@@ -1,0 +1,200 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{EFDD2122-DAB0-4F42-9DD6-1F450465C08C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DevExpress.Mvvm.UI</RootNamespace>
+    <AssemblyName>DevExpress.Mvvm.UI</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <BaseIntermediateOutputPath>obj.Wpf.Free</BaseIntermediateOutputPath>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\DevExpress.Mvvm.Key\StrongKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\Bin\Framework4\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;MVVM;FREE;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\Bin\Framework4\</OutputPath>
+    <DefineConstants>TRACE;MVVM;FREE;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="DevExpress.Mvvm">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Bin\Framework4\DevExpress.Mvvm.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.Entity" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Behaviors\ConfirmationBehavior.cs" />
+    <Compile Include="Behaviors\DependencyPropertyBehavior.cs" />
+    <Compile Include="Behaviors\FocusBehavior.cs" />
+    <Compile Include="Behaviors\ValidationErrorsHostBehavior.cs" />
+    <Compile Include="Behaviors\WindowFadeAnimationBehavior.cs" />
+    <Compile Include="Converters.cs" />
+    <Compile Include="EventToCommand.cs" />
+    <Compile Include="Interactivity\AttachableCollection.cs" />
+    <Compile Include="Interactivity\AttachableObject.cs" />
+    <Compile Include="Interactivity\Behavior.cs" />
+    <Compile Include="Interactivity\Interaction.cs" />
+    <Compile Include="Interactivity\Native.cs" />
+    <Compile Include="Interactivity\TargetTypeAttribute.cs" />
+    <Compile Include="Interactivity\Trigger.cs" />
+    <Compile Include="Native\ApplicationHelper.cs" />
+    <Compile Include="Native\DependencyObjectExt.cs" />
+    <Compile Include="Native\DPConsistencyCheckerAttribute.cs" />
+    <Compile Include="Native\ImageLoader2.cs" />
+    <Compile Include="Native\LayoutHelper.cs" />
+    <Compile Include="Native\VisualTreeEnumerator.cs" />
+    <Compile Include="Native\WeakEventHandler.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\ApplicationJumpListService\ApplicationJumpItemCollection.cs" />
+    <Compile Include="Services\ApplicationJumpListService\ApplicationJumpItems.cs" />
+    <Compile Include="Services\ApplicationJumpListService\ApplicationJumpListService.cs" />
+    <Compile Include="Services\ApplicationJumpListService\CustomApplicationJumpTaskLauncher.cs" />
+    <Compile Include="Services\ApplicationJumpListService\IconStorage.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\ApplicationJumpItemCollectionInternal.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\ApplicationJumpItemWrapper.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\ApplicationJumpList.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\CurrentProcess.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpListImplementation.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\JumpActionsManager.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\JumpActionsManagerClient.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\NativeJumpListManager.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\NativeResourceManager.cs" />
+    <Compile Include="Services\Core\DocumentUIServiceBase.cs" />
+    <Compile Include="Services\Core\ServiceBase.cs" />
+    <Compile Include="Services\Core\ViewHelper.cs" />
+    <Compile Include="Services\Core\ViewModelExtensions.cs" />
+    <Compile Include="Services\Core\ViewServiceBase.cs" />
+    <Compile Include="Services\CurrentWindowService.cs" />
+    <Compile Include="Services\DispatcherService.cs" />
+    <Compile Include="Services\FileDialogServiceBase.cs" />
+    <Compile Include="Services\FolderBrowserDialogService.cs" />
+    <Compile Include="Services\MessageBoxService.cs" />
+    <Compile Include="Services\NotificationService\CustomToastNotifications\CustomToastNotification.cs" />
+    <Compile Include="Services\NotificationService\CustomToastNotifications\CustomToastNotifier.cs" />
+    <Compile Include="Services\NotificationService\CustomToastNotifications\NotificationPositioner.cs" />
+    <Compile Include="Services\NotificationService\CustomToastNotifications\ToastContentControl.cs" />
+    <Compile Include="Services\NotificationService\CustomToastNotifications\ToastWindow.xaml.cs">
+      <DependentUpon>ToastWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Services\NotificationService\NotificationService.cs" />
+    <Compile Include="Services\NotificationService\TemplatesHelper.cs" />
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\Public.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\ShellHelper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\ToastNotification.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\ToastNotificationContent.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\ToastNotifier.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Common.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Shell.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\ToastNotificationManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Windows.Data.Xml.Dom.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Windows.UI.Notifications.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\NotificationService\WpfPredefinedToastNotifications\Colors.cs" />
+    <Compile Include="Services\NotificationService\WpfPredefinedToastNotifications\PredefinedToastNotificationVewModel.cs" />
+    <Compile Include="Services\NotificationService\WpfPredefinedToastNotifications\ToastTemplateSelector.cs" />
+    <Compile Include="Services\NotificationService\WpfPredefinedToastNotifications\WpfPredefinedToastNotification.cs" />
+    <Compile Include="Services\NotificationService\WpfPredefinedToastNotifications\WpfPredefinedToastNotificationContent.cs" />
+    <Compile Include="Services\NotificationService\WpfPredefinedToastNotifications\WpfPredefinedToastNotifier.cs" />
+    <Compile Include="Services\OpenFileDialogService.cs" />
+    <Compile Include="Services\SaveFileDialogService.cs" />
+    <Compile Include="Services\SplashScreenService.cs" />
+    <Compile Include="Services\TaskbarButtonService\Native\Container.cs" />
+    <Compile Include="Services\TaskbarButtonService\Native\TaskbarThumbButtonInfoWrapper.cs" />
+    <Compile Include="Services\TaskbarButtonService\TaskbarButtonService.cs" />
+    <Compile Include="Services\TaskbarButtonService\TaskbarThumbButtonInfoCollection.cs" />
+    <Compile Include="Services\WindowDocumentManagerService.cs" />
+    <Compile Include="Services\WindowService.cs" />
+    <Compile Include="SplashScreen\DXSplashScreen.cs" />
+    <Compile Include="SplashScreen\DXSplashScreenExceptions.cs" />
+    <Compile Include="SplashScreen\ISplashScreen.cs" />
+    <Compile Include="SplashScreen\SplashScreenViewModel.cs" />
+    <Compile Include="ViewLocator\IViewLocator.cs" />
+    <Compile Include="ViewLocator\ViewLocator.cs" />
+    <Compile Include="ViewLocator\ViewLocatorBase.cs" />
+    <Compile Include="ViewModelSourceExtension.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\Bin\Framework4\DevExpress.Mvvm.UI.ApplicationJumpTaskLauncher.exe">
+      <Link>DevExpress.Mvvm.UI.ApplicationJumpTaskLauncher.exe</Link>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="Services\NotificationService\CustomToastNotifications\ToastWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Services\NotificationService\PredefinedToastNotification.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\Generic.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
