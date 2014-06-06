@@ -1,0 +1,158 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{E50AC0CD-550A-4E66-911D-529B62A1C3A9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DevExpress.Mvvm.Tests</RootNamespace>
+    <AssemblyName>DevExpress.Mvvm.Tests.Free</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <BaseIntermediateOutputPath>obj.Wpf.Free</BaseIntermediateOutputPath>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\DevExpress.Mvvm.Key\StrongKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\Bin\Framework4\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;MVVM;FREE;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="DevExpress.Mvvm">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Bin\Framework4\DevExpress.Mvvm.dll</HintPath>
+    </Reference>
+    <Reference Include="DevExpress.Mvvm.UI">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Bin\Framework4\DevExpress.Mvvm.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="DevExpress.Mvvm.TestClasses.VB">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Bin\Framework4\DevExpress.Mvvm.TestClasses.VB.dll</HintPath>
+    </Reference>
+    <Reference Include="Moq">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Moq.4.2.1402.2112\lib\net40\Moq.dll</HintPath>
+    </Reference>
+    <Reference Include="Castle.Core">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Castle.Core.3.3.0\lib\net40-client\Castle.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.Entity" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UIAutomationProvider" />
+    <Reference Include="UIAutomationTypes" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Behaviors\AttachedBehaviorTests.cs" />
+    <Compile Include="Behaviors\ConfirmationBehaviorTests.cs" />
+    <Compile Include="Behaviors\DependencyPropertyBehaviorTests.cs" />
+    <Compile Include="Behaviors\ValidationErrorsHostBehaviorTests.cs" />
+    <Compile Include="BindableBaseTests.cs" />
+    <Compile Include="DefaultMessageBoxButtonLocalizerTests.cs" />
+    <Compile Include="DelegateCommandTests.cs" />
+    <Compile Include="DesignTimeHelperTests.cs" />
+    <Compile Include="ExpressionHelperTests.cs" />
+    <Compile Include="MessengerTests.cs" />
+    <Compile Include="MetadataBuilderTests.cs" />
+    <Compile Include="Services\SplashScreenServiceTests.cs" />
+    <Compile Include="Services\TaskbarButtonServiceTests.cs" />
+    <Compile Include="SyncCollectionHelperTests.cs" />
+    <Compile Include="Mvvm.UI\ConvertersTests.cs" />
+    <Compile Include="Mvvm.UI\EventToCommandTests.cs" />
+    <Compile Include="Behaviors\FocusBehaviorTests.cs" />
+    <Compile Include="Mvvm.UI\ImageLoader2Tests.cs" />
+    <Compile Include="Mvvm.UI\ViewModelExtensionsTests.cs" />
+    <Compile Include="Mvvm.UI\ViewModelSourceExtensionTests.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\ApplicationJumpListService\ApplicationJumpListServiceTests.cs" />
+    <Compile Include="Services\ApplicationJumpListService\AsyncTestFixture.cs" />
+    <Compile Include="Services\ApplicationJumpListService\JumpActionsManagerTests.cs" />
+    <Compile Include="Services\ApplicationJumpListService\NativeResourceManagerTests.cs" />
+    <Compile Include="Services\DialogServiceBaseTests.cs" />
+    <Compile Include="Services\DocumentManagerServiceBaseTests.cs" />
+    <Compile Include="Services\FileDialogServicesTests.cs" />
+    <Compile Include="Services\MessageBoxServiceBaseTests.cs" />
+    <Compile Include="Services\Notifications.cs" />
+    <Compile Include="Services\ServiceContainerBaseTests.cs" />
+    <Compile Include="Services\WindowedDocumentUIServiceTests.cs" />
+    <Compile Include="TestUtils\DispatcherHelper.cs" />
+    <Compile Include="TestUtils\GCTestHelpers.cs" />
+    <Compile Include="TestUtils\MemoryLeaksHelper.cs" />
+    <Compile Include="UICommandTests.cs" />
+    <Compile Include="ViewModelBaseTests.cs" />
+    <Compile Include="ViewModelSourceTests.cs" />
+    <Compile Include="Views\EventToCommandTestView.xaml.cs">
+      <DependentUpon>EventToCommandTestView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\EventToCommandTestViewModel.cs" />
+    <Compile Include="VisualTestUtils\AssertHelper.cs" />
+    <Compile Include="VisualTestUtils\Attributes.cs" />
+    <Compile Include="VisualTestUtils\BaseWpfFixture.cs" />
+    <Compile Include="VisualTestUtils\DependencyPropertiesConsistencyChecker.cs" />
+    <Compile Include="VisualTestUtils\DObjectChecker.cs" />
+    <Compile Include="VisualTestUtils\FixtureTag.cs" />
+    <Compile Include="VisualTestUtils\TestWindow.cs" />
+    <Compile Include="VisualTestUtils\UITestHelper.cs" />
+    <Compile Include="VisualTestUtils\WpfTestWindow.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
+    <None Include="Views\EventToCommandTestView.SL.xaml" />
+    <Page Include="Views\EventToCommandTestView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Services\ApplicationJumpListService\Code_Central.png" />
+    <Resource Include="Services\ApplicationJumpListService\demoicon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\icon1.ico" />
+    <Resource Include="Icons\icon2.ico" />
+    <Resource Include="Icons\icon3.ico" />
+    <Resource Include="Icons\icon4.ico" />
+    <Resource Include="Icons\icon5.ico" />
+    <Resource Include="Icons\icon6.ico" />
+    <Resource Include="Icons\icon7.ico" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

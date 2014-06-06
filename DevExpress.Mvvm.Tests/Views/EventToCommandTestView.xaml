@@ -1,0 +1,60 @@
+<UserControl x:Class="DevExpress.Mvvm.UI.Tests.EventToCommandTestView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:local="clr-namespace:DevExpress.Mvvm.UI.Tests">
+    <UserControl.DataContext>
+        <local:EventToCommandTestViewModel />
+    </UserControl.DataContext>
+    <dxmvvm:Interaction.Behaviors>
+        <dxmvvm:EventToCommand Command="{Binding LoadedCommand}" CommandParameter="{Binding TestParameter}"/>
+        <dxmvvm:EventToCommand />
+        <dxmvvm:EventToCommand Command="{Binding DummyCommand}"/>
+        <dxmvvm:EventToCommand EventName="SelectionChanged" SourceName="listBox" PassEventArgsToCommand="True" Command="{Binding SelectionChangedCommand}"/>
+        <dxmvvm:EventToCommand EventName="SelectionChanged" SourceObject="{x:Reference listBox2}" CommandParameter="foo" PassEventArgsToCommand="True" Command="{Binding SelectionChangedCommand2}"/>
+        <dxmvvm:EventToCommand SourceObject="{x:Reference listBox2}" SourceName="listBox"/>
+        <dxmvvm:EventToCommand EventName="SelectionChanged" SourceName="listBox3" PassEventArgsToCommand="True" Command="{Binding SelectionChangedCommand3}">
+            <dxmvvm:EventToCommand.EventArgsConverter>
+                <local:SelectionChangedConverter/>
+            </dxmvvm:EventToCommand.EventArgsConverter>
+        </dxmvvm:EventToCommand>
+        <dxmvvm:EventToCommand EventName="SelectionChanged" SourceName="listBox5" AllowChangingEventOwnerIsEnabled="True" Command="{Binding SelectionChangedCommand5}" CommandParameter="{Binding SelectionChangedCommandParameter5}"/>
+
+        <dxmvvm:EventToCommand PassEventArgsToCommand="True" EventName="Loaded"
+                               Command="{Binding Q554072Command}" SourceName="Q554072"/>
+        <dxmvvm:EventToCommand PassEventArgsToCommand="True" EventName="SizeChanged"
+                               Command="{Binding Q554072Command}" SourceName="Q554072"/>
+    </dxmvvm:Interaction.Behaviors>
+    <StackPanel Name="LayoutRoot">
+        <Button IsEnabled="False" Name="button">
+            <dxmvvm:Interaction.Behaviors>
+                <dxmvvm:EventToCommand Command="{Binding ButtonLoadedCommand}"/>
+            </dxmvvm:Interaction.Behaviors>
+        </Button>
+        <ListBox Name="listBox" x:FieldModifier="public">
+            <ListBoxItem>item1</ListBoxItem>
+            <ListBoxItem>item2</ListBoxItem>
+        </ListBox>
+        <ListBox Name="listBox2" x:FieldModifier="public">
+            <ListBoxItem>item1</ListBoxItem>
+            <ListBoxItem>item2</ListBoxItem>
+        </ListBox>
+        <ListBox Name="listBox3" x:FieldModifier="public">
+            <ListBoxItem>item1</ListBoxItem>
+            <ListBoxItem>item2</ListBoxItem>
+        </ListBox>
+        <ListBox Name="listBox4" x:FieldModifier="public">
+            <dxmvvm:Interaction.Behaviors>
+                <dxmvvm:EventToCommand EventName="SelectionChanged" AllowChangingEventOwnerIsEnabled="True" Command="{Binding SelectionChangedCommand4}" CommandParameter="{Binding SelectionChangedCommandParameter4}"/>
+            </dxmvvm:Interaction.Behaviors>
+            <ListBoxItem>item1</ListBoxItem>
+            <ListBoxItem>item2</ListBoxItem>
+        </ListBox>
+        <ListBox Name="listBox5" x:FieldModifier="public">
+            <ListBoxItem>item1</ListBoxItem>
+            <ListBoxItem>item2</ListBoxItem>
+        </ListBox>
+
+        <Button Name="Q554072" />
+    </StackPanel>
+</UserControl>
