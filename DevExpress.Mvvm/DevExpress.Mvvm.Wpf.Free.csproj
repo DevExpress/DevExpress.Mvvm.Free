@@ -1,0 +1,166 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6DC18CB2-A40A-4E9C-9A74-B99EE545B59A}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DevExpress.Mvvm</RootNamespace>
+    <AssemblyName>DevExpress.Mvvm</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <BaseIntermediateOutputPath>obj.Wpf.Free</BaseIntermediateOutputPath>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\DevExpress.Mvvm.Key\StrongKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\Bin\Framework4\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;MVVM;FREE;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\Bin\Framework4\</OutputPath>
+    <DefineConstants>TRACE;MVVM;FREE;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.Entity" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyVersion.cs" />
+    <Compile Include="BindableBase.cs" />
+    <Compile Include="CellValue.cs" />
+    <Compile Include="DataAnnotationsResources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DataAnnotationsResources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="DataAnnotations\Attributes\AttributesDX.cs" />
+    <Compile Include="DataAnnotations\Attributes\AttributesPOCO.cs" />
+    <Compile Include="DataAnnotations\Attributes\DXValidationAttribute.cs" />
+    <Compile Include="DataAnnotations\Attributes\MetadataTypeAttribute.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\Command.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\Extensions.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MetadataBuilder.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\Property.cs" />
+    <Compile Include="DataAnnotations\MetadataLocator.cs" />
+    <Compile Include="DataAnnotations\Native\AttributeBuilderProviderBase.cs" />
+    <Compile Include="DataAnnotations\Native\AttributeHelper.cs" />
+    <Compile Include="DataAnnotations\Native\FreeNative.cs" />
+    <Compile Include="DataAnnotations\Native\MetadataHelper.cs" />
+    <Compile Include="DataAnnotations\Native\PropertyValidator.cs" />
+    <Compile Include="DataAnnotations\Native\ResourceResolver.cs" />
+    <Compile Include="DesignTimeHelper.cs" />
+    <Compile Include="IDataErrorInfoHelper.cs" />
+    <Compile Include="ILockable.cs" />
+    <Compile Include="MessageBoxButtonLocalizer.cs" />
+    <Compile Include="Native\ActionInvoker\ActionInvokerBase.cs" />
+    <Compile Include="Native\ActionInvoker\ActionInvokerFactories.cs" />
+    <Compile Include="Native\ActionInvoker\IActionInvoker.cs" />
+    <Compile Include="Native\ActionInvoker\SLWeakActionInvoker.cs" />
+    <Compile Include="Native\ActionInvoker\StaticActionInvoker.cs" />
+    <Compile Include="Native\ActionInvoker\WeakActionInvoker.cs" />
+    <Compile Include="Native\AssemblyHelper.cs" />
+    <Compile Include="Native\AsyncCommandFactory.cs" />
+    <Compile Include="Native\DefaultBoolean.cs" />
+    <Compile Include="Native\DelegateCommandFactory.cs" />
+    <Compile Include="Native\DesignTimeValuesProvider.cs" />
+    <Compile Include="Native\EventFireCounter.cs" />
+    <Compile Include="Native\ExpressionHelper.cs" />
+    <Compile Include="Native\Guard.cs" />
+    <Compile Include="Native\IClickable.cs" />
+    <Compile Include="Native\ICommand.cs" />
+    <Compile Include="Native\MayBe.cs" />
+    <Compile Include="Native\NativeConstants.cs" />
+    <Compile Include="Native\PropertyChangedHelper.cs" />
+    <Compile Include="Native\SyncCollectionHelper.cs" />
+    <Compile Include="Native\ViewModelDesignHelper.cs" />
+    <Compile Include="NavigationViewModelBase.cs" />
+    <Compile Include="Services\ApplicationJumpListService\ApplicationJumpItems.cs" />
+    <Compile Include="Services\ApplicationJumpListService\IApplicationJumpListService.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpItemInfoInternal.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpItemInfoSource.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpTaskInfoInternal.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpTaskInfoSource.cs" />
+    <Compile Include="Services\DialogService\IDialogService.cs" />
+    <Compile Include="Services\DialogService\DialogServiceExtensions.cs" />
+    <Compile Include="Services\DispatcherService\IDispatcherService.cs" />
+    <Compile Include="Services\FileDialogServices\IFileDialogServiceBase.cs" />
+    <Compile Include="Services\FileDialogServices\IFileInfo.cs" />
+    <Compile Include="Services\FileDialogServices\IFolderBrowserDialogService.cs" />
+    <Compile Include="Services\FileDialogServices\IOpenFileDialogService.cs" />
+    <Compile Include="Services\FileDialogServices\ISaveFileDialogService.cs" />
+    <Compile Include="Services\IServiceContainer.cs" />
+    <Compile Include="Services\ISupportNavigation.cs" />
+    <Compile Include="Services\ISupportParameter.cs" />
+    <Compile Include="Services\ISupportParentViewModel.cs" />
+    <Compile Include="Services\ISupportServices.cs" />
+    <Compile Include="Services\MessageBoxService\IMessageBoxService.cs" />
+    <Compile Include="Services\MessengerService\FuzzyDictionary.cs" />
+    <Compile Include="Services\MessengerService\IMessenger.cs" />
+    <Compile Include="Services\MessageBoxService\MessageBoxServiceExtensions.cs" />
+    <Compile Include="Services\MessengerService\Messenger.cs" />
+    <Compile Include="Services\MessengerService\MessengerExtensions.cs" />
+    <Compile Include="Services\NavigationService\INavigationService.cs" />
+    <Compile Include="Services\NotificationService\INotificationService.cs" />
+    <Compile Include="Services\SplashScreenService\ISplashScreenService.cs" />
+    <Compile Include="Services\SplashScreenService\ISupportSplashScreen.cs" />
+    <Compile Include="Services\SplashScreenService\SplashScreenServiceExtensions.cs" />
+    <Compile Include="Services\TaskbarButtonService\ITaskbarButtonService.cs" />
+    <Compile Include="Services\TaskbarButtonService\Native\ITaskbarThumbButtonInfo.cs" />
+    <Compile Include="Services\WindowService\ICurrentWindowService.cs" />
+    <Compile Include="DelegateCommand.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\DocumentManagerService\DocumentManagerServiceExtensions.cs" />
+    <Compile Include="Services\DocumentManagerService\IDocument.cs" />
+    <Compile Include="Services\DocumentManagerService\IDocumentViewModel.cs" />
+    <Compile Include="Services\DocumentManagerService\IDocumentManagerService.cs" />
+    <Compile Include="Services\ServiceContainer.cs" />
+    <Compile Include="Services\WindowService\IWindowService.cs" />
+    <Compile Include="Services\WindowService\WindowServiceExtensions.cs" />
+    <Compile Include="UICommand.cs" />
+    <Compile Include="ViewModelBase.cs" />
+    <Compile Include="ViewModelSource.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="DataAnnotationsResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DataAnnotationsResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
