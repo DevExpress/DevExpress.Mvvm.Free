@@ -4,9 +4,6 @@ using System.Linq;
 using System.Text;
 using System.ComponentModel;
 using System.Collections.Specialized;
-#if SILVERLIGHT && !FREE
-using DevExpress.Data.Browsing;
-#endif
 namespace DevExpress.Mvvm.UI.Native {
     #region
     public interface IWeakEventHandler<THandler> {
