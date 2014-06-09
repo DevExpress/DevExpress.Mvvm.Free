@@ -8,7 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-#if FREE && SILVERLIGHT
+#if SILVERLIGHT
 using DevExpress.Xpf.Core;
 #endif
 
