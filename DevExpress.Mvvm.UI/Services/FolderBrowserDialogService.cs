@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -7,6 +8,7 @@ using System.Windows.Forms;
 using System.Windows.Input;
 
 namespace DevExpress.Mvvm.UI {
+    [Browsable(true), EditorBrowsable(EditorBrowsableState.Always)]
     public class FolderBrowserDialogService : ServiceBase, IFolderBrowserDialogService {
         public static readonly DependencyProperty DescriptionProperty =
             DependencyProperty.Register("Description", typeof(string), typeof(FolderBrowserDialogService), new PropertyMetadata(string.Empty));

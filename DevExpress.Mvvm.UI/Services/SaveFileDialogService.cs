@@ -7,8 +7,10 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.ComponentModel;
 
 namespace DevExpress.Mvvm.UI {
+    [Browsable(true), EditorBrowsable(EditorBrowsableState.Always)]
     public class SaveFileDialogService : FileDialogServiceBase, ISaveFileDialogService {
 #if !SILVERLIGHT
         public static readonly DependencyProperty CreatePromptProperty =
