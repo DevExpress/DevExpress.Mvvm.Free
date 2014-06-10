@@ -4,9 +4,10 @@ using System.Windows.Threading;
 
 namespace DevExpress.Mvvm.UI {
     public class DispatcherService : ServiceBase, IDispatcherService {
-        #region
+        #region Dependency Properties
         public static readonly DependencyProperty DelayProperty =
-            DependencyProperty.Register("Delay", typeof(TimeSpan), typeof(DispatcherService), new PropertyMetadata(new TimeSpan()));
+            DependencyProperty.Register("Delay", typeof(TimeSpan), typeof(DispatcherService),
+            new PropertyMetadata(TimeSpan.Zero, (d, e) => ((DispatcherService)d).OnDelayChanged()));
         #endregion
 
 #if !SILVERLIGHT
@@ -20,9 +21,13 @@ namespace DevExpress.Mvvm.UI {
             get { return (TimeSpan)GetValue(DelayProperty); }
             set { SetValue(DelayProperty, value); }
         }
+        void OnDelayChanged() {
+            delay = Delay;
+        }
+        TimeSpan delay;
 
         public void BeginInvoke(Action action) {
-            if(Delay == TimeSpan.Zero) {
+            if(delay == TimeSpan.Zero) {
                 BeginInvokeCore(action);
                 return;
             }
@@ -38,7 +43,7 @@ namespace DevExpress.Mvvm.UI {
                 BeginInvokeCore(action);
             };
             timer.Tick += onTimerTick;
-            timer.Interval = Delay;
+            timer.Interval = delay;
             timer.Start();
         }
         void BeginInvokeCore(Action action) {
