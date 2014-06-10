@@ -91,6 +91,7 @@
     <Compile Include="ExpressionHelperTests.cs" />
     <Compile Include="MessengerTests.cs" />
     <Compile Include="MetadataBuilderTests.cs" />
+    <Compile Include="Services\DispatcherServiceTests.cs" />
     <Compile Include="Services\SplashScreenServiceTests.cs" />
     <Compile Include="Services\TaskbarButtonServiceTests.cs" />
     <Compile Include="SyncCollectionHelperTests.cs" />
