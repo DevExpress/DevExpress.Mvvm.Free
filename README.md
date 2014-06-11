@@ -16,4 +16,4 @@ At the DevExpress site, you can find several training blog posts: https://commun
 
 NuGet
 ====================
-The Free DevExpress Mvvm Framework is available from NugGet: https://www.nuget.org/packages/DevExpressMvvm/14.1.3
+The Free DevExpress Mvvm Framework is available from NugGet: https://www.nuget.org/packages/DevExpressMvvm/
