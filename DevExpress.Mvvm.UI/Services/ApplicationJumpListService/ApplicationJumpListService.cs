@@ -115,7 +115,7 @@ namespace DevExpress.Mvvm.UI {
             ApplicationJumpTaskWrap task = (ApplicationJumpTaskWrap)nativeJumpList.Find(commandId);
             return task == null ? null : task.ApplicationJumpTask;
         }
-        protected virtual bool AddOrReplace(ApplicationJumpTaskInfo jumpTask) {
+        public virtual bool AddOrReplace(ApplicationJumpTaskInfo jumpTask) {
             if(InteractionHelper.IsInDesignMode(this)) {
                 designModeItems.Add(jumpTask);
                 return true;

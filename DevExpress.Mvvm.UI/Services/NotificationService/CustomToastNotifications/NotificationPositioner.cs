@@ -9,7 +9,7 @@ namespace DevExpress.Mvvm.UI.Native {
             public Size size;
         }
 
-        NotificationPosition position;
+        internal NotificationPosition position;
         System.Drawing.Rectangle screen;
         const double verticalMargin = 10;
         const double verticalScreenMargin = 20;

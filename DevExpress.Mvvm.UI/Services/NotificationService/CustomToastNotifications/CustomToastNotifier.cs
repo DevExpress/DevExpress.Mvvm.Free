@@ -96,7 +96,7 @@ namespace DevExpress.Mvvm.UI.Native {
         public CustomNotifier(IScreen screen = null) {
             this.screen = screen ?? new PrimaryScreen();
             this.screen.WorkingAreaChanged += screen_WorkingAreaChanged;
-            UpdatePositioner(NotificationPosition.BottomRight, maxVisibleToasts);
+            UpdatePositioner(NotificationPosition.TopRight, maxVisibleToasts);
         }
 
         void screen_WorkingAreaChanged() {

@@ -21,28 +21,32 @@ namespace DevExpress.Mvvm.UI {
     public class TaskbarButtonService : ServiceBase, ITaskbarButtonService {
         #region
         public static readonly DependencyProperty ProgressStateProperty =
-            DependencyProperty.Register("ProgressState", typeof(TaskbarItemProgressState), typeof(TaskbarButtonService), new PropertyMetadata(TaskbarItemProgressState.None,
+            DependencyProperty.Register("ProgressState", typeof(TaskbarItemProgressState), typeof(TaskbarButtonService),
+            new FrameworkPropertyMetadata(TaskbarItemProgressState.None, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
                 (d, e) => ((TaskbarButtonService)d).OnProgressStateChanged(e)));
         [IgnoreDependencyPropertiesConsistencyCheckerAttribute]
         static readonly DependencyProperty ItemInfoProgressStateProperty =
             DependencyProperty.Register("ItemInfoProgressState", typeof(TaskbarItemProgressState), typeof(TaskbarButtonService), new PropertyMetadata(TaskbarItemProgressState.None,
                 (d, e) => ((TaskbarButtonService)d).OnItemInfoProgressStateChanged(e)));
         public static readonly DependencyProperty ProgressValueProperty =
-            DependencyProperty.Register("ProgressValue", typeof(double), typeof(TaskbarButtonService), new PropertyMetadata(0.0,
+            DependencyProperty.Register("ProgressValue", typeof(double), typeof(TaskbarButtonService),
+            new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
                 (d, e) => ((TaskbarButtonService)d).OnProgressValueChanged(e)));
         [IgnoreDependencyPropertiesConsistencyCheckerAttribute]
         static readonly DependencyProperty ItemInfoProgressValueProperty =
             DependencyProperty.Register("ItemInfoProgressValue", typeof(double), typeof(TaskbarButtonService), new PropertyMetadata(0.0,
                 (d, e) => ((TaskbarButtonService)d).OnItemInfoProgressValueChanged(e)));
         public static readonly DependencyProperty OverlayIconProperty =
-            DependencyProperty.Register("OverlayIcon", typeof(ImageSource), typeof(TaskbarButtonService), new PropertyMetadata(null,
+            DependencyProperty.Register("OverlayIcon", typeof(ImageSource), typeof(TaskbarButtonService),
+            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
                 (d, e) => ((TaskbarButtonService)d).OnOverlayIconChanged(e)));
         [IgnoreDependencyPropertiesConsistencyCheckerAttribute]
         static readonly DependencyProperty ItemInfoOverlayIconProperty =
             DependencyProperty.Register("ItemInfoOverlayIcon", typeof(ImageSource), typeof(TaskbarButtonService), new PropertyMetadata(null,
                 (d, e) => ((TaskbarButtonService)d).OnItemInfoOverlayIconChanged(e)));
         public static readonly DependencyProperty DescriptionProperty =
-            DependencyProperty.Register("Description", typeof(string), typeof(TaskbarButtonService), new PropertyMetadata("",
+            DependencyProperty.Register("Description", typeof(string), typeof(TaskbarButtonService),
+            new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
                 (d, e) => ((TaskbarButtonService)d).OnDescriptionChanged(e)));
         [IgnoreDependencyPropertiesConsistencyCheckerAttribute]
         static readonly DependencyProperty ItemInfoDescriptionProperty =
@@ -56,7 +60,8 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("ItemInfoThumbButtonInfos", typeof(ThumbButtonInfoCollection), typeof(TaskbarButtonService), new PropertyMetadata(null,
                 (d, e) => ((TaskbarButtonService)d).OnItemInfoThumbButtonInfosChanged(e)));
         public static readonly DependencyProperty ThumbnailClipMarginProperty =
-            DependencyProperty.Register("ThumbnailClipMargin", typeof(Thickness), typeof(TaskbarButtonService), new PropertyMetadata(new Thickness(),
+            DependencyProperty.Register("ThumbnailClipMargin", typeof(Thickness), typeof(TaskbarButtonService),
+            new FrameworkPropertyMetadata(new Thickness(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
                 (d, e) => ((TaskbarButtonService)d).OnThumbnailClipMarginChanged(e)));
         [IgnoreDependencyPropertiesConsistencyCheckerAttribute]
         static readonly DependencyProperty ItemInfoThumbnailClipMarginProperty =
@@ -102,7 +107,9 @@ namespace DevExpress.Mvvm.UI {
             ItemInfo.ProgressState = (TaskbarItemProgressState)e.NewValue;
         }
         protected virtual void OnProgressValueChanged(DependencyPropertyChangedEventArgs e) {
-            ItemInfo.ProgressValue = (double)e.NewValue;
+            double newValue = (double)e.NewValue;
+            if(Math.Abs(ItemInfo.ProgressValue - newValue) > Double.Epsilon)
+                ItemInfo.ProgressValue = newValue;
         }
         protected virtual void OnOverlayIconChanged(DependencyPropertyChangedEventArgs e) {
             ItemInfo.Overlay = (ImageSource)e.NewValue;
@@ -150,7 +157,9 @@ namespace DevExpress.Mvvm.UI {
             ProgressState = (TaskbarItemProgressState)e.NewValue;
         }
         void OnItemInfoProgressValueChanged(DependencyPropertyChangedEventArgs e) {
-            ProgressValue = (double)e.NewValue;
+            double newValue = (double)e.NewValue;
+            if(Math.Abs(ProgressValue - newValue) > Double.Epsilon)
+                ProgressValue = (double)e.NewValue;
         }
         void OnItemInfoOverlayIconChanged(DependencyPropertyChangedEventArgs e) {
             OverlayIcon = (ImageSource)e.NewValue;

@@ -138,11 +138,7 @@ namespace DevExpress.Mvvm.UI.Native {
         }
         public static DateTime GetApplicationCreateTime() {
             if(applicationCreateTime == null) {
-                try {
-                    applicationCreateTime = GetFileTime(ApplicationExecutablePath);
-                } catch {
-                    applicationCreateTime = DateTime.Now;
-                }
+                applicationCreateTime = DateTime.Now;
             }
             return applicationCreateTime.Value;
         }
