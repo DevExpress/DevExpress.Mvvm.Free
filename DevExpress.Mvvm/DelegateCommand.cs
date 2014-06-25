@@ -1,6 +1,7 @@
 using DevExpress.Mvvm.Native;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows;
@@ -64,19 +65,22 @@ namespace DevExpress.Mvvm {
                 canExecuteChanged(this, EventArgs.Empty);
         }
         bool ICommand.CanExecute(object parameter) {
-            return CanExecute(GetGenericParameter(parameter));
+            return CanExecute(GetGenericParameter(parameter, true));
         }
         void ICommand.Execute(object parameter) {
             Execute(GetGenericParameter(parameter));
         }
-        static T GetGenericParameter(object parameter) {
+        static T GetGenericParameter(object parameter, bool suppressCastException = false) {
             Type targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
             if(targetType.IsEnum && parameter is string) {
                 parameter = Enum.Parse(targetType, (string)parameter, false);
             } else if(parameter is IConvertible && !typeof(T).IsAssignableFrom(parameter.GetType())) {
                 parameter = Convert.ChangeType(parameter, targetType, CultureInfo.InvariantCulture);
             }
-            return parameter == null ? default(T) : (T)parameter;
+            if(parameter == null) return default(T);
+            if(parameter is T) return (T)parameter;
+            if(suppressCastException) return default(T);
+            throw new InvalidCastException(string.Format("CommandParameter: Unable to cast object of type '{0}' to type '{1}'", parameter.GetType().FullName, typeof(T).FullName));
         }
     }
     public abstract class DelegateCommandBase<T> : CommandBase<T> {
