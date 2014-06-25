@@ -27,6 +27,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleNotificationService.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleWindowService.Wpf.Free", "Examples\ExampleWindowService\ExampleWindowService.Wpf.Free.csproj", "{8C7A24A2-B0D9-424A-9AB8-5500526C91D8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleSplashScreenService.Wpf.Free", "Examples\ExampleSplashScreenService\ExampleSplashScreenService.Wpf.Free.csproj", "{22FDE8A5-EB3F-4A5B-A855-EC5D366A4B45}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleWindowedDocumentUIService.Wpf.Free", "Examples\ExampleWindowedDocumentUIService\ExampleWindowedDocumentUIService.Wpf.Free.csproj", "{5EB6AC98-B2F9-4ED0-B21C-1650ACA4AD3B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleConfirmationBehavior.Wpf.Free", "Examples\ExampleConfirmationBehavior\ExampleConfirmationBehavior.Wpf.Free.csproj", "{A8B586F2-C126-4AE1-981F-2250590D0400}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleDependencyPropertyBehavior.Wpf.Free", "Examples\ExampleDependencyPropertyBehavior\ExampleDependencyPropertyBehavior.Wpf.Free.csproj", "{8D2DE645-159C-46EE-8146-B4E99D4C0883}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleFocusBehavior.Wpf.Free", "Examples\ExampleFocusBehavior\ExampleFocusBehavior.Wpf.Free.csproj", "{E95BDC8A-9623-4D64-A189-FA78B97F2CAC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +66,16 @@ Global
 		{4B5516DD-44B3-4618-B642-BB3D65EA5499}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C7A24A2-B0D9-424A-9AB8-5500526C91D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8C7A24A2-B0D9-424A-9AB8-5500526C91D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22FDE8A5-EB3F-4A5B-A855-EC5D366A4B45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22FDE8A5-EB3F-4A5B-A855-EC5D366A4B45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EB6AC98-B2F9-4ED0-B21C-1650ACA4AD3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EB6AC98-B2F9-4ED0-B21C-1650ACA4AD3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8B586F2-C126-4AE1-981F-2250590D0400}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8B586F2-C126-4AE1-981F-2250590D0400}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D2DE645-159C-46EE-8146-B4E99D4C0883}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D2DE645-159C-46EE-8146-B4E99D4C0883}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E95BDC8A-9623-4D64-A189-FA78B97F2CAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E95BDC8A-9623-4D64-A189-FA78B97F2CAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
