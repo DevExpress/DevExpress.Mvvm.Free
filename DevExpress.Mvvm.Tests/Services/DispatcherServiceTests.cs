@@ -1,4 +1,4 @@
-﻿#if !SILVERLIGHT
+#if !SILVERLIGHT
 using NUnit.Framework;
 #else
 using Microsoft.Silverlight.Testing;
@@ -27,14 +27,14 @@ namespace DevExpress.Mvvm.UI.Tests {
                 vm.Calculate();
                 Assert.IsTrue(vm.IsProgress);
             });
-            EnqueueDelay(50);
+            EnqueueWait(() => vm.Task.IsCompleted);
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
+                DispatcherHelper.DoEvents();
                 Assert.IsFalse(vm.IsProgress);
                 Assert.IsTrue(vm.IsCompleted);
             });
             EnqueueTestComplete();
-            
         }
         class TestVM : ViewModelBase {
             public IDispatcherService DispatcherService { get { return GetService<IDispatcherService>(); } }
@@ -44,9 +44,10 @@ namespace DevExpress.Mvvm.UI.Tests {
                 IsCompleted = false;
                 IsProgress = false;
             }
+            public Task Task { get; private set; }
             public void Calculate() {
                 IsProgress = true;
-                Task.Factory.StartNew(CalcCore).ContinueWith(x => {
+                Task = Task.Factory.StartNew(CalcCore).ContinueWith(x => {
                     DispatcherService.BeginInvoke(new Action(() => IsProgress = false));
                 });
             }

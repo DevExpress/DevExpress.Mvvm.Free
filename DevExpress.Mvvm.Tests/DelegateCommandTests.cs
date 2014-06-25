@@ -222,10 +222,15 @@ namespace DevExpress.Mvvm.Tests {
             ICommand command = CreateCommand<ParamClass1>(x => { });
             command.CanExecute("a");
         }
-        [Test, ExpectedException(typeof(InvalidCastException))]
-        public void CustomParameterException2() {
+        [Test]
+        public void CustomParameterException2_T120478() {
             ICommand command = CreateCommand<ParamClass1>(x => { });
             command.CanExecute(new ParamClass2());
+        }
+        [Test, ExpectedException(typeof(InvalidCastException))]
+        public void CustomParameterException3_T120478() {
+            ICommand command = CreateCommand<ParamClass1>(x => { });
+            command.Execute(new ParamClass2());
         }
         [Test]
         public void DateTimeToStringParameter() {

@@ -619,7 +619,7 @@ namespace DevExpress.Mvvm.Tests {
             }, x => Assert.AreEqual("Property with setter cannot be Service Property: Property.", x.Message));
         }
         #endregion
-#pragma warning disable 0618
+#pragma warning restore 0618
         #endregion
 
         public class DesignTimeViewModel {

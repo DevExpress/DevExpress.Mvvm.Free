@@ -349,7 +349,7 @@ namespace DevExpress.Mvvm.Tests {
                 new InvalidCanExecuteMethodNameViewModel();
             }, x => Assert.AreEqual("Method not found: CanMethod_.", x.Message));
         }
-#pragma warning disable 0618
+#pragma warning restore 0618
         #endregion
         #endregion
     }

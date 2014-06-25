@@ -125,9 +125,7 @@
     <Compile Include="Mvvm.UI\ViewModelSourceExtensionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\DialogServiceBaseTests.cs" />
-    <Compile Include="Services\DispatcherServiceTests.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Services\DispatcherServiceTests.cs" />
     <Compile Include="Services\DocumentManagerServiceBaseTests.cs" />
     <Compile Include="Services\FileDialogServicesTests.cs" />
     <Compile Include="Services\MessageBoxServiceBaseTests.cs" />

@@ -99,8 +99,6 @@ namespace DevExpress {
             TestInitialize,
             TestCleanup
         }
-
-
         public string Namespace {
             get { return this._type.Namespace; }
         }
