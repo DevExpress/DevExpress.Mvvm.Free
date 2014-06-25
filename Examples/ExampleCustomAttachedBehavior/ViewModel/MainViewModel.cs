@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.DataAnnotations;
+﻿using DevExpress.Mvvm.DataAnnotations;
 using System.Windows.Media;
 
 namespace Example.ViewModel {

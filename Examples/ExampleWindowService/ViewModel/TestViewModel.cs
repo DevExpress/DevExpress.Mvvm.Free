@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Example.ViewModel {
     public class TestViewModel {

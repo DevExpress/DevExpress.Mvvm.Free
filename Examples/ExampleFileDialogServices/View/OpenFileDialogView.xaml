@@ -1,4 +1,4 @@
-<UserControl x:Class="Example.View.OpenFileDialogView"
+﻿<UserControl x:Class="Example.View.OpenFileDialogView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ViewModel="clr-namespace:Example.ViewModel"

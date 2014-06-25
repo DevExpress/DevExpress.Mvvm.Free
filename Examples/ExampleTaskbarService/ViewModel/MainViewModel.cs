@@ -1,4 +1,4 @@
-using DevExpress.Mvvm;
+﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using System;
 using System.Windows.Shell;
@@ -23,21 +23,8 @@ namespace Example.ViewModel {
 
         public MainViewModel() {
             Description = "Hello";
-            ProgressValue = 50;
+            ProgressValue = 0.5;
             IsNormalProgressState = true;
-        }
-        public void Init() {
-            OnDescriptionChanged();
-            OnProgressValueChanged();
-            UpdateProgressState();
-        }
-        protected void OnDescriptionChanged() {
-            if(TaskbarButtonService == null) return;
-            TaskbarButtonService.Description = Description;
-        }
-        protected void OnProgressValueChanged() {
-            if(TaskbarButtonService == null) return;
-            TaskbarButtonService.ProgressValue = ProgressValue / 100;
         }
         protected void UpdateProgressState() {
             if(TaskbarButtonService == null) return;

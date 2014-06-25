@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.UI;
+﻿using DevExpress.Mvvm.UI;
 using System.Windows;
 
 namespace Example.Service {

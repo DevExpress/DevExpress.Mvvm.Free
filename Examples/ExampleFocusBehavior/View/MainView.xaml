@@ -1,0 +1,32 @@
+﻿<UserControl x:Class="Example.View.MainView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ViewModel="clr-namespace:Example.ViewModel"
+    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" d:DesignHeight="500" d:DesignWidth="600"
+    DataContext="{dxmvvm:ViewModelSource Type=ViewModel:MainViewModel}">
+    
+    <Grid x:Name="LayoutRoot" Background="White">
+        <StackPanel Orientation="Vertical">
+            <StackPanel Orientation="Horizontal" Margin="10">
+                <TextBlock Text="This control is focused on button click: " VerticalAlignment="Center"/>
+                <TextBox Text="Click the bottom button">
+                    <dxmvvm:Interaction.Behaviors>
+                        <dxmvvm:FocusBehavior SourceName="bt" EventName="Click"/>
+                    </dxmvvm:Interaction.Behaviors>
+                </TextBox>
+                <Button x:Name="bt" Content="Click to focus the TextBox"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="10">
+                <TextBlock Text="This control is focused on startup: " VerticalAlignment="Center"/>
+                <TextBox Text="Focus is here">
+                    <dxmvvm:Interaction.Behaviors>
+                        <dxmvvm:FocusBehavior/>
+                    </dxmvvm:Interaction.Behaviors>
+                </TextBox>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>

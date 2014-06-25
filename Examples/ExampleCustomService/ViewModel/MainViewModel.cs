@@ -1,4 +1,4 @@
-using DevExpress.Mvvm;
+﻿using DevExpress.Mvvm;
 using Example.Service;
 
 namespace Example.ViewModel {

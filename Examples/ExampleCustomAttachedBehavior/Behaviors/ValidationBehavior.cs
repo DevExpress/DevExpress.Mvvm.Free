@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.UI.Interactivity;
+﻿using DevExpress.Mvvm.UI.Interactivity;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -9,7 +9,7 @@ namespace Example.Behaviors {
             DependencyProperty.Register("ValidForeground", typeof(Brush), typeof(ValidationBehavior),
             new PropertyMetadata(new SolidColorBrush(Colors.Black), (d, e) => ((ValidationBehavior)d).Update()));
         public static readonly DependencyProperty InvalidForegroundProperty =
-            DependencyProperty.Register("InvalidForeground", typeof(Brush), typeof(ValidationBehavior),
+            DependencyProperty.Register("InvalidForeground", typeof(Brush), typeof(ValidationBehavior), 
             new PropertyMetadata(new SolidColorBrush(Colors.Red), (d,e) => ((ValidationBehavior)d).Update()));
         public static readonly DependencyProperty InvalidValueProperty =
             DependencyProperty.Register("InvalidValue", typeof(string), typeof(ValidationBehavior),

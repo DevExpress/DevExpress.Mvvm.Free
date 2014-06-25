@@ -1,4 +1,4 @@
-using DevExpress.Mvvm;
+﻿using DevExpress.Mvvm;
 
 namespace Example.ViewModel {
     public class MainViewModel : ViewModelBase {
