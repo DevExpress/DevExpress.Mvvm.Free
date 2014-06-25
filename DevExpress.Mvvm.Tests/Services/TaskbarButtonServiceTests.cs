@@ -1,14 +1,17 @@
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
+using DevExpress.Mvvm.POCO;
 using DevExpress.Mvvm.UI;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Tests;
 using DevExpress.Utils;
 using NUnit.Framework;
 using System;
+using System.ComponentModel;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Shell;
 
@@ -47,6 +50,26 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(TaskbarItemProgressState.Error, RealWindow.TaskbarItemInfo.ProgressState);
         }
         [Test]
+        public void BindProgressIndicatorState() {
+            VM vm = VM.Create();
+            RealWindow.DataContext = vm;
+            TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService();
+            Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
+            BindingOperations.SetBinding(taskbarServiceImpl, TaskbarButtonService.ProgressStateProperty, new Binding("ProgressState"));
+            EnqueueShowRealWindow();
+            ITaskbarButtonService taskbarService = taskbarServiceImpl;
+            vm.ProgressState = TaskbarItemProgressState.Indeterminate;
+            Assert.AreEqual(TaskbarItemProgressState.Indeterminate, RealWindow.TaskbarItemInfo.ProgressState);
+            vm.ProgressState = TaskbarItemProgressState.None;
+            Assert.AreEqual(TaskbarItemProgressState.None, RealWindow.TaskbarItemInfo.ProgressState);
+            vm.ProgressState = TaskbarItemProgressState.Normal;
+            Assert.AreEqual(TaskbarItemProgressState.Normal, RealWindow.TaskbarItemInfo.ProgressState);
+            vm.ProgressState = TaskbarItemProgressState.Paused;
+            Assert.AreEqual(TaskbarItemProgressState.Paused, RealWindow.TaskbarItemInfo.ProgressState);
+            vm.ProgressState = TaskbarItemProgressState.Error;
+            Assert.AreEqual(TaskbarItemProgressState.Error, RealWindow.TaskbarItemInfo.ProgressState);
+        }
+        [Test]
         public void SetProgressIndicatorValue() {
             TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService();
             Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
@@ -57,6 +80,22 @@ namespace DevExpress.Mvvm.UI.Tests {
             taskbarService.ProgressValue = 0.5;
             Assert.AreEqual(0.5, RealWindow.TaskbarItemInfo.ProgressValue);
             taskbarService.ProgressValue = 1.0;
+            Assert.AreEqual(1, RealWindow.TaskbarItemInfo.ProgressValue);
+        }
+        [Test]
+        public void BindProgressIndicatorValue() {
+            VM vm = VM.Create();
+            RealWindow.DataContext = vm;
+            TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService();
+            Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
+            BindingOperations.SetBinding(taskbarServiceImpl, TaskbarButtonService.ProgressValueProperty, new Binding("ProgressValue"));
+            EnqueueShowRealWindow();
+            ITaskbarButtonService taskbarService = taskbarServiceImpl;
+            vm.ProgressValue = 0.0;
+            Assert.AreEqual(0, RealWindow.TaskbarItemInfo.ProgressValue);
+            vm.ProgressValue = 0.5;
+            Assert.AreEqual(0.5, RealWindow.TaskbarItemInfo.ProgressValue);
+            vm.ProgressValue = 1.0;
             Assert.AreEqual(1, RealWindow.TaskbarItemInfo.ProgressValue);
         }
         [Test]
@@ -100,8 +139,8 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
         [Test]
         public void AttachServiceToWindowWithTaskbarButtonInfo() {
-            ImageSource icon_1 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Mvvm.UI/Tests/Images/demoicon.ico"));
-            ImageSource icon_2 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Mvvm.UI/Tests/Images/Code_Central.png"));
+            ImageSource icon_1 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Icons/icon1.ico"));
+            ImageSource icon_2 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Icons/icon2.png"));
             RealWindow.TaskbarItemInfo = new TaskbarItemInfo() {
                 ProgressState = TaskbarItemProgressState.Paused,
                 ProgressValue = 0.1,
@@ -195,11 +234,27 @@ namespace DevExpress.Mvvm.UI.Tests {
             Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
             EnqueueShowRealWindow();
             ITaskbarButtonService taskbarService = taskbarServiceImpl;
-            ImageSource icon_1 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Mvvm.UI/Tests/Images/demoicon.ico"));
-            ImageSource icon_2 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Mvvm.UI/Tests/Images/Code_Central.png"));
+            ImageSource icon_1 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Icons/icon1.ico"));
+            ImageSource icon_2 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Icons/icon2.ico"));
             taskbarService.OverlayIcon = icon_1;
             Assert.AreEqual(icon_1, RealWindow.TaskbarItemInfo.Overlay);
             taskbarService.OverlayIcon = icon_2;
+            Assert.AreEqual(icon_2, RealWindow.TaskbarItemInfo.Overlay);
+        }
+        [Test]
+        public void BindOverlayIcon() {
+            VM vm = VM.Create();
+            RealWindow.DataContext = vm;
+            TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService();
+            Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
+            BindingOperations.SetBinding(taskbarServiceImpl, TaskbarButtonService.OverlayIconProperty, new Binding("OverlayIcon"));
+            EnqueueShowRealWindow();
+            ITaskbarButtonService taskbarService = taskbarServiceImpl;
+            ImageSource icon_1 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Icons/icon1.ico"));
+            ImageSource icon_2 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Icons/icon2.ico"));
+            vm.OverlayIcon = icon_1;
+            Assert.AreEqual(icon_1, RealWindow.TaskbarItemInfo.Overlay);
+            vm.OverlayIcon = icon_2;
             Assert.AreEqual(icon_2, RealWindow.TaskbarItemInfo.Overlay);
         }
         [Test]
@@ -211,6 +266,20 @@ namespace DevExpress.Mvvm.UI.Tests {
             taskbarService.Description = "test1";
             Assert.AreEqual("test1", RealWindow.TaskbarItemInfo.Description);
             taskbarService.Description = "test2";
+            Assert.AreEqual("test2", RealWindow.TaskbarItemInfo.Description);
+        }
+        [Test]
+        public void BindDescription() {
+            VM vm = VM.Create();
+            RealWindow.DataContext = vm;
+            TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService();
+            Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
+            BindingOperations.SetBinding(taskbarServiceImpl, TaskbarButtonService.DescriptionProperty, new Binding("Description"));
+            EnqueueShowRealWindow();
+            ITaskbarButtonService taskbarService = taskbarServiceImpl;
+            vm.Description = "test1";
+            Assert.AreEqual("test1", RealWindow.TaskbarItemInfo.Description);
+            vm.Description = "test2";
             Assert.AreEqual("test2", RealWindow.TaskbarItemInfo.Description);
         }
         [Test]
@@ -233,8 +302,8 @@ namespace DevExpress.Mvvm.UI.Tests {
             TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService();
             Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
             EnqueueShowRealWindow();
-            ImageSource imageSource1 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Mvvm.UI/Tests/Images/demoicon.ico"));
-            ImageSource imageSource2 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Mvvm.UI/Tests/Images/Code_Central.png"));
+            ImageSource imageSource1 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Icons/icon1.ico"));
+            ImageSource imageSource2 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Icons/icon2.png"));
             ITaskbarButtonService taskbarService = taskbarServiceImpl;
             TaskbarThumbButtonInfo thumbButtonInfo_1 = new TaskbarThumbButtonInfo() {
                 Description = "thumbButton1",
@@ -269,8 +338,8 @@ namespace DevExpress.Mvvm.UI.Tests {
             TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService();
             Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
             EnqueueShowRealWindow();
-            ImageSource imageSource1 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Mvvm.UI/Tests/Images/demoicon.ico"));
-            ImageSource imageSource2 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Mvvm.UI/Tests/Images/Code_Central.png"));
+            ImageSource imageSource1 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Icons/icon1.ico"));
+            ImageSource imageSource2 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Icons/icon2.ico"));
             ITaskbarButtonService taskbarService = taskbarServiceImpl;
             TaskbarThumbButtonInfo thumbButtonInfo_1 = new TaskbarThumbButtonInfo() {
                 Description = "thumbButton1",
@@ -385,6 +454,18 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(new Thickness { Bottom = 10, Left = 5, Right = 100, Top = 1 }, RealWindow.TaskbarItemInfo.ThumbnailClipMargin);
         }
         [Test]
+        public void BindThumbnailClipMargin() {
+            VM vm = VM.Create();
+            RealWindow.DataContext = vm;
+            TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService();
+            Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
+            BindingOperations.SetBinding(taskbarServiceImpl, TaskbarButtonService.ThumbnailClipMarginProperty, new Binding("ThumbnailClipMargin"));
+            EnqueueShowRealWindow();
+            ITaskbarButtonService taskbarService = taskbarServiceImpl;
+            vm.ThumbnailClipMargin = new Thickness { Bottom = 10, Left = 5, Right = 100, Top = 1 };
+            Assert.AreEqual(new Thickness { Bottom = 10, Left = 5, Right = 100, Top = 1 }, RealWindow.TaskbarItemInfo.ThumbnailClipMargin);
+        }
+        [Test]
         public void SetThumbnailClipMarginCallback() {
             clipMarginShift = 0;
             TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService() { ThumbnailClipMarginCallback = GetThumbnailClipMargin };
@@ -449,7 +530,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
             EnqueueShowRealWindow();
             ITaskbarButtonService taskbarService = taskbarServiceImpl;
-            ImageSource icon_1 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Mvvm.UI/Tests/Images/demoicon.ico"));
+            ImageSource icon_1 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Icons/icon1.ico"));
             ThumbButtonInfo thumbButtonInfo = new ThumbButtonInfo() { Description = "thumbButton51" };
             RealWindow.TaskbarItemInfo.ProgressValue = 0.5;
             RealWindow.TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Error;
@@ -482,6 +563,74 @@ namespace DevExpress.Mvvm.UI.Tests {
                 Right = 0.2 * window.Width + shift,
                 Bottom = 0.3 * window.Height - shift
             };
+        }
+
+        [Test]
+        public void BindPropertyAndListenPropertyChanged() {
+            VM vm = VM.Create();
+            RealWindow.DataContext = vm;
+            TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService();
+            Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
+
+            int progressStateChangedCount = 0;
+            int progressValueChangedCount = 0;
+            int overlayIconChangedCount = 0;
+            int descriptionChangedCount = 0;
+            int thumbnailClipMarginChangedCount = 0;
+            ((INotifyPropertyChanged)vm).PropertyChanged += (d, e) => {
+                if(e.PropertyName == "ProgressState")
+                    progressStateChangedCount++;
+                if(e.PropertyName == "ProgressValue")
+                    progressValueChangedCount++;
+                if(e.PropertyName == "OverlayIcon")
+                    overlayIconChangedCount++;
+                if(e.PropertyName == "Description")
+                    descriptionChangedCount++;
+                if(e.PropertyName == "ThumbnailClipMargin")
+                    thumbnailClipMarginChangedCount++;
+            };
+
+            BindingOperations.SetBinding(taskbarServiceImpl, TaskbarButtonService.ProgressStateProperty, new Binding("ProgressState"));
+            BindingOperations.SetBinding(taskbarServiceImpl, TaskbarButtonService.ProgressValueProperty, new Binding("ProgressValue"));
+            BindingOperations.SetBinding(taskbarServiceImpl, TaskbarButtonService.OverlayIconProperty, new Binding("OverlayIcon"));
+            BindingOperations.SetBinding(taskbarServiceImpl, TaskbarButtonService.DescriptionProperty, new Binding("Description"));
+            BindingOperations.SetBinding(taskbarServiceImpl, TaskbarButtonService.ThumbnailClipMarginProperty, new Binding("ThumbnailClipMargin"));
+
+            EnqueueShowRealWindow();
+            ITaskbarButtonService taskbarService = taskbarServiceImpl;
+            vm.ProgressState = TaskbarItemProgressState.Indeterminate;
+            Assert.AreEqual(TaskbarItemProgressState.Indeterminate, RealWindow.TaskbarItemInfo.ProgressState);
+            Assert.AreEqual(1, progressStateChangedCount);
+
+            vm.ProgressValue = 0.5d;
+            Assert.AreEqual(0.5d, RealWindow.TaskbarItemInfo.ProgressValue);
+            Assert.AreEqual(1, progressValueChangedCount);
+
+            ImageSource icon_1 = ApplicationJumpListServiceTestsImageSourceHelper.GetImageSource(AssemblyHelper.GetResourceUri(typeof(TaskbarButtonServiceTests).Assembly, "Icons/icon1.ico"));
+            vm.OverlayIcon = icon_1;
+            Assert.AreEqual(icon_1, RealWindow.TaskbarItemInfo.Overlay);
+            Assert.AreEqual(1, overlayIconChangedCount);
+
+            vm.Description = "Test";
+            Assert.AreEqual("Test", RealWindow.TaskbarItemInfo.Description);
+            Assert.AreEqual(1, descriptionChangedCount);
+
+            vm.ThumbnailClipMargin = new Thickness(45);
+            Assert.AreEqual(new Thickness(45), RealWindow.TaskbarItemInfo.ThumbnailClipMargin);
+            Assert.AreEqual(1, thumbnailClipMarginChangedCount);
+        }
+
+        public class VM {
+            public virtual TaskbarItemProgressState ProgressState { get; set; }
+            public virtual double ProgressValue { get; set; }
+            public virtual ImageSource OverlayIcon { get; set; }
+            public virtual string Description { get; set; }
+            public virtual Thickness ThumbnailClipMargin { get; set; }
+            public static VM Create() {
+                return ViewModelSource.Create(() => new VM());
+            }
+            protected VM() {
+            }
         }
     }
 }
