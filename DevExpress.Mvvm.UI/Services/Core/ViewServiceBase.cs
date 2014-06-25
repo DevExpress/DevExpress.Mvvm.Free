@@ -42,7 +42,15 @@ namespace DevExpress.Mvvm.UI {
         }
 #endif
         protected void UpdateThemeName(DependencyObject target) {
-
+#if !FREE && !SILVERLIGHT
+            string themeName = null;
+            if(AssociatedObject != null && DevExpress.Xpf.Core.ThemeManager.GetTreeWalker(target) == null) {
+                var themeTreeWalker = DevExpress.Xpf.Core.ThemeManager.GetTreeWalker(AssociatedObject);
+                themeName = themeTreeWalker != null ? themeTreeWalker.ThemeName : null;
+                if(!string.IsNullOrEmpty(themeName))
+                    DevExpress.Xpf.Core.ThemeManager.SetThemeName(target, themeName);
+            }
+#endif
         }
     }
 }

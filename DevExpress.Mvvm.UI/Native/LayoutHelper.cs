@@ -275,6 +275,46 @@ namespace DevExpress.Mvvm.UI.Native {
 #endif
         }
 
+#if !SILVERLIGHT && !DESIGN
+        public static Rect GetScreenRect(FrameworkElement element) {
+            if(element is Window) {
+                Window elementWindow = (Window)element;
+                if(elementWindow.WindowStyle == WindowStyle.None)
+                    GetScreenRectCore(elementWindow, elementWindow);
+                else {
+                    if(elementWindow.WindowState == WindowState.Maximized) {
+                        var screen = System.Windows.Forms.Screen.FromRectangle(new System.Drawing.Rectangle(
+                            (int)elementWindow.Left, (int)elementWindow.Top, (int)elementWindow.ActualWidth, (int)elementWindow.ActualHeight));
+                        var workingArea = screen.WorkingArea;
+                        var leftTop = new Point(workingArea.Location.X, workingArea.Location.Y);
+                        var size = new Size(workingArea.Size.Width, workingArea.Size.Height);
+                        return new Rect(leftTop, size);
+                    } else {
+                        var leftTop = new Point(elementWindow.Left, elementWindow.Top);
+                        var presentationSource = PresentationSource.FromVisual(elementWindow);
+                        if(presentationSource != null) {
+                            double dpiX = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M11;
+                            double dpiY = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M22;
+                            leftTop = new Point(leftTop.X * 96.0 / dpiX, leftTop.Y * 96.0 / dpiY);
+                        }
+                        return new Rect(leftTop, new Size(element.ActualWidth, element.ActualHeight));
+                    }
+                }
+            }
+            return GetScreenRectCore(Window.GetWindow(element), element);
+        }
+        static Rect GetScreenRectCore(Window window, FrameworkElement element) {
+            var leftTop = element.PointToScreen(new Point());
+            var presentationSource = PresentationSource.FromVisual(window);
+            if(presentationSource != null) {
+                double dpiX = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M11;
+                double dpiY = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M22;
+                leftTop = new Point(leftTop.X * 96.0 / dpiX, leftTop.Y * 96.0 / dpiY);
+            }
+            return new Rect(leftTop, new Size(element.ActualWidth, element.ActualHeight));
+        }
+#endif
+
         public delegate void ElementHandler(FrameworkElement e);
     }
 }
