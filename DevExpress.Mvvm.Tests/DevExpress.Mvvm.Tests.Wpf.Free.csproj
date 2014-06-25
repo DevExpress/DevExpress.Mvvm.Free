@@ -92,6 +92,7 @@
     <Compile Include="MessengerTests.cs" />
     <Compile Include="MetadataBuilderTests.cs" />
     <Compile Include="Services\DispatcherServiceTests.cs" />
+    <Compile Include="Services\Notifications.cs" />
     <Compile Include="Services\SplashScreenServiceTests.cs" />
     <Compile Include="Services\TaskbarButtonServiceTests.cs" />
     <Compile Include="SyncCollectionHelperTests.cs" />
@@ -110,7 +111,6 @@
     <Compile Include="Services\DocumentManagerServiceBaseTests.cs" />
     <Compile Include="Services\FileDialogServicesTests.cs" />
     <Compile Include="Services\MessageBoxServiceBaseTests.cs" />
-    <Compile Include="Services\Notifications.cs" />
     <Compile Include="Services\ServiceContainerBaseTests.cs" />
     <Compile Include="Services\WindowedDocumentUIServiceTests.cs" />
     <Compile Include="TestUtils\DispatcherHelper.cs" />
