@@ -620,6 +620,20 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(1, thumbnailClipMarginChangedCount);
         }
 
+        [Test]
+        public void BindTaskbarThumbButtonInfoCommand() {
+            VM vm = VM.Create();
+            RealWindow.DataContext = vm;
+            TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService();
+            TaskbarThumbButtonInfo bt = new TaskbarThumbButtonInfo();
+            BindingOperations.SetBinding(bt, TaskbarThumbButtonInfo.CommandProperty, new Binding("DoCommand"));
+            taskbarServiceImpl.ThumbButtonInfos.Add(bt);
+            Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
+            EnqueueShowRealWindow();
+            Assert.AreEqual(POCOViewModelExtensions.GetCommand(vm, x => x.Do()), bt.Command);
+        }
+
+
         public class VM {
             public virtual TaskbarItemProgressState ProgressState { get; set; }
             public virtual double ProgressValue { get; set; }
@@ -630,6 +644,9 @@ namespace DevExpress.Mvvm.UI.Tests {
                 return ViewModelSource.Create(() => new VM());
             }
             protected VM() {
+            }
+            public void Do() {
+
             }
         }
     }

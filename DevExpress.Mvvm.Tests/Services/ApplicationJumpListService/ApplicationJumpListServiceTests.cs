@@ -1,3 +1,4 @@
+using DevExpress.Internal;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Native;
@@ -57,6 +58,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             ApplicationJumpListServiceTestsImageSourceHelper.RegisterPackScheme();
             NativeResourceManager.CompanyNameOverride = "DevExpress Tests";
             NativeResourceManager.ProductNameOverride = "DevExpress.Xpf.Core Tests";
+            NativeResourceManager.VersionOverride = AssemblyInfo.Version;
             nativeJumpList = new TestNativeJumpList();
             jumpActionsManager = new TestJumpActionsManager();
             applicationJumpListService = new TestApplicationJumpListService(nativeJumpList, jumpActionsManager);
@@ -69,6 +71,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 Directory.Delete(resourcesFolder, true);
             NativeResourceManager.ProductNameOverride = null;
             NativeResourceManager.CompanyNameOverride = null;
+            NativeResourceManager.VersionOverride = null;
             base.TearDownCore();
         }
         [Test]

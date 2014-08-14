@@ -7,6 +7,7 @@ using NUnit.Framework;
 using DevExpress.Mvvm.Tests;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
@@ -25,18 +26,11 @@ namespace DevExpress.Mvvm.UI.Tests {
             public override Style SelectStyle(object item, DependencyObject container) { return Style; }
         }
 #endif
-        class ViewModelWithNullTitle : IDocumentViewModel {
-            bool IDocumentViewModel.Close() { return true; }
-            object IDocumentViewModel.Title { get { return null; } }
-        }
-        class TestDocumentViewModel : IDocumentViewModel {
-            Func<bool> close;
-
-            public TestDocumentViewModel(Func<bool> close) {
-                this.close = close;
-            }
-            public bool Close() { return close(); }
-            public object Title { get { return null; } }
+        class ViewModelWithNullTitle : IDocumentContent {
+            public IDocumentOwner DocumentOwner { get; set; }
+            void IDocumentContent.OnClose(CancelEventArgs e) { }
+            object IDocumentContent.Title { get { return null; } }
+            void IDocumentContent.OnDestroy() { }
         }
 
         protected override void SetUpCore() {
@@ -48,54 +42,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             ViewLocator.Default = null;
             base.TearDownCore();
         }
-        [Test, Asynchronous]
-        public void IDocumentViewModelCloseTest() {
-            EnqueueShowWindow();
-            IDocumentManagerService service = null;
-            bool close = false;
-            bool closeChecked = false;
-            IDocument document = null;
-            EnqueueCallback(() => {
-                WindowedDocumentUIService windowedDocumentUIService = new WindowedDocumentUIService();
-                Interaction.GetBehaviors(Window).Add(windowedDocumentUIService);
-                service = windowedDocumentUIService;
-                TestDocumentViewModel viewModel = new TestDocumentViewModel(() => {
-                    closeChecked = true;
-                    return close;
-                });
-                document = service.CreateDocument("EmptyView", viewModel);
-                document.Show();
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                document.DestroyOnClose = false;
-                close = false;
-                closeChecked = false;
-                document.Close(false);
-                Assert.IsTrue(closeChecked);
-                Assert.IsTrue(service.Documents.Contains(document));
-                close = true;
-                closeChecked = false;
-                document.Close(false);
-                Assert.IsTrue(closeChecked);
-                document.Show();
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                document.DestroyOnClose = true;
-                close = false;
-                closeChecked = false;
-                document.Close(false);
-                Assert.IsTrue(closeChecked);
-                Assert.IsTrue(service.Documents.Contains(document));
-                close = true;
-                closeChecked = false;
-                document.Close(false);
-                Assert.IsTrue(closeChecked);
-                Assert.IsFalse(service.Documents.Contains(document));
-            });
-            EnqueueTestComplete();
-        }
+
         [Test, Asynchronous]
         public void WindowStyle() {
             EnqueueShowWindow();
@@ -112,7 +59,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
                 var windowDocument = (WindowedDocumentUIService.WindowDocument)document;
-                Assert.AreEqual("Style Tag", windowDocument.window.Tag);
+                Assert.AreEqual("Style Tag", windowDocument.Window.RealWindow.Tag);
             });
             EnqueueTestComplete();
         }
@@ -276,9 +223,147 @@ namespace DevExpress.Mvvm.UI.Tests {
             service.WindowStyleSelector = new TestStyleSelector() { Style = windowStyle };
             IDocument document = service.CreateDocument("EmptyView", new object());
             var windowDocument = (WindowedDocumentUIService.WindowDocument)document;
-            Assert.AreEqual("Style Selector Tag", windowDocument.window.Tag);
+            Assert.AreEqual("Style Selector Tag", windowDocument.Window.RealWindow.Tag);
         }
 #endif
+    }
+    [TestFixture]
+    public class WindowedDocumentUIServiceIDocumentContentCloseTests : BaseWpfFixture {
+        public class EmptyView : FrameworkElement { }
+        class TestDocumentContent : IDocumentContent {
+            Func<bool> close;
+            Action onDestroy;
+
+            public TestDocumentContent(Func<bool> close, Action onDestroy = null) {
+                this.close = close;
+                this.onDestroy = onDestroy;
+            }
+            public IDocumentOwner DocumentOwner { get; set; }
+            public void OnClose(CancelEventArgs e) { e.Cancel = !close(); }
+            public object Title { get { return null; } }
+            void IDocumentContent.OnDestroy() {
+                if(onDestroy != null)
+                    onDestroy();
+            }
+        }
+
+        protected override void SetUpCore() {
+            base.SetUpCore();
+            ViewLocator.Default = new TestViewLocator(this);
+        }
+        protected override void TearDownCore() {
+            Interaction.GetBehaviors(Window).Clear();
+            ViewLocator.Default = null;
+            base.TearDownCore();
+        }
+
+        void DoCloseTest(bool allowClose, bool destroyOnClose, bool destroyed, Action<IDocument> closeMethod) {
+            DoCloseTest((bool?)allowClose, destroyOnClose, destroyed, (d, b) => closeMethod(d));
+        }
+        void DoCloseTest(bool? allowClose, bool destroyOnClose, bool destroyed, Action<IDocument, bool> closeMethod) {
+            EnqueueShowWindow();
+            IDocumentManagerService service = null;
+            bool closeChecked = false;
+            bool destroyCalled = false;
+            IDocument document = null;
+            EnqueueCallback(() => {
+                WindowedDocumentUIService windowedDocumentUIService = new WindowedDocumentUIService();
+                Interaction.GetBehaviors(Window).Add(windowedDocumentUIService);
+                service = windowedDocumentUIService;
+                TestDocumentContent viewModel = new TestDocumentContent(() => {
+                    closeChecked = true;
+                    return allowClose != null && allowClose.Value;
+                }, () => {
+                    destroyCalled = true;
+                });
+                document = service.CreateDocument("EmptyView", viewModel);
+                document.Show();
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(() => {
+                document.DestroyOnClose = destroyOnClose;
+                closeMethod(document, allowClose == null);
+                Assert.AreEqual(allowClose != null, closeChecked);
+                Assert.AreEqual(destroyed, destroyCalled);
+                Assert.AreEqual(!destroyed, service.Documents.Contains(document));
+            });
+            EnqueueTestComplete();
+        }
+        void CloseDocument(IDocument document, bool force) {
+            document.Close(force);
+        }
+        void CloseDocumentWithDocumentOwner(IDocument document, bool force) {
+            IDocumentContent documentContent = (IDocumentContent)document.Content;
+            documentContent.DocumentOwner.Close(documentContent, force);
+        }
+        void CloseDocumentWithClosingWindow(IDocument document) {
+            var window = ((WindowedDocumentUIService.WindowDocument)document).Window.RealWindow;
+            window.Close();
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest1() {
+            DoCloseTest(allowClose: false, destroyOnClose: false, destroyed: false, closeMethod: CloseDocument);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest2() {
+            DoCloseTest(allowClose: false, destroyOnClose: false, destroyed: false, closeMethod: CloseDocumentWithDocumentOwner);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest12() {
+            DoCloseTest(allowClose: false, destroyOnClose: false, destroyed: false, closeMethod: CloseDocumentWithClosingWindow);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest3() {
+            DoCloseTest(allowClose: false, destroyOnClose: true, destroyed: false, closeMethod: CloseDocument);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest4() {
+            DoCloseTest(allowClose: false, destroyOnClose: true, destroyed: false, closeMethod: CloseDocumentWithDocumentOwner);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest14() {
+            DoCloseTest(allowClose: false, destroyOnClose: true, destroyed: false, closeMethod: CloseDocumentWithClosingWindow);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest5() {
+            DoCloseTest(allowClose: true, destroyOnClose: false, destroyed: false, closeMethod: CloseDocument);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest6() {
+            DoCloseTest(allowClose: true, destroyOnClose: false, destroyed: false, closeMethod: CloseDocumentWithDocumentOwner);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest16() {
+            DoCloseTest(allowClose: true, destroyOnClose: false, destroyed: false, closeMethod: CloseDocumentWithClosingWindow);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest7() {
+            DoCloseTest(allowClose: true, destroyOnClose: true, destroyed: true, closeMethod: CloseDocument);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest8() {
+            DoCloseTest(allowClose: true, destroyOnClose: true, destroyed: true, closeMethod: CloseDocumentWithDocumentOwner);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest18() {
+            DoCloseTest(allowClose: true, destroyOnClose: true, destroyed: true, closeMethod: CloseDocumentWithClosingWindow);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest9() {
+            DoCloseTest(allowClose: null, destroyOnClose: false, destroyed: false, closeMethod: CloseDocument);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest10() {
+            DoCloseTest(allowClose: null, destroyOnClose: false, destroyed: false, closeMethod: CloseDocumentWithDocumentOwner);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest11() {
+            DoCloseTest(allowClose: null, destroyOnClose: true, destroyed: true, closeMethod: CloseDocument);
+        }
+        [Test, Asynchronous]
+        public void IDocumentViewModelCloseTest13() {
+            DoCloseTest(allowClose: null, destroyOnClose: true, destroyed: true, closeMethod: CloseDocumentWithDocumentOwner);
+        }
     }
     public class TestViewLocator : IViewLocator {
         Dictionary<string, Type> types;

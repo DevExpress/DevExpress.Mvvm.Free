@@ -1,3 +1,4 @@
+using DevExpress.Internal;
 using DevExpress.Mvvm.UI.Native;
 using NUnit.Framework;
 using System;
@@ -12,6 +13,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             ApplicationJumpListServiceTestsImageSourceHelper.RegisterPackScheme();
             NativeResourceManager.CompanyNameOverride = "DevExpress Tests";
             NativeResourceManager.ProductNameOverride = "DevExpress.Xpf.Core Tests";
+            NativeResourceManager.VersionOverride = AssemblyInfo.Version;
         }
         protected override void TearDownCore() {
             string resourcesFolder = NativeResourceManager.ExpandVariables(NativeResourceManager.ResourcesFolder);
@@ -19,6 +21,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 Directory.Delete(resourcesFolder, true);
             NativeResourceManager.ProductNameOverride = null;
             NativeResourceManager.CompanyNameOverride = null;
+            NativeResourceManager.VersionOverride = null;
             base.TearDownCore();
         }
         [Test]
