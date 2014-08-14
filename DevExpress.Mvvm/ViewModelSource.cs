@@ -11,6 +11,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace DevExpress.Mvvm.Native {
     public static class ViewModelSourceHelper {
@@ -23,6 +24,10 @@ namespace DevExpress.Mvvm.Native {
         public static bool IsPOCOViewModelType(Type type) {
             return DevExpress.Mvvm.POCO.ViewModelSource.IsPOCOViewModelType(type);
         }
+        public static ConstructorInfo FindConstructorWithAllOptionalParameters(Type type) {
+            return DevExpress.Mvvm.POCO.ViewModelSource.FindConstructorWithAllOptionalParameters(type);
+        }
+
     }
 }
 namespace DevExpress.Mvvm.POCO {
@@ -56,7 +61,7 @@ namespace DevExpress.Mvvm.POCO {
 
         const string Error_MemberWithSameCommandNameAlreadyExists = "Member with the same command name already exists: {0}.";
 
-        const string Error_PropertyTypeShouldBeServiceType = "Property type should be service type: {0}.";
+        const string Error_PropertyTypeShouldBeServiceType = "Service properties should have an interface type: {0}.";
         const string Error_CantAccessProperty = "Cannot access property: {0}.";
         const string Error_PropertyIsNotVirtual = "Property is not virtual: {0}.";
         const string Error_PropertyHasSetter = "Property with setter cannot be Service Property: {0}.";
@@ -176,8 +181,21 @@ namespace DevExpress.Mvvm.POCO {
             return Expression.New(actualCtor, newExpression.Arguments);
         }
         internal static object Create(Type type) {
+            Type pocoType = GetPOCOType(type);
+            var defaultCtor = pocoType.GetConstructor(new Type[0]);
+            if(defaultCtor != null)
+                return defaultCtor.Invoke(null);
+            defaultCtor = FindConstructorWithAllOptionalParameters(type);
+            if(defaultCtor != null)
+                return pocoType.GetConstructor(defaultCtor.GetParameters().Select(x => x.ParameterType).ToArray()).Invoke(defaultCtor.GetParameters().Select(x => x.DefaultValue).ToArray());
             return Activator.CreateInstance(GetPOCOType(type));
         }
+
+        internal static ConstructorInfo FindConstructorWithAllOptionalParameters(Type type) {
+            return type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                            .FirstOrDefault(x => (x.Attributes.HasFlag(MethodAttributes.Public) || x.Attributes.HasFlag(MethodAttributes.Family)) && x.GetParameters().All(y => y.IsOptional));
+        }
+
         public static Type GetPOCOType(Type type) {
             return types.GetOrAdd(type, () => CreateType(type));
         }
@@ -661,7 +679,7 @@ namespace DevExpress.Mvvm.POCO {
 
                 MethodInfo canExecuteMethod = GetCanExecuteMethod(type, commandMethod);
 
-                bool useCommandManager = attribute != null ? attribute.UseCommandManager : true;
+                bool? useCommandManager = attribute != null ? attribute.GetUseCommandManager() : null;
                 var getMethod = BuildGetCommandMethod(typeBuilder, commandMethod, canExecuteMethod, commandName, useCommandManager, isAsyncCommand);
                 PropertyBuilder commandProperty = typeBuilder.DefineProperty(commandName,
                                                      PropertyAttributes.None,
@@ -706,7 +724,7 @@ namespace DevExpress.Mvvm.POCO {
         static MethodInfo GetCanExecuteMethod(Type type, MethodInfo method) {
             return ViewModelBase.GetCanExecuteMethod(type, method, ViewModelBase.GetAttribute<CommandAttribute>(method), x => new ViewModelSourceException(x));
         }
-        static MethodBuilder BuildGetCommandMethod(TypeBuilder type, MethodInfo commandMethod, MethodInfo canExecuteMethod, string commandName, bool useCommandManager, bool isAsyncCommand) {
+        static MethodBuilder BuildGetCommandMethod(TypeBuilder type, MethodInfo commandMethod, MethodInfo canExecuteMethod, string commandName, bool? useCommandManager, bool isAsyncCommand) {
             bool hasParameter = commandMethod.GetParameters().Length == 1;
             bool isCommandMethodReturnTypeVoid = commandMethod.ReturnType == typeof(void);
             Type commandMethodReturnType = commandMethod.ReturnType;
@@ -731,16 +749,16 @@ namespace DevExpress.Mvvm.POCO {
             MethodInfo createCommandMethod;
             if(isAsyncCommand)
                 createCommandMethod = hasParameter ?
-                    AsyncCommandFactory.GetGenericMethodWithResult(parameterType, commandMethodReturnType)
-                    : AsyncCommandFactory.GetSimpleMethodWithResult(commandMethodReturnType);
+                    AsyncCommandFactory.GetGenericMethodWithResult(parameterType, commandMethodReturnType, useCommandManager != null)
+                    : AsyncCommandFactory.GetSimpleMethodWithResult(commandMethodReturnType, useCommandManager != null);
             else
                 createCommandMethod = hasParameter ?
                 (isCommandMethodReturnTypeVoid ?
-                    DelegateCommandFactory.GetGenericMethodWithoutResult(parameterType)
-                    : DelegateCommandFactory.GetGenericMethodWithResult(parameterType, commandMethodReturnType))
+                    DelegateCommandFactory.GetGenericMethodWithoutResult(parameterType, useCommandManager != null)
+                    : DelegateCommandFactory.GetGenericMethodWithResult(parameterType, commandMethodReturnType, useCommandManager != null))
                 : (isCommandMethodReturnTypeVoid ?
-                    DelegateCommandFactory.GetSimpleMethodWithoutResult()
-                    : DelegateCommandFactory.GetSimpleMethodWithResult(commandMethodReturnType));
+                    DelegateCommandFactory.GetSimpleMethodWithoutResult(useCommandManager != null)
+                    : DelegateCommandFactory.GetSimpleMethodWithResult(commandMethodReturnType, useCommandManager != null));
             method.SetReturnType(commandPropertyType);
 
             ILGenerator gen = method.GetILGenerator();
@@ -764,10 +782,8 @@ namespace DevExpress.Mvvm.POCO {
             } else {
                 gen.Emit(OpCodes.Ldnull);
             }
-            if(useCommandManager)
-                gen.Emit(OpCodes.Ldc_I4_1);
-            else
-                gen.Emit(OpCodes.Ldc_I4_0);
+            if(useCommandManager != null)
+                gen.Emit(useCommandManager.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
             gen.Emit(OpCodes.Call, createCommandMethod);
 
             gen.Emit(OpCodes.Dup);
@@ -979,6 +995,7 @@ namespace DevExpress.Mvvm.POCO {
 
         }
     }
+#pragma warning disable 612,618
     public static class POCOViewModelExtensions {
         public static bool IsInDesignMode(this object viewModel) {
             return ViewModelBase.IsInDesignMode;
@@ -987,7 +1004,7 @@ namespace DevExpress.Mvvm.POCO {
             IPOCOViewModel pocoViewModel = GetPOCOViewModel(viewModel);
             pocoViewModel.RaisePropertyChanged(BindableBase.GetPropertyNameFast(propertyExpression));
         }
-        public static ICommand GetCommand<T>(this T viewModel, Expression<Action<T>> methodExpression) {
+        public static IDelegateCommand GetCommand<T>(this T viewModel, Expression<Action<T>> methodExpression) {
             return GetCommandCore(viewModel, methodExpression);
         }
         public static T SetParentViewModel<T>(this T viewModel, object parentViewModel) {
@@ -1000,9 +1017,13 @@ namespace DevExpress.Mvvm.POCO {
         public static void RaiseCanExecuteChanged<T>(this T viewModel, Expression<Action<T>> methodExpression) {
             RaiseCanExecuteChangedCore(viewModel, methodExpression);
         }
+        [Obsolete("This method is obsolete. Use the GetAsyncCommand method instead.")]
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static bool GetShouldCancel<T>(this T viewModel, Expression<Func<T, Task>> methodExpression) {
             return GetAsyncCommand(viewModel, methodExpression).ShouldCancel;
         }
+        [Obsolete("This method is obsolete. Use the GetAsyncCommand method instead.")]
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static bool GetIsExecuting<T>(this T viewModel, Expression<Func<T, Task>> methodExpression) {
             return GetAsyncCommand(viewModel, methodExpression).IsExecuting;
         }
@@ -1033,7 +1054,7 @@ namespace DevExpress.Mvvm.POCO {
             return pocoViewModel;
         }
     }
-
+#pragma warning restore 612,618
     #region
     public static class ViewModelSource<T> {
         static TDelegate GetFactoryByTypes<TDelegate>(Func<Type[]> getTypesDelegate) {

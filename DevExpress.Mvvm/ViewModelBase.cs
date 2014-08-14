@@ -146,7 +146,7 @@ namespace DevExpress.Mvvm {
 
                     MethodInfo canExecuteMethod = GetCanExecuteMethod(type, x, attribute, s => new CommandAttributeException(s));
                     var attributes = MetadataHelper.GetAllAttributes(x);
-                    return new CommandProperty(x, canExecuteMethod, name, attribute.UseCommandManager, attributes, type);
+                    return new CommandProperty(x, canExecuteMethod, name, attribute.GetUseCommandManager(), attributes, type);
                 })
                 .ToDictionary(x => x.Method);
             foreach(var property in commandProperties.Values) {
@@ -201,7 +201,7 @@ namespace DevExpress.Mvvm {
                 throw createException(string.Format(Error_MethodShouldBePublic, canExecuteMethod.Name));
         }
         public static class CreateCommandHelper<T> {
-            public static IDelegateCommand CreateCommand(object owner, MethodInfo method, MethodInfo canExecuteMethod, bool useCommandManager, bool hasParameter) {
+            public static IDelegateCommand CreateCommand(object owner, MethodInfo method, MethodInfo canExecuteMethod, bool? useCommandManager, bool hasParameter) {
                 return new DelegateCommand<T>(
                     x => method.Invoke(owner, GetInvokeParameters(x, hasParameter)),
                     x => canExecuteMethod != null ? (bool)canExecuteMethod.Invoke(owner, GetInvokeParameters(x, hasParameter)) : true
@@ -216,10 +216,10 @@ namespace DevExpress.Mvvm {
 
         }
         readonly Dictionary<MethodInfo, IDelegateCommand> commands = new Dictionary<MethodInfo, IDelegateCommand>();
-        IDelegateCommand GetCommand(MethodInfo method, MethodInfo canExecuteMethod, bool useCommandManager, bool hasParameter) {
+        IDelegateCommand GetCommand(MethodInfo method, MethodInfo canExecuteMethod, bool? useCommandManager, bool hasParameter) {
             return commands.GetOrAdd(method, () => CreateCommand(method, canExecuteMethod, useCommandManager, hasParameter));
         }
-        IDelegateCommand CreateCommand(MethodInfo method, MethodInfo canExecuteMethod, bool useCommandManager, bool hasParameter) {
+        IDelegateCommand CreateCommand(MethodInfo method, MethodInfo canExecuteMethod, bool? useCommandManager, bool hasParameter) {
             Type commandType = hasParameter ? method.GetParameters()[0].ParameterType : typeof(object);
             return (IDelegateCommand)typeof(CreateCommandHelper<>).MakeGenericType(commandType).GetMethod("CreateCommand", BindingFlags.Static | BindingFlags.Public).Invoke(null, new object[] { this, method, canExecuteMethod, useCommandManager, hasParameter });
         }
@@ -234,13 +234,13 @@ namespace DevExpress.Mvvm {
             readonly MethodInfo method;
             readonly MethodInfo canExecuteMethod;
             readonly string name;
-            readonly bool useCommandManager;
+            readonly bool? useCommandManager;
             readonly bool hasParameter;
             readonly Attribute[] attributes;
             readonly Type reflectedType;
             public MethodInfo Method { get { return method; } }
             public MethodInfo CanExecuteMethod { get { return canExecuteMethod; } }
-            public CommandProperty(MethodInfo method, MethodInfo canExecuteMethod, string name, bool useCommandManager, Attribute[] attributes, Type reflectedType)
+            public CommandProperty(MethodInfo method, MethodInfo canExecuteMethod, string name, bool? useCommandManager, Attribute[] attributes, Type reflectedType)
 #if !SILVERLIGHT
                 : base(name, attributes)
 #endif

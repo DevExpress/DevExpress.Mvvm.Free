@@ -22,8 +22,13 @@ namespace DevExpress.Mvvm {
         }
         static T CheckService<T>(T service) where T : class {
             if(service == null)
-                throw new NotSupportedException();
+                throw new ServiceNotFoundException();
             return service;
+        }
+    }
+    public class ServiceNotFoundException : Exception {
+        public ServiceNotFoundException() :
+            base("The target service is not found") {
         }
     }
 }

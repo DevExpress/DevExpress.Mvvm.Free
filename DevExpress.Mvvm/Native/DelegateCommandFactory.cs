@@ -4,20 +4,20 @@ using System.Reflection;
 
 namespace DevExpress.Mvvm.Native {
     public static class DelegateCommandFactory {
-        internal static MethodInfo GetGenericMethodWithoutResult(Type parameterType) {
-            var method = GetMethodByParameter("Create", new Type[] { typeof(Action<>), typeof(Func<,>), typeof(bool) });
+        internal static MethodInfo GetGenericMethodWithoutResult(Type parameterType, bool withUseCommandManagerParameter) {
+            var method = GetMethodByParameter("Create", withUseCommandManagerParameter ? new Type[] { typeof(Action<>), typeof(Func<,>), typeof(bool) } : new Type[] { typeof(Action<>), typeof(Func<,>) });
             return method.MakeGenericMethod(parameterType);
         }
-        internal static MethodInfo GetGenericMethodWithResult(Type parameterType1, Type parameterType2) {
-            var method = GetMethodByParameter("CreateFromFunction", new Type[] { typeof(Func<,>), typeof(Func<,>), typeof(bool) });
+        internal static MethodInfo GetGenericMethodWithResult(Type parameterType1, Type parameterType2, bool withUseCommandManagerParameter) {
+            var method = GetMethodByParameter("CreateFromFunction", withUseCommandManagerParameter ? new Type[] { typeof(Func<,>), typeof(Func<,>), typeof(bool) } : new Type[] { typeof(Func<,>), typeof(Func<,>) });
             return method.MakeGenericMethod(parameterType1, parameterType2);
         }
-        internal static MethodInfo GetSimpleMethodWithoutResult() {
-            var method = GetMethodByParameter("Create", new Type[] { typeof(Action), typeof(Func<bool>), typeof(bool) });
+        internal static MethodInfo GetSimpleMethodWithoutResult(bool withUseCommandManagerParameter) {
+            var method = GetMethodByParameter("Create", withUseCommandManagerParameter ? new Type[] { typeof(Action), typeof(Func<bool>), typeof(bool) } : new Type[] { typeof(Action), typeof(Func<bool>) });
             return method;
         }
-        internal static MethodInfo GetSimpleMethodWithResult(Type parameterType) {
-            var method = GetMethodByParameter("CreateFromFunction", new Type[] { typeof(Func<>), typeof(Func<bool>), typeof(bool) });
+        internal static MethodInfo GetSimpleMethodWithResult(Type parameterType, bool withUseCommandManagerParameter) {
+            var method = GetMethodByParameter("CreateFromFunction", withUseCommandManagerParameter ? new Type[] { typeof(Func<>), typeof(Func<bool>), typeof(bool) } : new Type[] { typeof(Func<>), typeof(Func<bool>) });
             return method.MakeGenericMethod(parameterType);
         }
         static MethodInfo GetMethodByParameter(string methodName, Type[] parameterTypes) {
@@ -41,48 +41,66 @@ namespace DevExpress.Mvvm.Native {
             return null;
         }
 
-        public static DelegateCommand<T> CreateFromFunction<T, TResult>(Func<T, TResult> executeMethod, Func<T, bool> canExecuteMethod, bool useCommandManager = true) {
+        public static DelegateCommand<T> CreateFromFunction<T, TResult>(Func<T, TResult> executeMethod, Func<T, bool> canExecuteMethod, bool useCommandManager) {
 #if !SILVERLIGHT
             return new DelegateCommand<T>(x => executeMethod(x), canExecuteMethod, useCommandManager);
 #else
             return new DelegateCommand<T>(x => executeMethod(x), canExecuteMethod);
 #endif
         }
-        public static DelegateCommand<T> Create<T>(Action<T> executeMethod, bool useCommandManager = true) {
+        public static DelegateCommand<T> CreateFromFunction<T, TResult>(Func<T, TResult> executeMethod, Func<T, bool> canExecuteMethod) {
+            return new DelegateCommand<T>(x => executeMethod(x), canExecuteMethod);
+        }
+        public static DelegateCommand<T> Create<T>(Action<T> executeMethod, bool useCommandManager) {
 #if !SILVERLIGHT
             return new DelegateCommand<T>(executeMethod, useCommandManager);
 #else
             return new DelegateCommand<T>(executeMethod);
 #endif
         }
-        public static DelegateCommand<T> Create<T>(Action<T> executeMethod, Func<T, bool> canExecuteMethod, bool useCommandManager = true) {
+        public static DelegateCommand<T> Create<T>(Action<T> executeMethod) {
+            return new DelegateCommand<T>(executeMethod);
+        }
+        public static DelegateCommand<T> Create<T>(Action<T> executeMethod, Func<T, bool> canExecuteMethod, bool useCommandManager) {
 #if !SILVERLIGHT
             return new DelegateCommand<T>(executeMethod, canExecuteMethod, useCommandManager);
 #else
             return new DelegateCommand<T>(executeMethod, canExecuteMethod);
 #endif
         }
+        public static DelegateCommand<T> Create<T>(Action<T> executeMethod, Func<T, bool> canExecuteMethod) {
+            return new DelegateCommand<T>(executeMethod, canExecuteMethod);
+        }
 
-        public static DelegateCommand CreateFromFunction<TResult>(Func<TResult> executeMethod, Func<bool> canExecuteMethod, bool useCommandManager = true) {
+        public static DelegateCommand CreateFromFunction<TResult>(Func<TResult> executeMethod, Func<bool> canExecuteMethod, bool useCommandManager) {
 #if !SILVERLIGHT
             return new DelegateCommand(() => executeMethod(), canExecuteMethod, useCommandManager);
 #else
             return new DelegateCommand(() => executeMethod(), canExecuteMethod);
 #endif
         }
-        public static DelegateCommand Create(Action executeMethod, bool useCommandManager = true) {
+        public static DelegateCommand CreateFromFunction<TResult>(Func<TResult> executeMethod, Func<bool> canExecuteMethod) {
+            return new DelegateCommand(() => executeMethod(), canExecuteMethod);
+        }
+        public static DelegateCommand Create(Action executeMethod, bool useCommandManager) {
 #if !SILVERLIGHT
             return new DelegateCommand(executeMethod, useCommandManager);
 #else
             return new DelegateCommand(executeMethod);
 #endif
         }
-        public static DelegateCommand Create(Action executeMethod, Func<bool> canExecuteMethod, bool useCommandManager = true) {
+        public static DelegateCommand Create(Action executeMethod) {
+            return new DelegateCommand(executeMethod);
+        }
+        public static DelegateCommand Create(Action executeMethod, Func<bool> canExecuteMethod, bool useCommandManager) {
 #if !SILVERLIGHT
             return new DelegateCommand(executeMethod, canExecuteMethod, useCommandManager);
 #else
             return new DelegateCommand(executeMethod, canExecuteMethod);
 #endif
+        }
+        public static DelegateCommand Create(Action executeMethod, Func<bool> canExecuteMethod) {
+            return new DelegateCommand(executeMethod, canExecuteMethod);
         }
     }
 }

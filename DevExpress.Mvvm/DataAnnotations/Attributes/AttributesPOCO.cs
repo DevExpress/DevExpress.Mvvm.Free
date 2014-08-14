@@ -8,11 +8,12 @@ namespace DevExpress.Mvvm.DataAnnotations {
     }
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class CommandAttribute : Attribute {
+#if !SILVERLIGHT
+        bool? useCommandManager;
+#endif
+
         public CommandAttribute(bool isCommand) {
             this.IsCommand = isCommand;
-#if !SILVERLIGHT
-            UseCommandManager = true;
-#endif
         }
         public CommandAttribute()
             : this(true) {
@@ -22,9 +23,13 @@ namespace DevExpress.Mvvm.DataAnnotations {
         public bool IsCommand { get; private set; }
         internal MethodInfo CanExecuteMethod { get; set; }
 #if !SILVERLIGHT
-        public bool UseCommandManager { get; set; }
+        public bool UseCommandManager {
+            set { useCommandManager = value; }
+            get { throw new NotSupportedException(); }
+        }
+        internal bool? GetUseCommandManager() { return useCommandManager; }
 #else
-        internal bool UseCommandManager { get { return false; } }
+        internal bool? GetUseCommandManager() { return false; }
 #endif
     }
     public class AsyncCommandAttribute : CommandAttribute {
