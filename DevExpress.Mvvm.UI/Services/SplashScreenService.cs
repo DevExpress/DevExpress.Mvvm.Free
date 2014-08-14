@@ -1,5 +1,4 @@
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
 using DevExpress.Mvvm.UI.Interactivity;
 using System;
@@ -57,19 +56,22 @@ namespace DevExpress.Mvvm.UI {
         bool SplashScreenIsShownOnLoading = false;
         protected override void OnAttached() {
             base.OnAttached();
-            AssociatedObject.Loaded += OnAssociatedObjectLoaded;
-            if(ShowSplashScreenOnLoading && !DXSplashScreen.IsActive) {
+            if(ShowSplashScreenOnLoading && !AssociatedObject.IsLoaded && !DXSplashScreen.IsActive) {
+                AssociatedObject.Loaded += OnAssociatedObjectLoaded;
                 SplashScreenIsShownOnLoading = true;
                 ((ISplashScreenService)this).ShowSplashScreen();
             }
         }
         protected override void OnDetaching() {
-            AssociatedObject.Loaded -= OnAssociatedObjectLoaded;
+            HideSplashScreenOnAssociatedObjectLoaded();
             base.OnDetaching();
         }
         void OnAssociatedObjectLoaded(object sender, RoutedEventArgs e) {
-            AssociatedObject.Loaded -= OnAssociatedObjectLoaded;
+            HideSplashScreenOnAssociatedObjectLoaded();
+        }
+        void HideSplashScreenOnAssociatedObjectLoaded() {
             if(SplashScreenIsShownOnLoading) {
+                AssociatedObject.Loaded -= OnAssociatedObjectLoaded;
                 SplashScreenIsShownOnLoading = false;
                 ((ISplashScreenService)this).HideSplashScreen();
             }
@@ -79,11 +81,8 @@ namespace DevExpress.Mvvm.UI {
             get { return DXSplashScreen.IsActive; }
         }
         void ISplashScreenService.ShowSplashScreen(string documentType) {
-            if(SplashScreenType != null &&
-                (!string.IsNullOrEmpty(documentType) || ViewTemplate != null || ViewLocator != null)) {
-                    if(!string.IsNullOrEmpty(documentType) || ViewTemplate != null || ViewLocator != null)
-                        throw new InvalidOperationException(DXSplashScreenExceptions.ServiceException1);
-            }
+            if(SplashScreenType != null && (!string.IsNullOrEmpty(documentType) || ViewTemplate != null || ViewLocator != null))
+                throw new InvalidOperationException(DXSplashScreenExceptions.ServiceException1);
             if(DXSplashScreen.IsActive) return;
 
             if(SplashScreenType != null)
@@ -91,7 +90,7 @@ namespace DevExpress.Mvvm.UI {
             else
                 DXSplashScreen.Show(CreateSplashScreenWindow, CreateSplashScreen,
                     new object[] { SplashScreenWindowStyle, SplashScreenStartupLocation },
-                    new object[] { documentType, ViewLocator, ViewTemplate, SplashScreenType });
+                    new object[] { documentType, ViewLocator, ViewTemplate });
         }
         void ISplashScreenService.HideSplashScreen() {
             if(!DXSplashScreen.IsActive) return;
@@ -130,15 +129,8 @@ namespace DevExpress.Mvvm.UI {
             string documentType = parameters[0] as string;
             IViewLocator viewLocator = parameters[1] as IViewLocator;
             DataTemplate viewTemplate = parameters[2] as DataTemplate;
-            Type splashScreenType = parameters[3] as Type;
             var SplashScreenViewModel = new SplashScreenViewModel();
-            object view = null;
-            if(splashScreenType != null) {
-                view = Activator.CreateInstance(splashScreenType);
-                view.With(x => x as FrameworkElement).Do(x => x.DataContext = SplashScreenViewModel);
-            } else
-                view = ViewHelper.CreateAndInitializeView(viewLocator, documentType, SplashScreenViewModel, null, null, viewTemplate, null);
-            return view;
+            return ViewHelper.CreateAndInitializeView(viewLocator, documentType, SplashScreenViewModel, null, null, viewTemplate, null);
         }
     }
 }

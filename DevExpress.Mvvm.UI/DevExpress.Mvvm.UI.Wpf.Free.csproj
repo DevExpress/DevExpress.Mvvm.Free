@@ -167,6 +167,7 @@
     <Compile Include="Services\TaskbarButtonService\TaskbarButtonService.cs" />
     <Compile Include="Services\TaskbarButtonService\TaskbarThumbButtonInfoCollection.cs" />
     <Compile Include="Services\WindowDocumentManagerService.cs" />
+    <Compile Include="Native\WindowSurrogate.cs" />
     <Compile Include="Services\WindowService.cs" />
     <Compile Include="SplashScreen\DXSplashScreen.cs" />
     <Compile Include="SplashScreen\DXSplashScreenExceptions.cs" />

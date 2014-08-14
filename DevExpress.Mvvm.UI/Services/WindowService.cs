@@ -1,6 +1,7 @@
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
+using DevExpress.Mvvm.UI.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -19,8 +20,8 @@ using WindowBase = DevExpress.Xpf.Core.DXWindowBase;
 using System.Reflection;
 #endif
 namespace DevExpress.Mvvm.UI {
-    public enum WindowShowMode { Dialog, Default };
-    public class WindowService : ViewServiceBase, IWindowService {
+    public enum WindowShowMode { Dialog, Default }
+    public class WindowService : ViewServiceBase, IWindowService, IDocumentOwner {
 #if !SILVERLIGHT
         static Type DefaultWindowType = typeof(Window);
 #endif
@@ -75,15 +76,15 @@ namespace DevExpress.Mvvm.UI {
             get { return (WindowShowMode)GetValue(WindowShowModeProperty); }
             set { SetValue(WindowShowModeProperty, value); }
         }
-        protected virtual WindowBase CreateWindow(object view) {
-            WindowBase window = (WindowBase)Activator.CreateInstance(WindowType ?? DefaultWindowType);
-            UpdateThemeName(window);
-            window.Content = view;
-            window.Style = WindowStyle;
+        protected virtual IWindowSurrogate CreateWindow(object view) {
+            IWindowSurrogate window = WindowProxy.GetWindowSurrogate(Activator.CreateInstance(WindowType ?? DefaultWindowType));
+            UpdateThemeName(window.RealWindow);
+            window.RealWindow.Content = view;
+            window.RealWindow.Style = WindowStyle;
 #if !SILVERLIGHT
-            window.WindowStartupLocation = this.WindowStartupLocation;
+            window.RealWindow.WindowStartupLocation = this.WindowStartupLocation;
             if(AllowSetWindowOwner && AssociatedObject != null)
-                window.Owner = Window.GetWindow(AssociatedObject);
+                window.RealWindow.Owner = Window.GetWindow(AssociatedObject);
 #endif
             return window;
         }
@@ -94,24 +95,26 @@ namespace DevExpress.Mvvm.UI {
         }
         void OnTitleChanged() {
             if(window != null)
-                window.Title = Title ?? string.Empty;
+                window.RealWindow.Title = Title ?? string.Empty;
         }
         void SetTitleBinding() {
             if(string.IsNullOrEmpty(Title))
-                DocumentUIServiceBase.SetTitleBinding(window.Content, WindowBase.TitleProperty, window, true);
+                DocumentUIServiceBase.SetTitleBinding(window.RealWindow.Content, WindowBase.TitleProperty, window.RealWindow, true);
         }
         void OnWindowClosing(object sender, CancelEventArgs e) {
-            IDocumentViewModel documentViewModel = ViewHelper.GetViewModelFromView(window.Content) as IDocumentViewModel;
-            if(documentViewModel != null)
-                e.Cancel = !documentViewModel.Close();
+            DocumentViewModelHelper.OnClose(GetViewModel(window.RealWindow), e);
         }
         void OnWindowClosed(object sender, EventArgs e) {
-            window.Closing -= OnWindowClosing;
-            window.Closed -= OnWindowClosed;
+            window.RealWindow.Closing -= OnWindowClosing;
+            window.RealWindow.Closed -= OnWindowClosed;
+            DocumentViewModelHelper.OnDestroy(GetViewModel(window.RealWindow));
             window = null;
         }
+        object GetViewModel(WindowBase window) {
+            return ViewHelper.GetViewModelFromView(window.Content);
+        }
 
-        WindowBase window;
+        IWindowSurrogate window;
         bool IWindowService.IsWindowAlive {
             get { return window != null; }
         }
@@ -120,20 +123,21 @@ namespace DevExpress.Mvvm.UI {
                 window.Show();
                 return;
             }
-            object view = CreateAndInitializeView(documentType, viewModel, parameter, parentViewModel);
+            object view = CreateAndInitializeView(documentType, viewModel, parameter, parentViewModel, this);
             window = CreateWindow(view);
-            window.Title = Title ?? string.Empty;
+            window.RealWindow.Title = Title ?? string.Empty;
             SetTitleBinding();
-            window.Closing += OnWindowClosing;
-            window.Closed += OnWindowClosed;
+            window.RealWindow.Closing += OnWindowClosing;
+            window.RealWindow.Closed += OnWindowClosed;
             if(WindowShowMode == WindowShowMode.Dialog)
                 window.ShowDialog();
-            else window.Show();
+            else
+                window.Show();
         }
 
         void IWindowService.Activate() {
             if(window != null) {
-                window.Activate();
+                window.RealWindow.Activate();
             }
         }
         void IWindowService.Restore() {
@@ -141,7 +145,7 @@ namespace DevExpress.Mvvm.UI {
 #if !SILVERLIGHT
                 window.Show();
 #else
-                window.Visibility = Visibility.Visible;
+                window.RealWindow.Visibility = Visibility.Visible;
 
 #endif
             }
@@ -149,20 +153,26 @@ namespace DevExpress.Mvvm.UI {
         void IWindowService.Hide() {
             if(window != null) {
 #if !SILVERLIGHT
-                window.Hide();
+                window.RealWindow.Hide();
 #else
-                window.Visibility = Visibility.Collapsed;
+                window.RealWindow.Visibility = Visibility.Collapsed;
 #endif
             }
         }
         void IWindowService.Close() {
             if(window != null)
-                window.Close();
+                window.RealWindow.Close();
+        }
+        void IDocumentOwner.Close(IDocumentContent documentContent, bool force) {
+            if(window == null || GetViewModel(window.RealWindow) != documentContent) return;
+            if(force)
+                window.RealWindow.Closing -= OnWindowClosing;
+            window.RealWindow.Close();
         }
 #if !SILVERLIGHT
         void IWindowService.SetWindowState(WindowState state) {
             if(window != null)
-                window.WindowState = state;
+                window.RealWindow.WindowState = state;
         }
 #endif
     }

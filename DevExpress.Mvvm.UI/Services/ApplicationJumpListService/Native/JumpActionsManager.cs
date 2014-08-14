@@ -74,6 +74,7 @@ namespace DevExpress.Mvvm.UI.Native {
         readonly Dictionary<string, RegisteredJumpAction> jumpActions = new Dictionary<string, RegisteredJumpAction>();
         GuidData applicationInstanceId;
         ServiceHost applicationInstanceHost;
+        bool registered = false;
         ICurrentProcess currentProcess;
         bool disposed = false;
         bool updating = false;
@@ -91,18 +92,32 @@ namespace DevExpress.Mvvm.UI.Native {
             GC.SuppressFinalize(this);
         }
         protected virtual void Dispose(bool disposing) {
-            UnregisterInstance();
+            if(disposing)
+                Monitor.Enter(jumpActions);
+            try {
+                Mutex mainMutex = GetMainMutex(!disposing);
+                WaitOne(mainMutex);
+                try {
+                    UnregisterInstance(!disposing);
+                } finally {
+                    mainMutex.ReleaseMutex();
+                }
+            } finally {
+                if(disposing)
+                    Monitor.Exit(jumpActions);
+            }
         }
         public void BeginUpdate() {
             if(updating)
                 throw new InvalidOperationException();
             Monitor.Enter(jumpActions);
             try {
-                WaitOne(MainMutex);
+                Mutex mainMutex = GetMainMutex(false);
+                WaitOne(mainMutex);
                 try {
                     ClearActions();
                 } catch {
-                    MainMutex.ReleaseMutex();
+                    mainMutex.ReleaseMutex();
                     throw;
                 }
             } catch {
@@ -115,7 +130,8 @@ namespace DevExpress.Mvvm.UI.Native {
             if(!updating)
                 throw new InvalidOperationException();
             try {
-                MainMutex.ReleaseMutex();
+                Mutex mainMutex = GetMainMutex(false);
+                mainMutex.ReleaseMutex();
             } finally {
                 updating = false;
                 Monitor.Exit(jumpActions);
@@ -174,14 +190,15 @@ namespace DevExpress.Mvvm.UI.Native {
             jumpActions.Clear();
         }
         void RegisterInstance(GuidData[] registeredApplicationInstances = null) {
-            if(applicationInstanceHost != null) return;
+            if(registered) return;
             if(registeredApplicationInstances == null)
-                registeredApplicationInstances = GetApplicationInstances();
+                registeredApplicationInstances = GetApplicationInstances(false);
             CreateInstance();
             GuidData[] newApplicationInstances = new GuidData[registeredApplicationInstances.Length + 1];
             newApplicationInstances[0] = applicationInstanceId;
             Array.Copy(registeredApplicationInstances, 0, newApplicationInstances, 1, registeredApplicationInstances.Length);
-            UpdateInstancesFile(newApplicationInstances);
+            UpdateInstancesFile(newApplicationInstances, false);
+            registered = true;
         }
         void CreateInstance() {
             applicationInstanceId = new GuidData(Guid.NewGuid());
@@ -194,9 +211,9 @@ namespace DevExpress.Mvvm.UI.Native {
             applicationInstanceHost = null;
             applicationInstanceId = new GuidData(Guid.Empty);
         }
-        void UnregisterInstance() {
-            if(applicationInstanceHost == null) return;
-            GuidData[] registeredApplicationInstances = GetApplicationInstances();
+        void UnregisterInstance(bool safe) {
+            if(!registered) return;
+            GuidData[] registeredApplicationInstances = GetApplicationInstances(safe);
             GuidData[] newApplicationInstances = new GuidData[registeredApplicationInstances.Length - 1];
             int i = 0;
             foreach(GuidData instance in registeredApplicationInstances) {
@@ -204,8 +221,10 @@ namespace DevExpress.Mvvm.UI.Native {
                 newApplicationInstances[i] = instance;
                 ++i;
             }
-            UpdateInstancesFile(newApplicationInstances);
-            DeleteInstance();
+            UpdateInstancesFile(newApplicationInstances, safe);
+            registered = false;
+            if(!safe && applicationInstanceHost != null)
+                DeleteInstance();
         }
     }
 }

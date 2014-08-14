@@ -81,12 +81,23 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty ThumbnailClipMarginCallbackProperty =
             DependencyProperty.Register("ThumbnailClipMarginCallback", typeof(Func<Size, Thickness>), typeof(TaskbarButtonService), new PropertyMetadata(null,
                 (d, e) => ((TaskbarButtonService)d).OnThumbnailClipMarginCallbackChanged(e)));
+
+        [IgnoreDependencyPropertiesConsistencyChecker]
+        static readonly DependencyProperty InternalItemsProperty =
+            DependencyProperty.RegisterAttached("InternalItems", typeof(FreezableCollection<TaskbarThumbButtonInfo>), typeof(TaskbarButtonService), new PropertyMetadata(null));
+        static FreezableCollection<TaskbarThumbButtonInfo> GetInternalItems(DependencyObject obj) {
+            return (FreezableCollection<TaskbarThumbButtonInfo>)obj.GetValue(InternalItemsProperty);
+        }
+        static void SetInternalItems(DependencyObject obj, FreezableCollection<TaskbarThumbButtonInfo> value) {
+            obj.SetValue(InternalItemsProperty, value);
+        }
         #endregion
 
         TaskbarItemInfo itemInfo;
         bool associatedObjectIsLoaded = false;
 
         public TaskbarButtonService() {
+            SetInternalItems(this, new FreezableCollection<TaskbarThumbButtonInfo>());
             ItemInfo = new TaskbarItemInfo();
         }
         public TaskbarItemProgressState ProgressState { get { return (TaskbarItemProgressState)GetValue(ProgressStateProperty); } set { SetValue(ProgressStateProperty, value); } }
@@ -167,9 +178,14 @@ namespace DevExpress.Mvvm.UI {
         void OnItemInfoDescriptionChanged(DependencyPropertyChangedEventArgs e) {
             Description = (string)e.NewValue;
         }
+
         protected virtual void OnThumbButtonInfosChanged(DependencyPropertyChangedEventArgs e) {
             TaskbarThumbButtonInfoCollection collection = (TaskbarThumbButtonInfoCollection)e.NewValue;
             ItemInfo.ThumbButtonInfos = collection.InternalCollection;
+
+            GetInternalItems(this).Clear();
+            foreach(TaskbarThumbButtonInfo item in collection)
+                GetInternalItems(this).Add(item);
         }
         void OnItemInfoThumbButtonInfosChanged(DependencyPropertyChangedEventArgs e) {
             ThumbButtonInfos = new TaskbarThumbButtonInfoCollection((ThumbButtonInfoCollection)e.NewValue);

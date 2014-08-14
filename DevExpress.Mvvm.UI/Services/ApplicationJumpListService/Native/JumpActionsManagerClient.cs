@@ -5,6 +5,8 @@ using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.ServiceModel;
 using System.Threading;
 
@@ -46,7 +48,7 @@ namespace DevExpress.Mvvm.UI.Native {
             void Execute(string command);
         }
 
-        protected const string MainMutexName = "78E27AC7-D44D-4BC9-8035-B7E032F6E485_";
+        protected const string MainMutexName = "Global\\78E27AC7-D44D-4BC9-8035-B7E032F6E485_";
         protected const string InstancesPropertiesFileName = "F23F13DB-7891-4E3E-90EC-BE0F00F136F4_";
         protected const string InstanceNamePrefix = "20C14DA6-B82A-4370-8760-951ED22346CB_";
         protected const string InstancesFileNamePrefix = "4EED163C-BC17-4840-A543-14FAF6D1BCEC_";
@@ -60,24 +62,40 @@ namespace DevExpress.Mvvm.UI.Native {
             MillisecondsTimeout = millisecondsTimeout;
         }
         protected int MillisecondsTimeout { get; private set; }
-        protected Mutex MainMutex {
-            [SecuritySafeCritical]
-            get {
-                if(mainMutex == null)
-                    mainMutex = new Mutex(false, MainMutexName + ApplicationId);
-                return mainMutex;
-            }
+        [SecuritySafeCritical]
+        protected Mutex GetMainMutex(bool safe) {
+            if(safe) return GetMainMutexCore(true);
+            if(mainMutex == null)
+                mainMutex = GetMainMutexCore(false);
+            return mainMutex;
         }
-        MemoryMappedFile InstancesPropertiesFile {
-            [SecuritySafeCritical]
-            get {
-                if(instancesPropertiesFile == null) {
-                    try {
-                        instancesPropertiesFile = MemoryMappedFile.OpenExisting(InstancesPropertiesFileName + ApplicationId);
-                    } catch(FileNotFoundException) {
-                        instancesPropertiesFile = MemoryMappedFile.CreateNew(InstancesPropertiesFileName + ApplicationId, Marshal.SizeOf(typeof(InstancesProperties)));
-                        UpdateInstancesFile(new GuidData[] { });
-                    }
+        [SecuritySafeCritical]
+        protected Mutex GetMainMutexCore(bool safe) {
+            Mutex mutex = new Mutex(false, MainMutexName + ApplicationId);
+            MutexAccessRule accessRule = new MutexAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), MutexRights.FullControl, AccessControlType.Allow);
+            MutexSecurity security = new MutexSecurity();
+            security.AddAccessRule(accessRule);
+            mutex.SetAccessControl(security);
+            return mutex;
+        }
+        [SecuritySafeCritical]
+        MemoryMappedFile GetInstancesPropertiesFile(bool safe) {
+            if(safe) return GetInstancesPropertiesCoreFile(true);
+            if(instancesPropertiesFile == null)
+                instancesPropertiesFile = GetInstancesPropertiesCoreFile(false);
+            return instancesPropertiesFile;
+        }
+        [SecuritySafeCritical]
+        MemoryMappedFile GetInstancesPropertiesCoreFile(bool safe) {
+            try {
+                return MemoryMappedFile.OpenExisting(InstancesPropertiesFileName + ApplicationId);
+            } catch(FileNotFoundException) {
+                MemoryMappedFile instancesPropertiesFile = MemoryMappedFile.CreateNew(InstancesPropertiesFileName + ApplicationId, Marshal.SizeOf(typeof(InstancesProperties)));
+                try {
+                    UpdateInstancesFile(new GuidData[] { }, safe, instancesPropertiesFile, new GuidData(Guid.Empty));
+                } catch {
+                    instancesPropertiesFile.Dispose();
+                    throw;
                 }
                 return instancesPropertiesFile;
             }
@@ -86,8 +104,8 @@ namespace DevExpress.Mvvm.UI.Native {
             return string.Format("net.pipe://localhost/{0}{1}", InstanceNamePrefix, applicationInstance.AsGuid);
         }
         [SecuritySafeCritical]
-        protected GuidData[] GetApplicationInstances() {
-            Tuple<MemoryMappedFile, int> instancesFile = GetInstancesFile();
+        protected GuidData[] GetApplicationInstances(bool safe) {
+            Tuple<MemoryMappedFile, int> instancesFile = GetInstancesFile(safe);
             if(instancesFile.Item2 == 0) return new GuidData[] { };
             GuidData[] instances = new GuidData[instancesFile.Item2];
             using(var accessor = instancesFile.Item1.CreateViewAccessor())
@@ -95,22 +113,25 @@ namespace DevExpress.Mvvm.UI.Native {
             return instances;
         }
         [SecuritySafeCritical]
-        protected Tuple<MemoryMappedFile, int> GetInstancesFile() {
+        protected Tuple<MemoryMappedFile, int> GetInstancesFile(bool safe) {
+            MemoryMappedFile instancesPropertiesFile = GetInstancesPropertiesFile(safe);
             InstancesProperties listProperties;
-            using(var acccessor = InstancesPropertiesFile.CreateViewAccessor())
+            using(var acccessor = instancesPropertiesFile.CreateViewAccessor())
                 acccessor.Read(0, out listProperties);
-            if(listProperties.NameSuffix.AsGuid != instancesFileNameSuffix.AsGuid) {
-                if(instancesFile != null)
-                    instancesFile.Dispose();
+            if(safe || listProperties.NameSuffix.AsGuid != this.instancesFileNameSuffix.AsGuid) {
+                MemoryMappedFile instancesFile = listProperties.NameSuffix.AsGuid == Guid.Empty ? null : MemoryMappedFile.OpenExisting(GetInstancesFileName(listProperties.NameSuffix));
+                if(safe) return new Tuple<MemoryMappedFile, int>(instancesFile, listProperties.InstancesCount);
+                if(this.instancesFile != null)
+                    this.instancesFile.Dispose();
                 instancesFileNameSuffix = listProperties.NameSuffix;
-                instancesFile = instancesFileNameSuffix.AsGuid == Guid.Empty ? null : MemoryMappedFile.OpenExisting(GetInstancesFileName(instancesFileNameSuffix));
+                this.instancesFile = instancesFile;
             }
-            return new Tuple<MemoryMappedFile, int>(instancesFile, listProperties.InstancesCount);
+            return new Tuple<MemoryMappedFile, int>(this.instancesFile, listProperties.InstancesCount);
         }
         [SecuritySafeCritical]
-        protected void UpdateInstancesFile(GuidData[] instances) {
-            if(instancesFile != null)
-                instancesFile.Dispose();
+        protected void UpdateInstancesFile(GuidData[] instances, bool safe) {
+            GuidData instancesFileNameSuffix;
+            MemoryMappedFile instancesFile;
             if(instances.Length != 0) {
                 instancesFileNameSuffix = new GuidData(Guid.NewGuid());
                 instancesFile = MemoryMappedFile.CreateNew(GetInstancesFileName(instancesFileNameSuffix), instances.Length * Marshal.SizeOf(typeof(GuidData)));
@@ -120,11 +141,19 @@ namespace DevExpress.Mvvm.UI.Native {
                 instancesFile = null;
                 instancesFileNameSuffix = new GuidData(Guid.Empty);
             }
+            UpdateInstancesFile(instances, safe, GetInstancesPropertiesFile(safe), instancesFileNameSuffix);
+            if(!safe) {
+                this.instancesFileNameSuffix = instancesFileNameSuffix;
+                this.instancesFile = instancesFile;
+            }
+        }
+        [SecuritySafeCritical]
+        protected static void UpdateInstancesFile(GuidData[] instances, bool safe, MemoryMappedFile instancesPropertiesFile, GuidData instancesFileNameSuffix) {
             InstancesProperties listProperties = new InstancesProperties() { InstancesCount = instances.Length, NameSuffix = instancesFileNameSuffix };
-            using(var acccessor = InstancesPropertiesFile.CreateViewAccessor())
+            using(var acccessor = instancesPropertiesFile.CreateViewAccessor())
                 acccessor.Write(0, ref listProperties);
         }
-        string GetInstancesFileName(GuidData instancesFileNameSuffix) {
+        static string GetInstancesFileName(GuidData instancesFileNameSuffix) {
             return InstancesFileNamePrefix + instancesFileNameSuffix.AsGuid.ToString();
         }
         protected void WaitOne(WaitHandle waitHandle) {
@@ -140,9 +169,10 @@ namespace DevExpress.Mvvm.UI.Native {
         public void Run(string[] args, Action<ProcessStartInfo> startProcess) {
             if(args.Length != 4 && args.Length != 5) throw new ArgumentException("", "args");
             applicationId = args[0];
-            WaitOne(MainMutex);
+            Mutex mainMutex = GetMainMutex(false);
+            WaitOne(mainMutex);
             try {
-                GuidData[] registeredApplicationInstances = GetApplicationInstances();
+                GuidData[] registeredApplicationInstances = GetApplicationInstances(false);
                 if(registeredApplicationInstances.Length == 0) {
                     ProcessStartInfo startInfo = new ProcessStartInfo();
                     startInfo.FileName = Uri.UnescapeDataString(args[2]);
@@ -154,7 +184,7 @@ namespace DevExpress.Mvvm.UI.Native {
                     SendExecuteMessage(registeredApplicationInstances, Uri.UnescapeDataString(args[1]));
                 }
             } finally {
-                MainMutex.ReleaseMutex();
+                mainMutex.ReleaseMutex();
             }
         }
         protected override string ApplicationId { get { return applicationId; } }

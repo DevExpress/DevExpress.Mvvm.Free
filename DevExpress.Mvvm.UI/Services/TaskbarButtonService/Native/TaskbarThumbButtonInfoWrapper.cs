@@ -248,10 +248,10 @@ namespace DevExpress.Mvvm.UI.Native {
                 taskbarThumbButtonInfo.CommandParameter = thumbButtonInfo.CommandParameter;
                 ThumbButtonInfoCommand command = thumbButtonInfo.Command as ThumbButtonInfoCommand;
                 if(command != null) {
-                    taskbarThumbButtonInfo.Command = command.InternalCommand;
-                    taskbarThumbButtonInfo.Action = command.Action;
+                    if(command.InternalCommand != null) taskbarThumbButtonInfo.Command = command.InternalCommand;
+                    if(command.Action != null) taskbarThumbButtonInfo.Action = command.Action;
                     ITaskbarThumbButtonInfo taskbarThumbButtonInfoInternal = taskbarThumbButtonInfo;
-                    taskbarThumbButtonInfoInternal.Click = command.Click;
+                    if(command.Click != null) taskbarThumbButtonInfoInternal.Click = command.Click;
                 } else {
                     taskbarThumbButtonInfo.Command = command;
                 }

@@ -11,47 +11,63 @@ using System.ComponentModel;
 using System.Windows.Controls;
 using System.Collections.ObjectModel;
 using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.UI.Native;
 #if SILVERLIGHT
-using Window = DevExpress.Xpf.Core.DXWindow;
+using WindowBase = DevExpress.Xpf.Core.DXWindowBase;
+#else
+using WindowBase = System.Windows.Window;
 #endif
 
 namespace DevExpress.Mvvm.UI {
     [TargetTypeAttribute(typeof(UserControl))]
     [TargetTypeAttribute(typeof(Window))]
-    public class WindowedDocumentUIService : DocumentUIServiceBase, IDocumentManagerService {
+    public class WindowedDocumentUIService : DocumentUIServiceBase, IDocumentManagerService, IDocumentOwner {
         public class WindowDocument : IDocument {
             readonly object documentContentView;
-            internal readonly Window window;
             bool destroyOnClose = true;
             readonly WindowedDocumentUIService owner;
-            public WindowDocument(WindowedDocumentUIService owner, Window window, object documentContentView) {
+
+            public WindowDocument(WindowedDocumentUIService owner, IWindowSurrogate window, object documentContentView) {
                 this.owner = owner;
-                this.window = window;
+                Window = window;
                 this.documentContentView = documentContentView;
-                window.Closing += window_Closing;
-                window.Closed += window_Closed;
+                Window.RealWindow.Closing += window_Closing;
+                Window.RealWindow.Closed += window_Closed;
             }
+            [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
+            public IWindowSurrogate Window { get; private set; }
             void window_Closed(object sender, EventArgs e) {
                 RemoveFromWindowsList();
-                window.Closing -= window_Closing;
-                window.Closed -= window_Closed;
+                Window.RealWindow.Closing -= window_Closing;
+                Window.RealWindow.Closed -= window_Closed;
+                DocumentViewModelHelper.OnDestroy(GetContent());
             }
             void window_Closing(object sender, CancelEventArgs e) {
-                IDocumentViewModel documentContent = GetContent() as IDocumentViewModel;
-                bool cancel = documentContent != null && !documentContent.Close();
-                if(destroyOnClose) {
-                    e.Cancel = cancel;
-                } else {
+                DocumentViewModelHelper.OnClose(GetContent(), e);
+                if(!destroyOnClose && !e.Cancel) {
                     e.Cancel = true;
-                    if(!cancel)
-                        window.Hide();
+                    HideWindow(Window.RealWindow);
                 }
             }
             void IDocument.Close(bool force) {
-                if(force) {
-                    window.Closing -= window_Closing;
+                if(!force) {
+                    Window.RealWindow.Close();
+                    return;
                 }
-                window.Close();
+                Window.RealWindow.Closing -= window_Closing;
+                if(!destroyOnClose)
+                    HideWindow(Window.RealWindow);
+                else
+                    Window.RealWindow.Close();
+            }
+            void HideWindow(WindowBase window) {
+#if !SILVERLIGHT
+                window.Hide();
+#else
+                window.Closed -= window_Closed;
+                window.Hide();
+                window.Closed += window_Closed;
+#endif
             }
             bool IDocument.DestroyOnClose {
                 get { return destroyOnClose; }
@@ -59,14 +75,16 @@ namespace DevExpress.Mvvm.UI {
             }
             void IDocument.Show() {
                 switch(owner.DocumentShowMode) {
-                    case WindowShowMode.Dialog: window.ShowDialog();
+                    case WindowShowMode.Dialog:
+                        Window.ShowDialog();
                         break;
-                    default: window.Show();
+                    default:
+                        Window.Show();
                         break;
                 }
             }
             void IDocument.Hide() {
-                window.Hide();
+                HideWindow(Window.RealWindow);
             }
 
             object IDocument.Id {
@@ -75,8 +93,8 @@ namespace DevExpress.Mvvm.UI {
             }
 
             object IDocument.Title {
-                get { return window.Title; }
-                set { window.Title = Convert.ToString(value); }
+                get { return Window.RealWindow.Title; }
+                set { Window.RealWindow.Title = Convert.ToString(value); }
             }
 
             object IDocument.Content {
@@ -84,7 +102,7 @@ namespace DevExpress.Mvvm.UI {
             }
 
             void RemoveFromWindowsList() {
-                owner.windows.Remove(window);
+                owner.windows.Remove(Window);
             }
             object GetContent() {
                 return ViewHelper.GetViewModelFromView(documentContentView);
@@ -134,44 +152,47 @@ namespace DevExpress.Mvvm.UI {
             set { SetValue(DocumentShowModeProperty, value); }
         }
 
-        protected virtual Window CreateWindow(object view) {
-            Window window = (Window)Activator.CreateInstance(WindowType);
-            UpdateThemeName(window);
-            window.Content = view;
+        protected virtual IWindowSurrogate CreateWindow(object view) {
+            IWindowSurrogate window = WindowProxy.GetWindowSurrogate(Activator.CreateInstance(WindowType));
+            UpdateThemeName(window.RealWindow);
+            window.RealWindow.Content = view;
 #if SILVERLIGHT
-            window.Style = WindowStyle;
+            window.RealWindow.Style = WindowStyle;
 #else
-            window.Owner = Window.GetWindow(AssociatedObject);
-            window.Style = GetDocumentContainerStyle(window, view, WindowStyle, WindowStyleSelector);
-            window.WindowStartupLocation = this.WindowStartupLocation;
+            window.RealWindow.Owner = Window.GetWindow(AssociatedObject);
+            window.RealWindow.Style = GetDocumentContainerStyle(window.RealWindow, view, WindowStyle, WindowStyleSelector);
+            window.RealWindow.WindowStartupLocation = this.WindowStartupLocation;
 #endif
             return window;
         }
         IDocument IDocumentManagerService.CreateDocument(string documentType, object viewModel, object parameter, object parentViewModel) {
-            object view = CreateAndInitializeView(documentType, viewModel, parameter, parentViewModel);
-            Window window = CreateWindow(view);
+            object view = CreateAndInitializeView(documentType, viewModel, parameter, parentViewModel, this);
+            IWindowSurrogate window = CreateWindow(view);
             windows.Add(window);
-            SubscribeWindow(window);
+            SubscribeWindow(window.RealWindow);
             IDocument document = new WindowDocument(this, window, view);
-            SetDocument(window, document);
-            SetTitleBinding(view, Window.TitleProperty, window, true);
+            SetDocument(window.RealWindow, document);
+            SetTitleBinding(view, WindowBase.TitleProperty, window.RealWindow, true);
             return document;
         }
+        void IDocumentOwner.Close(IDocumentContent documentContent, bool force) {
+            CloseDocument(this, documentContent, force);
+        }
 
-        IList<Window> windows = new List<Window>();
-        IEnumerable<IDocument> IDocumentManagerService.Documents { get { return windows.Select(w => GetDocument(w)); } }
+        IList<IWindowSurrogate> windows = new List<IWindowSurrogate>();
+        IEnumerable<IDocument> IDocumentManagerService.Documents { get { return windows.Select(w => GetDocument(w.RealWindow)); } }
 
 
         public event ActiveDocumentChangedEventHandler ActiveDocumentChanged;
 
-        void SubscribeWindow(Window window) {
+        void SubscribeWindow(WindowBase window) {
             window.Activated += OnWindowActivated;
 #if !SILVERLIGHT
             window.Deactivated += OnWindowDeactivated;
 #endif
             window.Closed += OnWindowClosed;
         }
-        void UnsubscribeWindow(Window window) {
+        void UnsubscribeWindow(WindowBase window) {
             window.Activated -= OnWindowActivated;
 #if !SILVERLIGHT
             window.Deactivated -= OnWindowDeactivated;
@@ -181,10 +202,10 @@ namespace DevExpress.Mvvm.UI {
         void OnWindowClosed(object sender, EventArgs e) {
             if(windows.Count == 1)
                 ActiveDocument = null;
-            UnsubscribeWindow((Window)sender);
+            UnsubscribeWindow((WindowBase)sender);
         }
         void OnWindowActivated(object sender, EventArgs e) {
-            ActiveDocument = GetDocument((Window)sender);
+            ActiveDocument = GetDocument((WindowBase)sender);
         }
 #if !SILVERLIGHT
         void OnWindowDeactivated(object sender, EventArgs e) {
@@ -193,9 +214,9 @@ namespace DevExpress.Mvvm.UI {
         }
 #endif
         void OnActiveDocumentChanged(IDocument oldValue, IDocument newValue) {
-            if((WindowDocument)newValue != null) {
-                ((WindowDocument)newValue).window.Activate();
-            }
+            WindowDocument newDocument = (WindowDocument)newValue;
+            if(newDocument != null)
+                newDocument.Window.RealWindow.Activate();
             if(ActiveDocumentChanged != null)
                 ActiveDocumentChanged(this, new ActiveDocumentChangedEventArgs(oldValue, newValue));
         }

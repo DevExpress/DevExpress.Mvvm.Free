@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -11,18 +12,22 @@ using DevExpress.Utils;
 
 namespace DevExpress.Mvvm.UI.Native {
     public static class NativeResourceManager {
-        public const string CompanyNameEnvironmentVariable = "%COMPANYNAME%";
-        public const string ProductNameEnvironmentVariable = "%PRODUCTNAME%";
+        public const string AppDataEnvironmentVariable = "%_DATA_%";
+        public const string CompanyNameEnvironmentVariable = "%_COMPANY_%";
+        public const string ProductNameEnvironmentVariable = "%_PRODUCT_%";
+        public const string VersionEnvironmentVariable = "%_VERSION_%";
         public const string ResourcesFolderName = "R-3B849FCF-333E-41D2-A306-5DE5A24DB817";
         static object resourcesFolderLock = new object();
         static string companyNameOverride;
         static string productNameOverride;
+        static string versionOverride;
         static DateTime? applicationCreateTime = null;
         static string applicationExecutablePath;
         static string applicationId;
         static string applicationIdHash;
         static Dictionary<string, Func<string>> variables;
         static object variablesLock = new object();
+        static Tuple<string, string, string, string> configurationPathParts;
 
         public static string CompanyNameOverride {
             get {
@@ -45,6 +50,18 @@ namespace DevExpress.Mvvm.UI.Native {
             set {
                 lock(resourcesFolderLock) {
                     productNameOverride = value;
+                }
+            }
+        }
+        public static string VersionOverride {
+            get {
+                lock(resourcesFolderLock) {
+                    return versionOverride;
+                }
+            }
+            set {
+                lock(resourcesFolderLock) {
+                    versionOverride = value;
                 }
             }
         }
@@ -72,39 +89,53 @@ namespace DevExpress.Mvvm.UI.Native {
                 return applicationIdHash;
             }
         }
-        public static string ResourcesFolder { get { return Path.Combine("%LOCALAPPDATA%", CompanyNameEnvironmentVariable, ProductNameEnvironmentVariable, ResourcesFolderName); } }
+        public static string ResourcesFolder { get { return Path.Combine(AppDataEnvironmentVariable, CompanyNameEnvironmentVariable, ProductNameEnvironmentVariable, VersionEnvironmentVariable, ResourcesFolderName); } }
         public static Dictionary<string, Func<string>> Variables {
             get {
                 if(variables == null) {
                     lock(variablesLock) {
                         if(variables == null) {
                             variables = new Dictionary<string, Func<string>>();
-                            variables.Add(CompanyNameEnvironmentVariable, GetCompanyName);
-                            variables.Add(ProductNameEnvironmentVariable, GetProductName);
+                            variables.Add(AppDataEnvironmentVariable, () => ConfigurationPathParts.Item1);
+                            variables.Add(CompanyNameEnvironmentVariable, () => CompanyNameOverride ?? ConfigurationPathParts.Item2);
+                            variables.Add(ProductNameEnvironmentVariable, () => ProductNameOverride ?? ConfigurationPathParts.Item3);
+                            variables.Add(VersionEnvironmentVariable, () => VersionOverride ?? ConfigurationPathParts.Item4);
                         }
                     }
                 }
                 return variables;
             }
         }
-        public static string GetCompanyName() {
-            lock(resourcesFolderLock) {
-                string companyName = companyNameOverride;
-                if(companyName == null)
-                    companyName = Environment.GetEnvironmentVariable(CompanyNameEnvironmentVariable, EnvironmentVariableTarget.Process);
-                if(companyName == null)
-                    companyName = AssemblyHelper.EntryAssembly.With(a => a.GetCustomAttributes(typeof(AssemblyCompanyAttribute), false).Cast<AssemblyCompanyAttribute>().SingleOrDefault().With(t => t.Company));
-                return companyName == null || !companyName.Where(c => char.IsLetterOrDigit(c)).Any() ? ApplicationIdHash : NativeResourceManager.CreateFileName(companyName);
-            }
-        }
-        public static string GetProductName() {
-            lock(resourcesFolderLock) {
-                string productName = productNameOverride;
-                if(productName == null)
-                    productName = Environment.GetEnvironmentVariable(ProductNameEnvironmentVariable, EnvironmentVariableTarget.Process);
-                if(productName == null)
-                    productName = AssemblyHelper.EntryAssembly.With(a => a.GetCustomAttributes(typeof(AssemblyProductAttribute), false).Cast<AssemblyProductAttribute>().SingleOrDefault().With(t => t.Product));
-                return productName == null || !productName.Where(c => char.IsLetterOrDigit(c)).Any() ? ApplicationIdHash : NativeResourceManager.CreateFileName(productName);
+        static Tuple<string, string, string, string> ConfigurationPathParts {
+            get {
+                lock(resourcesFolderLock) {
+                    if(configurationPathParts == null) {
+                        string appDataDirectory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\";
+                        try {
+                            object configurationManager = typeof(ConfigurationException).Assembly.GetType("System.Configuration.ConfigurationManagerInternalFactory").GetProperty("Instance", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null, null);
+                            var directory = (string)configurationManager.GetType().GetInterface("System.Configuration.Internal.IConfigurationManagerInternal").GetProperty("ExeLocalConfigDirectory").GetValue(configurationManager, null);
+                            if(!directory.StartsWith(appDataDirectory, StringComparison.InvariantCultureIgnoreCase))
+                                throw new IndexOutOfRangeException();
+                            directory = directory.Substring(appDataDirectory.Length);
+                            string[] pathParts = directory.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+                            if(pathParts.Length < 3)
+                                throw new IndexOutOfRangeException();
+                            if(pathParts.Length == 3)
+                                configurationPathParts = new Tuple<string, string, string, string>(appDataDirectory, pathParts[0], pathParts[1], pathParts[2]);
+                            else
+                                configurationPathParts = new Tuple<string, string, string, string>(Path.Combine(appDataDirectory, Path.Combine(pathParts.Take(pathParts.Length - 1).ToArray())), string.Empty, string.Empty, pathParts[pathParts.Length - 1]);
+                        } catch {
+                            string companyName = AssemblyHelper.EntryAssembly.With(a => a.GetCustomAttributes(typeof(AssemblyCompanyAttribute), false).Cast<AssemblyCompanyAttribute>().SingleOrDefault().With(t => t.Company));
+                            string productName = AssemblyHelper.EntryAssembly.With(a => a.GetCustomAttributes(typeof(AssemblyProductAttribute), false).Cast<AssemblyProductAttribute>().SingleOrDefault().With(t => t.Product));
+                            string version = AssemblyHelper.EntryAssembly.With(a => a.GetName().Version.ToString(4));
+                            companyName = companyName == null || !companyName.Where(c => char.IsLetterOrDigit(c)).Any() ? ApplicationIdHash : NativeResourceManager.CreateFileName(companyName);
+                            productName = productName == null || !productName.Where(c => char.IsLetterOrDigit(c)).Any() ? ApplicationIdHash : NativeResourceManager.CreateFileName(productName);
+                            version = version == null || !version.Where(c => char.IsLetterOrDigit(c)).Any() ? ApplicationIdHash : NativeResourceManager.CreateFileName(version);
+                            configurationPathParts = new Tuple<string, string, string, string>(appDataDirectory, companyName, productName, version);
+                        }
+                    }
+                    return configurationPathParts;
+                }
             }
         }
         public static string ExpandVariables(string name) {
