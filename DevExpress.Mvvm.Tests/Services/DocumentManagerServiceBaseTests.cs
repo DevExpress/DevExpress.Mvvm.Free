@@ -78,10 +78,12 @@ namespace DevExpress.Mvvm.Tests {
                 get { return docs; }
             }
         }
-        public class TestDocumentViewModel : IDocumentViewModel {
+        public class TestDocumentContent : IDocumentContent {
+            public IDocumentOwner DocumentOwner { get;set; }
             public virtual object Title { get; set; }
-            bool IDocumentViewModel.Close() { return true; }
-            object IDocumentViewModel.Title { get { return Title; } }
+            void IDocumentContent.OnClose(CancelEventArgs e) { }
+            object IDocumentContent.Title { get { return Title; } }
+            void IDocumentContent.OnDestroy() { }
         }
         [Test]
         public void ExtenstionTests_FindById() {
@@ -173,7 +175,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void SetTitleBindingTest() {
-            var viewModel = ViewModelSource.Create(() => new TestDocumentViewModel());
+            var viewModel = ViewModelSource.Create(() => new TestDocumentContent());
             viewModel.Title = "a";
             IDocumentManagerService service = new TestDocumentManagerService();
             IDocument document = service.CreateDocument("doc", viewModel);

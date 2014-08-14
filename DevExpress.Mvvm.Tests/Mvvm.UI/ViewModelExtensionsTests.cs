@@ -5,6 +5,7 @@ using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -14,8 +15,9 @@ using DevExpress.Mvvm.UI.Interactivity;
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class ViewModelExtensionsTests {
-        class ViewModel : ViewModelBase, IDocumentViewModel {
-            public bool Close() {
+        class ViewModel : ViewModelBase, IDocumentContent {
+            public IDocumentOwner DocumentOwner { get; set; }
+            public void OnClose(CancelEventArgs e) {
                 throw new NotImplementedException();
             }
 
@@ -24,9 +26,11 @@ namespace DevExpress.Mvvm.Tests {
                 get { return title; }
                 set { SetProperty(ref title, value, () => Title); }
             }
+            void IDocumentContent.OnDestroy() { }
         }
-        class ViewModelWithAnotherTitle : ViewModelBase, IDocumentViewModel {
-            public bool Close() {
+        class ViewModelWithAnotherTitle : ViewModelBase, IDocumentContent {
+            public IDocumentOwner DocumentOwner { get; set; }
+            public void OnClose(CancelEventArgs e) {
                 throw new NotImplementedException();
             }
 
@@ -40,7 +44,8 @@ namespace DevExpress.Mvvm.Tests {
                 get { return documentTitle; }
                 set { SetProperty(ref documentTitle, value, () => DocumentTitle); }
             }
-            object IDocumentViewModel.Title { get { return DocumentTitle; } }
+            object IDocumentContent.Title { get { return DocumentTitle; } }
+            void IDocumentContent.OnDestroy() { }
         }
         class DObject : DependencyObject {
         }
@@ -62,13 +67,15 @@ namespace DevExpress.Mvvm.Tests {
             ViewModelExtensions.SetParentViewModel(button2, parentViewModel);
             Assert.AreEqual(parentViewModel, viewModel.With(x => x as ISupportParentViewModel).ParentViewModel);
         }
-        public class DocumentViewModel : BindableBase, IDocumentViewModel {
-            object IDocumentViewModel.Title {
+        public class DocumentViewModel : BindableBase, IDocumentContent {
+            public IDocumentOwner DocumentOwner { get; set; }
+            object IDocumentContent.Title {
                 get { return "foo2"; }
             }
-            bool IDocumentViewModel.Close() {
+            void IDocumentContent.OnClose(CancelEventArgs e) {
                 throw new NotImplementedException();
             }
+            void IDocumentContent.OnDestroy() { }
         }
         [Test]
         public void ViewHelperTest() {

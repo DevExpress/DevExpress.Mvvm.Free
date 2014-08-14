@@ -580,7 +580,7 @@ namespace DevExpress.Mvvm.Tests {
         public void Services_NotServiceTypeTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
                 ViewModelSource.Create(() => new Services_NotServiceType());
-            }, x => Assert.AreEqual("Property type should be service type: Property.", x.Message));
+            }, x => Assert.AreEqual("Service properties should have an interface type: Property.", x.Message));
         }
 
         public class Services_PropertyIsNotVirtual {
@@ -1259,6 +1259,10 @@ namespace DevExpress.Mvvm.Tests {
             });
             EnqueueWait(() => viewModel.MethodWithParameterCallCount == 1);
             EnqueueCallback(() => {
+                if(button.Command is IAsyncCommand)
+                    EnqueueWait(() => ((IAsyncCommand)button.Command).IsExecuting == false);
+            });
+            EnqueueCallback(() => {
                 Assert.AreEqual(9, viewModel.MethodWithParameterLastParameter);
                 Assert.IsTrue(button.Command.CanExecute(9));
                 Assert.IsFalse(button.Command.CanExecute(13), "3");
@@ -1645,7 +1649,7 @@ namespace DevExpress.Mvvm.Tests {
             ((ISupportServices)viewModel).ServiceContainer.RegisterService(supportInitializeMock.Object);
             Assert.IsNull(viewModel.SupportInitialize);
 
-            AssertHelper.AssertThrows<NotSupportedException>(() => viewModel.DocumentManager.FindDocument(new object()));
+            AssertHelper.AssertThrows<ServiceNotFoundException>(() => viewModel.DocumentManager.FindDocument(new object()));
 
             ParentViewModel parent = new ParentViewModel();
             var documentManagerServiceMock = new Mock<IDocumentManagerService>(MockBehavior.Strict);
@@ -1895,8 +1899,49 @@ namespace DevExpress.Mvvm.Tests {
         public sealed class IsPOCO_Method_Sealed {
             public void Do() { }
         }
+        public class IsPOCO_NoDefaultCtor1 {
+            protected IsPOCO_NoDefaultCtor1(int x = 13) {
+                X = x;
+            }
+            public virtual int X { get; set; }
+        }
+        public class IsPOCO_NoDefaultCtor2 {
+            protected IsPOCO_NoDefaultCtor2() {
+            }
+            protected IsPOCO_NoDefaultCtor2(int x = 13) {
+                X = x;
+            }
+            public virtual int X { get; set; }
+        }
+        public class IsPOCO_NoDefaultCtor3 {
+            public IsPOCO_NoDefaultCtor3(object x = null, int y = 0) { }
+            public virtual int X { get; set; }
+        }
+        public class IsPOCO_NoDefaultCtor4 {
+            private IsPOCO_NoDefaultCtor4(object x = null, int y = 0) { }
+            public virtual int X { get; set; }
+        }
+        public class IsPOCO_NoDefaultCtor5 {
+            private IsPOCO_NoDefaultCtor5(object x = null) { }
+            protected IsPOCO_NoDefaultCtor5(object x = null, int y = 0) { }
+            public virtual int X { get; set; }
+        }
+        public class IsPOCO_NoDefaultCtor6 {
+            private IsPOCO_NoDefaultCtor6(object x = null) { }
+            protected internal IsPOCO_NoDefaultCtor6(object x = null, int y = 0) { }
+            public virtual int X { get; set; }
+        }
 
         #endregion
+        [Test]
+        public void CreateByType() {
+            Assert.AreEqual(13, ((IsPOCO_NoDefaultCtor1)ViewModelSourceHelper.Create(typeof(IsPOCO_NoDefaultCtor1))).X);
+            Assert.AreEqual(0, ((IsPOCO_NoDefaultCtor2)ViewModelSourceHelper.Create(typeof(IsPOCO_NoDefaultCtor2))).X);
+            Assert.AreEqual(0, ((IsPOCO_NoDefaultCtor3)ViewModelSourceHelper.Create(typeof(IsPOCO_NoDefaultCtor3))).X);
+            AssertHelper.AssertThrows<ViewModelSourceException>(() => ViewModelSourceHelper.Create(typeof(IsPOCO_NoDefaultCtor4)));
+            Assert.AreEqual(0, ((IsPOCO_NoDefaultCtor5)ViewModelSourceHelper.Create(typeof(IsPOCO_NoDefaultCtor5))).X);
+            Assert.AreEqual(0, ((IsPOCO_NoDefaultCtor6)ViewModelSourceHelper.Create(typeof(IsPOCO_NoDefaultCtor6))).X);
+        }
         [Test]
         public void IsPOCOViewModelTest() {
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(IsPOCO_Empty)));
@@ -1977,6 +2022,12 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_Services)));
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_Services_Metadata)));
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_Services_Metadata_FluentAPI)));
+
+            Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(IsPOCO_NoDefaultCtor1)));
+            Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(IsPOCO_NoDefaultCtor2)));
+            Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(IsPOCO_NoDefaultCtor3)));
+            Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(IsPOCO_NoDefaultCtor5)));
+            Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(IsPOCO_NoDefaultCtor6)));
         }
         #endregion
 

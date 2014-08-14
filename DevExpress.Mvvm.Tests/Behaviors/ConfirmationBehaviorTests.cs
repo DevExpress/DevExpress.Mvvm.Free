@@ -81,41 +81,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(service, viewModel.MessageBoxService);
             Assert.AreEqual(service, b.GetActualService());
         }
-        [Test]
-        public void GetActualServiceTest3() {
-            UserControl root = new UserControl();
-            var viewModel = new TestViewModelBase();
-            root.DataContext = viewModel;
-            Button button = new Button();
-            var b = new ConfirmationBehavior();
-            Interaction.GetBehaviors(button).Add(b);
-            root.Content = button;
-            var service = b.GetActualService();
-            var service2 = b.GetActualService();
-            var service3 = Interaction.GetBehaviors(button).First(x => x is IMessageBoxService);
-            Assert.AreEqual(service, service2);
-            Assert.AreEqual(service, service3);
-        }
-        [Test]
-        public void GetActualServiceTest4() {
-            UserControl root = new UserControl();
-            var service = CreateMessageService();
-            Interaction.GetBehaviors(root).Add(service);
-            Button button = new Button();
-            var b = new ConfirmationBehavior();
-            Interaction.GetBehaviors(button).Add(b);
-            root.DataContext = new object();
-            root.Content = button;
-            var viewModel = new TestViewModelBase();
-            button.DataContext = viewModel;
-            var service2 = b.GetActualService();
-            var service3 = b.GetActualService();
-            Assert.IsNotNull(viewModel.MessageBoxService);
-            Assert.AreNotEqual(service, service2);
-            Assert.AreEqual(service2, service3);
-            b.MessageBoxService = service;
-            Assert.AreEqual(service, b.GetActualService());
-        }
 
         [Test]
         public void SetAssociatedObjectCommandPropertyTest1() {
@@ -257,6 +222,23 @@ namespace DevExpress.Mvvm.UI.Tests {
             control.Command.Execute(null);
             Assert.AreEqual(2, executeCount);
             Assert.AreEqual(3, service.ShowCount);
+        }
+        [Test]
+        public void DisableConfirmationMessage() {
+            int executeCount = 0;
+            DelegateCommand command = new DelegateCommand(() => executeCount++, () => true);
+            TestMessageBoxService service = new TestMessageBoxService();
+            Button control = new Button();
+            ConfirmationBehavior b = new ConfirmationBehavior();
+            b.Command = command;
+            Interaction.GetBehaviors(control).Add(b);
+            b.MessageBoxService = service;
+            b.EnableConfirmationMessage = false;
+            control.Command.Execute(null);
+            Assert.AreEqual(1, executeCount);
+            Assert.AreEqual(0, service.ShowCount);
+            Assert.IsNull(service.Caption);
+            Assert.IsNull(service.MessageBoxTest);
         }
     }
 }
