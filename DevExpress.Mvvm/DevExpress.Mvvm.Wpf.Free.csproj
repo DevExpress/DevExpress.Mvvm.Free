@@ -96,7 +96,6 @@
     <Compile Include="Native\ActionInvoker\WeakActionInvoker.cs" />
     <Compile Include="Native\AssemblyHelper.cs" />
     <Compile Include="Native\AsyncCommandFactory.cs" />
-    <Compile Include="Native\DefaultBoolean.cs" />
     <Compile Include="Native\DelegateCommandFactory.cs" />
     <Compile Include="Native\DesignTimeValuesProvider.cs" />
     <Compile Include="Native\EventFireCounter.cs" />
