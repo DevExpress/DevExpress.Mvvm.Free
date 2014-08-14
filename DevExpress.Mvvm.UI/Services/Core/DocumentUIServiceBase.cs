@@ -16,19 +16,28 @@ namespace DevExpress.Mvvm.UI {
         public static void SetDocument(DependencyObject obj, IDocument value) {
             obj.SetValue(DocumentProperty, value);
         }
+        public static void CheckDocumentAccess(bool isDocumentAlive) {
+            if(!isDocumentAlive)
+                throw new InvalidOperationException("Cannot access the destroyed document.");
+        }
         public static void SetTitleBinding(object documentContentView, DependencyProperty property, FrameworkElement target, bool convertToString = false) {
-            IDocumentViewModel documentViewModel = ViewHelper.GetViewModelFromView(documentContentView) as IDocumentViewModel;
-            if(documentViewModel == null) return;
-            if(ExpressionHelper.PropertyHasImplicitImplementation(documentViewModel, i => i.Title)) {
-                Binding binding = new Binding("Title") { Source = documentViewModel };
+            object viewModel = ViewHelper.GetViewModelFromView(documentContentView);
+            if(!DocumentViewModelHelper.IsDocumentContentOrDocumentViewModel(viewModel)) return;
+            if(DocumentViewModelHelper.TitlePropertyHasImplicitImplementation(viewModel)) {
+                Binding binding = new Binding("Title") { Source = viewModel };
 #if !SILVERLIGHT
                 if(convertToString)
                     binding.Converter = new ObjectToStringConverter();
 #endif
                 target.SetBinding(property, binding);
             } else {
-                new TitleUpdater(convertToString, documentViewModel, target, property).Update(target, documentViewModel);
+                new TitleUpdater(convertToString, viewModel, target, property).Update(target, viewModel);
             }
+        }
+        public static void CloseDocument(IDocumentManagerService documentManagerService, IDocumentContent documentContent, bool force) {
+            IDocument document = documentManagerService.FindDocument(documentContent);
+            if(document != null)
+                document.Close(force);
         }
         class TitleUpdater : IDisposable {
             #region
@@ -38,9 +47,9 @@ namespace DevExpress.Mvvm.UI {
             bool convertToString;
             DependencyProperty targetProperty;
             PropertyChangedWeakEventHandler<DependencyObject> updateHandler;
-            WeakReference documentViewModelRef;
+            WeakReference documentContentRef;
 
-            public TitleUpdater(bool convertToString, IDocumentViewModel documentViewModel, DependencyObject target, DependencyProperty targetProperty) {
+            public TitleUpdater(bool convertToString, object documentContentOrDocumentViewModel, DependencyObject target, DependencyProperty targetProperty) {
                 TitleUpdater oldUpdater = (TitleUpdater)target.GetValue(TitleUpdaterInternalProperty);
                 if(oldUpdater != null)
                     oldUpdater.Dispose();
@@ -48,34 +57,34 @@ namespace DevExpress.Mvvm.UI {
                 target.SetValue(TitleUpdaterInternalProperty, this);
                 this.targetProperty = targetProperty;
                 this.updateHandler = new PropertyChangedWeakEventHandler<DependencyObject>(target, OnDocumentViewModelPropertyChanged);
-                INotifyPropertyChanged notify = documentViewModel as INotifyPropertyChanged;
-                DocumentViewModel = notify;
+                INotifyPropertyChanged notify = documentContentOrDocumentViewModel as INotifyPropertyChanged;
+                DocumentContent = notify;
                 if(notify != null)
                     notify.PropertyChanged += this.updateHandler.Handler;
             }
             public void Dispose() {
-                INotifyPropertyChanged notify = DocumentViewModel;
+                INotifyPropertyChanged notify = DocumentContent;
                 if(notify != null)
                     notify.PropertyChanged -= this.updateHandler.Handler;
                 this.updateHandler = null;
-                DocumentViewModel = null;
+                DocumentContent = null;
             }
-            public void Update(DependencyObject target, IDocumentViewModel documentViewModel) {
-                object title = documentViewModel.Title;
+            public void Update(DependencyObject target, object documentContentOrDocumentViewModel) {
+                object title = DocumentViewModelHelper.GetTitle(documentContentOrDocumentViewModel);
 #if !SILVERLIGHT
                 if(convertToString)
                     title = title == null ? string.Empty : title.ToString();
 #endif
                 target.SetValue(targetProperty, title);
             }
-            INotifyPropertyChanged DocumentViewModel {
-                get { return documentViewModelRef == null ? null : (INotifyPropertyChanged)documentViewModelRef.Target; }
-                set { documentViewModelRef = value == null ? null : new WeakReference(value); }
+            INotifyPropertyChanged DocumentContent {
+                get { return documentContentRef == null ? null : (INotifyPropertyChanged)documentContentRef.Target; }
+                set { documentContentRef = value == null ? null : new WeakReference(value); }
             }
             static void OnDocumentViewModelPropertyChanged(DependencyObject target, object sender, PropertyChangedEventArgs e) {
                 if(e.PropertyName != "Title") return;
                 TitleUpdater updater = (TitleUpdater)target.GetValue(TitleUpdaterInternalProperty);
-                updater.Update(target, (IDocumentViewModel)sender);
+                updater.Update(target, sender);
             }
         }
 #if !SILVERLIGHT

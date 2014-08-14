@@ -305,7 +305,7 @@ namespace DevExpress.Mvvm.UI.Native {
         }
         static Rect GetScreenRectCore(Window window, FrameworkElement element) {
             var leftTop = element.PointToScreen(new Point());
-            var presentationSource = PresentationSource.FromVisual(window);
+            var presentationSource = window == null ? null : PresentationSource.FromVisual(window);
             if(presentationSource != null) {
                 double dpiX = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M11;
                 double dpiY = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M22;

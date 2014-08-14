@@ -33,8 +33,8 @@ namespace DevExpress.Mvvm.UI {
 #else
         DataTemplateSelector ViewTemplateSelector { get { return null; } }
 #endif
-        protected object CreateAndInitializeView(string documentType, object viewModel, object parameter, object parentViewModel) {
-            return ViewHelper.CreateAndInitializeView(ViewLocator, documentType, viewModel, parameter, parentViewModel, ViewTemplate, ViewTemplateSelector);
+        protected object CreateAndInitializeView(string documentType, object viewModel, object parameter, object parentViewModel, IDocumentOwner documentOwner = null) {
+            return ViewHelper.CreateAndInitializeView(ViewLocator, documentType, viewModel, parameter, parentViewModel, documentOwner, ViewTemplate, ViewTemplateSelector);
         }
 #if !SILVERLIGHT
         protected Style GetDocumentContainerStyle(DependencyObject documentContainer, object view, Style style, StyleSelector styleSelector) {

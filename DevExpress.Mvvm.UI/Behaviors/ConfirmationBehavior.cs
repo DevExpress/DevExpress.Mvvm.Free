@@ -1,3 +1,4 @@
+using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
 using System;
 using System.Linq;
@@ -13,6 +14,9 @@ namespace DevExpress.Mvvm.UI {
 #else
         static MessageBoxButton DefaultMessageBoxButton = MessageBoxButton.OKCancel;
 #endif
+        public static readonly DependencyProperty EnableConfirmationMessageProperty =
+            DependencyProperty.Register("EnableConfirmationMessage", typeof(bool), typeof(ConfirmationBehavior),
+            new PropertyMetadata(true));
         public static readonly DependencyProperty CommandProperty =
             DependencyProperty.Register("Command", typeof(ICommand), typeof(ConfirmationBehavior),
             new PropertyMetadata(null, (d, e) => ((ConfirmationBehavior)d).OnCommandChanged((ICommand)e.OldValue, (ICommand)e.NewValue)));
@@ -44,6 +48,10 @@ namespace DevExpress.Mvvm.UI {
             new PropertyMetadata(MessageBoxImage.None));
 #endif
 
+        public bool EnableConfirmationMessage {
+            get { return (bool)GetValue(EnableConfirmationMessageProperty); }
+            set { SetValue(EnableConfirmationMessageProperty, value); }
+        }
         public ICommand Command {
             get { return (ICommand)GetValue(CommandProperty); }
             set { SetValue(CommandProperty, value); }
@@ -146,23 +154,20 @@ namespace DevExpress.Mvvm.UI {
         internal IMessageBoxService GetActualService() {
             IMessageBoxService res = MessageBoxService;
             if(res != null) return res;
-            res = (IMessageBoxService)Interaction.GetBehaviors(AssociatedObject).FirstOrDefault(x => x is IMessageBoxService);
-            if(res != null) return res;
-            FrameworkElement associatedFrameworkElement = AssociatedObject as FrameworkElement;
-            if(associatedFrameworkElement != null && associatedFrameworkElement.DataContext is ISupportServices) {
-                ISupportServices viewModel = (ISupportServices)associatedFrameworkElement.DataContext;
+            ISupportServices viewModel = AssociatedObject.With(x => x as FrameworkElement).
+                Return(x => x.DataContext, null) as ISupportServices;
+            if(viewModel != null)
                 res = viewModel.ServiceContainer.GetService<IMessageBoxService>();
-            }
             if(res != null) return res;
 #if !SILVERLIGHT
             res = new MessageBoxService();
 #else
             res = new MessageBoxService();
 #endif
-            Interaction.GetBehaviors(AssociatedObject).Add((Behavior)res);
             return res;
         }
         bool ShowConfirmation() {
+            if (!EnableConfirmationMessage) return true;
             IMessageBoxService service = GetActualService();
 #if !SILVERLIGHT
             MessageBoxResult res = service.Show(MessageText, MessageTitle, MessageButton, MessageIcon, MessageDefaultResult);

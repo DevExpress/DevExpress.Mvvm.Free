@@ -1,4 +1,3 @@
-using DevExpress.Utils;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -11,13 +10,7 @@ using System.Windows.Markup;
 namespace DevExpress.Mvvm.UI {
     public class NumericToBooleanConverter : IValueConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if(value == null)
-                return false;
-            try {
-                var d = (double)System.Convert.ChangeType(value, typeof(double), null);
-                return d != 0d;
-            } catch(Exception) { }
-            return false;
+            return ConverterHelper.NumericToBoolean(value);
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) { return null; }
     }
@@ -94,38 +87,40 @@ namespace DevExpress.Mvvm.UI {
     public class BooleanToVisibilityConverter : IValueConverter {
         bool hiddenInsteadOfCollapsed;
         public bool Inverse { get; set; }
-        [Obsolete, Browsable(false)]
+        [Obsolete, Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public bool HiddenInsteadCollapsed { get { return hiddenInsteadOfCollapsed; } set { hiddenInsteadOfCollapsed = value; } }
         public bool HiddenInsteadOfCollapsed { get { return hiddenInsteadOfCollapsed; } set { hiddenInsteadOfCollapsed = value; } }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             bool booleanValue = ConverterHelper.GetBooleanValue(value);
-            return (booleanValue ^ Inverse) ?
-                Visibility.Visible :
-#if !SILVERLIGHT
-                (HiddenInsteadOfCollapsed ? Visibility.Hidden : Visibility.Collapsed);
-#else
-                Visibility.Collapsed;
-#endif
+            return ConverterHelper.BooleanToVisibility(booleanValue, Inverse, HiddenInsteadOfCollapsed);
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             bool booleanValue = (value is Visibility && (Visibility)value == Visibility.Visible) ^ Inverse;
-            if(targetType == typeof(DefaultBoolean))
-                return ConverterHelper.ToDefaultBoolean(booleanValue);
             return booleanValue;
         }
     }
+    public class NumericToVisibilityConverter : IValueConverter {
+        bool hiddenInsteadOfCollapsed;
+        public bool Inverse { get; set; }
+        public bool HiddenInsteadOfCollapsed { get { return hiddenInsteadOfCollapsed; } set { hiddenInsteadOfCollapsed = value; } }
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+            bool boolean = ConverterHelper.NumericToBoolean(value);
+            return ConverterHelper.BooleanToVisibility(boolean, Inverse, HiddenInsteadOfCollapsed);
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) { return null; }
+    }
+
+
     public class DefaultBooleanToBooleanConverter : IValueConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             bool? booleanValue = ConverterHelper.GetNullableBooleanValue(value);
             if(targetType == typeof(bool)) return booleanValue ?? false;
-            else if(targetType == typeof(DefaultBoolean)) return ConverterHelper.ToDefaultBoolean(booleanValue);
-            else return booleanValue;
+            return booleanValue;
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             bool? booleanValue = ConverterHelper.GetNullableBooleanValue(value);
             if(targetType == typeof(bool)) return booleanValue ?? false;
-            else if(targetType == typeof(bool?)) return booleanValue;
-            else return ConverterHelper.ToDefaultBoolean(booleanValue);
+            return booleanValue;
         }
     }
     public class BooleanNegationConverter : IValueConverter {
@@ -134,8 +129,7 @@ namespace DevExpress.Mvvm.UI {
             if(booleanValue != null)
                 booleanValue = !booleanValue.Value;
             if(targetType == typeof(bool)) return booleanValue ?? true;
-            else if(targetType == typeof(DefaultBoolean)) return ConverterHelper.ToDefaultBoolean(booleanValue);
-            else return booleanValue;
+            return booleanValue;
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             return Convert(value, targetType, parameter, culture);
@@ -169,16 +163,6 @@ namespace DevExpress.Mvvm.UI {
         public object FalseValue { get; set; }
         public object NullValue { get; set; }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if(value is DefaultBoolean) {
-                var asDefaultBoolean = (DefaultBoolean)value;
-                if(asDefaultBoolean == DefaultBoolean.True) {
-                    value = true;
-                } else if(asDefaultBoolean == DefaultBoolean.False) {
-                    value = false;
-                } else {
-                    value = null;
-                }
-            }
             if(value is bool?) {
                 value = (bool?)value == true;
             }
@@ -210,28 +194,36 @@ namespace DevExpress.Mvvm.UI {
             return false;
         }
         public static bool GetBooleanValue(object value) {
-            bool booleanValue = false;
-            if(value is bool) {
-                booleanValue = (bool)value;
-            } else if(value is bool?) {
+            if(value is bool)
+                return (bool)value;
+            if(value is bool?) {
                 bool? nullable = (bool?)value;
-                booleanValue = nullable.HasValue ? nullable.Value : false;
-            } else if(value is DefaultBoolean) {
-                booleanValue = (DefaultBoolean)value == DefaultBoolean.True;
+                return nullable.HasValue ? nullable.Value : false;
             }
-            return booleanValue;
+            return false;
         }
         public static bool? GetNullableBooleanValue(object value) {
             if(value is bool) return (bool)value;
             if(value is bool?) return (bool?)value;
-            if(value is DefaultBoolean) {
-                DefaultBoolean defaultBoolean = (DefaultBoolean)value;
-                return defaultBoolean == DefaultBoolean.Default ? (bool?)null : defaultBoolean == DefaultBoolean.True;
-            }
             return null;
         }
-        public static DefaultBoolean ToDefaultBoolean(bool? booleanValue) {
-            return booleanValue == null ? DefaultBoolean.Default : booleanValue.Value ? DefaultBoolean.True : DefaultBoolean.False;
+        public static bool NumericToBoolean(object value) {
+            if(value == null)
+                return false;
+            try {
+                var d = (double)System.Convert.ChangeType(value, typeof(double), null);
+                return d != 0d;
+            } catch(Exception) { }
+            return false;
+        }
+        public static Visibility BooleanToVisibility(bool booleanValue, bool inverse, bool hiddenInsteadOfCollapsed) {
+            return (booleanValue ^ inverse) ?
+                Visibility.Visible :
+#if !SILVERLIGHT
+ (hiddenInsteadOfCollapsed ? Visibility.Hidden : Visibility.Collapsed);
+#else
+                Visibility.Collapsed;
+#endif
         }
     }
 }

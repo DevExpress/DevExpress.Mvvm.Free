@@ -15,21 +15,21 @@ namespace DevExpress.Mvvm.UI {
                 return CreateAndInitializeView(viewLocator, documentType, null, parameter, parentViewModel, viewTemplate, viewTemplateSelector);
         }
         public static object CreateAndInitializeView(IViewLocator viewLocator, string documentType, object viewModel, object parameter, object parentViewModel, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {
+            return CreateAndInitializeView(viewLocator, documentType, viewModel, parameter, parentViewModel, null, viewTemplate, viewTemplateSelector);
+        }
+        public static object CreateAndInitializeView(IViewLocator viewLocator, string documentType, object viewModel, object parameter, object parentViewModel, IDocumentOwner documentOwner, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {
             object view = CreateView(viewLocator, documentType, viewTemplate, viewTemplateSelector);
-            InitializeView(view, viewModel, parameter, parentViewModel);
+            InitializeView(view, viewModel, parameter, parentViewModel, documentOwner);
             return view;
         }
-        public static void InitializeView(object view, object viewModel, object parameter, object parentViewModel) {
+        public static void InitializeView(object view, object viewModel, object parameter, object parentViewModel, IDocumentOwner documentOwner = null) {
+            object actualViewModel = viewModel ?? GetViewModelFromView(view);
+            actualViewModel.With(x => x as ISupportParameter).Do(x => x.Parameter = parameter);
+            actualViewModel.With(x => x as ISupportParentViewModel).Do(x => x.ParentViewModel = parentViewModel);
+            actualViewModel.With(x => x as IDocumentContent).Do(x => x.DocumentOwner = documentOwner);
             if(viewModel != null) {
-                viewModel.With(x => x as ISupportParameter).Do(x => x.Parameter = parameter);
-                viewModel.With(x => x as ISupportParentViewModel).Do(x => x.ParentViewModel = parentViewModel);
                 view.With(x => x as FrameworkElement).Do(x => x.DataContext = viewModel);
                 view.With(x => x as ContentPresenter).Do(x => x.Content = viewModel);
-                return;
-            }
-            if(viewModel == null) {
-                GetViewModelFromView(view).With(x => x as ISupportParameter).Do(x => x.Parameter = parameter);
-                GetViewModelFromView(view).With(x => x as ISupportParentViewModel).Do(x => x.ParentViewModel = parentViewModel);
             }
         }
         public static object CreateView(IViewLocator viewLocator, string documentType, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {

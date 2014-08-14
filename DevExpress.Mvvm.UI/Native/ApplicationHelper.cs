@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Resources;
 using System.Xml.Linq;
-using DevExpress.Utils;
 #if !SILVERLIGHT
 using System.Windows.Interop;
 #endif
