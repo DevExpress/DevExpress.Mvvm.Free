@@ -8,11 +8,26 @@
     mc:Ignorable="d" d:DesignHeight="500" d:DesignWidth="600"
     DataContext="{dxmvvm:ViewModelSource Type=ViewModel:MainViewModel}">
     
+    <UserControl.Resources>
+        <dxmvvm:BooleanNegationConverter x:Key="BooleanNegationConverter"/>
+        <dxmvvm:BooleanToObjectConverter x:Key="BooleanToObjectConverter" TrueValue="Saved!" FalseValue="Unsaved!"/>
+    </UserControl.Resources>
+    
     <Grid x:Name="LayoutRoot" Background="White">
-        <Button Content="Save" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <dxmvvm:Interaction.Behaviors>
-                <dxmvvm:ConfirmationBehavior Command="{Binding SaveCommand}" MessageText="Do you want to save?"/>
-            </dxmvvm:Interaction.Behaviors>
-        </Button>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal">
+            <Button Content="Save" Command="{Binding SaveCommand}"/>
+            <Button Content="Close">
+                <dxmvvm:Interaction.Behaviors>
+                    <dxmvvm:ConfirmationBehavior EnableConfirmationMessage="{Binding IsSaved, Converter={StaticResource BooleanNegationConverter}}" 
+                                                 Command="{Binding CloseCommand}" MessageText="Are you sure to close the unsaved document?"/>
+                </dxmvvm:Interaction.Behaviors>
+            </Button>
+            <TextBlock Text="{Binding IsSaved, Converter={StaticResource BooleanToObjectConverter}}"/>
+        </StackPanel>
+        <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Grid.Row="1"/>
     </Grid>
 </UserControl>

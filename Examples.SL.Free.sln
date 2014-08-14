@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleDependencyPropertyBe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleFocusBehavior.SL.Free", "Examples\ExampleFocusBehavior\ExampleFocusBehavior.SL.Free.csproj", "{A6407087-583D-46A9-A678-AC30C7E6DE61}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleAsyncCommand.SL.Free", "Examples\ExampleAsyncCommand\ExampleAsyncCommand.SL.Free.csproj", "{4B72E872-EBC1-44AE-81EF-39EC5CC69046}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +58,8 @@ Global
 		{B4B62C6D-B49E-476B-B2B8-FE1E827490FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6407087-583D-46A9-A678-AC30C7E6DE61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A6407087-583D-46A9-A678-AC30C7E6DE61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B72E872-EBC1-44AE-81EF-39EC5CC69046}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B72E872-EBC1-44AE-81EF-39EC5CC69046}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
