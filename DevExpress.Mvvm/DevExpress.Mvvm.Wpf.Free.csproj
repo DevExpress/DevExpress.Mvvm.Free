@@ -118,6 +118,7 @@
     <Compile Include="Services\DialogService\IDialogService.cs" />
     <Compile Include="Services\DialogService\DialogServiceExtensions.cs" />
     <Compile Include="Services\DispatcherService\IDispatcherService.cs" />
+    <Compile Include="Services\DocumentManagerService\IDocumentViewModel.cs" />
     <Compile Include="Services\FileDialogServices\IFileDialogServiceBase.cs" />
     <Compile Include="Services\FileDialogServices\IFileInfo.cs" />
     <Compile Include="Services\FileDialogServices\IFolderBrowserDialogService.cs" />
@@ -146,7 +147,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\DocumentManagerService\DocumentManagerServiceExtensions.cs" />
     <Compile Include="Services\DocumentManagerService\IDocument.cs" />
-    <Compile Include="Services\DocumentManagerService\IDocumentViewModel.cs" />
     <Compile Include="Services\DocumentManagerService\IDocumentManagerService.cs" />
     <Compile Include="Services\ServiceContainer.cs" />
     <Compile Include="Services\WindowService\IWindowService.cs" />
