@@ -1,0 +1,31 @@
+﻿<UserControl x:Class="Example.View.MainView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ViewModel="clr-namespace:Example.ViewModel"
+    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" d:DesignHeight="500" d:DesignWidth="600"
+    DataContext="{dxmvvm:ViewModelSource Type=ViewModel:MainViewModel}">
+    
+    <UserControl.Resources>
+        <dxmvvm:BooleanNegationConverter x:Key="BooleanNegationConverter"/>
+    </UserControl.Resources>
+    <dxmvvm:Interaction.Behaviors>
+        <dxmvvm:ValidationErrorsHostBehavior x:Name="validationErrorsHostBehavior"/>
+    </dxmvvm:Interaction.Behaviors>
+    <Grid x:Name="LayoutRoot" Background="White">
+        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="First Name: " VerticalAlignment="Center"/>
+                <TextBox Text="{Binding FirstName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" Width="120"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Last Name: " VerticalAlignment="Center"/>
+                <TextBox Text="{Binding LastName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" Width="120"/>
+            </StackPanel>
+            <Button Content="Save" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                IsEnabled="{Binding ElementName=validationErrorsHostBehavior, Path=HasErrors, Converter={StaticResource BooleanNegationConverter}}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
