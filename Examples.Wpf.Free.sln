@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleCustomAttachedBehavior.Wpf.Free", "Examples\ExampleCustomAttachedBehavior\ExampleCustomAttachedBehavior.Wpf.Free.csproj", "{022EB334-7BF3-4859-99A7-2A77B58C30E4}"
 EndProject
@@ -37,9 +37,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleDependencyPropertyBe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleFocusBehavior.Wpf.Free", "Examples\ExampleFocusBehavior\ExampleFocusBehavior.Wpf.Free.csproj", "{E95BDC8A-9623-4D64-A189-FA78B97F2CAC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleValidationErrorsHostBehavior.Wpf.Free", "Examples\ExampleValidationErrorsHostBehavior\ExampleValidationErrorsHostBehavior.Wpf.Free.csproj", "{43DE8653-E935-47E3-8616-D02CA8BC7D9D}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleAsyncCommand.Wpf.Free", "Examples\ExampleAsyncCommand\ExampleAsyncCommand.Wpf.Free.csproj", "{6EAD2F52-02FC-4129-B174-3B3D64F7402F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleValidationErrorsHostBehavior.Wpf.Free", "Examples\ExampleValidationErrorsHostBehavior\ExampleValidationErrorsHostBehavior.Wpf.Free.csproj", "{43DE8653-E935-47E3-8616-D02CA8BC7D9D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleEventToCommand.Wpf.Free", "Examples\ExampleEventToCommand\ExampleEventToCommand.Wpf.Free.csproj", "{3061F41F-88BF-43A0-8E40-8B046C6A1935}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -80,10 +82,12 @@ Global
 		{8D2DE645-159C-46EE-8146-B4E99D4C0883}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E95BDC8A-9623-4D64-A189-FA78B97F2CAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E95BDC8A-9623-4D64-A189-FA78B97F2CAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6EAD2F52-02FC-4129-B174-3B3D64F7402F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6EAD2F52-02FC-4129-B174-3B3D64F7402F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{43DE8653-E935-47E3-8616-D02CA8BC7D9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{43DE8653-E935-47E3-8616-D02CA8BC7D9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6EAD2F52-02FC-4129-B174-3B3D64F7402F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6EAD2F52-02FC-4129-B174-3B3D64F7402F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3061F41F-88BF-43A0-8E40-8B046C6A1935}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3061F41F-88BF-43A0-8E40-8B046C6A1935}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
