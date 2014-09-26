@@ -68,7 +68,7 @@ namespace DevExpress.Mvvm.UI {
         public IEnumerator<ApplicationJumpItem> GetEnumerator() {
             return implementation.GetItems().Select(ApplicationJumpItem.GetItem).GetEnumerator();
         }
-        #region
+        #region IList
         object syncRoot = new object();
 
         IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }

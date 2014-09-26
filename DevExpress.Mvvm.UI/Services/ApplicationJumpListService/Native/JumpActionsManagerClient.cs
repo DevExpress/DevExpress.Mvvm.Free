@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.MemoryMappedFiles;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.AccessControl;
@@ -11,8 +13,9 @@ using System.ServiceModel;
 using System.Threading;
 
 namespace DevExpress.Mvvm.UI.Native {
-    public abstract class JumpActionsManagerBase {
-        public const int DefaultMillisecondsTimeout = 30;
+    public abstract class JumpActionsManagerBase : IDisposable {
+        public const int DefaultMillisecondsTimeout = 500;
+        [StructLayout(LayoutKind.Sequential)]
         protected struct GuidData {
             public GuidData(Guid guid) : this(guid.ToByteArray()) { }
             public GuidData(byte[] bytes) {
@@ -38,6 +41,7 @@ namespace DevExpress.Mvvm.UI.Native {
             }
             public Guid AsGuid { get { return new Guid(AsBytesArray); } }
         }
+        [StructLayout(LayoutKind.Sequential)]
         protected struct InstancesProperties {
             public GuidData NameSuffix;
             public int InstancesCount;
@@ -47,19 +51,58 @@ namespace DevExpress.Mvvm.UI.Native {
             [OperationContract]
             void Execute(string command);
         }
+        protected class NamedFile {
+            public NamedFile(Tuple<IntPtr, IntPtr> file, GuidData nameSuffix) {
+                File = file;
+                NameSuffix = nameSuffix;
+            }
+            public Tuple<IntPtr, IntPtr> File { get; private set; }
+            public GuidData NameSuffix { get; private set; }
+        }
 
-        protected const string MainMutexName = "Global\\78E27AC7-D44D-4BC9-8035-B7E032F6E485_";
-        protected const string InstancesPropertiesFileName = "F23F13DB-7891-4E3E-90EC-BE0F00F136F4_";
-        protected const string InstanceNamePrefix = "20C14DA6-B82A-4370-8760-951ED22346CB_";
-        protected const string InstancesFileNamePrefix = "4EED163C-BC17-4840-A543-14FAF6D1BCEC_";
+        protected const string MainMutexName = "C4339FDC-8943-4AA6-8DB9-644D68462BC7_";
+        protected const string InstancesPropertiesFileName = "7BA4B4E1-BBB3-484F-89A5-75089CAA2B65_";
+        protected const string InstanceNamePrefix = "5BCE503C-DB8D-440A-BEEC-9C963A364DBF_";
+        protected const string InstancesFileNamePrefix = "E1E74EA7-B062-425F-AFFB-6517A3B5B075_";
         protected const string EndPointName = "Pipe";
         Mutex mainMutex;
-        MemoryMappedFile instancesPropertiesFile;
-        GuidData instancesFileNameSuffix = new GuidData(Guid.Empty);
-        MemoryMappedFile instancesFile = null;
+        Tuple<IntPtr, IntPtr> instancesPropertiesFile = null;
+        NamedFile instancesFile = new NamedFile(null, new GuidData(Guid.Empty));
+        volatile bool disposed = false;
 
         public JumpActionsManagerBase(int millisecondsTimeout) {
             MillisecondsTimeout = millisecondsTimeout;
+        }
+        ~JumpActionsManagerBase() {
+            Dispose(false);
+        }
+        public void Dispose() {
+            if(disposed) return;
+            disposed = true;
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        protected virtual void Dispose(bool disposing) {
+            Mutex mainMutex = GetMainMutex(!disposing);
+            WaitOne(mainMutex);
+            try {
+                DisposeInstancesFile();
+                DisposeInstancesPropertiesFile();
+            } finally {
+                mainMutex.ReleaseMutex();
+            }
+        }
+        [SecuritySafeCritical]
+        void DisposeInstancesPropertiesFile() {
+            if(instancesPropertiesFile == null) return;
+            UnmapViewAndCloseFileMapping(instancesPropertiesFile);
+            instancesPropertiesFile = null;
+        }
+        [SecuritySafeCritical]
+        void DisposeInstancesFile() {
+            if(instancesFile.File == null) return;
+            UnmapViewAndCloseFileMapping(instancesFile.File);
+            instancesFile = new NamedFile(null, new GuidData(Guid.Empty));
         }
         protected int MillisecondsTimeout { get; private set; }
         [SecuritySafeCritical]
@@ -71,87 +114,65 @@ namespace DevExpress.Mvvm.UI.Native {
         }
         [SecuritySafeCritical]
         protected Mutex GetMainMutexCore(bool safe) {
-            Mutex mutex = new Mutex(false, MainMutexName + ApplicationId);
-            MutexAccessRule accessRule = new MutexAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), MutexRights.FullControl, AccessControlType.Allow);
-            MutexSecurity security = new MutexSecurity();
-            security.AddAccessRule(accessRule);
-            mutex.SetAccessControl(security);
-            return mutex;
+            return new Mutex(false, MainMutexName + ApplicationId);
         }
         [SecuritySafeCritical]
-        MemoryMappedFile GetInstancesPropertiesFile(bool safe) {
-            if(safe) return GetInstancesPropertiesCoreFile(true);
-            if(instancesPropertiesFile == null)
-                instancesPropertiesFile = GetInstancesPropertiesCoreFile(false);
-            return instancesPropertiesFile;
-        }
-        [SecuritySafeCritical]
-        MemoryMappedFile GetInstancesPropertiesCoreFile(bool safe) {
-            try {
-                return MemoryMappedFile.OpenExisting(InstancesPropertiesFileName + ApplicationId);
-            } catch(FileNotFoundException) {
-                MemoryMappedFile instancesPropertiesFile = MemoryMappedFile.CreateNew(InstancesPropertiesFileName + ApplicationId, Marshal.SizeOf(typeof(InstancesProperties)));
-                try {
-                    UpdateInstancesFile(new GuidData[] { }, safe, instancesPropertiesFile, new GuidData(Guid.Empty));
-                } catch {
-                    instancesPropertiesFile.Dispose();
-                    throw;
+        Tuple<IntPtr, IntPtr> GetInstancesPropertiesFile() {
+            if(instancesPropertiesFile == null) {
+                bool alreadyExists;
+                instancesPropertiesFile = CreateFileMappingAndMapView(Marshal.SizeOf(typeof(InstancesProperties)), InstancesPropertiesFileName + ApplicationId, out alreadyExists);
+                if(!alreadyExists) {
+                    try {
+                        UpdateInstancesFile(new GuidData[] { }, new GuidData(Guid.Empty));
+                    } catch {
+                        DisposeInstancesPropertiesFile();
+                        throw;
+                    }
                 }
-                return instancesPropertiesFile;
             }
+            return instancesPropertiesFile;
         }
         protected string GetServiceUri(GuidData applicationInstance) {
             return string.Format("net.pipe://localhost/{0}{1}", InstanceNamePrefix, applicationInstance.AsGuid);
         }
         [SecuritySafeCritical]
-        protected GuidData[] GetApplicationInstances(bool safe) {
-            Tuple<MemoryMappedFile, int> instancesFile = GetInstancesFile(safe);
+        protected GuidData[] GetApplicationInstances(bool isCurrentProcessApplicationInstance) {
+            Tuple<NamedFile, int> instancesFile = GetInstancesFile(!isCurrentProcessApplicationInstance);
             if(instancesFile.Item2 == 0) return new GuidData[] { };
             GuidData[] instances = new GuidData[instancesFile.Item2];
-            using(var accessor = instancesFile.Item1.CreateViewAccessor())
-                accessor.ReadArray(0, instances, 0, instances.Length);
+            for(int i = 0; i < instances.Length; ++i)
+                instances[i] = (GuidData)Marshal.PtrToStructure(instancesFile.Item1.File.Item2 + i * Marshal.SizeOf(typeof(GuidData)), typeof(GuidData));
             return instances;
         }
         [SecuritySafeCritical]
-        protected Tuple<MemoryMappedFile, int> GetInstancesFile(bool safe) {
-            MemoryMappedFile instancesPropertiesFile = GetInstancesPropertiesFile(safe);
-            InstancesProperties listProperties;
-            using(var acccessor = instancesPropertiesFile.CreateViewAccessor())
-                acccessor.Read(0, out listProperties);
-            if(safe || listProperties.NameSuffix.AsGuid != this.instancesFileNameSuffix.AsGuid) {
-                MemoryMappedFile instancesFile = listProperties.NameSuffix.AsGuid == Guid.Empty ? null : MemoryMappedFile.OpenExisting(GetInstancesFileName(listProperties.NameSuffix));
-                if(safe) return new Tuple<MemoryMappedFile, int>(instancesFile, listProperties.InstancesCount);
-                if(this.instancesFile != null)
-                    this.instancesFile.Dispose();
-                instancesFileNameSuffix = listProperties.NameSuffix;
-                this.instancesFile = instancesFile;
+        protected Tuple<NamedFile, int> GetInstancesFile(bool isFileCreatedByAnotherProcess) {
+            Tuple<IntPtr, IntPtr> instancesPropertiesFile = GetInstancesPropertiesFile();
+            InstancesProperties listProperties = (InstancesProperties)Marshal.PtrToStructure(instancesPropertiesFile.Item2, typeof(InstancesProperties));
+            if(listProperties.NameSuffix.AsGuid != this.instancesFile.NameSuffix.AsGuid) {
+                DisposeInstancesFile();
+                if(listProperties.NameSuffix.AsGuid != Guid.Empty) {
+                    bool alreadyExists;
+                    instancesFile = new NamedFile(CreateFileMappingAndMapView(isFileCreatedByAnotherProcess ? 1 : 0, GetInstancesFileName(listProperties.NameSuffix), out alreadyExists), listProperties.NameSuffix);
+                }
             }
-            return new Tuple<MemoryMappedFile, int>(this.instancesFile, listProperties.InstancesCount);
+            return new Tuple<NamedFile, int>(instancesFile, listProperties.InstancesCount);
         }
         [SecuritySafeCritical]
-        protected void UpdateInstancesFile(GuidData[] instances, bool safe) {
-            GuidData instancesFileNameSuffix;
-            MemoryMappedFile instancesFile;
+        protected void UpdateInstancesFile(GuidData[] instances) {
+            DisposeInstancesFile();
             if(instances.Length != 0) {
-                instancesFileNameSuffix = new GuidData(Guid.NewGuid());
-                instancesFile = MemoryMappedFile.CreateNew(GetInstancesFileName(instancesFileNameSuffix), instances.Length * Marshal.SizeOf(typeof(GuidData)));
-                using(var accessor = instancesFile.CreateViewAccessor())
-                    accessor.WriteArray(0, instances, 0, instances.Length);
-            } else {
-                instancesFile = null;
-                instancesFileNameSuffix = new GuidData(Guid.Empty);
+                GuidData instancesFileNameSuffix = new GuidData(Guid.NewGuid());
+                bool alreadyExists;
+                instancesFile = new NamedFile(CreateFileMappingAndMapView(instances.Length * Marshal.SizeOf(typeof(GuidData)), GetInstancesFileName(instancesFileNameSuffix), out alreadyExists), instancesFileNameSuffix);
+                for(int i = 0; i < instances.Length; ++i)
+                    Marshal.StructureToPtr(instances[i], instancesFile.File.Item2 + i * Marshal.SizeOf(typeof(GuidData)), false);
             }
-            UpdateInstancesFile(instances, safe, GetInstancesPropertiesFile(safe), instancesFileNameSuffix);
-            if(!safe) {
-                this.instancesFileNameSuffix = instancesFileNameSuffix;
-                this.instancesFile = instancesFile;
-            }
+            UpdateInstancesFile(instances, instancesFile.NameSuffix);
         }
         [SecuritySafeCritical]
-        protected static void UpdateInstancesFile(GuidData[] instances, bool safe, MemoryMappedFile instancesPropertiesFile, GuidData instancesFileNameSuffix) {
+        protected void UpdateInstancesFile(GuidData[] instances, GuidData instancesFileNameSuffix) {
             InstancesProperties listProperties = new InstancesProperties() { InstancesCount = instances.Length, NameSuffix = instancesFileNameSuffix };
-            using(var acccessor = instancesPropertiesFile.CreateViewAccessor())
-                acccessor.Write(0, ref listProperties);
+            Marshal.StructureToPtr(listProperties, GetInstancesPropertiesFile().Item2, false);
         }
         static string GetInstancesFileName(GuidData instancesFileNameSuffix) {
             return InstancesFileNamePrefix + instancesFileNameSuffix.AsGuid.ToString();
@@ -161,6 +182,57 @@ namespace DevExpress.Mvvm.UI.Native {
                 throw new TimeoutException();
         }
         protected abstract string ApplicationId { get; }
+
+        [SecurityCritical]
+        Tuple<IntPtr, IntPtr> CreateFileMappingAndMapView(int dwMaximumSizeLow, string lpName, out bool alreadyExists) {
+            if(dwMaximumSizeLow == 0) {
+                dwMaximumSizeLow = 1;
+            }
+            IntPtr fileObject = Import.CreateFileMapping(Import.InvalidHandleValue, IntPtr.Zero, Import.PageReadwrite, 0, (uint)dwMaximumSizeLow, lpName);
+            if(fileObject == IntPtr.Zero)
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            alreadyExists = Marshal.GetLastWin32Error() == Import.ERROR_ALREADY_EXISTS;
+            IntPtr fileView = Import.MapViewOfFile(fileObject, Import.FileMapAllAccess, 0, 0, UIntPtr.Zero);
+            if(fileView == IntPtr.Zero)
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            return new Tuple<IntPtr, IntPtr>(fileObject, fileView);
+        }
+        [SecurityCritical]
+        void UnmapViewAndCloseFileMapping(Tuple<IntPtr, IntPtr> file) {
+            Import.UnmapViewOfFile(file.Item2);
+            Import.CloseHandle(file.Item1);
+        }
+        static class Import {
+            [DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+            public static extern IntPtr CreateFileMapping(
+                IntPtr lpBaseAddress,
+                IntPtr lpFileMappingAttributes,
+                uint flProtect,
+                uint dwMaximumSizeHigh,
+                uint dwMaximumSizeLow,
+                string lpName);
+
+            [DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+            public static extern IntPtr MapViewOfFile(
+                IntPtr hFileMappingObject,
+                uint dwDesiredAccess,
+                uint dwFileOffsetHigh,
+                uint dwFileOffsetLow,
+                UIntPtr dwNumberOfBytesToMap);
+
+            [return: MarshalAs(UnmanagedType.Bool)]
+            [DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+            public static extern bool UnmapViewOfFile(IntPtr lpBaseAddress);
+
+            [DllImport("kernel32.dll", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool CloseHandle(IntPtr hObject);
+
+            public const uint FileMapAllAccess = 0xF001F;
+            public const uint PageReadwrite = 0x04;
+            public static readonly IntPtr InvalidHandleValue = new IntPtr(-1);
+            public const int ERROR_ALREADY_EXISTS = 183;
+        }
     }
     public class JumpActionsManagerClient : JumpActionsManagerBase {
         string applicationId;

@@ -19,7 +19,7 @@ namespace DevExpress.Mvvm.UI {
     [TargetTypeAttribute(typeof(UserControl))]
     [TargetTypeAttribute(typeof(Window))]
     public class TaskbarButtonService : ServiceBase, ITaskbarButtonService {
-        #region
+        #region Dependency Properties
         public static readonly DependencyProperty ProgressStateProperty =
             DependencyProperty.Register("ProgressState", typeof(TaskbarItemProgressState), typeof(TaskbarButtonService),
             new FrameworkPropertyMetadata(TaskbarItemProgressState.None, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,

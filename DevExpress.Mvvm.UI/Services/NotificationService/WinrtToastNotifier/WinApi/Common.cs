@@ -20,7 +20,7 @@ namespace DevExpress.Internal.WinApi {
     }
 
     public static class ComFunctions {
-        #region
+        #region ctor
         static Dictionary<Type, Tuple<string, Guid>> knownTypes;
         static ComFunctions() {
             knownTypes = new Dictionary<Type, Tuple<string, Guid>>();
@@ -29,7 +29,7 @@ namespace DevExpress.Internal.WinApi {
             knownTypes[typeof(IToastNotificationManager)] =
                 Tuple.Create("Windows.UI.Notifications.ToastNotificationManager", new Guid("50AC103F-D235-4598-BBEF-98FE4D1A3AD4"));
         }
-        #endregion
+        #endregion ctor
         public const short
             UnmanagedType_HString = 47;
         public enum RO_INIT_TYPE {
@@ -60,7 +60,7 @@ namespace DevExpress.Internal.WinApi {
             internal static int RoInitialize(RO_INIT_TYPE initType) {
                 return Unsafe.RoInitialize(initType);
             }
-            #region
+            #region SecurityCritical
             static class Unsafe {
                 [DllImport("Combase.dll")]
                 internal static extern Int32 RoGetActivationFactory(
@@ -71,7 +71,7 @@ namespace DevExpress.Internal.WinApi {
                 [DllImport("Combase.dll")]
                 internal static extern Int32 RoInitialize(RO_INIT_TYPE initType);
             }
-            #endregion
+            #endregion SecurityCritical
         }
     }
 

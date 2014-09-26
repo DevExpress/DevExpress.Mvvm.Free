@@ -7,7 +7,7 @@ using System.Windows.Controls;
 
 namespace DevExpress.Mvvm.UI {
     public class ValidationErrorsHostBehavior : Behavior<FrameworkElement> {
-        #region
+        #region Dependency Properties
         public static readonly DependencyProperty ErrorsProperty =
             DependencyProperty.Register("Errors", typeof(IList<ValidationError>), typeof(ValidationErrorsHostBehavior), new PropertyMetadata(null,
                 (d, e) => ((ValidationErrorsHostBehavior)d).OnErrorsChanged(e),

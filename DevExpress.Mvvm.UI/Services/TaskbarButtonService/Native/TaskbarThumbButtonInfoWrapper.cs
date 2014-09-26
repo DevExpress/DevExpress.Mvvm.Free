@@ -40,7 +40,7 @@ namespace DevExpress.Mvvm.UI.Native {
                     InternalCommand.Execute(parameter);
             }
         }
-        #region
+        #region Dependency Properties
         public static readonly DependencyProperty TaskbarThumbButtonInfoProperty =
             DependencyProperty.RegisterAttached("TaskbarThumbButtonInfo", typeof(Container<TaskbarThumbButtonInfo>), typeof(TaskbarThumbButtonInfoWrapper), new PropertyMetadata(new Container<TaskbarThumbButtonInfo>(),
                 OnTaskbarThumbButtonInfoChanged));
@@ -50,7 +50,7 @@ namespace DevExpress.Mvvm.UI.Native {
         public static readonly DependencyProperty DoNotProcessPropertyChangedProperty =
             DependencyProperty.RegisterAttached("DoNotProcessPropertyChanged", typeof(bool), typeof(TaskbarThumbButtonInfoWrapper), new PropertyMetadata(false));
         #endregion
-        #region
+        #region ThumbButtonInfo Dependency Properties
         [IgnoreDependencyPropertiesConsistencyChecker]
         static readonly DependencyProperty ThumbButtonInfoCommandParameterProperty =
             DependencyProperty.RegisterAttached("ThumbButtonInfoCommandParameter", typeof(object), typeof(TaskbarThumbButtonInfoWrapper), new PropertyMetadata(new object(), OnThumbButtonInfoPropertyChanged));
@@ -82,7 +82,7 @@ namespace DevExpress.Mvvm.UI.Native {
         static readonly DependencyProperty ThumbButtonInfoVisibilityProperty =
             DependencyProperty.RegisterAttached("ThumbButtonInfoVisibility", typeof(object), typeof(TaskbarThumbButtonInfoWrapper), new PropertyMetadata(new object(), OnThumbButtonInfoPropertyChanged));
         #endregion
-        #region
+        #region TaskbarThumbButtonInfo Dependency Properties
         [IgnoreDependencyPropertiesConsistencyChecker]
         static readonly DependencyProperty TaskbarThumbButtonInfoCommandParameterProperty =
             DependencyProperty.RegisterAttached("TaskbarThumbButtonInfoCommandParameter", typeof(object), typeof(TaskbarThumbButtonInfoWrapper), new PropertyMetadata(new object(), OnTaskbarThumbButtonInfoPropertyChanged));

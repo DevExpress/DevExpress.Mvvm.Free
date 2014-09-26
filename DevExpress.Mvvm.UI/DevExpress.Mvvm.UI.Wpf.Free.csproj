@@ -70,11 +70,14 @@
   <ItemGroup>
     <Compile Include="Behaviors\ConfirmationBehavior.cs" />
     <Compile Include="Behaviors\DependencyPropertyBehavior.cs" />
+    <Compile Include="Behaviors\EventToCommand\EventToCommand.cs" />
+    <Compile Include="Behaviors\EventToCommand\EventToCommandBase.cs" />
+    <Compile Include="Behaviors\EventToCommand\IEventArgsConverter.cs" />
+    <Compile Include="Behaviors\EventToCommand\KeyToCommand.cs" />
     <Compile Include="Behaviors\FocusBehavior.cs" />
     <Compile Include="Behaviors\ValidationErrorsHostBehavior.cs" />
     <Compile Include="Behaviors\WindowFadeAnimationBehavior.cs" />
     <Compile Include="Converters.cs" />
-    <Compile Include="EventToCommand.cs" />
     <Compile Include="Interactivity\AttachableCollection.cs" />
     <Compile Include="Interactivity\AttachableObject.cs" />
     <Compile Include="Interactivity\Behavior.cs" />
@@ -89,7 +92,6 @@
     <Compile Include="Native\LayoutHelper.cs" />
     <Compile Include="Native\VisualTreeEnumerator.cs" />
     <Compile Include="Native\WeakEventHandler.cs" />
-    <Compile Include="Native\WindowSurrogate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\ApplicationJumpListService\ApplicationJumpItemCollection.cs" />
     <Compile Include="Services\ApplicationJumpListService\ApplicationJumpItems.cs" />
@@ -168,6 +170,7 @@
     <Compile Include="Services\TaskbarButtonService\TaskbarButtonService.cs" />
     <Compile Include="Services\TaskbarButtonService\TaskbarThumbButtonInfoCollection.cs" />
     <Compile Include="Services\WindowDocumentManagerService.cs" />
+    <Compile Include="Native\WindowSurrogate.cs" />
     <Compile Include="Services\WindowService.cs" />
     <Compile Include="SplashScreen\DXSplashScreen.cs" />
     <Compile Include="SplashScreen\DXSplashScreenExceptions.cs" />
@@ -177,6 +180,7 @@
     <Compile Include="ViewLocator\ViewLocator.cs" />
     <Compile Include="ViewLocator\ViewLocatorBase.cs" />
     <Compile Include="ViewModelSourceExtension.cs" />
+    <Compile Include="LayoutTreeHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\Bin\Framework4\DevExpress.Mvvm.UI.ApplicationJumpTaskLauncher.exe">
@@ -197,5 +201,6 @@
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

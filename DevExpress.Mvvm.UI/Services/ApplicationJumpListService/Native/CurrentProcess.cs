@@ -10,6 +10,6 @@ namespace DevExpress.Mvvm.UI.Native {
     public class CurrentProcess : ICurrentProcess {
         public string ExecutablePath { get { return NativeResourceManager.ApplicationExecutablePath; } }
         public IEnumerable<string> CommandLineArgs { get { return Environment.GetCommandLineArgs(); } }
-        public string ApplicationId { get { return NativeResourceManager.ApplicationId; } }
+        public string ApplicationId { get { return NativeResourceManager.ApplicationIdHash; } }
     }
 }

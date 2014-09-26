@@ -22,7 +22,7 @@ namespace DevExpress.Mvvm.UI.Native {
         void EndUpdate();
         void RegisterAction(IJumpAction jumpAction, string commandLineArgumentPrefix, Func<string> launcherPath);
     }
-    public class JumpActionsManager : JumpActionsManagerBase, IJumpActionsManager, IDisposable {
+    public class JumpActionsManager : JumpActionsManagerBase, IJumpActionsManager {
         static object factoryLock = new object();
         static Func<JumpActionsManager> factory = () => new JumpActionsManager();
         public static Func<JumpActionsManager> Factory {
@@ -74,37 +74,32 @@ namespace DevExpress.Mvvm.UI.Native {
         readonly Dictionary<string, RegisteredJumpAction> jumpActions = new Dictionary<string, RegisteredJumpAction>();
         GuidData applicationInstanceId;
         ServiceHost applicationInstanceHost;
-        bool registered = false;
+        volatile bool registered = false;
         ICurrentProcess currentProcess;
-        bool disposed = false;
-        bool updating = false;
+        volatile bool updating = false;
 
         public JumpActionsManager(ICurrentProcess currentProcess = null, int millisecondsTimeout = DefaultMillisecondsTimeout)
             : base(millisecondsTimeout) {
             this.currentProcess = currentProcess ?? new CurrentProcess();
         }
-        ~JumpActionsManager() {
-            Dispose(false);
-        }
-        public void Dispose() {
-            if(disposed) return;
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-        protected virtual void Dispose(bool disposing) {
-            if(disposing)
-                Monitor.Enter(jumpActions);
+        protected override void Dispose(bool disposing) {
             try {
-                Mutex mainMutex = GetMainMutex(!disposing);
-                WaitOne(mainMutex);
+                if(disposing)
+                    Monitor.Enter(jumpActions);
                 try {
-                    UnregisterInstance(!disposing);
+                    Mutex mainMutex = GetMainMutex(!disposing);
+                    WaitOne(mainMutex);
+                    try {
+                        UnregisterInstance(!disposing);
+                    } finally {
+                        mainMutex.ReleaseMutex();
+                    }
                 } finally {
-                    mainMutex.ReleaseMutex();
+                    if(disposing)
+                        Monitor.Exit(jumpActions);
                 }
             } finally {
-                if(disposing)
-                    Monitor.Exit(jumpActions);
+                base.Dispose(disposing);
             }
         }
         public void BeginUpdate() {
@@ -189,15 +184,14 @@ namespace DevExpress.Mvvm.UI.Native {
         void ClearActions() {
             jumpActions.Clear();
         }
-        void RegisterInstance(GuidData[] registeredApplicationInstances = null) {
+        void RegisterInstance() {
             if(registered) return;
-            if(registeredApplicationInstances == null)
-                registeredApplicationInstances = GetApplicationInstances(false);
+            GuidData[] registeredApplicationInstances = GetApplicationInstances(true);
             CreateInstance();
             GuidData[] newApplicationInstances = new GuidData[registeredApplicationInstances.Length + 1];
             newApplicationInstances[0] = applicationInstanceId;
             Array.Copy(registeredApplicationInstances, 0, newApplicationInstances, 1, registeredApplicationInstances.Length);
-            UpdateInstancesFile(newApplicationInstances, false);
+            UpdateInstancesFile(newApplicationInstances);
             registered = true;
         }
         void CreateInstance() {
@@ -213,7 +207,7 @@ namespace DevExpress.Mvvm.UI.Native {
         }
         void UnregisterInstance(bool safe) {
             if(!registered) return;
-            GuidData[] registeredApplicationInstances = GetApplicationInstances(safe);
+            GuidData[] registeredApplicationInstances = GetApplicationInstances(true);
             GuidData[] newApplicationInstances = new GuidData[registeredApplicationInstances.Length - 1];
             int i = 0;
             foreach(GuidData instance in registeredApplicationInstances) {
@@ -221,7 +215,7 @@ namespace DevExpress.Mvvm.UI.Native {
                 newApplicationInstances[i] = instance;
                 ++i;
             }
-            UpdateInstancesFile(newApplicationInstances, safe);
+            UpdateInstancesFile(newApplicationInstances);
             registered = false;
             if(!safe && applicationInstanceHost != null)
                 DeleteInstance();

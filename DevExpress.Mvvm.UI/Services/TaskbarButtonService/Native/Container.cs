@@ -15,7 +15,7 @@ namespace DevExpress.Mvvm.UI.Native {
             Content = content;
         }
         public T Content { get; private set; }
-        #region
+        #region Equality
         public override int GetHashCode() {
             return Content == null ? 0 : Content.GetHashCode();
         }

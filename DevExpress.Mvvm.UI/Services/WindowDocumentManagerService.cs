@@ -115,6 +115,8 @@ namespace DevExpress.Mvvm.UI {
 #if !SILVERLIGHT
         public static readonly DependencyProperty WindowStyleSelectorProperty =
             DependencyProperty.Register("WindowStyleSelector", typeof(StyleSelector), typeof(WindowedDocumentUIService), new PropertyMetadata(null));
+        public static readonly DependencyProperty SetWindowOwnerProperty =
+            DependencyProperty.Register("SetWindowOwner", typeof(bool), typeof(WindowedDocumentUIService), new PropertyMetadata(true));
 #endif
         public static readonly DependencyProperty WindowTypeProperty =
             DependencyProperty.Register("WindowType", typeof(Type), typeof(WindowedDocumentUIService), new PropertyMetadata(typeof(Window)));
@@ -142,6 +144,10 @@ namespace DevExpress.Mvvm.UI {
             get { return (StyleSelector)GetValue(WindowStyleSelectorProperty); }
             set { SetValue(WindowStyleSelectorProperty, value); }
         }
+        public bool SetWindowOwner {
+            get { return (bool)GetValue(SetWindowOwnerProperty); }
+            set { SetValue(SetWindowOwnerProperty, value); }
+        }
 #endif
         public Type WindowType {
             get { return (Type)GetValue(WindowTypeProperty); }
@@ -159,7 +165,7 @@ namespace DevExpress.Mvvm.UI {
 #if SILVERLIGHT
             window.RealWindow.Style = WindowStyle;
 #else
-            window.RealWindow.Owner = Window.GetWindow(AssociatedObject);
+            if(SetWindowOwner) window.RealWindow.Owner = Window.GetWindow(AssociatedObject);
             window.RealWindow.Style = GetDocumentContainerStyle(window.RealWindow, view, WindowStyle, WindowStyleSelector);
             window.RealWindow.WindowStartupLocation = this.WindowStartupLocation;
 #endif

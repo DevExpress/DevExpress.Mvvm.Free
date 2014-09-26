@@ -52,7 +52,7 @@ namespace DevExpress.Mvvm.UI {
                 yield return TaskbarThumbButtonInfoWrapper.UnWrap(item);
             }
         }
-        #region
+        #region IList
         object syncRoot = new object();
 
         int IList.Add(object value) {

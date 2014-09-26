@@ -38,7 +38,7 @@ namespace DevExpress.Mvvm.UI.Native {
             return new WpfPredefinedToastNotificationContentFactory();
         }
         class WpfPredefinedToastNotificationContentFactory : IPredefinedToastNotificationContentFactory {
-            #region
+            #region IPredefinedToastNotificationContentFactory Members
             public IPredefinedToastNotificationContent CreateContent(string bodyText) {
                 PredefinedToastNotificationVewModel vm = CreateDefaultViewModel();
                 vm.ToastTemplate = NotificationTemplate.LongText;

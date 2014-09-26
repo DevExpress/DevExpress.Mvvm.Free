@@ -83,7 +83,7 @@ namespace DevExpress.Mvvm.UI {
         protected override ApplicationJumpItem CreateInstanceCore() { return new ApplicationJumpPath(); }
     }
     public class ApplicationJumpTask : ApplicationJumpItem, IClickable, IApplicationJumpTaskInfoSource, IApplicationJumpTask {
-        #region
+        #region Dependency Properties
         public static readonly DependencyProperty CommandProperty =
             DependencyProperty.Register("Command", typeof(ICommand), typeof(ApplicationJumpTask), new PropertyMetadata(null));
         public static readonly DependencyProperty CommandParameterProperty =

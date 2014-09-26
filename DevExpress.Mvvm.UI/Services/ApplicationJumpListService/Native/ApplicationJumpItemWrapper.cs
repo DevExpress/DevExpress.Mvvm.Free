@@ -46,7 +46,7 @@ namespace DevExpress.Mvvm.UI.Native {
             ApplicationJumpPath = applicationJumpPath;
         }
         public ApplicationJumpPathInfo ApplicationJumpPath { get; private set; }
-        #region
+        #region Equality
         public static bool operator ==(ApplicationJumpPathWrap a, ApplicationJumpPathWrap b) {
             bool aIsNull = (object)a == null;
             bool bIsNull = (object)b == null;
@@ -71,7 +71,7 @@ namespace DevExpress.Mvvm.UI.Native {
             ApplicationJumpTask = applicationJumpTask;
         }
         public ApplicationJumpTaskInfo ApplicationJumpTask { get; private set; }
-        #region
+        #region Equality
         public static bool operator ==(ApplicationJumpTaskWrap a, ApplicationJumpTaskWrap b) {
             bool aIsNull = (object)a == null;
             bool bIsNull = (object)b == null;
@@ -89,7 +89,7 @@ namespace DevExpress.Mvvm.UI.Native {
             return this == obj as ApplicationJumpTaskWrap;
         }
         #endregion
-        #region
+        #region IJumpAction
         string IJumpAction.CommandId { get { return ApplicationJumpTask.CommandId; } }
         string IJumpAction.ApplicationPath { get { return ApplicationJumpTask.ApplicationPath; } }
         string IJumpAction.Arguments { get { return ApplicationJumpTask.Arguments; } }

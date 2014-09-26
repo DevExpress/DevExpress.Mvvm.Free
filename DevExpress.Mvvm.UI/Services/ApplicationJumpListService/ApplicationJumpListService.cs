@@ -21,7 +21,7 @@ namespace DevExpress.Mvvm.UI {
     [ContentProperty("Items")]
     public class ApplicationJumpListService : ServiceBase, IApplicationJumpListService, IApplicationJumpListImplementation {
         public const string CommandLineArgumentDefaultPrefix = "/APPLICATION_JUMP_TASK=";
-        #region
+        #region Dependency Properties
         public static readonly DependencyProperty CommandLineArgumentPrefixProperty =
             DependencyProperty.Register("CommandLineArgumentPrefix", typeof(string), typeof(ApplicationJumpListService), new PropertyMetadata(CommandLineArgumentDefaultPrefix));
         public static readonly DependencyProperty DefaultLauncherStorageFolderProperty =
@@ -253,10 +253,10 @@ namespace DevExpress.Mvvm.UI {
         IIconStorage CreateDefaultIconStorage() {
             return new IconStorage(GetBaseUri);
         }
-        #region
+        #region IApplicationJumpListService
         IApplicationJumpList IApplicationJumpListService.Items { get { return jumpList; } }
         #endregion
-        #region
+        #region IApplicationJumpListImplementation
         ApplicationJumpTaskInfo IApplicationJumpListImplementation.Find(string commandId) { return Find(commandId); }
         bool IApplicationJumpListImplementation.AddOrReplace(ApplicationJumpTaskInfo jumpTask) { return AddOrReplace(jumpTask); }
         void IApplicationJumpListImplementation.AddItem(ApplicationJumpItemInfo item) { AddItem(item); }

@@ -43,7 +43,7 @@ namespace DevExpress.Internal.WinApi {
                         (IToastNotificationAdapter)new ToastNotificationAdapter(appID, GetDefaultManager()) :
                         (IToastNotificationAdapter)new EmptyToastNotificationAdapter();
         }
-        #region
+        #region ToastNotifierAdapter
         class ToastNotificationAdapter : IToastNotificationAdapter {
             string appId;
             IToastNotifier notifier;

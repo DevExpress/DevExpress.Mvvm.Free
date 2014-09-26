@@ -25,7 +25,7 @@ namespace DevExpress.Internal {
         public IPredefinedToastNotification CreateToastNotificationTwoLineHeader(string headlineText, string bodyText) {
             return CreateToastNotification(DefaultFactory.CreateTwoLineHeaderContent(headlineText, bodyText));
         }
-        #region
+        #region IPredefinedToastNotificationContentFactory
         IPredefinedToastNotificationContentFactory factoryCore;
         IPredefinedToastNotificationContentFactory DefaultFactory {
             get {
@@ -51,7 +51,7 @@ namespace DevExpress.Internal {
                 return WinRTToastNotificationContent.CreateOneLineHeader(headlineText, bodyText1, bodyText2);
             }
         }
-        #endregion
+        #endregion IPredefinedToastNotificationContentFactory
     }
     class WinRTToastNotification : IPredefinedToastNotification {
         ToastNotificationHandlerInfo<HandlerDismissed> handlerDismissed;
@@ -74,7 +74,7 @@ namespace DevExpress.Internal {
         internal IToastNotificationAdapter Adapter {
             get { return adapterCore.Value; }
         }
-        #region
+        #region Events
         internal delegate void TypedEventHandler<TSender, TResult>(TSender sender, TResult args);
         internal event TypedEventHandler<IPredefinedToastNotification, ToastDismissalReason> Dismissed {
             add { handlerDismissed.Handler.Subscribe(value); }
@@ -88,8 +88,8 @@ namespace DevExpress.Internal {
             add { handlerFailed.Handler.Subscribe(value); }
             remove { handlerFailed.Handler.Unsubscribe(value); }
         }
-        #endregion
-        #region
+        #endregion Events
+        #region Handlers
         class ToastNotificationHandlerInfo<THandler> {
             public ToastNotificationHandlerInfo(Func<THandler> initializer) {
                 Handler = initializer();
@@ -138,7 +138,7 @@ namespace DevExpress.Internal {
                 return InvokeCore(sender, args, (h, s, a) => h(s, ToastNotificationFailedException.ToException(a.Error)));
             }
         }
-        #endregion
+        #endregion Handlers
         IToastNotification Notification;
         const uint WPN_E_TOAST_NOTIFICATION_DROPPED = 0x803E0207;
         public Task<ToastNotificationResultInternal> ShowAsync() {

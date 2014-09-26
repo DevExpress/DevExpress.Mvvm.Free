@@ -23,7 +23,6 @@ namespace DevExpress.Mvvm.UI.Native {
         static string versionOverride;
         static DateTime? applicationCreateTime = null;
         static string applicationExecutablePath;
-        static string applicationId;
         static string applicationIdHash;
         static Dictionary<string, Func<string>> variables;
         static object variablesLock = new object();
@@ -70,13 +69,6 @@ namespace DevExpress.Mvvm.UI.Native {
                 if(applicationExecutablePath == null)
                     applicationExecutablePath = AssemblyHelper.EntryAssembly.Return(a => a.Location, () => Path.Combine(Environment.CurrentDirectory, Environment.GetCommandLineArgs()[0]));
                 return applicationExecutablePath;
-            }
-        }
-        public static string ApplicationId {
-            get {
-                if(applicationId == null)
-                    applicationId = "A" + Uri.EscapeDataString(ApplicationExecutablePath);
-                return applicationId;
             }
         }
         public static string ApplicationIdHash {
