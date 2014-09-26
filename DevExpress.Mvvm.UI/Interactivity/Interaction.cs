@@ -1,10 +1,11 @@
 using DevExpress.Mvvm.UI.Native;
 using System;
+using System.ComponentModel;
 using System.Windows;
 
 namespace DevExpress.Mvvm.UI.Interactivity {
     public static class Interaction {
-        #region
+        #region Dependency Properties
 #if SILVERLIGHT
         const string BehaviorsPropertyName = "Behaviors";
         const string TriggersPropertyName = "Triggers";
@@ -17,6 +18,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             DependencyProperty.RegisterAttached(BehaviorsPropertyName, typeof(BehaviorCollection), typeof(Interaction), new PropertyMetadata(null, OnCollectionChanged));
         [IgnoreDependencyPropertiesConsistencyChecker]
         [Obsolete("This property is obsolete. Use the Behaviors property instead.")]
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static readonly DependencyProperty TriggersProperty =
             DependencyProperty.RegisterAttached(TriggersPropertyName, typeof(TriggerCollection), typeof(Interaction), new PropertyMetadata(null, OnCollectionChanged));
         #endregion
@@ -30,6 +32,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             return behaviors;
         }
         [Obsolete("This method is obsolete. Use the GetBehaviors method instead.")]
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static TriggerCollection GetTriggers(DependencyObject d) {
             TriggerCollection triggers = (TriggerCollection)d.GetValue(TriggersProperty);
             if(triggers == null) {

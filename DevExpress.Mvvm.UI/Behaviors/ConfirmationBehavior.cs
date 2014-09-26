@@ -8,7 +8,7 @@ using System.Windows.Input;
 
 namespace DevExpress.Mvvm.UI {
     public class ConfirmationBehavior : Behavior<DependencyObject> {
-        #region
+        #region Dependency Properties
 #if !SILVERLIGHT
         static MessageBoxButton DefaultMessageBoxButton = MessageBoxButton.YesNo;
 #else

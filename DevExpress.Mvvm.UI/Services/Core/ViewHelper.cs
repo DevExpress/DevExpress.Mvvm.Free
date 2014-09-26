@@ -3,6 +3,7 @@ using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace DevExpress.Mvvm.UI {
     public static class ViewHelper {
@@ -23,30 +24,53 @@ namespace DevExpress.Mvvm.UI {
             return view;
         }
         public static void InitializeView(object view, object viewModel, object parameter, object parentViewModel, IDocumentOwner documentOwner = null) {
-            object actualViewModel = viewModel ?? GetViewModelFromView(view);
-            actualViewModel.With(x => x as ISupportParameter).Do(x => x.Parameter = parameter);
-            actualViewModel.With(x => x as ISupportParentViewModel).Do(x => x.ParentViewModel = parentViewModel);
-            actualViewModel.With(x => x as IDocumentContent).Do(x => x.DocumentOwner = documentOwner);
             if(viewModel != null) {
+                if(parameter != null) viewModel.With(x => x as ISupportParameter).Do(x => x.Parameter = parameter);
+                if(parentViewModel != null) viewModel.With(x => x as ISupportParentViewModel).Do(x => x.ParentViewModel = parentViewModel);
+                if(documentOwner != null) viewModel.With(x => x as IDocumentContent).Do(x => x.DocumentOwner = documentOwner);
+
                 view.With(x => x as FrameworkElement).Do(x => x.DataContext = viewModel);
                 view.With(x => x as ContentPresenter).Do(x => x.Content = viewModel);
+                return;
             }
+            if(!(view is DependencyObject)) return;
+            if(ViewModelExtensions.GetParameter((DependencyObject)view) == null)
+                ViewModelExtensions.SetParameter((DependencyObject)view, parameter);
+            if(ViewModelExtensions.GetParentViewModel((DependencyObject)view) == null)
+                ViewModelExtensions.SetParentViewModel((DependencyObject)view, parentViewModel);
+            if(ViewModelExtensions.GetDocumentOwner((DependencyObject)view) == null)
+                ViewModelExtensions.SetDocumentOwner((DependencyObject)view, documentOwner);
         }
         public static object CreateView(IViewLocator viewLocator, string documentType, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {
             if(viewTemplate != null || viewTemplateSelector != null) {
-                var presenter = new ContentPresenter() {
-                    ContentTemplate = viewTemplate,
-#if !SILVERLIGHT
-                    ContentTemplateSelector = viewTemplateSelector
-#endif
-                };
-                return presenter;
+                return new ViewPresenter(viewTemplate, viewTemplateSelector);
             }
             IViewLocator actualLocator = viewLocator ?? (ViewLocator.Default ?? ViewLocator.Instance);
             return actualLocator.ResolveView(documentType);
         }
         public static object GetViewModelFromView(object view) {
             return view.With(x => x as FrameworkElement).With(x => x.DataContext);
+        }
+
+
+        class ViewPresenter : ContentPresenter {
+            public ViewPresenter(DataTemplate viewTemplate, DataTemplateSelector viewTemplateSelector) {
+                ContentTemplate = viewTemplate;
+#if !SILVERLIGHT
+                ContentTemplateSelector = viewTemplateSelector;
+#endif
+                Loaded += ViewPresenter_Loaded;
+            }
+            void ViewPresenter_Loaded(object sender, RoutedEventArgs e) {
+                if(VisualTreeHelper.GetChildrenCount(this) == 0) return;
+                var child = VisualTreeHelper.GetChild(this, 0);
+                var parameter = ViewModelExtensions.GetParameter(this);
+                var parentViewModel = ViewModelExtensions.GetParentViewModel(this);
+                var documentOwner = ViewModelExtensions.GetDocumentOwner(this);
+                if(parameter != null) ViewModelExtensions.SetParameter((DependencyObject)child, parameter);
+                if(parentViewModel != null) ViewModelExtensions.SetParentViewModel((DependencyObject)child, parentViewModel);
+                if(documentOwner != null) ViewModelExtensions.SetDocumentOwner((DependencyObject)child, documentOwner);
+            }
         }
     }
 }

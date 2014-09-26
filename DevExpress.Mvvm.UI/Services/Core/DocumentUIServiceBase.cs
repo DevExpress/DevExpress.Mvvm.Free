@@ -40,7 +40,7 @@ namespace DevExpress.Mvvm.UI {
                 document.Close(force);
         }
         class TitleUpdater : IDisposable {
-            #region
+            #region Dependency Properties
             static readonly DependencyProperty TitleUpdaterInternalProperty =
                 DependencyProperty.RegisterAttached("TitleUpdaterInternal", typeof(TitleUpdater), typeof(TitleUpdater), new PropertyMetadata(null));
             #endregion

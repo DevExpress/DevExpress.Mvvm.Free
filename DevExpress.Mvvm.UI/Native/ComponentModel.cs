@@ -224,12 +224,12 @@ namespace System.ComponentModel {
             return null;
         }
 
-        #region
+        #region IEnumerable<Attribute> Members
         IEnumerator<Attribute> IEnumerable<Attribute>.GetEnumerator() {
             return GetEnumerator();
         }
         #endregion
-        #region
+        #region IEnumerable Members
         Collections.IEnumerator Collections.IEnumerable.GetEnumerator() {
             return GetEnumerator();
         }

@@ -8,7 +8,7 @@ using System.Collections.Specialized;
 using DevExpress.Data.Browsing;
 #endif
 namespace DevExpress.Mvvm.UI.Native {
-    #region
+    #region WeakEventHandler
     public interface IWeakEventHandler<THandler> {
         THandler Handler { get; }
     }

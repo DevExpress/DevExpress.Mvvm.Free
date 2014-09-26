@@ -4,7 +4,7 @@ using System.Windows.Threading;
 
 namespace DevExpress.Mvvm.UI {
     public class DispatcherService : ServiceBase, IDispatcherService {
-        #region
+        #region Dependency Properties
         public static readonly DependencyProperty DelayProperty =
             DependencyProperty.Register("Delay", typeof(TimeSpan), typeof(DispatcherService),
             new PropertyMetadata(TimeSpan.Zero, (d,e) => ((DispatcherService)d).OnDelayChanged()));

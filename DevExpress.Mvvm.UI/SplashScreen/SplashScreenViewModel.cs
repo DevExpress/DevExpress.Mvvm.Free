@@ -37,7 +37,7 @@ namespace DevExpress.Mvvm.UI {
             IsIndeterminate = false;
             MaxProgress = 100;
             Progress = 50;
-            State = "State";
+            State = "Loading...";
         }
 
         bool isIndeterminate = true;

@@ -38,8 +38,8 @@ namespace DevExpress.Mvvm.UI {
         }
 
         bool lockPropertyValueChanged;
-        protected override void OnEvent(object eventArgs) {
-            base.OnEvent(eventArgs);
+        protected override void OnEvent(object sender, object eventArgs) {
+            base.OnEvent(sender, eventArgs);
             if(!string.IsNullOrEmpty(PropertyName)) return;
             DoFocus();
         }

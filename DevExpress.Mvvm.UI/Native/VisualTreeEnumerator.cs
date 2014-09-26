@@ -10,7 +10,7 @@ namespace DevExpress.Mvvm.UI.Native {
     public enum EnumeratorDirection { Forward, Backward }
 
     public abstract class NestedObjectEnumeratorBase : IEnumerator {
-        #region
+        #region inner class
         protected class EnumStack : Stack<IEnumerator> {
             public IEnumerator TopEnumerator {
                 get { return (IsEmpty == false) ? Peek() : null; }
@@ -146,7 +146,7 @@ namespace DevExpress.Mvvm.UI.Native {
             Reset();
             Stack = null;
         }
-        #region
+        #region IEnumerator Members
         DependencyObject current;
         object System.Collections.IEnumerator.Current {
             get { return current; }

@@ -20,7 +20,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
     }
 
     public class EventTriggerBase<T> : TriggerBase<T> where T : DependencyObject {
-        #region
+        #region Static
         [IgnoreDependencyPropertiesConsistencyChecker]
         public static readonly DependencyProperty EventNameProperty =
             DependencyProperty.Register("EventName", typeof(string), typeof(EventTriggerBase<T>),
@@ -168,12 +168,9 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         EventTriggerEventSubscriber EventHelper;
         public EventTriggerBase()
             : base() {
-                EventHelper = new EventTriggerEventSubscriber(OnEventCore);
+                EventHelper = new EventTriggerEventSubscriber(OnEvent);
         }
-        internal virtual void OnEventCore(object sender, object eventArgs) {
-            OnEvent(eventArgs);
-        }
-        protected virtual void OnEvent(object eventArgs) { }
+        protected virtual void OnEvent(object sender, object eventArgs) { }
         protected virtual void OnSourceChanged(object oldSource, object newSource) {
             RaiseSourceChangedCount++;
 #if !SILVERLIGHT

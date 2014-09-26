@@ -137,10 +137,10 @@ namespace DevExpress.Mvvm.UI.Native {
         public static FrameworkElement GetRoot(FrameworkElement element) {
             return FindRoot(element) as FrameworkElement;
         }
-        public static DependencyObject FindRoot(DependencyObject d) {
+        public static DependencyObject FindRoot(DependencyObject d, bool useLogicalTree = false) {
             DependencyObject current = d;
-            while(GetParent(current) != null)
-                current = GetParent(current);
+            while(GetParent(current, useLogicalTree) != null)
+                current = GetParent(current, useLogicalTree);
             return current;
         }
         public static DependencyObject GetParent(DependencyObject d, bool uselogicalTree = false) {
@@ -174,17 +174,19 @@ namespace DevExpress.Mvvm.UI.Native {
             }
             return null;
         }
-        public static T FindLayoutOrVisualParentObject<T>(DependencyObject child, bool useLogicalTree = false) where T : class {
-            return FindLayoutOrVisualParentObject(child, typeof(T), useLogicalTree) as T;
+        public static T FindLayoutOrVisualParentObject<T>(DependencyObject child, bool useLogicalTree = false, DependencyObject stopSearchNode = null) where T : class {
+            return FindLayoutOrVisualParentObject(child, typeof(T), useLogicalTree, stopSearchNode) as T;
         }
-        public static DependencyObject FindLayoutOrVisualParentObject(DependencyObject child, Predicate<DependencyObject> predicate, bool useLogicalTree = false) {
-            return FindLayoutOrVisualParentObjectCore(child, predicate, useLogicalTree);
+        public static DependencyObject FindLayoutOrVisualParentObject(DependencyObject child, Predicate<DependencyObject> predicate, bool useLogicalTree = false, DependencyObject stopSearchNode = null) {
+            return FindLayoutOrVisualParentObjectCore(child, predicate, useLogicalTree, stopSearchNode);
         }
-        public static DependencyObject FindLayoutOrVisualParentObject(DependencyObject child, Type parentType, bool useLogicalTree = false) {
-            return FindLayoutOrVisualParentObjectCore(child, element => parentType.IsAssignableFrom(element.GetType()), useLogicalTree);
+        public static DependencyObject FindLayoutOrVisualParentObject(DependencyObject child, Type parentType, bool useLogicalTree = false, DependencyObject stopSearchNode = null) {
+            return FindLayoutOrVisualParentObjectCore(child, element => parentType.IsAssignableFrom(element.GetType()), useLogicalTree, stopSearchNode);
         }
-        static DependencyObject FindLayoutOrVisualParentObjectCore(DependencyObject child, Predicate<DependencyObject> predicate, bool useLogicalTree) {
+        static DependencyObject FindLayoutOrVisualParentObjectCore(DependencyObject child, Predicate<DependencyObject> predicate, bool useLogicalTree, DependencyObject stopSearchNode = null) {
             while(child != null) {
+                if(child == stopSearchNode)
+                    break;
                 if(predicate(child))
                     return child;
                 child = GetParent(child, useLogicalTree);
@@ -192,14 +194,21 @@ namespace DevExpress.Mvvm.UI.Native {
             return null;
         }
 
-        public static FrameworkElement FindElement(FrameworkElement treeRoot, Predicate<FrameworkElement> predicate) {
+        internal static DependencyObject FindElementCore(DependencyObject treeRoot, Predicate<DependencyObject> predicate) {
             VisualTreeEnumerator en = new VisualTreeEnumerator(treeRoot);
             while(en.MoveNext()) {
-                FrameworkElement element = en.Current as FrameworkElement;
+                DependencyObject element = en.Current;
                 if(element != null && predicate(element))
                     return element;
             }
             return null;
+        }
+        public static FrameworkElement FindElement(FrameworkElement treeRoot, Predicate<FrameworkElement> predicate) {
+            return FindElementCore(treeRoot, x => {
+                if(x is FrameworkElement)
+                    return predicate((FrameworkElement)x);
+                return false;
+            }) as FrameworkElement;
         }
         public static FrameworkElement FindElementByName(FrameworkElement treeRoot, string name) {
             return FindElement(treeRoot, element => element.Name == name);
@@ -207,7 +216,7 @@ namespace DevExpress.Mvvm.UI.Native {
         public static FrameworkElement FindElementByType(FrameworkElement treeRoot, Type type) {
             return FindElement(treeRoot, element => element.GetType() == type);
         }
-        public static T FindElementByType<T>(FrameworkElement treeRoot) where T: FrameworkElement {
+        public static T FindElementByType<T>(FrameworkElement treeRoot) where T : FrameworkElement {
             return (T)FindElementByType(treeRoot, typeof(T));
         }
 
@@ -300,6 +309,10 @@ namespace DevExpress.Mvvm.UI.Native {
                         return new Rect(leftTop, new Size(element.ActualWidth, element.ActualHeight));
                     }
                 }
+            }
+            if(element == null) {
+                var screen = System.Windows.Forms.Screen.PrimaryScreen;
+                return new Rect(new Point(), new Size(screen.Bounds.Width, screen.Bounds.Height));
             }
             return GetScreenRectCore(Window.GetWindow(element), element);
         }
