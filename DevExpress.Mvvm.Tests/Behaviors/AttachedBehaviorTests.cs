@@ -139,7 +139,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             ViewModelDesignHelper.IsInDesignModeOverride = false;
         }
 
-        #region
+        #region RunTime
         [Test]
         public void TestBehaviorRegular_AttachInRunTime() {
             CheckAttach(new TestBehaviorRegular());
@@ -193,7 +193,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         #endregion
 
 
-        #region
+        #region DesignTime
         [Test]
         public void TestBehaviorRegular_NotAttachInDesignTime() {
             ViewModelDesignHelper.IsInDesignModeOverride = true;

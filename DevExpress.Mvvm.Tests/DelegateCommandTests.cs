@@ -25,7 +25,7 @@ namespace DevExpress.Mvvm.Tests {
         protected abstract CommandBase<T> CreateCommand<T>(Action<T> execute, Func<T, bool> canExecute, bool? useCommandManager = null);
         protected abstract void Execute(ICommand command, object parameter);
 
-        #region
+        #region Convert Parameter
         [Test]
         public void BoolParameter() {
             bool? param = null;
@@ -245,7 +245,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(Convert.ToString(today, CultureInfo.InvariantCulture), parameter);
         }
         #endregion
-        #region
+        #region Execute
         [Test]
         public void Execute1() {
             bool executed = false;
@@ -293,7 +293,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(2, counter);
         }
         #endregion
-        #region
+        #region CanExecute
         [Test]
         public void CanExecute() {
             bool canExecute = true;
@@ -341,7 +341,7 @@ namespace DevExpress.Mvvm.Tests {
         }
 #endif
         #endregion
-        #region
+        #region RaiseCanExecuteChanged
         void RaiseCanExecuteChangedTest<T>(CommandBase<T> command) {
             var counter = new CanExecuteChangedCounter(command);
             command.RaiseCanExecuteChanged();
@@ -388,7 +388,7 @@ namespace DevExpress.Mvvm.Tests {
         }
 #endif
         #endregion
-        #region
+        #region References and Memory
         public class ViewModel {
             public static int ExecuteCount;
             public ICommand Command { get; set; }

@@ -16,7 +16,7 @@ namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class DocumentManagerServiceTests {
         public class TestDocument : FrameworkElement, IDocument, IViewLocator {
-            #region
+            #region Dependency Properties
             public static readonly DependencyProperty TitleProperty =
                 DependencyProperty.Register("Title", typeof(string), typeof(TestDocument), new PropertyMetadata(null));
             #endregion

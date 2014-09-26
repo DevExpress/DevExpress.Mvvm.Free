@@ -166,7 +166,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 
     }
     public class SelectionChangedConverter : IEventArgsConverter {
-        object IEventArgsConverter.Convert(object args) {
+        object IEventArgsConverter.Convert(object sender, object args) {
             if(args is SelectionChangedEventArgs)
                 return ((SelectionChangedEventArgs)args).AddedItems[0];
             return null;

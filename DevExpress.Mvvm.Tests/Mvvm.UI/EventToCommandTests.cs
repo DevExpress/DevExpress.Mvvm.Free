@@ -13,6 +13,7 @@ using System.Windows.Controls.Primitives;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.POCO;
 using DevExpress.Mvvm.UI.Interactivity;
+using System.Windows.Threading;
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
@@ -341,9 +342,11 @@ namespace DevExpress.Mvvm.UI.Tests {
         [Test]
         public void SetEvent_RaiseEvent_CheckCommandExecuted() {
             bool commandExecuted = false;
-            EventToCommand eventToCommand = new EventToCommand() { Command = new DelegateCommand(() => {
-                commandExecuted = true;
-            })};
+            EventToCommand eventToCommand = new EventToCommand() {
+                Command = new DelegateCommand(() => {
+                    commandExecuted = true;
+                })
+            };
             Button button = new Button();
             eventToCommand.Event = Button.ClickEvent;
             eventToCommand.Attach(button);
@@ -445,13 +448,141 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueTestComplete();
         }
 
+        [Test]
+        public void EventArgsConverter_PassEventArgsToCommand() {
+            var button = new Button();
+            int dataContextChangedCount = 0;
+            int dataContextChangedCount2 = 0;
+            button.DataContextChanged += (d, e) => dataContextChangedCount2++;
+            var eventArgsConverter = new EventArgsConverterTestClass();
+            var eventToCommand = new EventToCommand() {
+                EventName = "DataContextChanged",
+                Command = new DelegateCommand(() => dataContextChangedCount++),
+                EventArgsConverter = eventArgsConverter
+            };
+            Interaction.GetBehaviors(button).Add(eventToCommand);
+            Assert.AreEqual(dataContextChangedCount2, dataContextChangedCount);
+            Assert.AreEqual(0, eventArgsConverter.Count);
+            button.DataContext = "1";
+            Assert.AreEqual(1, dataContextChangedCount);
+            Assert.AreEqual(dataContextChangedCount2, dataContextChangedCount);
+            Assert.AreEqual(1, eventArgsConverter.Count);
+            eventToCommand.PassEventArgsToCommand = false;
+            button.DataContext = "2";
+            Assert.AreEqual(2, dataContextChangedCount);
+            Assert.AreEqual(dataContextChangedCount2, dataContextChangedCount);
+            Assert.AreEqual(1, eventArgsConverter.Count);
+        }
+
+
+        void DispatcherTestCore(Action<EventToCommand> eventToCommandInitializer, bool checkImmediately) {
+            var button = new Button();
+            int dataContextChangedCount = 0;
+            int dataContextChangedCount2 = 0;
+            button.DataContextChanged += (d, e) => dataContextChangedCount2++;
+            var eventToCommand = new EventToCommand() {
+                EventName = "DataContextChanged",
+                Command = new DelegateCommand(() => dataContextChangedCount++),
+#if !SILVERLIGHT
+                DispatcherPriority = DispatcherPriority.Render,
+#endif
+            };
+            eventToCommandInitializer(eventToCommand);
+            Interaction.GetBehaviors(button).Add(eventToCommand);
+            Window.Content = button;
+            Assert.AreEqual(dataContextChangedCount2, dataContextChangedCount);
+            button.DataContext = "1";
+            if(!checkImmediately)
+                Assert.AreEqual(0, dataContextChangedCount);
+            else Assert.AreEqual(1, dataContextChangedCount);
+            Assert.AreEqual(1, dataContextChangedCount2);
+
+            EnqueueShowWindow();
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(() => {
+                Assert.AreEqual(1, dataContextChangedCount);
+            });
+            EnqueueTestComplete();
+        }
+#if !SILVERLIGHT
+        [Test]
+        public void DispatcherDefaultValues() {
+            EventToCommand eventToCommand = new EventToCommand();
+            Assert.AreEqual(null, eventToCommand.UseDispatcher);
+            Assert.AreEqual(null, eventToCommand.DispatcherPriority);
+            Assert.AreEqual(false, eventToCommand.ActualUseDispatcher);
+            Assert.AreEqual(DispatcherPriority.Normal, eventToCommand.ActualDispatcherPriority);
+
+            eventToCommand.DispatcherPriority = DispatcherPriority.Normal;
+            Assert.AreEqual(true, eventToCommand.ActualUseDispatcher);
+            Assert.AreEqual(DispatcherPriority.Normal, eventToCommand.ActualDispatcherPriority);
+            eventToCommand.DispatcherPriority = DispatcherPriority.Render;
+            Assert.AreEqual(DispatcherPriority.Render, eventToCommand.ActualDispatcherPriority);
+
+            eventToCommand.UseDispatcher = false;
+            Assert.AreEqual(false, eventToCommand.ActualUseDispatcher);
+
+            eventToCommand.DispatcherPriority = null;
+            eventToCommand.UseDispatcher = true;
+            Assert.AreEqual(true, eventToCommand.ActualUseDispatcher);
+            Assert.AreEqual(DispatcherPriority.Normal, eventToCommand.ActualDispatcherPriority);
+        }
+        [Test, Asynchronous]
+        public void NotNullDispatcherPriority_NullUseDispatcher() {
+            DispatcherTestCore(x => {
+                x.DispatcherPriority = DispatcherPriority.Render;
+            }, false);
+        }
+#endif
+        [Test, Asynchronous]
+        public void TrueUseDispatcher_NullDispatcherPriority() {
+            DispatcherTestCore(x => {
+                x.UseDispatcher = true;
+            }, false);
+        }
+
+#if !SILVERLIGHT
+        [Test, Asynchronous]
+        public void MarkRoutedEventsAsHandled() {
+            var button = new Button() { Name = "View" };
+            int counter1 = 0;
+            int counter2 = 0;
+            int counter3 = 0;
+            button.Loaded += (d, e) => counter1++;
+            var eventToCommand1 = new EventToCommand() {
+                PassEventArgsToCommand = true,
+                EventName = "Loaded",
+                Command = new DelegateCommand(() => counter2++),
+                SourceName = "View",
+                MarkRoutedEventsAsHandled = true,
+            };
+            var eventToCommand2 = new EventToCommand() {
+                PassEventArgsToCommand = true,
+                EventName = "Loaded",
+                Command = new DelegateCommand(() => counter3++),
+                SourceName = "View",
+                MarkRoutedEventsAsHandled = true,
+            };
+            Interaction.GetBehaviors(button).Add(eventToCommand1);
+            Interaction.GetBehaviors(button).Add(eventToCommand2);
+            Window.Content = button;
+            EnqueueShowWindow();
+            EnqueueCallback(() => {
+                Assert.AreEqual(1, counter1);
+                Assert.AreEqual(1, counter2);
+                Assert.AreEqual(0, counter3);
+            });
+            EnqueueTestComplete();
+        }
+#endif
+
         public enum EventToCommandType { AssociatedObject, SourceName, SourceObject }
         public class EventToCommandTestClass : EventToCommand {
             public EventToCommandType Type { get; set; }
             public int EventCount { get; set; }
             public object EventSender { get; set; }
-            internal override void OnEventCore(object sender, object eventArgs) {
-                base.OnEventCore(sender, eventArgs);
+            protected override void OnEvent(object sender, object eventArgs) {
+                base.OnEvent(sender, eventArgs);
                 EventCount++;
                 if(SourceName != null)
                     Type = EventToCommandType.SourceName;
@@ -460,6 +591,13 @@ namespace DevExpress.Mvvm.UI.Tests {
                 else
                     Type = EventToCommandType.SourceObject;
                 EventSender = sender;
+            }
+        }
+        public class EventArgsConverterTestClass : IEventArgsConverter {
+            public int Count { get; set; }
+            public object Convert(object sender, object args) {
+                Count++;
+                return null;
             }
         }
     }

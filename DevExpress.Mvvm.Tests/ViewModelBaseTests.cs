@@ -66,7 +66,7 @@ namespace DevExpress.Mvvm.Tests {
             var viewModel2 = new TestViewModel();
             Assert.AreEqual(1, viewModel2.InitializeInRuntimeCount);
         }
-        #region
+        #region command attrbute
         public abstract class CommandAttributeViewModelBaseCounters : ViewModelBase {
             public int BaseClassCommandCallCount;
             public int SimpleMethodCallCount;
@@ -220,7 +220,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.IsTrue(button.IsEnabled);
 
         }
-        #region
+        #region exceptions
 #pragma warning disable 0618
         public class NameConflictViewModel : ViewModelBase {
             [Command]

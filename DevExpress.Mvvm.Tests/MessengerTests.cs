@@ -130,7 +130,7 @@ namespace DevExpress.Mvvm.Tests {
             Messenger.Default = null;
         }
 
-        #region
+        #region Send
         [Test]
         public void SendNullMessage() {
             bool ok = false;
@@ -192,7 +192,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.IsNull(message3);
         }
         #endregion
-        #region
+        #region Message Inheritance
         [Test]
         public void MessageInheritance() {
             string message = null;
@@ -281,7 +281,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreSame(v, message4);
         }
         #endregion
-        #region
+        #region Register Unregister
         [Test]
         public void RegisterUnregister() {
             string message = null;
@@ -532,7 +532,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("test", message);
         }
         #endregion
-        #region
+        #region Custom Messenger
         [Test]
         public void CustomMessenger() {
             string message1 = null;
@@ -572,7 +572,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("test2", recipient2.Message);
         }
         #endregion
-        #region
+        #region Memory
         TestRecipient DeletingRecipientRecipient1;
         TestRecipient DeletingRecipientRecipient2;
         [Test]
@@ -684,7 +684,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.IsFalse(recipientReference.IsAlive);
         }
         #endregion
-        #region
+        #region Extension Methods
         [Test, ExpectedException(typeof(ArgumentNullException))]
         public void NullService1() {
             IMessenger service = null;

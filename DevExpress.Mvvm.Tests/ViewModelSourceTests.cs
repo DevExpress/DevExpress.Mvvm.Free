@@ -95,9 +95,9 @@ namespace DevExpress.Mvvm.Tests {
     }
     [TestFixture]
     public class ViewModelSourceTests : BaseWpfFixture {
-        #region
+        #region errors
 #pragma warning disable 0618
-        #region
+        #region properties
         public class POCOViewModel_InvalidMetadata_BindableAttributeOnNotVirtualProeprty {
             [BindableProperty]
             public string Property { get; set; }
@@ -367,7 +367,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
 
-        #region
+        #region commands
         public class POCOViewModel_MemberWithCommandName {
             public void Show() { ShowCommand++; }
             int ShowCommand = 0;
@@ -525,7 +525,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
 
-        #region
+        #region ctors
         public class InternalCtor {
             public InternalCtor() { }
             internal InternalCtor(int x) { }
@@ -571,7 +571,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
 
-        #region
+        #region services
         public class Services_NotServiceType {
             [ServiceProperty]
             public virtual SomeService Property { get { return null; } }
@@ -661,7 +661,7 @@ namespace DevExpress.Mvvm.Tests {
             CheckNotBindableProperty(viewModel, x => x.NotAutoImplementedProperty, (vm, x) => vm.NotAutoImplementedProperty = x, "x", "y");
         }
 
-        #region
+        #region property changed
         public class POCOViewModel_PropertyChangedBase {
             protected virtual void OnProtectedChangedMethodWithParamChanged(string oldValue) { }
             public virtual bool SealedProperty { get; set; }
@@ -692,8 +692,12 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void PropertyChangedTest() {
             POCOViewModel_PropertyChanged viewModel = ViewModelSource.Create<POCOViewModel_PropertyChanged>();
-            ((INotifyPropertyChanged)viewModel).PropertyChanged += (o, e) => Assert.IsTrue(viewModel.OnProtectedChangedMethodWithParamChangedCalled);
-            CheckBindableProperty(viewModel, x => x.ProtectedChangedMethodWithParam, (vm, x) => vm.ProtectedChangedMethodWithParam = x, "x", "y", (x, val) => Assert.AreEqual(val, x.ProtectedChangedMethodWithParamOldValue));
+            ((INotifyPropertyChanged)viewModel).PropertyChanged += (o, e) => Assert.IsFalse(viewModel.OnProtectedChangedMethodWithParamChangedCalled);
+            CheckBindableProperty(viewModel, x => x.ProtectedChangedMethodWithParam, (vm, x) => vm.ProtectedChangedMethodWithParam = x, "x", "y", (x, val) => {
+                Assert.IsTrue(x.OnProtectedChangedMethodWithParamChangedCalled);
+                x.OnProtectedChangedMethodWithParamChangedCalled = false;
+                Assert.AreEqual(val, x.ProtectedChangedMethodWithParamOldValue);
+            });
 
             CheckBindableProperty(viewModel, x => x.PublicChangedMethodWithoutParam, (vm, x) => vm.PublicChangedMethodWithoutParam = x, 1, 2, (x, val) => Assert.AreEqual(val + 1, x.PublicChangedMethodWithoutParamOldValue));
             CheckBindableProperty(viewModel, x => x.ProtectedInternalChangedMethodWithoutParam, (vm, x) => vm.ProtectedInternalChangedMethodWithoutParam = x, 1, 2, (x, val) => Assert.AreEqual(val + 1, x.ProtectedInternalChangedMethodWithoutParamOldValue));
@@ -730,7 +734,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
 
-        #region
+        #region property changing
         public class POCOViewModel_PropertyChanging {
             public virtual string Property1 { get; set; }
             public string Property1NewValue;
@@ -768,7 +772,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
 
-        #region
+        #region subscribe in constructor
         public class POCOViewModel_SubscribeInCtor {
             public POCOViewModel_SubscribeInCtor() {
                 ((INotifyPropertyChanged)this).PropertyChanged += POCOViewModel_SubscribeInCtor_PropertyChanged;
@@ -787,7 +791,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
 
-        #region
+        #region metadata
         public class POCOViewModel_WithMetadata {
             [BindableProperty(false)]
             public virtual string NotBindableProperty { get; set; }
@@ -869,7 +873,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
 
-        #region
+        #region IPOCOViewModelImplementation
         [Test]
         public void IPOCOViewModelImplementation() {
             var viewModel = ViewModelSource.Create<POCOViewModel>();
@@ -880,10 +884,13 @@ namespace DevExpress.Mvvm.Tests {
 
             viewModel.RaisePropertyChanged(x => x.Property5);
             Assert.AreEqual("Property5", propertyName);
+
+            viewModel.RaisePropertiesChanged();
+            Assert.AreEqual(string.Empty, propertyName);
         }
         #endregion
 
-        #region
+        #region commands
         [CLSCompliant(false)]
         public class POCOCommandsViewModel {
             public virtual string Property1 { get; set; }
@@ -999,7 +1006,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(117, viewModel.CloseLastParameter);
             Assert.AreEqual(1, viewModel.CloseCallCount);
         }
-        public class POCOAsyncCommandsCanExecute {
+        public class POCOAsyncCommands {
             public Task Show() {
                 return null;
             }
@@ -1007,7 +1014,7 @@ namespace DevExpress.Mvvm.Tests {
             public bool CanShow() {
                 return CanShowValue;
             }
-
+            [AsyncCommand(AllowMultipleExecution = true)]
             public Task Open(string parameter) {
                 return null;
             }
@@ -1017,7 +1024,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void AsyncCommandsCanExecute() {
-            POCOAsyncCommandsCanExecute viewModel = ViewModelSource.Create<POCOAsyncCommandsCanExecute>();
+            POCOAsyncCommands viewModel = ViewModelSource.Create<POCOAsyncCommands>();
             IAsyncCommand asyncCommand = (IAsyncCommand)TypeHelper.GetPropertyValue(viewModel, "ShowCommand");
             Assert.IsFalse(asyncCommand.CanExecute(null));
             viewModel.CanShowValue = true;
@@ -1026,6 +1033,14 @@ namespace DevExpress.Mvvm.Tests {
             asyncCommand = (IAsyncCommand)TypeHelper.GetPropertyValue(viewModel, "OpenCommand");
             Assert.IsTrue(asyncCommand.CanExecute("y"));
             Assert.IsFalse(asyncCommand.CanExecute("x"));
+        }
+        [Test]
+        public void AsyncCommandAllowMultipleExecutionAttributeTest() {
+            POCOAsyncCommands viewModel = ViewModelSource.Create<POCOAsyncCommands>();
+            AsyncCommand asyncCommand1 = (AsyncCommand)TypeHelper.GetPropertyValue(viewModel, "ShowCommand");
+            Assert.IsFalse(asyncCommand1.AllowMultipleExecution);
+            AsyncCommand<string> asyncCommand2 = (AsyncCommand<string>)TypeHelper.GetPropertyValue(viewModel, "OpenCommand");
+            Assert.IsTrue(asyncCommand2.AllowMultipleExecution);
         }
 
         public abstract class CommandAttributeViewModelBaseCounters {
@@ -1321,7 +1336,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(1, canExecuteChangedCount);
         }
         #endregion
-        #region
+        #region non default constructors
         public class POCOViewModel_NonDefaultConstructors {
             public string Property1 { get; set; }
             public string Property2 { get; set; }
@@ -1559,7 +1574,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
 
-        #region
+        #region inheriting INotifyPropertyCanged
         public class POCOViewModel_BindableBaseDescendant : BindableBase {
             public virtual string Property1 { get; set; }
 
@@ -1599,7 +1614,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
 
-        #region
+        #region services
         public class ParentViewModel : ViewModelBase { }
         public class SomeService { }
         public class POCOViewModel_ServicesViaCustomImplementationBase {
@@ -1837,7 +1852,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
 
-        #region
+        #region IsInDesignMode
         [Test]
         public void IsInDesignModeTest() {
             POCOViewModel_PropertyChanged viewModel = ViewModelSource.Create<POCOViewModel_PropertyChanged>();
@@ -1851,11 +1866,11 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
 
-        #region
+        #region inheritance
         #endregion
 
-        #region
-        #region
+        #region IsPOCOViewModel
+        #region classes
         public class IsPOCO_Empty { }
         public class IsPOCO_NotVirtualProperty {
             public int MyProperty { get; set; }
@@ -1952,7 +1967,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(IsPOCO_Method_Sealed)));
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(IsPOCO_Method_Command_Attribute_Sealed)));
 
-            #region
+            #region proeprties
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_InvalidMetadata_BindableAttributeOnNotVirtualProeprty)));
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_InvalidMetadata_BindableAttributeOnProeprtyWithInternalSetter)));
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_InvalidMetadata_BindableAttributeOnProeprtyWithoutSetter)));
@@ -1968,7 +1983,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_FinalProperty)));
             #endregion
 
-            #region
+            #region commands
             Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_MemberWithCommandName)));
             Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_MemberWithCommandName2)));
             Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(DuplicateNamesViewModel)));
@@ -1984,7 +1999,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(InvalidCanExecuteMethodNameViewModel)));
             #endregion
 
-            #region
+            #region ctors and services
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(InternalCtor)));
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(OnlyInternalCtor)));
 
@@ -2031,7 +2046,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
 
-        #region
+        #region IDataErrorInfo
 
         public class SimpleDataErrorInfoClass {
             [Required]

@@ -22,7 +22,7 @@ namespace DevExpress {
             this.cleanup = new LazyAssemblyMethodInfo(this.assembly, typeof(AssemblyCleanupAttribute));
         }
 
-        #region
+        #region IAssembly Members
         public MethodInfo AssemblyCleanupMethod {
             get { return this.cleanup.GetMethodInfo(); }
         }

@@ -117,6 +117,8 @@
     <Compile Include="MetadataBuilderTests.cs" />
     <Compile Include="Mvvm.UI\ConvertersTests.cs" />
     <Compile Include="Mvvm.UI\EventToCommandTests.cs" />
+    <Compile Include="Mvvm.UI\KeyGestureTests.cs" />
+    <Compile Include="Mvvm.UI\LayoutTreeHelperTests.cs" />
     <Compile Include="Mvvm.UI\ViewModelExtensionsTests.cs" />
     <Compile Include="Mvvm.UI\ViewModelSourceExtensionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -126,6 +128,7 @@
     <Compile Include="Services\FileDialogServicesTests.cs" />
     <Compile Include="Services\MessageBoxServiceBaseTests.cs" />
     <Compile Include="Services\ServiceContainerBaseTests.cs" />
+    <Compile Include="Services\ViewHelperTests.cs" />
     <Compile Include="SyncCollectionHelperTests.cs" />
     <Compile Include="TestHelper\AgTestHarness.cs" />
     <Compile Include="TestHelper\AgTestRunFilter.cs" />
@@ -163,6 +166,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <None Include="App.config" />
     <None Include="packages.config" />
     <None Include="Views\EventToCommandTestView.xaml" />
   </ItemGroup>
