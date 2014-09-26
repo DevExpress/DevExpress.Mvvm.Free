@@ -10,6 +10,7 @@ namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class BindableBaseTests {
         [Test]
+
         public void OnPropertiesChangedTest() {
             BindableBaseTest bb = new BindableBaseTest();
             int count = 0;
