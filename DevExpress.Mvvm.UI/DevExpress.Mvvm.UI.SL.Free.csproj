@@ -97,6 +97,7 @@
     <Compile Include="Interactivity\TargetTypeAttribute.cs" />
     <Compile Include="Interactivity\Trigger.cs" />
     <Compile Include="KeyGesture.cs" />
+    <Compile Include="LayoutTreeHelper.cs" />
     <Compile Include="Native\ApplicationHelper.cs" />
     <Compile Include="Native\ComponentModel.cs" />
     <Compile Include="Native\DPConsistencyCheckerAttribute.cs" />
@@ -125,7 +126,6 @@
     <Compile Include="ViewLocator\ViewLocator.cs" />
     <Compile Include="ViewLocator\ViewLocatorBase.cs" />
     <Compile Include="ViewModelSourceExtension.cs" />
-    <Compile Include="LayoutTreeHelper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Silverlight\$(SilverlightVersion)\Microsoft.Silverlight.CSharp.targets" />
   <ProjectExtensions>
