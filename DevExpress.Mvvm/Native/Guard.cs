@@ -1,7 +1,7 @@
 using System;
 
 namespace DevExpress.Utils {
-    #region
+    #region Guard
     public static class Guard {
         public static void ArgumentNotNull(object value, string name) {
             if (Object.ReferenceEquals(value, null))

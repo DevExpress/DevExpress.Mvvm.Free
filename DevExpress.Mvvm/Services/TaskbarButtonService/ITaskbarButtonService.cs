@@ -21,7 +21,7 @@ namespace DevExpress.Mvvm {
         void UpdateThumbnailClipMargin();
     }
     public class TaskbarThumbButtonInfo : Freezable, ITaskbarThumbButtonInfo {
-        #region
+        #region Dependency Properties
         public static readonly DependencyProperty CommandParameterProperty =
             DependencyProperty.Register("CommandParameter", typeof(object), typeof(TaskbarThumbButtonInfo), new PropertyMetadata(null));
         public static readonly DependencyProperty CommandProperty =
