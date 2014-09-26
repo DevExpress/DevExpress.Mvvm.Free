@@ -10,19 +10,6 @@ namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class BindableBaseTests {
         [Test]
-        public void PropertyChangedCallbackAndPropertyChangedEventOrderTest() {
-            BindableBaseTest bb = new BindableBaseTest();
-            bool propertyChangedCalled = false;
-            bb.PropertyChanged += (s, e) => {
-                propertyChangedCalled = true;
-                Assert.AreEqual("SomeProperty7", e.PropertyName);
-                Assert.AreEqual(0, bb.ChangedCallbackCallCount);
-            };
-            bb.SomeProperty7 = 777;
-            Assert.IsTrue(propertyChangedCalled);
-            Assert.AreEqual(1, bb.ChangedCallbackCallCount);
-        }
-        [Test]
         public void OnPropertiesChangedTest() {
             BindableBaseTest bb = new BindableBaseTest();
             int count = 0;
