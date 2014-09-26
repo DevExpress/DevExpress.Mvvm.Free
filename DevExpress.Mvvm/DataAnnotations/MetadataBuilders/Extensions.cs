@@ -9,7 +9,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
         DateTime
     }
     public static class PropertyMetadataBuilderExtensions {
-        #region
+        #region string
         public static PropertyMetadataBuilder<T, string> PasswordDataType<T>(this PropertyMetadataBuilder<T, string> builder) {
             return builder.SetDataTypeCore(PropertyDataType.Password);
         }
@@ -33,13 +33,13 @@ namespace DevExpress.Mvvm.DataAnnotations {
         }
         #endregion
 
-        #region
+        #region numeric
         internal static PropertyMetadataBuilder<T, TProperty> CurrencyDataTypeCore<T, TProperty>(this PropertyMetadataBuilder<T, TProperty> builder) {
             return builder.SetDataTypeCore(PropertyDataType.Currency);
         }
         #endregion
 
-        #region
+        #region date time
         public static PropertyMetadataBuilder<T, DateTime> DateTimeDataType<T>(this PropertyMetadataBuilder<T, DateTime> builder, DateTimeDisplayMode displayMode = DateTimeDisplayMode.Date) {
             return builder.SetDataTypeCore(GetDataTypeByDateTimeDisplayMode(displayMode));
         }

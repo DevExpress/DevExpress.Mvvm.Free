@@ -24,7 +24,7 @@ namespace DevExpress.Mvvm.Native {
             }
             return null;
         }
-        #region
+        #region scaffolding
 #if !SILVERLIGHT
         internal static Type GetScaffoldColumnAttributeType() {
             return typeof(ScaffoldColumnAttribute);
@@ -70,7 +70,7 @@ namespace DevExpress.Mvvm.Native {
         internal static TBuilder SetDataTypeCore<TBuilder>(TBuilder builder, PropertyDataType dataType) where TBuilder : IAttributeBuilderInternal<TBuilder> {
             return builder.AddOrReplaceAttribute(new DataTypeAttribute(ToDataType(dataType)));
         }
-        #region
+        #region data type conversion
         static DataType ToDataType(PropertyDataType dataType) {
             switch(dataType) {
                 case PropertyDataType.Currency:

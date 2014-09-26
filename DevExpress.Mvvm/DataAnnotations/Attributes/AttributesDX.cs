@@ -58,7 +58,7 @@ namespace DevExpress.Mvvm.Native {
         public int Length { get; private set; }
     }
 
-    #region
+    #region regex
     internal abstract class RegexAttributeBase : DXDataTypeAttribute {
         protected const RegexOptions DefaultRegexOptions =
 #if !SILVERLIGHT

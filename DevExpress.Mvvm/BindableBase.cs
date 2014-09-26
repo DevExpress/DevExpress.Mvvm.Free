@@ -30,9 +30,9 @@ namespace DevExpress.Mvvm {
         }
 
         void CallChangedCallBackAndRaisePropertyChanged(string propertyName, Action changedCallback) {
+            RaisePropertyChanged(propertyName);
             if(changedCallback != null)
                 changedCallback();
-            RaisePropertyChanged(propertyName);
         }
 
         protected bool SetProperty<T>(ref T storage, T value, string propertyName) {

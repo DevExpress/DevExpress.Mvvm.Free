@@ -10,7 +10,7 @@ using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm {
     public class Messenger : IMessenger {
-        #region
+        #region Inner Classes
         public struct ActionInvokerTokenPair {
             public readonly IActionInvoker ActionInvoker;
             public readonly object Token;

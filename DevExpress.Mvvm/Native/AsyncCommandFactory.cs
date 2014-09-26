@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 namespace DevExpress.Mvvm.Native {
     public static class AsyncCommandFactory {
         internal static MethodInfo GetGenericMethodWithResult(Type parameterType1, Type parameterType2, bool withUseCommandManagerParameter) {
-            var method = GetMethodByParameter("CreateFromFunction", withUseCommandManagerParameter ? new Type[] { typeof(Func<,>), typeof(Func<,>), typeof(bool) } : new Type[] { typeof(Func<,>), typeof(Func<,>) });
+            var method = GetMethodByParameter("CreateFromFunction", withUseCommandManagerParameter ? new Type[] { typeof(Func<,>), typeof(Func<,>), typeof(bool), typeof(bool) } : new Type[] { typeof(Func<,>), typeof(Func<,>), typeof(bool) });
             return method.MakeGenericMethod(parameterType1, parameterType2);
         }
         internal static MethodInfo GetSimpleMethodWithResult(Type parameterType, bool withUseCommandManagerParameter) {
-            var method = GetMethodByParameter("CreateFromFunction", withUseCommandManagerParameter ? new Type[] { typeof(Func<>), typeof(Func<bool>), typeof(bool) } : new Type[] { typeof(Func<>), typeof(Func<bool>) });
+            var method = GetMethodByParameter("CreateFromFunction", withUseCommandManagerParameter ? new Type[] { typeof(Func<>), typeof(Func<bool>), typeof(bool), typeof(bool) } : new Type[] { typeof(Func<>), typeof(Func<bool>), typeof(bool) });
             return method.MakeGenericMethod(parameterType);
         }
         static MethodInfo GetMethodByParameter(string methodName, Type[] parameterTypes) {
@@ -36,25 +36,25 @@ namespace DevExpress.Mvvm.Native {
             return null;
         }
 
-        public static AsyncCommand<T> CreateFromFunction<T, TResult>(Func<T, Task> executeMethod, Func<T, bool> canExecuteMethod, bool useCommandManager) {
+        public static AsyncCommand<T> CreateFromFunction<T, TResult>(Func<T, Task> executeMethod, Func<T, bool> canExecuteMethod, bool allowMultipleExecution, bool useCommandManager) {
 #if !SILVERLIGHT
-            return new AsyncCommand<T>(x => executeMethod(x), canExecuteMethod, useCommandManager);
+            return new AsyncCommand<T>(x => executeMethod(x), canExecuteMethod, allowMultipleExecution, useCommandManager);
 #else
-            return new AsyncCommand<T>(x => executeMethod(x), canExecuteMethod);
+            return new AsyncCommand<T>(x => executeMethod(x), canExecuteMethod, allowMultipleExecution);
 #endif
         }
-        public static AsyncCommand<T> CreateFromFunction<T, TResult>(Func<T, Task> executeMethod, Func<T, bool> canExecuteMethod) {
-            return new AsyncCommand<T>(x => executeMethod(x), canExecuteMethod);
+        public static AsyncCommand<T> CreateFromFunction<T, TResult>(Func<T, Task> executeMethod, Func<T, bool> canExecuteMethod, bool allowMultipleExecution) {
+            return new AsyncCommand<T>(x => executeMethod(x), canExecuteMethod, allowMultipleExecution);
         }
-        public static AsyncCommand CreateFromFunction<TResult>(Func<Task> executeMethod, Func<bool> canExecuteMethod, bool useCommandManager) {
+        public static AsyncCommand CreateFromFunction<TResult>(Func<Task> executeMethod, Func<bool> canExecuteMethod, bool allowMultipleExecution, bool useCommandManager) {
 #if !SILVERLIGHT
-            return new AsyncCommand(() => executeMethod(), canExecuteMethod, useCommandManager);
+            return new AsyncCommand(() => executeMethod(), canExecuteMethod, allowMultipleExecution, useCommandManager);
 #else
-            return new AsyncCommand(() => executeMethod(), canExecuteMethod);
+            return new AsyncCommand(() => executeMethod(), canExecuteMethod, allowMultipleExecution);
 #endif
         }
-        public static AsyncCommand CreateFromFunction<TResult>(Func<Task> executeMethod, Func<bool> canExecuteMethod) {
-            return new AsyncCommand(() => executeMethod(), canExecuteMethod);
+        public static AsyncCommand CreateFromFunction<TResult>(Func<Task> executeMethod, Func<bool> canExecuteMethod, bool allowMultipleExecution) {
+            return new AsyncCommand(() => executeMethod(), canExecuteMethod, allowMultipleExecution);
         }
     }
 }

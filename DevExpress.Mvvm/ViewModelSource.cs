@@ -35,7 +35,7 @@ namespace DevExpress.Mvvm.POCO {
         void RaisePropertyChanged(string propertyName);
     }
     public class ViewModelSource {
-        #region
+        #region error messages
         internal const string Error_ObjectDoesntImplementIPOCOViewModel = "Object doesn't implement IPOCOViewModel.";
         internal const string Error_CommandNotFound = "Command not found: {0}.";
         internal const string Error_CommandNotAsync = "Command is not async";
@@ -95,7 +95,7 @@ namespace DevExpress.Mvvm.POCO {
             var actualAxpression = GetCtorExpression(constructorExpression, typeof(T), false);
             return Expression.Lambda<Func<T>>(actualAxpression).Compile()();
         }
-        #region
+        #region GetFactory
         public static Func<TResult> Factory<TResult>(Expression<Func<TResult>> constructorExpression) where TResult : class {
             return GetFactoryCore(constructorExpression, typeof(TResult));
         }
@@ -131,7 +131,7 @@ namespace DevExpress.Mvvm.POCO {
         }
         #endregion
 
-        #region
+        #region helpers
         static TDelegate GetFactoryCore<TDelegate>(Expression<TDelegate> constructorExpression, Type resultType) {
             ValidateCtorExpression(constructorExpression, true);
             return GetFactoryCore<TDelegate>(() => CreateFactory(constructorExpression, resultType));
@@ -313,7 +313,7 @@ namespace DevExpress.Mvvm.POCO {
 
         }
 
-        #region
+        #region constructors
         static void BuildConstructors(Type type, TypeBuilder typeBuilder) {
             var ctors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => CanAccessFromDescendant(x)).ToArray();
             if(!ctors.Any()) {
@@ -342,7 +342,7 @@ namespace DevExpress.Mvvm.POCO {
         }
         #endregion
 
-        #region
+        #region bindable properties
         static void BuildBindableProperties(Type type, TypeBuilder typeBuilder, MethodInfo raisePropertyChangedMethod) {
             foreach(var propertyInfo in GetBindableProperties(type)) {
                 var getter = BuildBindablePropertyGetter(typeBuilder, propertyInfo.GetGetMethod());
@@ -485,16 +485,16 @@ namespace DevExpress.Mvvm.POCO {
             gen.Emit(OpCodes.Ldarg_1);
             gen.Emit(OpCodes.Call, setMethod);
 
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Ldstr, property.Name);
+            gen.Emit(OpCodes.Call, raisePropertyChangedMethod);
+
             if(propertyChangedMethod != null) {
                 gen.Emit(OpCodes.Ldarg_0);
                 if(propertyChangedMethod.GetParameters().Length == 1)
                     gen.Emit(OpCodes.Ldloc_0);
                 gen.Emit(OpCodes.Call, propertyChangedMethod);
             }
-
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Ldstr, property.Name);
-            gen.Emit(OpCodes.Call, raisePropertyChangedMethod);
 
             gen.MarkLabel(returnLabel);
             gen.Emit(OpCodes.Ret);
@@ -503,7 +503,7 @@ namespace DevExpress.Mvvm.POCO {
         }
         #endregion
 
-        #region
+        #region INotifyPropertyChanged implementation
         static MethodBuilder BuildGetPropertyChangedHelperMethod(TypeBuilder type) {
             FieldBuilder propertyChangedHelperField = type.DefineField("propertyChangedHelper", typeof(PropertyChangedHelper), FieldAttributes.Private);
 
@@ -608,7 +608,7 @@ namespace DevExpress.Mvvm.POCO {
         }
         #endregion
 
-        #region
+        #region IPOCOViewModel implementation
         static void ImplementIPOCOViewModel(TypeBuilder typeBuilder, MethodInfo raisePropertyChangedMethod) {
             var raisePropertyChangedMethodImplementation = BuildIPOCOViewModel_RaisePropertyChangedMethod(typeBuilder, raisePropertyChangedMethod);
             IPOCOViewModel pocoViewModel = null;
@@ -667,7 +667,7 @@ namespace DevExpress.Mvvm.POCO {
             return false;
         }
 
-        #region
+        #region commands
         static void BuildCommands(Type type, TypeBuilder typeBuilder) {
             MethodInfo[] methods = GetCommandMethods(type).ToArray();
             foreach(var commandMethod in methods) {
@@ -782,6 +782,11 @@ namespace DevExpress.Mvvm.POCO {
             } else {
                 gen.Emit(OpCodes.Ldnull);
             }
+            if(isAsyncCommand) {
+                AsyncCommandAttribute attribute = ViewModelBase.GetAttribute<AsyncCommandAttribute>(commandMethod);
+               bool allowMultipleExecution=attribute != null ? attribute.AllowMultipleExecution : false;
+               gen.Emit(allowMultipleExecution ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+            }
             if(useCommandManager != null)
                 gen.Emit(useCommandManager.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
             gen.Emit(OpCodes.Call, createCommandMethod);
@@ -805,7 +810,7 @@ namespace DevExpress.Mvvm.POCO {
         }
         #endregion
 
-        #region
+        #region services
         static void ImplementISupportServices(Type type, TypeBuilder typeBuilder) {
             if(typeof(ISupportServices).IsAssignableFrom(type))
                 return;
@@ -927,7 +932,7 @@ namespace DevExpress.Mvvm.POCO {
         }
         #endregion
 
-        #region
+        #region ISupportParentViewModel
         static void ImplementISupportParentViewModel(Type type, TypeBuilder typeBuilder) {
             if(typeof(ISupportParentViewModel).IsAssignableFrom(type))
                 return;
@@ -1000,6 +1005,10 @@ namespace DevExpress.Mvvm.POCO {
         public static bool IsInDesignMode(this object viewModel) {
             return ViewModelBase.IsInDesignMode;
         }
+        public static void RaisePropertiesChanged(this object viewModel) {
+            IPOCOViewModel pocoViewModel = GetPOCOViewModel(viewModel);
+            pocoViewModel.RaisePropertyChanged(string.Empty);
+        }
         public static void RaisePropertyChanged<T, TProperty>(this T viewModel, Expression<Func<T, TProperty>> propertyExpression) {
             IPOCOViewModel pocoViewModel = GetPOCOViewModel(viewModel);
             pocoViewModel.RaisePropertyChanged(BindableBase.GetPropertyNameFast(propertyExpression));
@@ -1055,7 +1064,7 @@ namespace DevExpress.Mvvm.POCO {
         }
     }
 #pragma warning restore 612,618
-    #region
+    #region ViewModelSource<T>
     public static class ViewModelSource<T> {
         static TDelegate GetFactoryByTypes<TDelegate>(Func<Type[]> getTypesDelegate) {
             return ViewModelSource.GetFactoryCore<TDelegate>(() => {

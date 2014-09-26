@@ -39,7 +39,7 @@ namespace DevExpress.Mvvm.Native {
     }
 
     public static class MetadataHelper {
-        #region
+        #region external types
         class ExtenalMetadataAttributesProvider : IAttributesProvider {
             readonly Type metadataClassType;
             public ExtenalMetadataAttributesProvider(Type metadataClassType) {

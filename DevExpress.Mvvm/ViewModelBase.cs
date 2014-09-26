@@ -95,7 +95,7 @@ namespace DevExpress.Mvvm {
             return ServiceContainer.GetService<T>(key, searchMode);
         }
 
-#region
+#region CommandAttributeSupport
         protected internal void RaiseCanExecuteChanged(Expression<Action> commandMethodExpression) {
             if(IsPOCOViewModel) {
                 POCOViewModelExtensions.RaiseCanExecuteChangedCore(this, commandMethodExpression);
@@ -223,7 +223,7 @@ namespace DevExpress.Mvvm {
             Type commandType = hasParameter ? method.GetParameters()[0].ParameterType : typeof(object);
             return (IDelegateCommand)typeof(CreateCommandHelper<>).MakeGenericType(commandType).GetMethod("CreateCommand", BindingFlags.Static | BindingFlags.Public).Invoke(null, new object[] { this, method, canExecuteMethod, useCommandManager, hasParameter });
         }
-        #region
+        #region CommandProperty
         class CommandProperty :
 #if !SILVERLIGHT
             PropertyDescriptor
@@ -296,7 +296,7 @@ namespace DevExpress.Mvvm {
             return customType ?? (customType = GetCustomType(GetType(), commandProperties.Values));
         }
 #else
-        #region
+        #region ICustomTypeDescriptor
         AttributeCollection ICustomTypeDescriptor.GetAttributes() {
             return TypeDescriptor.GetAttributes(this, true);
         }
@@ -336,7 +336,7 @@ namespace DevExpress.Mvvm {
         }
         #endregion
 #endif
-#endregion
+#endregion CommandAttributeSupport
     }
 #if !SILVERLIGHT
     [Serializable]

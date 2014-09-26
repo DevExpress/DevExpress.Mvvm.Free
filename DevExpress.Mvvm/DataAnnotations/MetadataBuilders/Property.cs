@@ -66,7 +66,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
             return parent;
         }
 
-        #region
+        #region POCO
         public PropertyMetadataBuilder<T, TProperty> DoNotMakeBindable() {
             return AddOrReplaceAttribute(new BindablePropertyAttribute(false));
         }

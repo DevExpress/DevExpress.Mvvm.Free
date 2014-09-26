@@ -9,7 +9,7 @@ namespace DevExpress.Mvvm {
             base.OnInitializeInDesignMode();
             OnNavigatedTo();
         }
-        #region
+        #region ISupportNavigation Members
         protected virtual void OnNavigatedTo() { }
         protected virtual void OnNavigatedFrom() {
         }

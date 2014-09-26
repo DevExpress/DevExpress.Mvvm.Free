@@ -265,23 +265,30 @@ namespace DevExpress.Mvvm {
 
 #if !SILVERLIGHT
         public AsyncCommand(Func<T, Task> executeMethod)
-            : this(executeMethod, null, null) {
+            : this(executeMethod, null, false, null) {
         }
         public AsyncCommand(Func<T, Task> executeMethod, bool useCommandManager)
-            : this(executeMethod, null, useCommandManager) {
+            : this(executeMethod, null, false, useCommandManager) {
         }
         public AsyncCommand(Func<T, Task> executeMethod, Func<T, bool> canExecuteMethod, bool? useCommandManager = null)
+            : this(executeMethod, canExecuteMethod, false, useCommandManager) {
+        }
+        public AsyncCommand(Func<T, Task> executeMethod, Func<T, bool> canExecuteMethod, bool allowMultipleExecution, bool? useCommandManager = null)
             : base(executeMethod, canExecuteMethod, useCommandManager) {
             CancelCommand = new DelegateCommand(Cancel, CanCancel, false);
-
+            AllowMultipleExecution = allowMultipleExecution;
         }
 #else
         public AsyncCommand(Func<T, Task> executeMethod)
-            : this(executeMethod, null) {
+            : this(executeMethod, null, false) {
         }
         public AsyncCommand(Func<T, Task> executeMethod, Func<T, bool> canExecuteMethod)
-        :base(executeMethod,canExecuteMethod){
+        :this(executeMethod, canExecuteMethod, false){
+        }
+        public AsyncCommand(Func<T, Task> executeMethod, Func<T, bool> canExecuteMethod, bool allowMultipleExecution)
+            : base(executeMethod, canExecuteMethod) {
             CancelCommand = new DelegateCommand(Cancel);
+            AllowMultipleExecution = allowMultipleExecution;
         }
 #endif
 
@@ -326,25 +333,33 @@ namespace DevExpress.Mvvm {
     public class AsyncCommand : AsyncCommand<object> {
 #if !SILVERLIGHT
         public AsyncCommand(Func<Task> executeMethod)
-            : this(executeMethod, null, null) {
+            : this(executeMethod, null, false, null) {
         }
         public AsyncCommand(Func<Task> executeMethod, bool useCommandManager)
-            : this(executeMethod, null, useCommandManager) {
+            : this(executeMethod, null, false, useCommandManager) {
         }
         public AsyncCommand(Func<Task> executeMethod, Func<bool> canExecuteMethod, bool? useCommandManager = null)
+            : this(executeMethod, canExecuteMethod, false, useCommandManager) {
+        }
+        public AsyncCommand(Func<Task> executeMethod, Func<bool> canExecuteMethod, bool allowMultipleExecution, bool? useCommandManager = null)
             : base(
                 executeMethod != null ? (Func<object, Task>)(o => executeMethod()) : null,
                 canExecuteMethod != null ? (Func<object, bool>)(o => canExecuteMethod()) : null,
+                allowMultipleExecution,
                 useCommandManager) {
         }
 #else
             public AsyncCommand(Func<Task> executeMethod)
-                : this(executeMethod, null) {
+                : this(executeMethod, null, false) {
             }
             public AsyncCommand(Func<Task> executeMethod, Func<bool> canExecuteMethod)
+                : this(executeMethod, canExecuteMethod, false) {
+            }
+            public AsyncCommand(Func<Task> executeMethod, Func<bool> canExecuteMethod, bool allowMultipleExecution)
                 : base(
                     executeMethod != null ? (Func<object, Task>)(o => executeMethod()) : null,
-                    canExecuteMethod != null ? (Func<object, bool>)(o => canExecuteMethod()) : null) {
+                    canExecuteMethod != null ? (Func<object, bool>)(o => canExecuteMethod()) : null,
+                    allowMultipleExecution) {
             }
 #endif
     }

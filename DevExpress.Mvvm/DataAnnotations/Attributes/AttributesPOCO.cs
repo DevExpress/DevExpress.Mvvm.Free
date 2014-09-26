@@ -37,6 +37,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
             : base(isAsincCommand) { }
         public AsyncCommandAttribute()
             : base() { }
+        public bool AllowMultipleExecution { get; set; }
     }
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class ServicePropertyAttribute : Attribute {
