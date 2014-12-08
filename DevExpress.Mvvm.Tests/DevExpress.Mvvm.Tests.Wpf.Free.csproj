@@ -83,6 +83,7 @@
     <Compile Include="Behaviors\ConfirmationBehaviorTests.cs" />
     <Compile Include="Behaviors\DependencyPropertyBehaviorTests.cs" />
     <Compile Include="Behaviors\EnumItemsSourceBehaviorTests.cs" />
+    <Compile Include="Behaviors\FunctionBindingBehaviorTests.cs" />
     <Compile Include="Behaviors\FunctionToCommandBehaviorTests.cs" />
     <Compile Include="Behaviors\ValidationErrorsHostBehaviorTests.cs" />
     <Compile Include="BindableBaseTests.cs" />
@@ -95,7 +96,6 @@
     <Compile Include="MetadataBuilderTests.cs" />
     <Compile Include="Mvvm.UI\ItemsControlMouseEventArgsConverterTests.cs" />
     <Compile Include="Mvvm.UI\LayoutTreeHelperTests.cs" />
-    <Compile Include="Behaviors\FunctionBindingBehaviorTests.cs" />
     <Compile Include="Mvvm.UI\ViewLocatorTests.cs" />
     <Compile Include="Services\CurrentWindowServiceTests.cs" />
     <Compile Include="Services\DispatcherServiceTests.cs" />
