@@ -203,12 +203,12 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="Behaviors\EnumItemsSourceBehavior\EnumItemsSourceDefaultTemplate.xaml">
-      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Behaviors\EnumItemsSourceBehavior\EnumMemberInfoPresenter.xaml">
-      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Services\NotificationService\CustomToastNotifications\ToastWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -218,13 +218,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Themes\WaitIndicators.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\WaitIndicators.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup />
