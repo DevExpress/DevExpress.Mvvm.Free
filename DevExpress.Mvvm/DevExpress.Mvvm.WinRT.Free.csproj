@@ -1,0 +1,124 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{184FD006-9EB0-495D-872A-E78A5B28FE43}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DevExpress.Mvvm</RootNamespace>
+    <AssemblyName>DevExpress.Mvvm</AssemblyName>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <TargetPlatformVersion>8.1</TargetPlatformVersion>
+    <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+    <BaseIntermediateOutputPath>obj.WinRT.Free</BaseIntermediateOutputPath>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\Bin\WinRT\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;MVVM;FREE;NETFX_CORE;WINDOWS_APP</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\Bin\WinRT\</OutputPath>
+    <DefineConstants>TRACE;MVVM;FREE;NETFX_CORE;WINDOWS_APP</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\DevExpress.Mvvm.Key\StrongKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
+    <VisualStudioVersion>12.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyVersion.cs" />
+    <Compile Include="BindableBase.cs" />
+    <Compile Include="CellValue.cs" />
+    <Compile Include="DataAnnotations\Attributes\Attributes.cs" />
+    <Compile Include="DataAnnotations\Attributes\DXValidationAttribute.cs" />
+    <Compile Include="DataAnnotations\Attributes\MetadataTypeAttribute.cs" />
+    <Compile Include="DelegateCommand.cs" />
+    <Compile Include="ILockable.cs" />
+    <Compile Include="MessageBoxButtonLocalizer.cs" />
+    <Compile Include="Native\ActionInvoker\ActionInvokerBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Native\ActionInvoker\ActionInvokerFactories.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Native\ActionInvoker\IActionInvoker.cs" />
+    <Compile Include="Native\ActionInvoker\StaticActionInvoker.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Native\ActionInvoker\WeakActionInvoker.cs" />
+    <Compile Include="Native\EventFireCounter.cs" />
+    <Compile Include="Native\Guard.cs" />
+    <Compile Include="Native\IClickable.cs" />
+    <Compile Include="Native\ICommand.cs" />
+    <Compile Include="Native\MayBe.cs" />
+    <Compile Include="Native\NativeConstants.cs" />
+    <Compile Include="Native\PropertyChangedHelper.cs" />
+    <Compile Include="Native\TypeCastHelper.cs" />
+    <Compile Include="Native\ViewModelDesignHelper.cs" />
+    <Compile Include="NavigationViewModelBase.cs" />
+    <Compile Include="Platform\WinRT\DBNull.cs" />
+    <Compile Include="Platform\WinRT\TypeConverter.cs" />
+    <Compile Include="Platform\WinRT\TypeConverterAttribute.cs" />
+    <Compile Include="Platform\WinRT\TypeExtenstions.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\DialogService\DialogServiceExtensions.WinRT.cs" />
+    <Compile Include="Services\DialogService\IDialogService.cs" />
+    <Compile Include="Services\DocumentManagerService\DocumentManagerServiceExtensions.cs" />
+    <Compile Include="Services\DocumentManagerService\IDocument.cs" />
+    <Compile Include="Services\DocumentManagerService\IDocumentManagerService.cs" />
+    <Compile Include="Services\DocumentManagerService\IDocumentViewModel.cs" />
+    <Compile Include="Services\IServiceContainer.cs" />
+    <Compile Include="Services\ISupportNavigation.cs" />
+    <Compile Include="Services\ISupportParameter.cs" />
+    <Compile Include="Services\ISupportParentViewModel.cs" />
+    <Compile Include="Services\ISupportServices.cs" />
+    <Compile Include="Services\MessageBoxService\IMessageBoxService.cs" />
+    <Compile Include="Services\MessageBoxService\MessageBoxEnums.cs" />
+    <Compile Include="Services\MessageBoxService\MessageBoxServiceExtensions.WinRT.cs" />
+    <Compile Include="Services\MessengerService\FuzzyDictionary.cs" />
+    <Compile Include="Services\MessengerService\IMessenger.cs" />
+    <Compile Include="Services\MessengerService\Messenger.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\MessengerService\MessengerExtensions.cs" />
+    <Compile Include="Services\ServiceContainer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UICommand.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ViewModelBase.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DataAnnotations\MetadataBuilders\" />
+    <Folder Include="DataAnnotations\Native\" />
+    <Folder Include="Services\DispatcherService\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
+</Project>
