@@ -1,6 +1,5 @@
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.Native;
-using DevExpress.Mvvm.POCO;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,13 +9,22 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
+#if !NETFX_CORE
+using DevExpress.Mvvm.POCO;
 using System.Windows.Threading;
+#else
+using Windows.UI.Xaml;
+#endif
 
 namespace DevExpress.Mvvm {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
     public abstract class ViewModelBase : BindableBase, ISupportParentViewModel, ISupportServices, ISupportParameter, ICustomTypeDescriptor {
 #else
-    public abstract class ViewModelBase : BindableBase, ISupportParentViewModel, ISupportServices, ISupportParameter, ICustomTypeProvider {
+    public abstract class ViewModelBase : BindableBase, ISupportParentViewModel, ISupportServices, ISupportParameter
+#if !NETFX_CORE
+        ,ICustomTypeProvider
+#endif
+    {
 #endif
         static readonly object NotSetParameter = new object();
         private object parameter = NotSetParameter;
@@ -27,11 +35,13 @@ namespace DevExpress.Mvvm {
                 if(ViewModelDesignHelper.IsInDesignModeOverride.HasValue)
                     return ViewModelDesignHelper.IsInDesignModeOverride.Value;
                 if(!isInDesignMode.HasValue) {
-#if !SILVERLIGHT
+#if SILVERLIGHT
+                    isInDesignMode = DesignerProperties.IsInDesignTool;
+#elif NETFX_CORE
+                    isInDesignMode = Windows.ApplicationModel.DesignMode.DesignModeEnabled;
+#else
                     DependencyPropertyDescriptor property = DependencyPropertyDescriptor.FromProperty(DesignerProperties.IsInDesignModeProperty, typeof(FrameworkElement));
                     isInDesignMode = (bool)property.Metadata.DefaultValue;
-#else
-                    isInDesignMode = DesignerProperties.IsInDesignTool;
 #endif
                 }
                 return isInDesignMode.Value;
@@ -52,14 +62,23 @@ namespace DevExpress.Mvvm {
         IServiceContainer serviceContainer;
         IServiceContainer ISupportServices.ServiceContainer { get { return ServiceContainer; } }
         protected IServiceContainer ServiceContainer { get { return serviceContainer ?? (serviceContainer = CreateServiceContainer()); } }
+#if !NETFX_CORE
         bool IsPOCOViewModel { get { return this is IPOCOViewModel; } }
-        public ViewModelBase() {
-            BuildCommandProperties();
-            if(IsInDesignMode) {
-#if !SILVERLIGHT
-                Dispatcher.CurrentDispatcher.BeginInvoke(new Action(OnInitializeInDesignMode));
 #else
+        bool IsPOCOViewModel { get { return false; } }
+#endif
+
+        public ViewModelBase() {
+#if !NETFX_CORE
+            BuildCommandProperties();
+#endif
+            if(IsInDesignMode) {
+#if SILVERLIGHT
                 Deployment.Current.Dispatcher.BeginInvoke(new Action(OnInitializeInDesignMode));
+#elif NETFX_CORE
+                OnInitializeInDesignMode();
+#else
+                Dispatcher.CurrentDispatcher.BeginInvoke(new Action(OnInitializeInDesignMode));
 #endif
             } else {
                 OnInitializeInRuntime();
@@ -88,13 +107,21 @@ namespace DevExpress.Mvvm {
         }
         protected virtual void OnInitializeInRuntime() {
         }
-        protected virtual T GetService<T>(ServiceSearchMode searchMode = ServiceSearchMode.PreferLocal) where T : class {
+        protected virtual T GetService<T>() where T : class {
+            return GetService<T>(ServiceSearchMode.PreferLocal);
+        }
+        protected virtual T GetService<T>(string key) where T : class {
+            return GetService<T>(key, ServiceSearchMode.PreferLocal);
+        }
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        protected virtual T GetService<T>(ServiceSearchMode searchMode) where T : class {
             return ServiceContainer.GetService<T>(searchMode);
         }
-        protected virtual T GetService<T>(string key, ServiceSearchMode searchMode = ServiceSearchMode.PreferLocal) where T : class {
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        protected virtual T GetService<T>(string key, ServiceSearchMode searchMode) where T : class {
             return ServiceContainer.GetService<T>(key, searchMode);
         }
-
+#if !NETFX_CORE
 #region CommandAttributeSupport
         protected internal void RaiseCanExecuteChanged(Expression<Action> commandMethodExpression) {
             if(IsPOCOViewModel) {
@@ -225,10 +252,10 @@ namespace DevExpress.Mvvm {
         }
         #region CommandProperty
         class CommandProperty :
-#if !SILVERLIGHT
+#if !SILVERLIGHT  && !NETFX_CORE
             PropertyDescriptor
 #else
-            PropertyInfo
+ PropertyInfo
 #endif
         {
             readonly MethodInfo method;
@@ -296,6 +323,7 @@ namespace DevExpress.Mvvm {
             return customType ?? (customType = GetCustomType(GetType(), commandProperties.Values));
         }
 #else
+#if !NETFX_CORE
         #region ICustomTypeDescriptor
         AttributeCollection ICustomTypeDescriptor.GetAttributes() {
             return TypeDescriptor.GetAttributes(this, true);
@@ -336,9 +364,11 @@ namespace DevExpress.Mvvm {
         }
         #endregion
 #endif
+#endif
 #endregion CommandAttributeSupport
+#endif
     }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
     [Serializable]
 #endif
     public class CommandAttributeException : Exception {

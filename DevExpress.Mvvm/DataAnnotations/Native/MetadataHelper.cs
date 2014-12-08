@@ -15,7 +15,7 @@ namespace DevExpress.Mvvm.Native {
     interface IAttributeProxy {
         Attribute CreateRealAttribute();
     }
-    class PropertyMetadataStorage {
+    class MemberMetadataStorage {
         Dictionary<Type, Attribute> attributes = new Dictionary<Type, Attribute>();
         List<Attribute> multipleAttributes = new List<Attribute>();
         internal void AddOrModifyAttribute<TAttribute>(Action<TAttribute> setAttributeValue = null) where TAttribute : Attribute, new() {
@@ -69,7 +69,7 @@ namespace DevExpress.Mvvm.Native {
         static Dictionary<Type, IAttributesProvider> Providers { get { return providers ?? (providers = new Dictionary<Type, IAttributesProvider>()); } }
 
         internal static T GetAttribute<T>(MemberInfo member) where T : Attribute {
-            return GetAllAttributes(member).FirstOrDefault(x => x is T) as T;
+            return GetAllAttributes(member).OfType<T>().FirstOrDefault() as T;
         }
 
         internal static Attribute[] GetAllAttributes(MemberInfo member) {
@@ -117,7 +117,8 @@ namespace DevExpress.Mvvm.Native {
             if(metadataClassType.IsAbstract || !isPublic || metadataClassType.GetConstructor(new Type[0]) == null)
                 return null;
             Type metadatProviderInterfaceType = metadataClassType.GetInterfaces().SingleOrDefault(x => {
-                return x.GetGenericTypeDefinition() == typeof(IMetadataProvider<>) && x.GetGenericArguments().Single() == componentType;
+                Type expectedProviderType = componentType.IsEnum ? typeof(IEnumMetadataProvider<>) : typeof(IMetadataProvider<>);
+                return x.GetGenericTypeDefinition() == expectedProviderType && x.GetGenericArguments().Single() == componentType;
             });
             if(metadatProviderInterfaceType == null)
                 return null;
@@ -153,13 +154,17 @@ namespace DevExpress.Mvvm.Native {
                                 if(x.GetParameters().Length != 1)
                                     return false;
                                 var parameter = x.GetParameters().Single();
-                                if(!parameter.ParameterType.IsGenericType || parameter.ParameterType.GetGenericTypeDefinition() != typeof(MetadataBuilder<>))
+                                if(!parameter.ParameterType.IsGenericType ||
+                                    (parameter.ParameterType.GetGenericTypeDefinition() != typeof(MetadataBuilder<>) && parameter.ParameterType.GetGenericTypeDefinition() != typeof(EnumMetadataBuilder<>)))
                                     return false;
                                 return true;
                             });
         }
         static IAttributesProvider CreateBuilder(Type componentType) {
-            return (IAttributesProvider)Activator.CreateInstance(typeof(MetadataBuilder<>).MakeGenericType(componentType));
+            return (IAttributesProvider)Activator.CreateInstance(GetMetadataBuilderType(componentType).MakeGenericType(componentType));
+        }
+        static Type GetMetadataBuilderType(Type componentType) {
+            return componentType.IsEnum ? typeof(EnumMetadataBuilder<>) : typeof(MetadataBuilder<>);
         }
     }
 }

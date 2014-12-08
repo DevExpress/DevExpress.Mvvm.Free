@@ -5,8 +5,18 @@ using System.Linq;
 
 
 namespace DevExpress.Mvvm {
-    public enum ServiceSearchMode { PreferLocal, LocalOnly, PreferParents }
     public class ServiceContainer : IServiceContainer {
+        class ServiceInfo {
+            public ServiceInfo(bool hasKey, object service, bool yieldToParent) {
+                this.HasKey = hasKey;
+                this.Service = service;
+                this.YieldToParent = yieldToParent;
+            }
+            public bool HasKey { get; private set; }
+            public object Service { get; private set; }
+            public bool YieldToParent { get; private set; }
+        }
+
         public static IServiceContainer Default = new ServiceContainer(null);
 
         readonly object owner;
@@ -22,70 +32,79 @@ namespace DevExpress.Mvvm {
         public ServiceContainer(object owner) {
             this.owner = owner;
         }
-        Dictionary<string, object> servicesByKey = new Dictionary<string, object>();
-        Dictionary<Type, object> servicesByInterfaceType = new Dictionary<Type, object>();
+        Dictionary<string, ServiceInfo> servicesByKey = new Dictionary<string, ServiceInfo>();
+        Dictionary<Type, ServiceInfo> servicesByInterfaceType = new Dictionary<Type, ServiceInfo>();
         public void Clear() {
             servicesByKey.Clear();
             servicesByInterfaceType.Clear();
         }
-        public void RegisterService(object service) {
+        public void RegisterService(object service, bool yieldToParent) {
+            RegisterService(null, service, yieldToParent);
+        }
+        public void RegisterService(string key, object service, bool yieldToParent) {
             if(service == null)
                 throw new ArgumentNullException("service");
-            RegisterInterfacesCore(service, true);
+            ServiceInfo serviceInfo = new ServiceInfo(!string.IsNullOrEmpty(key), service, yieldToParent);
+            RegisterInterfacesCore(serviceInfo, !serviceInfo.HasKey);
+            if(serviceInfo.HasKey)
+                servicesByKey[key] = serviceInfo;
         }
-        public void RegisterService(string key, object service) {
-            if(service == null)
-                throw new ArgumentNullException("service");
-            if(string.IsNullOrEmpty(key)) {
-                RegisterService(service);
-            } else {
-                servicesByKey[key] = service;
-                RegisterInterfacesCore(service, false);
-            }
-        }
-        void RegisterInterfacesCore(object service, bool allowOverwrite) {
-            foreach(Type type in service.GetType().GetInterfaces()) {
+        void RegisterInterfacesCore(ServiceInfo serviceInfo, bool allowOverwrite) {
+            foreach(Type type in serviceInfo.Service.GetType().GetInterfaces()) {
                 if(allowOverwrite || !servicesByInterfaceType.ContainsKey(type))
-                    servicesByInterfaceType[type] = service;
+                    servicesByInterfaceType[type] = serviceInfo;
             }
         }
         public T GetService<T>(string key, ServiceSearchMode searchMode = ServiceSearchMode.PreferLocal) where T : class {
-            CheckServiceType<T>();
-            switch(searchMode) {
-                case ServiceSearchMode.PreferLocal:
-                    return GetLocalService<T>(key) ?? GetParentService<T>(key, ServiceSearchMode.PreferLocal);
-                case ServiceSearchMode.LocalOnly:
-                    return GetLocalService<T>(key);
-                default:
-                    return GetParentService<T>(key, ServiceSearchMode.PreferParents) ?? GetLocalService<T>(key);
-            }
+            bool serviceHasKey;
+            IServiceContainer serviceCOntainer = this;
+            return serviceCOntainer.GetService<T>(key, searchMode, out serviceHasKey);
         }
         public T GetService<T>(ServiceSearchMode searchMode = ServiceSearchMode.PreferLocal) where T : class {
+            return this.GetService<T>(null, searchMode);
+        }
+        T IServiceContainer.GetService<T>(string key, ServiceSearchMode searchMode, out bool serviceHasKey) {
             CheckServiceType<T>();
-            switch(searchMode) {
-                case ServiceSearchMode.PreferLocal:
-                    return GetLocalService<T>() ?? GetParentService<T>(ServiceSearchMode.PreferLocal);
-                case ServiceSearchMode.LocalOnly:
-                    return GetLocalService<T>();
-                default:
-                    return GetParentService<T>(ServiceSearchMode.PreferParents) ?? GetLocalService<T>();
+            ServiceInfo serviceInfo = FindService<T>(key, searchMode);
+            if(serviceInfo == null) {
+                serviceHasKey = false;
+                return null;
             }
+            serviceHasKey = serviceInfo.HasKey;
+            return (T)serviceInfo.Service;
         }
-        T GetLocalService<T>(string key) where T : class {
-            return (T)servicesByKey.GetValueOrDefault(key);
+        ServiceInfo FindService<T>(string key, ServiceSearchMode searchMode) where T : class {
+            bool findServiceWithKey = !string.IsNullOrEmpty(key);
+            if(searchMode == ServiceSearchMode.LocalOnly || ParentServiceContainer == null)
+                return GetLocalService<T>(findServiceWithKey, key);
+            ServiceInfo parent = GetParentService<T>(key, searchMode);
+            if(searchMode == ServiceSearchMode.PreferParents && parent != null && (findServiceWithKey || !parent.HasKey)) return parent;
+            ServiceInfo local = GetLocalService<T>(findServiceWithKey, key);
+            if(local == null) return parent;
+            if(parent == null) return local;
+            return searchMode == ServiceSearchMode.PreferParents || local.YieldToParent
+                ? FindServiceCore(findServiceWithKey, parent, local)
+                : FindServiceCore(findServiceWithKey, local, parent);
         }
-        T GetLocalService<T>() where T : class {
-            return (T)servicesByInterfaceType.GetValueOrDefault(typeof(T));
+        ServiceInfo FindServiceCore(bool findServiceWithKey, ServiceInfo primary, ServiceInfo secondary) {
+            return findServiceWithKey ? primary : !primary.HasKey ? primary : !secondary.HasKey ? secondary : primary;
         }
-        T GetParentService<T>(string key, ServiceSearchMode searchMode) where T : class {
-            return ParentServiceContainer != null ? ParentServiceContainer.GetService<T>(key, searchMode) : (T)null;
+        ServiceInfo GetLocalService<T>(bool findServiceWithKey, string key) where T : class {
+            return findServiceWithKey ? servicesByKey.GetValueOrDefault(key) : servicesByInterfaceType.GetValueOrDefault(typeof(T));
         }
-        T GetParentService<T>(ServiceSearchMode searchMode) where T : class {
-            return (ParentServiceContainer != null ? ParentServiceContainer.GetService<T>(searchMode) : (T)null);
+        ServiceInfo GetParentService<T>(string key, ServiceSearchMode searchMode) where T : class {
+            bool serviceHasKey;
+            T service = ParentServiceContainer.GetService<T>(key, searchMode, out serviceHasKey);
+            return service == null ? null : new ServiceInfo(serviceHasKey, service, false);
         }
+
         void CheckServiceType<T>() {
             Type type = typeof(T);
+#if !NETFX_CORE
             if(!type.IsInterface) {
+#else
+            if(!type.IsInterface()) {
+#endif
                 throw new ArgumentException("Services can be only accessed via interface types");
             }
         }

@@ -43,7 +43,7 @@ namespace DevExpress.Mvvm.POCO {
         const string Error_TypeHasNoCtors = "Type has no accessible constructors: {0}.";
 
         const string Error_SealedClass = "Cannot create dynamic class for the sealed class: {0}.";
-        const string Error_PrivateClass = "Cannot create dynamic class for the private class: {0}.";
+        const string Error_InternalClass = "Cannot create dynamic class for the internal class: {0}.";
         const string Error_TypeImplementsIPOCOViewModel = "Type cannot implement IPOCOViewModel: {0}.";
 
         const string Error_RaisePropertyChangedMethodNotFound = "Class already supports INotifyPropertyChanged, but RaisePropertyChanged(string) method not found: {0}.";
@@ -295,7 +295,7 @@ namespace DevExpress.Mvvm.POCO {
 
         private static bool CheckType(Type type, bool @throw) {
             if(!type.IsPublic && !type.IsNestedPublic)
-                return ReturnFalseOrThrow(@throw, Error_PrivateClass, type);
+                return ReturnFalseOrThrow(@throw, Error_InternalClass, type);
             if(type.IsSealed)
                 return ReturnFalseOrThrow(@throw, Error_SealedClass, type);
             if(typeof(IPOCOViewModel).IsAssignableFrom(type))
@@ -1020,12 +1020,47 @@ namespace DevExpress.Mvvm.POCO {
             ((ISupportParentViewModel)viewModel).ParentViewModel = parentViewModel;
             return viewModel;
         }
+        public static T GetParentViewModel<T>(this object viewModel) where T : class {
+            return (T)((ISupportParentViewModel)viewModel).ParentViewModel;
+        }
         public static IAsyncCommand GetAsyncCommand<T>(this T viewModel, Expression<Func<T, Task>> methodExpression) {
             return GetAsyncCommandCore(viewModel, methodExpression);
         }
         public static void RaiseCanExecuteChanged<T>(this T viewModel, Expression<Action<T>> methodExpression) {
             RaiseCanExecuteChangedCore(viewModel, methodExpression);
         }
+#if !SILVERLIGHT
+        public static void UpdateFunctionBinding<T>(this T viewModel, Expression<Action<T>> methodExpression) {
+            UpdateFunctionBehaviorCore(viewModel, methodExpression);
+        }
+        public static void UpdateMethodToCommandCanExecute<T>(this T viewModel, Expression<Action<T>> methodExpression) {
+            UpdateFunctionBehaviorCore(viewModel, methodExpression);
+        }
+        static void UpdateFunctionBehaviorCore<T>(this T viewModel, Expression<Action<T>> methodExpression) {
+            string methodName = ExpressionHelper.GetMethod(methodExpression).Name;
+            GetPOCOViewModel(viewModel).RaisePropertyChanged(methodName);
+        }
+#endif
+
+        #region GetService methods
+        public static TService GetService<TService>(this object viewModel) where TService : class {
+            return GetServiceContainer(viewModel).GetService<TService>();
+        }
+        public static TService GetService<TService>(this object viewModel, string key) where TService : class {
+            return GetServiceContainer(viewModel).GetService<TService>(key);
+        }
+        public static TService GetRequiredService<TService>(this object viewModel) where TService : class {
+            return ServiceContainerExtensions.GetRequiredService<TService>(GetServiceContainer(viewModel));
+        }
+        public static TService GetRequiredService<TService>(this object viewModel, string key) where TService : class {
+            return ServiceContainerExtensions.GetRequiredService<TService>(GetServiceContainer(viewModel), key);
+        }
+        static IServiceContainer GetServiceContainer(object viewModel) {
+            GetPOCOViewModel(viewModel);
+            return ((ISupportServices)viewModel).ServiceContainer;
+        }
+        #endregion
+
         [Obsolete("This method is obsolete. Use the GetAsyncCommand method instead.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static bool GetShouldCancel<T>(this T viewModel, Expression<Func<T, Task>> methodExpression) {

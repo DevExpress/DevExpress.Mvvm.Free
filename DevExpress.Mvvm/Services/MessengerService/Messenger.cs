@@ -4,9 +4,14 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Windows;
-using System.Windows.Threading;
 using DevExpress.Mvvm.Internal;
 using DevExpress.Mvvm.Native;
+#if !NETFX_CORE
+using System.Windows.Threading;
+#else
+using Windows.UI.Xaml;
+using Windows.UI.Core;
+#endif
 
 namespace DevExpress.Mvvm {
     public class Messenger : IMessenger {
@@ -69,7 +74,7 @@ namespace DevExpress.Mvvm {
             }
         }
         #endregion
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         const DispatcherPriority CleanUpPriority = DispatcherPriority.ApplicationIdle;
 #endif
         static readonly object defaultMessengerLock = new object();
@@ -108,12 +113,15 @@ namespace DevExpress.Mvvm {
                 if(isMultiThreadSafe)
                     Monitor.Enter(actionInvokers);
                 IActionInvoker actionInvoker = actionInvokerFactory.CreateActionInvoker<TMessage>(recipient, action);
-                actionInvokers.Register(token, receiveInheritedMessages, typeof(TMessage), actionInvoker);
+                RegisterCore(token, receiveInheritedMessages, typeof(TMessage), actionInvoker);
             } finally {
                 if(isMultiThreadSafe)
                     Monitor.Exit(actionInvokers);
             }
             RequestCleanup();
+        }
+        protected void RegisterCore(object token, bool receiveInheritedMessages, Type messageType, IActionInvoker actionInvoker) {
+            actionInvokers.Register(token, receiveInheritedMessages, messageType, actionInvoker);
         }
         public virtual void Send<TMessage>(TMessage message, Type messageTargetType, object token) {
             try {
@@ -132,7 +140,7 @@ namespace DevExpress.Mvvm {
         public virtual void Unregister<TMessage>(object recipient, object token, Action<TMessage> action) {
             UnregisterCore(recipient, token, action, typeof(TMessage));
         }
-        void UnregisterCore(object recipient, object token, Delegate action, Type messageType) {
+        protected void UnregisterCore(object recipient, object token, Delegate action, Type messageType) {
             try {
                 if(isMultiThreadSafe)
                     Monitor.Enter(actionInvokers);
@@ -159,6 +167,11 @@ namespace DevExpress.Mvvm {
             cleanupScheduled = true;
 #if SILVERLIGHT
             Deployment.Current.Dispatcher.BeginInvoke(new Action(Cleanup));
+#elif NETFX_CORE
+#pragma warning disable 4014
+            if(!Windows.ApplicationModel.DesignMode.DesignModeEnabled)
+                Window.Current.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, new DispatchedHandler(Cleanup));
+#pragma warning restore 4014
 #else
             Dispatcher.CurrentDispatcher.BeginInvoke(new Action(Cleanup), CleanUpPriority, null);
 #endif

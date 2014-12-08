@@ -6,14 +6,17 @@ using System.Linq.Expressions;
 
 namespace DevExpress.Mvvm.DataAnnotations {
 
-    public abstract class PropertyMetadataBuilderBase<T, TProperty, TBuilder> : IPropertyMetadataBuilder, IAttributeBuilderInternal<TBuilder> where TBuilder : PropertyMetadataBuilderBase<T, TProperty, TBuilder> {
-        readonly PropertyMetadataStorage storage;
-        protected internal readonly MetadataBuilder<T> parent;
-        internal PropertyMetadataBuilderBase(PropertyMetadataStorage storage, MetadataBuilder<T> parent) {
+    public abstract class MemberMetadataBuilderBase<T, TBuilder, TParent> : IPropertyMetadataBuilder, IAttributeBuilderInternal<TBuilder>
+        where TBuilder : MemberMetadataBuilderBase<T, TBuilder, TParent>
+        where TParent : MetadataBuilderBase<T> {
+
+        readonly MemberMetadataStorage storage;
+        protected internal readonly TParent parent;
+
+        internal MemberMetadataBuilderBase(MemberMetadataStorage storage, TParent parent) {
             this.storage = storage;
             this.parent = parent;
         }
-
         internal TBuilder AddOrModifyAttribute<TAttribute>(Action<TAttribute> setAttributeValue = null) where TAttribute : Attribute, new() {
             storage.AddOrModifyAttribute(setAttributeValue);
             return (TBuilder)this;
@@ -35,9 +38,18 @@ namespace DevExpress.Mvvm.DataAnnotations {
         IEnumerable<Attribute> IPropertyMetadataBuilder.Attributes {
             get { return storage.GetAttributes(); }
         }
+        protected TBuilder ImageUriCore(string imageUri) {
+            return AddOrModifyAttribute<ImageAttribute>(x => x.ImageUri = imageUri);
+        }
+    }
+
+    public abstract class PropertyMetadataBuilderBase<T, TProperty, TBuilder> : MemberMetadataBuilderBase<T, TBuilder, MetadataBuilder<T>> where TBuilder : PropertyMetadataBuilderBase<T, TProperty, TBuilder> {
+        internal PropertyMetadataBuilderBase(MemberMetadataStorage storage, MetadataBuilder<T> parent)
+            : base(storage, parent) {
+        }
     }
     public class PropertyMetadataBuilder<T, TProperty> : PropertyMetadataBuilderBase<T, TProperty, PropertyMetadataBuilder<T, TProperty>> {
-        internal PropertyMetadataBuilder(PropertyMetadataStorage storage, MetadataBuilder<T> parent)
+        internal PropertyMetadataBuilder(MemberMetadataStorage storage, MetadataBuilder<T> parent)
             : base(storage, parent) {
         }
         public PropertyMetadataBuilder<T, TProperty> Required(bool allowEmptyStrings = false, Func<string> errorMessageAccessor = null) {
@@ -66,7 +78,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
             return parent;
         }
 
-        #region POCO
+#region POCO
         public PropertyMetadataBuilder<T, TProperty> DoNotMakeBindable() {
             return AddOrReplaceAttribute(new BindablePropertyAttribute(false));
         }
@@ -88,6 +100,6 @@ namespace DevExpress.Mvvm.DataAnnotations {
         public PropertyMetadataBuilder<T, TProperty> DoesNotReturnService() {
             return AddOrReplaceAttribute(new ServicePropertyAttribute(false));
         }
-        #endregion
+#endregion
     }
 }

@@ -6,24 +6,22 @@ using System.Windows.Threading;
 using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm.Native {
-    public class SLWeakReferenceActionInvoker<T> : ActionInvokerBase<T> {
-        Action<T> action;
-
+    public class SLWeakReferenceActionInvoker<T> : StrongReferenceActionInvoker<T> {
         public SLWeakReferenceActionInvoker(object target, Action<T> action)
-            : base(target) {
-            this.action = action;
+            : base(target, action) {
         }
-        protected override string MethodName {
-            get { return action.Method.Name; }
+        protected override void Execute(object parameter) {
+            if(ActionToInvoke != null)
+                base.Execute(parameter);
         }
-        protected override void Execute(T parameter) {
-            if(action != null) {
-                action(parameter);
-                return;
-            }
+    }
+    public class SLWeakReferenceActionInvoker : StrongReferenceActionInvoker {
+        public SLWeakReferenceActionInvoker(object target, Action action)
+            : base(target, action) {
         }
-        protected override void ClearCore() {
-            action = null;
+        protected override void Execute(object parameter) {
+            if(ActionToInvoke != null)
+                base.Execute(parameter);
         }
     }
 }

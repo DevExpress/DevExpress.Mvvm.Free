@@ -8,11 +8,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+#if !NETFX_CORE
 using System.Windows.Threading;
+#else
+using Windows.UI.Xaml;
+using Windows.UI.Core;
+#endif
 
 namespace DevExpress.Mvvm {
     public abstract class CommandBase {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         static bool defaultUseCommandManager = true;
 
         public static bool DefaultUseCommandManager { get { return defaultUseCommandManager; } set { defaultUseCommandManager = value; } }
@@ -26,7 +31,7 @@ namespace DevExpress.Mvvm {
         public event EventHandler CanExecuteChanged {
             add {
                 if(useCommandManager) {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
                     CommandManager.RequerySuggested += value;
 #endif
                 } else {
@@ -35,7 +40,7 @@ namespace DevExpress.Mvvm {
             }
             remove {
                 if(useCommandManager) {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
                     CommandManager.RequerySuggested -= value;
 #endif
                 } else {
@@ -44,7 +49,7 @@ namespace DevExpress.Mvvm {
             }
         }
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public CommandBase(bool? useCommandManager = null) {
             this.useCommandManager = useCommandManager ?? DefaultUseCommandManager;
         }
@@ -62,7 +67,7 @@ namespace DevExpress.Mvvm {
 
         public void RaiseCanExecuteChanged() {
             if(useCommandManager) {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
                 CommandManager.InvalidateRequerySuggested();
 #endif
             } else {
@@ -80,14 +85,8 @@ namespace DevExpress.Mvvm {
             Execute(GetGenericParameter(parameter));
         }
         static T GetGenericParameter(object parameter, bool suppressCastException = false) {
-            Type targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-            if(targetType.IsEnum && parameter is string) {
-                parameter = Enum.Parse(targetType, (string)parameter, false);
-            } else if(parameter is IConvertible && !typeof(T).IsAssignableFrom(parameter.GetType())) {
-                parameter = Convert.ChangeType(parameter, targetType, CultureInfo.InvariantCulture);
-            }
-            if(parameter == null) return default(T);
-            if(parameter is T) return (T)parameter;
+            parameter = TypeCastHelper.TryCast(parameter, typeof(T));
+            if(parameter == null || parameter is T) return (T)parameter;
             if(suppressCastException) return default(T);
             throw new InvalidCastException(string.Format("CommandParameter: Unable to cast object of type '{0}' to type '{1}'", parameter.GetType().FullName, typeof(T).FullName));
         }
@@ -101,7 +100,7 @@ namespace DevExpress.Mvvm {
             this.executeMethod = executeMethod;
             this.canExecuteMethod = canExecuteMethod;
         }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public DelegateCommandBase(Action<T> executeMethod)
             : this(executeMethod, null, null) {
         }
@@ -113,7 +112,7 @@ namespace DevExpress.Mvvm {
             Init(executeMethod, canExecuteMethod);
         }
 #else
-            public DelegateCommandBase(Action<T> executeMethod)
+        public DelegateCommandBase(Action<T> executeMethod)
                 : this(executeMethod, null) {
             }
             public DelegateCommandBase(Action<T> executeMethod, Func<T, bool> canExecuteMethod)
@@ -132,7 +131,7 @@ namespace DevExpress.Mvvm {
             this.canExecuteMethod = canExecuteMethod;
         }
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public AsyncCommandBase(Func<T, Task> executeMethod)
             : this(executeMethod, null, null) {
         }
@@ -164,7 +163,7 @@ namespace DevExpress.Mvvm {
         }
     }
     public class DelegateCommand<T> : DelegateCommandBase<T> {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public DelegateCommand(Action<T> executeMethod)
             : this(executeMethod, null, null) {
         }
@@ -191,7 +190,7 @@ namespace DevExpress.Mvvm {
     }
 
     public class DelegateCommand : DelegateCommand<object> {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public DelegateCommand(Action executeMethod)
             : this(executeMethod, null, null) {
         }
@@ -205,7 +204,7 @@ namespace DevExpress.Mvvm {
                 useCommandManager) {
         }
 #else
-            public DelegateCommand(Action executeMethod)
+        public DelegateCommand(Action executeMethod)
                 : this(executeMethod, null) {
             }
             public DelegateCommand(Action executeMethod, Func<bool> canExecuteMethod)
@@ -263,7 +262,7 @@ namespace DevExpress.Mvvm {
         public DelegateCommand CancelCommand { get; private set; }
         ICommand IAsyncCommand.CancelCommand { get { return CancelCommand; } }
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public AsyncCommand(Func<T, Task> executeMethod)
             : this(executeMethod, null, false, null) {
         }
@@ -303,16 +302,27 @@ namespace DevExpress.Mvvm {
             IsExecuting = true;
 #if SILVERLIGHT
             Dispatcher dispatcher = Deployment.Current.Dispatcher;
+#elif NETFX_CORE
+            var dispatcher = Window.Current.Dispatcher;
 #else
             Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
 #endif
             CancellationTokenSource = new CancellationTokenSource();
             executeTask = executeMethod(parameter).ContinueWith(x => {
+#if !NETFX_CORE
                 dispatcher.BeginInvoke(new Action(() => {
                     IsExecuting = false;
                     ShouldCancel = false;
 
                 }));
+#else
+#pragma warning disable 4014
+                dispatcher.RunAsync(CoreDispatcherPriority.Normal, new DispatchedHandler(() => {
+                    IsExecuting = false;
+                    ShouldCancel = false;
+                }));
+#pragma warning restore 4014
+#endif
             });
         }
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
@@ -331,7 +341,7 @@ namespace DevExpress.Mvvm {
     }
 
     public class AsyncCommand : AsyncCommand<object> {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public AsyncCommand(Func<Task> executeMethod)
             : this(executeMethod, null, false, null) {
         }

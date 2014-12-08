@@ -2,31 +2,49 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Windows.Threading;
 using DevExpress.Mvvm.Native;
+#if !NETFX_CORE
+using System.Windows.Threading;
+#endif
 
 namespace DevExpress.Mvvm.Native {
-    public class WeakReferenceActionInvoker<T> : ActionInvokerBase<T> {
-        MethodInfo actionMethod;
-        WeakReference actionTargetReference;
-
-        public WeakReferenceActionInvoker(object target, Action<T> action)
+    public abstract class WeakReferenceActionInvokerBase : ActionInvokerBase {
+        public WeakReferenceActionInvokerBase(object target, Delegate action)
             : base(target) {
-            actionMethod = action.Method;
-            actionTargetReference = new WeakReference(action.Target);
+#if !NETFX_CORE
+                ActionMethod = action.Method;
+#else
+                ActionMethod = action.GetMethodInfo();
+#endif
+                ActionTargetReference = new WeakReference(action.Target);
         }
-        object ActionTarget { get { return actionTargetReference.With(x => x.Target); } }
-        protected override string MethodName {
-            get { return actionMethod.Name; }
+        protected MethodInfo ActionMethod { get; private set; }
+        protected WeakReference ActionTargetReference { get; private set; }
+        protected override string MethodName { get { return ActionMethod.Name; } }
+        protected override void ClearCore() {
+            ActionTargetReference = null;
+            ActionMethod = null;
         }
-        protected override void Execute(T parameter) {
-            if(actionMethod != null && actionTargetReference != null && ActionTarget != null) {
-                actionMethod.Invoke(ActionTarget, new object[] { parameter });
+    }
+
+    public class WeakReferenceActionInvoker<T> : WeakReferenceActionInvokerBase {
+        public WeakReferenceActionInvoker(object target, Action<T> action)
+            : base(target, action) {
+        }
+        protected override void Execute(object parameter) {
+            if(ActionMethod != null && ActionTargetReference.IsAlive) {
+                ActionMethod.Invoke(ActionTargetReference.Target, new object[] { (T)parameter });
             }
         }
-        protected override void ClearCore() {
-            actionTargetReference = null;
-            actionMethod = null;
+    }
+    public class WeakReferenceActionInvoker : WeakReferenceActionInvokerBase {
+        public WeakReferenceActionInvoker(object target, Action action)
+            : base(target, action) {
+        }
+        protected override void Execute(object parameter) {
+            if(ActionMethod != null && ActionTargetReference.IsAlive) {
+                ActionMethod.Invoke(ActionTargetReference.Target, null);
+            }
         }
     }
 }

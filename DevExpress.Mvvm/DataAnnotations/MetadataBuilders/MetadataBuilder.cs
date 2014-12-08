@@ -9,21 +9,27 @@ namespace DevExpress.Mvvm.DataAnnotations {
     public interface IMetadataProvider<T> {
         void BuildMetadata(MetadataBuilder<T> builder);
     }
-    public class MetadataBuilder<T> : IAttributesProvider {
+    public abstract class MetadataBuilderBase<T> : IAttributesProvider {
+        Dictionary<string, MemberMetadataStorage> storages = new Dictionary<string, MemberMetadataStorage>();
+        IEnumerable<Attribute> IAttributesProvider.GetAttributes(string propertyName) {
+            MemberMetadataStorage storage;
+            storages.TryGetValue(propertyName, out storage);
+            return storage != null ? storage.GetAttributes() : null;
+        }
+        internal TBuilder GetBuilder<TBuilder>(string memberName, Func<MemberMetadataStorage, TBuilder> createBuilderCallBack) where TBuilder : IPropertyMetadataBuilder {
+            MemberMetadataStorage storage = storages.GetOrAdd(memberName, () => new MemberMetadataStorage());
+            return (TBuilder)createBuilderCallBack(storage);
+        }
+    }
+    public class MetadataBuilder<T> : MetadataBuilderBase<T> {
         internal static string GetPropertyName<TProperty>(Expression<Func<T, TProperty>> expression) {
             return ExpressionHelper.GetArgumentPropertyStrict(expression).Name;
         }
         internal static MethodInfo GetMethod(Expression<Action<T>> expression) {
             return ExpressionHelper.GetArgumentMethodStrict(expression);
         }
-        Dictionary<string, PropertyMetadataStorage> storages = new Dictionary<string, PropertyMetadataStorage>();
 
         public MetadataBuilder() { }
-        IEnumerable<Attribute> IAttributesProvider.GetAttributes(string propertyName) {
-            PropertyMetadataStorage storage;
-            storages.TryGetValue(propertyName, out storage);
-            return storage != null ? storage.GetAttributes() : null;
-        }
         public PropertyMetadataBuilder<T, TProperty> Property<TProperty>(Expression<Func<T, TProperty>> propertyExpression) {
             return GetBuilder(propertyExpression, x => new PropertyMetadataBuilder<T, TProperty>(x, this));
         }
@@ -32,14 +38,10 @@ namespace DevExpress.Mvvm.DataAnnotations {
         }
         internal CommandMethodMetadataBuilder<T> CommandFromMethodCore(Expression<Action<T>> methodExpression) {
             string methodName = GetMethod(methodExpression).Name;
-            return GetBuilder<ICommand, CommandMethodMetadataBuilder<T>>(methodName, x => new CommandMethodMetadataBuilder<T>(x, this, methodName));
+            return GetBuilder(methodName, x => new CommandMethodMetadataBuilder<T>(x, this, methodName));
         }
-        TBuilder GetBuilder<TProperty, TBuilder>(Expression<Func<T, TProperty>> propertyExpression, Func<PropertyMetadataStorage, TBuilder> createBuilderCallBack) where TBuilder : IPropertyMetadataBuilder {
-            return GetBuilder<TProperty, TBuilder>(GetPropertyName(propertyExpression), createBuilderCallBack);
-        }
-        TBuilder GetBuilder<TProperty, TBuilder>(string memberName, Func<PropertyMetadataStorage, TBuilder> createBuilderCallBack) where TBuilder : IPropertyMetadataBuilder {
-            PropertyMetadataStorage storage = storages.GetOrAdd(memberName, () => new PropertyMetadataStorage());
-            return (TBuilder)createBuilderCallBack(storage);
+        TBuilder GetBuilder<TProperty, TBuilder>(Expression<Func<T, TProperty>> propertyExpression, Func<MemberMetadataStorage, TBuilder> createBuilderCallBack) where TBuilder : IPropertyMetadataBuilder {
+            return GetBuilder(GetPropertyName(propertyExpression), createBuilderCallBack);
         }
     }
 }

@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq.Expressions;
+#if NETFX_CORE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace DevExpress.Mvvm {
     public abstract class BindableBase : INotifyPropertyChanged {
@@ -11,7 +14,7 @@ namespace DevExpress.Mvvm {
         internal static string GetPropertyNameFast(LambdaExpression expression) {
             MemberExpression memberExpression = expression.Body as MemberExpression;
             if(memberExpression == null) {
-                throw new ArgumentException("expression");
+                throw new ArgumentException("MemberExpression is expected in expression.Body", "expression");
             }
             return memberExpression.Member.Name;
         }
@@ -35,7 +38,13 @@ namespace DevExpress.Mvvm {
                 changedCallback();
         }
 
-        protected bool SetProperty<T>(ref T storage, T value, string propertyName) {
+        protected bool SetProperty<T>(ref T storage, T value,
+#if !NETFX_CORE
+            string propertyName
+#else
+        [CallerMemberName] String propertyName = null
+#endif
+        ) {
             return SetProperty<T>(ref storage, value, propertyName, null);
         }
         protected void RaisePropertyChanged(string propertyName) {
@@ -111,5 +120,16 @@ namespace DevExpress.Mvvm {
                 return (T)val;
             return default(T);
         }
+#if NETFX_CORE
+        protected bool SetProperty<T>(ref T storage, T value, Action<T, T> changedCallback, [CallerMemberName] string propertyName = null) {
+            if(object.Equals(storage, value)) return false;
+            T oldValue = storage;
+            storage = value;
+            if(changedCallback != null)
+                changedCallback(oldValue, value);
+            RaisePropertiesChanged(propertyName);
+            return true;
+        }
+#endif
     }
 }

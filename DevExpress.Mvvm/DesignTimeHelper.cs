@@ -8,7 +8,13 @@ using System.Text;
 
 namespace DevExpress.Mvvm {
     public static class DesignTimeHelper {
+#if DEBUG
+        public static int? DesignTimeObjectsCount;
+#endif
         public static T[] CreateDesignTimeObjects<T>(int count) where T : class {
+#if DEBUG
+            count = DesignTimeObjectsCount.GetValueOrDefault(count);
+#endif
             return Enumerable.Range(0, count).Select(x => CreateDesignTimeObject<T>(x)).Where(x => x != null).ToArray();
         }
         public static T CreateDesignTimeObject<T>() where T : class {

@@ -5,7 +5,7 @@ using System.Windows.Input;
 
 namespace DevExpress.Mvvm.DataAnnotations {
     public abstract class CommandMetadataBuilderBase<T, TBuilder> : PropertyMetadataBuilderBase<T, ICommand, TBuilder> where TBuilder : PropertyMetadataBuilderBase<T, ICommand, TBuilder> {
-        internal CommandMetadataBuilderBase(PropertyMetadataStorage storage, MetadataBuilder<T> parent)
+        internal CommandMetadataBuilderBase(MemberMetadataStorage storage, MetadataBuilder<T> parent)
             : base(storage, parent) {
         }
         public MetadataBuilder<T> EndCommand() {
@@ -14,7 +14,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
     }
     public class CommandMethodMetadataBuilder<T> : CommandMetadataBuilderBase<T, CommandMethodMetadataBuilder<T>> {
         readonly string methodName;
-        internal CommandMethodMetadataBuilder(PropertyMetadataStorage storage, MetadataBuilder<T> parent, string methodName)
+        internal CommandMethodMetadataBuilder(MemberMetadataStorage storage, MetadataBuilder<T> parent, string methodName)
             : base(storage, parent) {
             this.methodName = methodName;
         }

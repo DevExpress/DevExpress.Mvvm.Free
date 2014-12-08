@@ -7,6 +7,22 @@ using System.ComponentModel;
 
 namespace DevExpress.Mvvm {
     public static class IDataErrorInfoHelper {
+#if !SILVERLIGHT
+        public static bool HasErrors(IDataErrorInfo owner, int deep = 2) {
+            if(owner == null) throw new ArgumentNullException("owner");
+            if(--deep < 0) return false;
+            return TypeDescriptor.GetProperties(owner).Cast<PropertyDescriptor>().Select(p => PropertyHasError(owner, p, deep)).Concat(new bool[] { !string.IsNullOrEmpty(owner.Error) }).Any(e => e);
+        }
+        static bool PropertyHasError(IDataErrorInfo owner, PropertyDescriptor property, int deep) {
+            string simplePropertyError = owner[property.Name];
+            if(!string.IsNullOrEmpty(simplePropertyError)) return true;
+            object propertyValue;
+            if(!TryGetPropertyValue(owner, property.Name, out propertyValue))
+                return false;
+            IDataErrorInfo nestedDataErrorInfo = propertyValue as IDataErrorInfo;
+            return nestedDataErrorInfo != null && HasErrors(nestedDataErrorInfo, deep);
+        }
+#endif
         public static string GetErrorText(object owner, string propertyName) {
             if(owner == null)
                 throw new ArgumentNullException("owner");

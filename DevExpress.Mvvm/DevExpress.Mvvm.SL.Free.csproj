@@ -86,10 +86,12 @@
       <DependentUpon>DataAnnotationsResources.resx</DependentUpon>
     </Compile>
     <Compile Include="DataAnnotations\Attributes\AttributesDX.cs" />
+    <Compile Include="DataAnnotations\Attributes\AttributesEnum.cs" />
     <Compile Include="DataAnnotations\Attributes\AttributesPOCO.cs" />
     <Compile Include="DataAnnotations\Attributes\DXValidationAttribute.cs" />
     <Compile Include="DataAnnotations\Attributes\MetadataTypeAttribute.cs" />
     <Compile Include="DataAnnotations\MetadataBuilders\Command.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\Enum.cs" />
     <Compile Include="DataAnnotations\MetadataBuilders\Extensions.cs" />
     <Compile Include="DataAnnotations\MetadataBuilders\MetadataBuilder.cs" />
     <Compile Include="DataAnnotations\MetadataBuilders\Property.cs" />
@@ -98,6 +100,7 @@
     <Compile Include="DataAnnotations\Native\AttributeHelper.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DataAnnotations\Native\EnumSourceHelper.cs" />
     <Compile Include="DataAnnotations\Native\FreeNative.cs" />
     <Compile Include="DataAnnotations\Native\MetadataHelper.cs" />
     <Compile Include="DataAnnotations\Native\PropertyValidator.cs" />
@@ -124,7 +127,9 @@
     <Compile Include="Native\MayBe.cs" />
     <Compile Include="Native\NativeConstants.cs" />
     <Compile Include="Native\PropertyChangedHelper.cs" />
+    <Compile Include="Native\SplitStringHelper.cs" />
     <Compile Include="Native\SyncCollectionHelper.cs" />
+    <Compile Include="Native\TypeCastHelper.cs" />
     <Compile Include="Native\ViewModelDesignHelper.cs" />
     <Compile Include="NavigationViewModelBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -145,7 +150,9 @@
     <Compile Include="Services\ISupportParentViewModel.cs" />
     <Compile Include="Services\ISupportServices.cs" />
     <Compile Include="Services\MessageBoxService\IMessageBoxService.cs" />
+    <Compile Include="Services\MessageBoxService\MessageBoxEnums.cs" />
     <Compile Include="Services\MessageBoxService\MessageBoxServiceExtensions.cs" />
+    <Compile Include="Services\MessageBoxService\MessageBoxServiceExtensions.Wpf.cs" />
     <Compile Include="Services\MessengerService\FuzzyDictionary.cs" />
     <Compile Include="Services\MessengerService\IMessenger.cs" />
     <Compile Include="Services\MessengerService\Messenger.cs" />

@@ -200,6 +200,7 @@ namespace DevExpress.Mvvm.Native {
             else target.Insert(index, loadedItem);
         }
         static void RemoveItem(int index, IList target, Action<object> clearItemAction) {
+            if(index < 0 || index >= target.Count) return;
             var item = target[index];
             target.RemoveAt(index);
             if (clearItemAction != null)

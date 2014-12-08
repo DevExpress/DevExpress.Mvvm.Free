@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Windows.Threading;
 using DevExpress.Mvvm.Native;
+#if !NETFX_CORE
+using System.Windows.Threading;
+#endif
 
 namespace DevExpress.Mvvm.Native {
     public class StrongReferenceActionInvokerFactory : IActionInvokerFactory {
@@ -13,7 +15,11 @@ namespace DevExpress.Mvvm.Native {
     }
     public class WeakReferenceActionInvokerFactory : IActionInvokerFactory {
         IActionInvoker IActionInvokerFactory.CreateActionInvoker<TMessage>(object recipient, Action<TMessage> action) {
+#if !NETFX_CORE
             if(action.Method.IsStatic)
+#else
+            if(action.GetMethodInfo().IsStatic)
+#endif
                 return new StrongReferenceActionInvoker<TMessage>(recipient, action);
 #if SILVERLIGHT
             if(ShouldStoreActionItself(action))
@@ -22,7 +28,7 @@ namespace DevExpress.Mvvm.Native {
             return new WeakReferenceActionInvoker<TMessage>(recipient, action);
         }
 #if SILVERLIGHT
-        static bool ShouldStoreActionItself<TMessage>(Action<TMessage> action) {
+        static bool ShouldStoreActionItself(Delegate action) {
             if(!action.Method.IsPublic)
                 return true;
             if(action.Target != null && !action.Target.GetType().IsPublic && !action.Target.GetType().IsNestedPublic)

@@ -3,17 +3,19 @@ namespace DevExpress.Internal {
     public const string AssemblyCopyright = "Copyright (c) 2000-2014 Developer Express Inc.";
     public const string AssemblyCompany = "Developer Express Inc.";
 
-    public const int VersionId = 141;
-    public const int VersionIdMinor = 14101;
-    public const string VersionShort = "14.1";
-#if !SILVERLIGHT
-    public const string Version = VersionShort + ".0.0";
-#else
+    public const int VersionId = 142;
+    public const int VersionIdMinor = 14201;
+    public const string VersionShort = "14.2";
+#if SILVERLIGHT
     public const string Version = VersionShort + ".0.5";
+#elif NETFX_CORE
+    public const string Version = VersionShort + ".0.3";
+#else
+    public const string Version = VersionShort + ".0.0";
 #endif
     public const string FileVersion = Version;
-    public const string MarketingVersion = "v2014 vol 1";
-    public const string VirtDirSuffix = "_v14_1";
+    public const string MarketingVersion = "v2014 vol 2";
+    public const string VirtDirSuffix = "_v14_2";
 
     public const string PublicKeyToken = "79868b8147b5eae4";
     public const string PublicKey = "0024000004800000940000000602000000240000525341310004000001000100dd3415ad127e2479d518586804419e99231acd687f889e897fb021bec3d90d53781811bb9d569e032d00362413298930c553dfd43a24e699c6a3d4922824f3c987fc01524b94059de1ccfbef1ff6aedc86055d56c4c3c92c550c84a1410b0c0e891e8f2f0fa193e1532f25727ae634055808129b901bdc24cb517e95fb8815b5";
@@ -28,6 +30,7 @@ namespace DevExpress.Internal {
     public const string VSuffixLinq = VSuffix + ".Linq";
     public const string SRAssemblyAgScheduler = "DevExpress.Xpf.Scheduler" + VSuffix;
     public const string SRAssemblyAssemblyLoader = "DevExpress.Xpf.AssemblyLoader" + VSuffix;
+    public const string SRAssemblyXpfSpellChecker = "DevExpress.Xpf.SpellChecker" + VSuffix;
     public const string SRAssemblyXpfRichEdit = "DevExpress.Xpf.RichEdit" + VSuffix;
     public const string SRAssemblyXpfSpreadsheet = "DevExpress.Xpf.Spreadsheet" + VSuffix;
     public const string SRAssemblyXpfScheduler = "DevExpress.Xpf.Scheduler" + VSuffix;
@@ -86,10 +89,11 @@ namespace DevExpress.Internal {
         SRAssemblyMVC = "DevExpress.Web.Mvc" + VSuffix,
         SRAssemblyMVC5 = "DevExpress.Web.Mvc5" + VSuffix,
         SRAssemblyExpressAppWeb = "DevExpress.ExpressApp.Web" + VSuffix,
+        SRAssemblyExpressAppNotificationsWeb = "DevExpress.ExpressApp.Notifications.Web" + VSuffix,
         SRAssemblyASPxThemes = "DevExpress.Web.ASPxThemes" + VSuffix,
         SRAssemblyASPxThemesFull = SRAssemblyASPxThemes + FullAssemblyVersionExtension,
-        SRAssemblyASPxGridView = "DevExpress.Web.ASPxGridView" + VSuffix,
-        SRAssemblyASPxGridViewExport = "DevExpress.Web.ASPxGridView" + VSuffixExport,
+        SRAssemblyASPxGridView = "DevExpress.Web" + VSuffix,
+        SRAssemblyASPxGridViewExport = "DevExpress.Web" + VSuffixExport,
         SRAssemblyASPxPivotGrid = "DevExpress.Web.ASPxPivotGrid" + VSuffix,
         SRAssemblyASPxPivotGridExport = "DevExpress.Web.ASPxPivotGrid" + VSuffixExport,
         SRAssemblyBonusSkins = "DevExpress.BonusSkins" + VSuffix,
@@ -162,6 +166,7 @@ namespace DevExpress.Internal {
         SRAssemblySpellCheckerCore = "DevExpress.SpellChecker" + VSuffix + ".Core",
         SRAssemblySpellChecker = "DevExpress.XtraSpellChecker" + VSuffix,
         SRAssemblySpellCheckerDesign = "DevExpress.XtraSpellChecker" + VSuffixDesign,
+        SRAssemblySpellCheckerDesignFull = SRAssemblySpellCheckerDesign + FullAssemblyVersionExtension,
         SRAssemblySpellCheckerWeb = "DevExpress.Web.ASPxSpellChecker" + VSuffix,
         SRAssemblyWeb = "DevExpress.Web" + VSuffix,
         SRAssemblyWebDesign = "DevExpress.Web" + VSuffixDesign,
@@ -169,9 +174,10 @@ namespace DevExpress.Internal {
         SRAssemblyWebLinq = "DevExpress.Web" + VSuffixLinq,
         SRAssemblyWebSpreadsheet = "DevExpress.Web.ASPxSpreadsheet" + VSuffix,
         SRAssemblyWebRichEdit = "DevExpress.Web.ASPxRichEdit" + VSuffix,
+        SRAssemblyWebRichEditTests = "DevExpress.Web.ASPxRichEdit" + VSuffix + ".Tests",
 
         SRAssemblyHtmlEditorWeb = "DevExpress.Web.ASPxHtmlEditor" + VSuffix,
-        SRAssemblyEditorsWeb = "DevExpress.Web.ASPxEditors" + VSuffix,
+        SRAssemblyEditorsWeb = "DevExpress.Web" + VSuffix,
         SRAssemblyTreeListWeb = "DevExpress.Web.ASPxTreeList" + VSuffix,
         SRAssemblyTreeListWebExport = "DevExpress.Web.ASPxTreeList" + VSuffixExport,
         SRAssemblyDXPivotGrid = "DevExpress.Xpf.PivotGrid" + VSuffix,
@@ -196,6 +202,8 @@ namespace DevExpress.Internal {
         SRAssemblyMapDesign = "DevExpress.XtraMap" + VSuffixDesign,
         SRAssemblyDataAccess = "DevExpress.DataAccess" + VSuffix,
         SRAssemblyDataAccessUI = "DevExpress.DataAccess" + VSuffix + ".UI",
+        SRAssemblyDataAccessDesign = "DevExpress.DataAccess" + VSuffix + ".Design",
+        SRAssemblyDataAccessDesignFull = SRAssemblyDataAccessDesign + FullAssemblyVersionExtension,
         SRAssemblyPdfCore = "DevExpress.Pdf" + VSuffix + ".Core",
         SRAssemblyPdfDrawing = "DevExpress.Pdf" + VSuffix + ".Drawing",
         SRAssemblyXtraPdfViewer = "DevExpress.XtraPdfViewer" + VSuffix,
