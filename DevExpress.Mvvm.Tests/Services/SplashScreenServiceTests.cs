@@ -8,6 +8,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Windows.Data;
+using DevExpress.Mvvm.POCO;
 
 namespace DevExpress.Mvvm.UI.Tests {
     internal class SplashScreenTestWindow : Window, ISplashScreen {
@@ -82,12 +84,15 @@ namespace DevExpress.Mvvm.UI.Tests {
             SplashScreenTestUserControl.ViewModel = null;
             SplashScreenTestUserControl.Instance = null;
             SplashScreenTestWindow.Instance = null;
-            if(!DXSplashScreen.IsActive) return;
+            CloseDXSplashScreen();
+        }
+        protected void CloseDXSplashScreen() {
+            if(!DXSplashScreen.IsActive)
+                return;
             DXSplashScreen.Close();
-            if(DXSplashScreen.SplashContainer == null) return;
             var t = DXSplashScreen.SplashContainer.InternalThread;
             if(t != null)
-                DXSplashScreen.SplashContainer.InternalThread.Join();
+                t.Join();
         }
     }
     [TestFixture]
@@ -117,8 +122,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsTrue(SplashScreenTestWindow.Instance.WindowContent.IsVisible);
             Assert.AreEqual(double.NaN, SplashScreenTestWindow.Instance.Progress);
             Assert.IsTrue(SplashScreenTestWindow.Instance.IsIndeterminate);
-            DXSplashScreen.Close();
-            DXSplashScreen.SplashContainer.InternalThread.Join();
+            CloseDXSplashScreen();
             Assert.IsNull(DXSplashScreen.SplashContainer.InternalThread);
             Assert.IsNull(DXSplashScreen.SplashContainer.SplashScreen);
         }
@@ -127,8 +131,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             DXSplashScreen.Show<SplashScreenTestWindow>();
             Assert.IsNotNull(DXSplashScreen.SplashContainer.InternalThread);
             Assert.IsNotNull(DXSplashScreen.SplashContainer.SplashScreen);
-
-
             Assert.IsTrue(SplashScreenTestWindow.Instance.IsIndeterminate);
             DXSplashScreen.Progress(0);
             SplashScreenTestWindow.DoEvents();
@@ -138,9 +140,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 SplashScreenTestWindow.DoEvents();
                 Assert.AreEqual(i, SplashScreenTestWindow.Instance.Progress);
             }
-
-            DXSplashScreen.Close();
-            DXSplashScreen.SplashContainer.InternalThread.Join();
+            CloseDXSplashScreen();
             Assert.IsNull(DXSplashScreen.SplashContainer.InternalThread);
             Assert.IsNull(DXSplashScreen.SplashContainer.SplashScreen);
         }
@@ -149,13 +149,12 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(DXSplashScreen.IsActive);
             DXSplashScreen.Show<SplashScreenTestWindow>();
             Assert.IsTrue(DXSplashScreen.IsActive);
-            DXSplashScreen.Close();
-            DXSplashScreen.SplashContainer.InternalThread.Join();
+            CloseDXSplashScreen();
             Assert.IsFalse(DXSplashScreen.IsActive);
         }
 
         [Test]
-        public void CustomSplashScreenTest() {
+        public void CustomSplashScreen_Test() {
             Func<object, Window> windowCreator = (p) => {
                 Assert.AreEqual(1, p);
                 return new SplashScreenTestWindow();
@@ -167,15 +166,13 @@ namespace DevExpress.Mvvm.UI.Tests {
             DXSplashScreen.Show(windowCreator, splashScreenCreator, 1, 1);
             Assert.IsNotNull(DXSplashScreen.SplashContainer.InternalThread);
             Assert.IsNotNull(DXSplashScreen.SplashContainer.SplashScreen);
-
-            DXSplashScreen.Close();
-            DXSplashScreen.SplashContainer.InternalThread.Join();
+            CloseDXSplashScreen();
             Assert.IsNull(DXSplashScreen.SplashContainer.InternalThread);
             Assert.IsNull(DXSplashScreen.SplashContainer.SplashScreen);
         }
 
         [Test]
-        public void ShowWindowISplashScreen() {
+        public void ShowWindowISplashScreen_Test() {
             DXSplashScreen.Show<SplashScreenTestWindow>();
             SplashScreenTestWindow.DoEvents();
             Assert.IsTrue(SplashScreenTestWindow.Instance.IsIndeterminate);
@@ -197,28 +194,28 @@ namespace DevExpress.Mvvm.UI.Tests {
             SplashScreenTestWindow.DoEvents();
         }
         [Test, ExpectedException(typeof(InvalidOperationException))]
-        public void ShowWindowNotISplashScreen() {
+        public void ShowWindowNotISplashScreen_Test() {
             DXSplashScreen.Show<Window>();
         }
         [Test]
-        public void ShowUserControl() {
+        public void ShowUserControl_Test() {
             DXSplashScreen.Show<SplashScreenTestUserControl>();
             SplashScreenTestUserControl.DoEvents();
             Assert.AreEqual(0, SplashScreenTestUserControl.ViewModel.Progress);
             Assert.AreEqual(100, SplashScreenTestUserControl.ViewModel.MaxProgress);
-            Assert.AreEqual(null, SplashScreenTestUserControl.ViewModel.State);
+            Assert.AreEqual("Loading...", SplashScreenTestUserControl.ViewModel.State);
             Assert.AreEqual(true, SplashScreenTestUserControl.ViewModel.IsIndeterminate);
             DXSplashScreen.Progress(50);
             SplashScreenTestUserControl.DoEvents();
             Assert.AreEqual(50, SplashScreenTestUserControl.ViewModel.Progress);
             Assert.AreEqual(100, SplashScreenTestUserControl.ViewModel.MaxProgress);
-            Assert.AreEqual(null, SplashScreenTestUserControl.ViewModel.State);
+            Assert.AreEqual("Loading...", SplashScreenTestUserControl.ViewModel.State);
             Assert.AreEqual(false, SplashScreenTestUserControl.ViewModel.IsIndeterminate);
             DXSplashScreen.Progress(100, 200);
             SplashScreenTestUserControl.DoEvents();
             Assert.AreEqual(100, SplashScreenTestUserControl.ViewModel.Progress);
             Assert.AreEqual(200, SplashScreenTestUserControl.ViewModel.MaxProgress);
-            Assert.AreEqual(null, SplashScreenTestUserControl.ViewModel.State);
+            Assert.AreEqual("Loading...", SplashScreenTestUserControl.ViewModel.State);
             Assert.AreEqual(false, SplashScreenTestUserControl.ViewModel.IsIndeterminate);
             DXSplashScreen.SetState("Test");
             SplashScreenTestUserControl.DoEvents();
@@ -228,7 +225,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(false, SplashScreenTestUserControl.ViewModel.IsIndeterminate);
         }
         [Test]
-        public void ShowUserControlAndCheckWindowProperties() {
+        public void ShowUserControlAndCheckWindowProperties_Test() {
             DXSplashScreen.Show<SplashScreenTestUserControl>();
             SplashScreenTestUserControl.DoEvents();
             Window wnd = SplashScreenTestUserControl.Window;
@@ -251,7 +248,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             }));
             SyncEvent.WaitOne(TimeSpan.FromSeconds(2));
             Assert.IsFalse(hasError);
-            DXSplashScreen.Close();
+            CloseDXSplashScreen();
         }
 
         [Test]
@@ -266,8 +263,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             DXSplashScreen.CallSplashScreenMethod<SplashScreenTestWindow>(x => x.Text("Test"));
             SplashScreenTestWindow.DoEvents();
             Assert.AreEqual("Test", ((SplashScreenTestWindow)SplashScreenTestWindow.Instance).TextProp);
-            DXSplashScreen.Close();
-            DXSplashScreen.SplashContainer.InternalThread.Join();
+            CloseDXSplashScreen();
             Assert.IsNull(DXSplashScreen.SplashContainer.InternalThread);
             Assert.IsNull(DXSplashScreen.SplashContainer.SplashScreen);
         }
@@ -277,9 +273,13 @@ namespace DevExpress.Mvvm.UI.Tests {
             DXSplashScreen.CallSplashScreenMethod<UserControl>(x => x.Tag = "Test");
         }
     }
-
     [TestFixture]
     public class DXSplashScreenServiceTests : DXSplashScreenBaseTestFixture {
+        public class ContainerVM {
+            public virtual double Progress { get; set; }
+            public virtual double MaxProgress { get; set; }
+            public virtual object State { get; set; }
+        }
         [Test]
         public void TestB238799() {
             DXSplashScreenService s = new DXSplashScreenService();
@@ -329,6 +329,47 @@ namespace DevExpress.Mvvm.UI.Tests {
             ShowUserControlCore(service);
         }
         [Test]
+        public void BindServiceProperties() {
+            var service = new DXSplashScreenService() {
+                ViewTemplate = new DataTemplate() { VisualTree = new FrameworkElementFactory(typeof(SplashScreenTestUserControl)) },
+            };
+            ISplashScreenService iService = service;
+            Border container = new Border();
+            ContainerVM vm = ViewModelSource.Create(() => new ContainerVM());
+            container.DataContext = vm;
+            vm.State = "Loading2";
+            BindingOperations.SetBinding(service, DXSplashScreenService.ProgressProperty, new Binding("Progress"));
+            BindingOperations.SetBinding(service, DXSplashScreenService.MaxProgressProperty, new Binding("MaxProgress"));
+            BindingOperations.SetBinding(service, DXSplashScreenService.StateProperty, new Binding("State"));
+            Interaction.GetBehaviors(container).Add(service);
+
+            service.ShowSplashScreen();
+            SplashScreenTestUserControl.DoEvents();
+            Assert.AreEqual(0, SplashScreenTestUserControl.ViewModel.Progress);
+            Assert.AreEqual(0, SplashScreenTestUserControl.ViewModel.MaxProgress);
+            Assert.AreEqual("Loading2", SplashScreenTestUserControl.ViewModel.State);
+            Assert.AreEqual(false, SplashScreenTestUserControl.ViewModel.IsIndeterminate);
+            vm.Progress = 50; vm.MaxProgress = 100;
+            SplashScreenTestUserControl.DoEvents();
+            Assert.AreEqual(50, SplashScreenTestUserControl.ViewModel.Progress);
+            Assert.AreEqual(100, SplashScreenTestUserControl.ViewModel.MaxProgress);
+            Assert.AreEqual("Loading2", SplashScreenTestUserControl.ViewModel.State);
+            Assert.AreEqual(false, SplashScreenTestUserControl.ViewModel.IsIndeterminate);
+            vm.Progress = 100; vm.MaxProgress = 200;
+            SplashScreenTestUserControl.DoEvents();
+            Assert.AreEqual(100, SplashScreenTestUserControl.ViewModel.Progress);
+            Assert.AreEqual(200, SplashScreenTestUserControl.ViewModel.MaxProgress);
+            Assert.AreEqual("Loading2", SplashScreenTestUserControl.ViewModel.State);
+            Assert.AreEqual(false, SplashScreenTestUserControl.ViewModel.IsIndeterminate);
+            vm.State = "Test";
+            SplashScreenTestUserControl.DoEvents();
+            Assert.AreEqual(100, SplashScreenTestUserControl.ViewModel.Progress);
+            Assert.AreEqual(200, SplashScreenTestUserControl.ViewModel.MaxProgress);
+            Assert.AreEqual("Test", SplashScreenTestUserControl.ViewModel.State);
+            Assert.AreEqual(false, SplashScreenTestUserControl.ViewModel.IsIndeterminate);
+            iService.HideSplashScreen();
+        }
+        [Test]
         public void ShowUserControlViaSplashScreenType() {
             ISplashScreenService service = new DXSplashScreenService() {
                 SplashScreenType = typeof(SplashScreenTestUserControl),
@@ -340,19 +381,19 @@ namespace DevExpress.Mvvm.UI.Tests {
             SplashScreenTestUserControl.DoEvents();
             Assert.AreEqual(0, SplashScreenTestUserControl.ViewModel.Progress);
             Assert.AreEqual(100, SplashScreenTestUserControl.ViewModel.MaxProgress);
-            Assert.AreEqual(null, SplashScreenTestUserControl.ViewModel.State);
+            Assert.AreEqual("Loading...", SplashScreenTestUserControl.ViewModel.State);
             Assert.AreEqual(true, SplashScreenTestUserControl.ViewModel.IsIndeterminate);
             service.SetSplashScreenProgress(50, 100);
             SplashScreenTestUserControl.DoEvents();
             Assert.AreEqual(50, SplashScreenTestUserControl.ViewModel.Progress);
             Assert.AreEqual(100, SplashScreenTestUserControl.ViewModel.MaxProgress);
-            Assert.AreEqual(null, SplashScreenTestUserControl.ViewModel.State);
+            Assert.AreEqual("Loading...", SplashScreenTestUserControl.ViewModel.State);
             Assert.AreEqual(false, SplashScreenTestUserControl.ViewModel.IsIndeterminate);
             service.SetSplashScreenProgress(100, 200);
             SplashScreenTestUserControl.DoEvents();
             Assert.AreEqual(100, SplashScreenTestUserControl.ViewModel.Progress);
             Assert.AreEqual(200, SplashScreenTestUserControl.ViewModel.MaxProgress);
-            Assert.AreEqual(null, SplashScreenTestUserControl.ViewModel.State);
+            Assert.AreEqual("Loading...", SplashScreenTestUserControl.ViewModel.State);
             Assert.AreEqual(false, SplashScreenTestUserControl.ViewModel.IsIndeterminate);
             service.SetSplashScreenState("Test");
             SplashScreenTestUserControl.DoEvents();

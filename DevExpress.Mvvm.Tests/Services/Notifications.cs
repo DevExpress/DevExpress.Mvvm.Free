@@ -1,3 +1,4 @@
+using System.Windows.Controls;
 using DevExpress.Internal;
 using DevExpress.Mvvm.UI.Native;
 using NUnit.Framework;
@@ -22,7 +23,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         [Test]
         public void PositionerTest() {
             var pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(0, 0, 800, 600), NotificationPosition.TopRight, 3);
+            pos.Update(new Rect(0, 0, 800, 600), NotificationPosition.TopRight, 3);
             Point p;
 
             Assert.AreEqual(true, pos.HasEmptySlot());
@@ -56,7 +57,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(true, pos.HasEmptySlot());
 
             pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(0, 0, 800, 600), NotificationPosition.BottomRight, 3);
+            pos.Update(new Rect(0, 0, 800, 600), NotificationPosition.BottomRight, 3);
             p = pos.Add("item1", 200, 50);
             Assert.AreEqual(800 - 200, p.X);
             Assert.AreEqual(600 - 50 - 20, p.Y);
@@ -89,23 +90,23 @@ namespace DevExpress.Mvvm.UI.Tests {
         [Test]
         public void PositionerTest2() {
             var pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(0, 0, 800, 600), NotificationPosition.TopRight, 100);
+            pos.Update(new Rect(0, 0, 800, 600), NotificationPosition.TopRight, 100);
             pos.Add("item1", 200, 480);
             Assert.AreEqual(false, pos.HasEmptySlot());
 
             pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(0, 0, 800, 600), NotificationPosition.TopRight, 100);
+            pos.Update(new Rect(0, 0, 800, 600), NotificationPosition.TopRight, 100);
             pos.Add("item1", 200, 460);
             Assert.AreEqual(false, pos.HasEmptySlot());
 
             pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(0, 0, 800, 250), NotificationPosition.TopRight, 100);
+            pos.Update(new Rect(0, 0, 800, 250), NotificationPosition.TopRight, 100);
             pos.Add("item1", 200, 100);
             pos.Add("item1", 200, 100);
             Assert.AreEqual(false, pos.HasEmptySlot());
 
             pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(0, 0, 800, 360), NotificationPosition.TopRight, 100);
+            pos.Update(new Rect(0, 0, 800, 360), NotificationPosition.TopRight, 100);
             pos.Add("item1", 200, 100);
             pos.Add("item1", 200, 100);
             Assert.AreEqual(true, pos.HasEmptySlot());
@@ -114,13 +115,13 @@ namespace DevExpress.Mvvm.UI.Tests {
         [Test]
         public void PositionerTest3() {
             var pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(10, 25, 790, 575), NotificationPosition.TopRight, 100);
+            pos.Update(new Rect(10, 25, 790, 575), NotificationPosition.TopRight, 100);
             Point p = pos.Add("item1", 200, 100);
             Assert.AreEqual(10 + 790 - 200, p.X);
             Assert.AreEqual(25 + 20, p.Y);
 
             pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(10, 25, 790, 575), NotificationPosition.BottomRight, 100);
+            pos.Update(new Rect(10, 25, 790, 575), NotificationPosition.BottomRight, 100);
             p = pos.Add("item1", 200, 100);
             Assert.AreEqual(10 + 790 - 200, p.X);
             Assert.AreEqual(600 - 20 - 100, p.Y);
@@ -129,23 +130,23 @@ namespace DevExpress.Mvvm.UI.Tests {
         [Test]
         public void PositionerTest4() {
             var pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(0, 50, 800, 650), NotificationPosition.TopRight, 100);
+            pos.Update(new Rect(0, 50, 800, 650), NotificationPosition.TopRight, 100);
             pos.Add("item1", 200, 480);
             Assert.AreEqual(false, pos.HasEmptySlot());
 
             pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(0, 50, 800, 650), NotificationPosition.TopRight, 100);
+            pos.Update(new Rect(0, 50, 800, 650), NotificationPosition.TopRight, 100);
             pos.Add("item1", 200, 460);
             Assert.AreEqual(false, pos.HasEmptySlot());
 
             pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(0, 50, 800, 300), NotificationPosition.TopRight, 100);
+            pos.Update(new Rect(0, 50, 800, 300), NotificationPosition.TopRight, 100);
             pos.Add("item1", 200, 100);
             pos.Add("item1", 200, 100);
             Assert.AreEqual(false, pos.HasEmptySlot());
 
             pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(0, 50, 800, 410), NotificationPosition.TopRight, 100);
+            pos.Update(new Rect(0, 50, 800, 410), NotificationPosition.TopRight, 100);
             pos.Add("item1", 200, 100);
             pos.Add("item1", 200, 100);
             Assert.AreEqual(true, pos.HasEmptySlot());
@@ -154,7 +155,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         [Test]
         public void PositionerHasSlotTest() {
             var pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(0, 50, 800, 650), NotificationPosition.TopRight, 3);
+            pos.Update(new Rect(0, 50, 800, 650), NotificationPosition.TopRight, 3);
             pos.Add("item1", 200, 100);
             Assert.AreEqual(true, pos.HasEmptySlot());
             pos.Remove("item1");
@@ -180,6 +181,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background,
                     new DispatcherOperationCallback(ExitFrame), frame);
                 Dispatcher.PushFrame(frame);
+                System.Windows.Forms.Application.DoEvents();
             }
 
             private static object ExitFrame(object frame) {
@@ -275,8 +277,8 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
 
         class TestScreen : IScreen {
-            public System.Drawing.Rectangle bounds;
-            public System.Drawing.Rectangle GetWorkingArea() {
+            public Rect bounds;
+            public Rect GetWorkingArea() {
                 return bounds;
             }
             public void Changed() {
@@ -288,7 +290,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 
         [Test]
         public void BasicResolutionChangedHandlingTest() {
-            var testScreen = new TestScreen { bounds = new System.Drawing.Rectangle(0, 0, 1000, 500) };
+            var testScreen = new TestScreen { bounds = new Rect(0, 0, 1000, 500) };
             var notifier = new CustomNotifier(testScreen);
             notifier.UpdatePositioner(NotificationPosition.BottomRight, 2);
             var toasts = Enumerable.Range(0, 3).Select(_ => new CustomNotification(null, notifier)).ToList();
@@ -299,7 +301,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(new Point(615, 390), ps[0]);
             Assert.AreEqual(new Point(615, 290), ps[1]);
 
-            testScreen.bounds = new System.Drawing.Rectangle(0, 0, 800, 600);
+            testScreen.bounds = new Rect(0, 0, 800, 600);
             testScreen.Changed();
             pos = CustomNotifier.positioner;
             ps = pos.Items.Select(i => pos.GetItemPosition(i)).ToList();
@@ -312,7 +314,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 
         [Test]
         public void NotificationsArentLostOnPositionerUpdateTest() {
-            var testScreen = new TestScreen { bounds = new System.Drawing.Rectangle(0, 0, 1000, 500) };
+            var testScreen = new TestScreen { bounds = new Rect(0, 0, 1000, 500) };
             var notifier1 = new CustomNotifier(testScreen);
             var notifier2 = new CustomNotifier(testScreen);
             var positioner = CustomNotifier.positioner;
@@ -327,7 +329,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 
         [Test]
         public void UpdatePositionerTest() {
-            var testScreen = new TestScreen { bounds = new System.Drawing.Rectangle(0, 0, 800, 600) };
+            var testScreen = new TestScreen { bounds = new Rect(0, 0, 800, 600) };
             var notifier = new CustomNotifier(testScreen);
             var pos = CustomNotifier.positioner;
 
@@ -347,7 +349,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 
         [Test]
         public void ResolutionChangingTest() {
-            var testScreen = new TestScreen { bounds = new System.Drawing.Rectangle(0, 0, 1000, 500) };
+            var testScreen = new TestScreen { bounds = new Rect(0, 0, 1000, 500) };
             var notifier = new CustomNotifier(testScreen);
             notifier.UpdatePositioner(NotificationPosition.BottomRight, 2);
             var toasts = Enumerable.Range(0, 3).Select(_ => new CustomNotification(null, notifier)).ToList();
@@ -355,7 +357,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 
             Assert.AreEqual(2, CustomNotifier.positioner.Items.Count(i => i != null));
 
-            testScreen.bounds = new System.Drawing.Rectangle(0, 0, 800, 600);
+            testScreen.bounds = new Rect(0, 0, 800, 600);
             testScreen.Changed();
 
             Assert.AreEqual(2, CustomNotifier.positioner.Items.Count(i => i != null));
@@ -366,14 +368,14 @@ namespace DevExpress.Mvvm.UI.Tests {
         [Test]
         public void PositionUpdateTest() {
             var pos = new NotificationPositioner<string>();
-            pos.Update(new System.Drawing.Rectangle(0, 0, 800, 600), NotificationPosition.TopRight, 3);
+            pos.Update(new Rect(0, 0, 800, 600), NotificationPosition.TopRight, 3);
             Point p;
 
             p = pos.Add("item1", 200, 50);
             Assert.AreEqual(800 - 200, p.X);
             Assert.AreEqual(20, p.Y);
 
-            pos.Update(new System.Drawing.Rectangle(0, 0, 800, 600), NotificationPosition.BottomRight, 3);
+            pos.Update(new Rect(0, 0, 800, 600), NotificationPosition.BottomRight, 3);
 
             p = pos.GetItemPosition("item1");
             Assert.AreEqual(800 - 200, p.X);
@@ -425,6 +427,34 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(NotificationPosition.BottomRight, CustomNotifier.positioner.position);
             service.CustomNotificationPosition = NotificationPosition.TopRight;
             Assert.AreEqual(NotificationPosition.TopRight, CustomNotifier.positioner.position);
+        }
+
+        [Test]
+        public void ResettingTimerOfHiddenNotificationTest() {
+            var customNotifier = new CustomNotifier(new TestScreen());
+            var toast = new CustomNotification(null, customNotifier);
+            customNotifier.ShowAsync(toast);
+            customNotifier.Hide(toast);
+            customNotifier.ResetTimer(toast);
+            customNotifier.StopTimer(toast);
+        }
+
+        class TestTemplateSelector : DataTemplateSelector {
+            public bool Called = false;
+            public override DataTemplate SelectTemplate(object item, DependencyObject container) {
+                Called = true;
+                return base.SelectTemplate(item, container);
+            }
+        }
+
+        [Test]
+        public void CustomNotificationTemplateSelectorTest() {
+            var customNotifier = new CustomNotifier(new TestScreen { bounds = new Rect(0, 0, 1000, 500) });
+            var selector = new TestTemplateSelector();
+            customNotifier.ContentTemplateSelector = selector;
+            var toast = new CustomNotification(null, customNotifier);
+            WaitWithDispatcher(customNotifier.ShowAsync(toast, 1));
+            Assert.IsTrue(selector.Called);
         }
     }
 }

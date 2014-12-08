@@ -79,21 +79,30 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Behaviors\AttachedBehaviorTests.cs" />
+    <Compile Include="Behaviors\CompositeCommandBehaviorTests.cs" />
     <Compile Include="Behaviors\ConfirmationBehaviorTests.cs" />
     <Compile Include="Behaviors\DependencyPropertyBehaviorTests.cs" />
+    <Compile Include="Behaviors\EnumItemsSourceBehaviorTests.cs" />
+    <Compile Include="Behaviors\FunctionToCommandBehaviorTests.cs" />
     <Compile Include="Behaviors\ValidationErrorsHostBehaviorTests.cs" />
     <Compile Include="BindableBaseTests.cs" />
     <Compile Include="DefaultMessageBoxButtonLocalizerTests.cs" />
     <Compile Include="DelegateCommandTests.cs" />
     <Compile Include="DesignTimeHelperTests.cs" />
+    <Compile Include="EnumHelperTests.cs" />
     <Compile Include="ExpressionHelperTests.cs" />
     <Compile Include="MessengerTests.cs" />
     <Compile Include="MetadataBuilderTests.cs" />
+    <Compile Include="Mvvm.UI\ItemsControlMouseEventArgsConverterTests.cs" />
     <Compile Include="Mvvm.UI\LayoutTreeHelperTests.cs" />
+    <Compile Include="Behaviors\FunctionBindingBehaviorTests.cs" />
+    <Compile Include="Mvvm.UI\ViewLocatorTests.cs" />
+    <Compile Include="Services\CurrentWindowServiceTests.cs" />
     <Compile Include="Services\DispatcherServiceTests.cs" />
     <Compile Include="Services\SplashScreenServiceTests.cs" />
     <Compile Include="Services\TaskbarButtonServiceTests.cs" />
     <Compile Include="Services\ViewHelperTests.cs" />
+    <Compile Include="Services\ViewInjectionServiceTests.cs" />
     <Compile Include="SyncCollectionHelperTests.cs" />
     <Compile Include="Mvvm.UI\ConvertersTests.cs" />
     <Compile Include="Mvvm.UI\EventToCommandTests.cs" />
@@ -154,6 +163,11 @@
     <Resource Include="Icons\icon5.ico" />
     <Resource Include="Icons\icon6.ico" />
     <Resource Include="Icons\icon7.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Behaviors\TestImages\Copy.png" />
+    <Resource Include="Behaviors\TestImages\Cut.png" />
+    <Resource Include="Behaviors\TestImages\Delete.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

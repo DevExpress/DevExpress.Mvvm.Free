@@ -14,6 +14,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Shell;
+using System.Windows.Input;
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
@@ -334,6 +335,23 @@ namespace DevExpress.Mvvm.UI.Tests {
             }, RealWindow.TaskbarItemInfo.ThumbButtonInfos, true, new string[] { "Command" });
         }
         [Test]
+        public void TaskbarThumbButtonBindCommandWithParameter() {
+            TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService();
+            Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
+            EnqueueShowRealWindow();
+            ButtonViewModel viewModel = new ButtonViewModel();
+            ITaskbarButtonService taskbarService = taskbarServiceImpl;
+            TaskbarThumbButtonInfo thumbButtonInfo_1 = new TaskbarThumbButtonInfo();
+            BindingOperations.SetBinding(thumbButtonInfo_1, TaskbarThumbButtonInfo.CommandParameterProperty, new Binding("CommandParameter") { Source = viewModel, Mode = BindingMode.OneWay });
+            BindingOperations.SetBinding(thumbButtonInfo_1, TaskbarThumbButtonInfo.CommandProperty, new Binding("Command") { Source = viewModel, Mode = BindingMode.OneWay });
+            taskbarService.ThumbButtonInfos.Add(thumbButtonInfo_1);
+            int? parameter = null;
+            viewModel.Command = new DelegateCommand<int?>(p => parameter = p);
+            viewModel.CommandParameter = 13;
+            RealWindow.TaskbarItemInfo.ThumbButtonInfos[0].Command.Execute(RealWindow.TaskbarItemInfo.ThumbButtonInfos[0].CommandParameter);
+            Assert.AreEqual(13, parameter);
+        }
+        [Test]
         public void ThumbButtonPropertiesChanged() {
             TaskbarButtonService taskbarServiceImpl = new TaskbarButtonService();
             Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
@@ -376,7 +394,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
             EnqueueShowRealWindow();
             ITaskbarButtonService taskbarService = taskbarServiceImpl;
-            TaskbarThumbButtonInfo taskbarThumbButtonInfo = new TaskbarThumbButtonInfo();
+            TaskbarThumbButtonInfo taskbarThumbButtonInfo = new TaskbarThumbButtonInfo() { Description = "xxx" };
             bool actionExecuted = false;
             bool clickExecuted = false;
             taskbarThumbButtonInfo.Action = () => { actionExecuted = true; };
@@ -633,6 +651,16 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(POCOViewModelExtensions.GetCommand(vm, x => x.Do()), bt.Command);
         }
 
+        public class ButtonViewModel : BindableBase {
+            public ICommand Command {
+                get { return GetProperty(() => Command); }
+                set { SetProperty(() => Command, value); }
+            }
+            public object CommandParameter {
+                get { return GetProperty(() => CommandParameter); }
+                set { SetProperty(() => CommandParameter, value); }
+            }
+        }
 
         public class VM {
             public virtual TaskbarItemProgressState ProgressState { get; set; }

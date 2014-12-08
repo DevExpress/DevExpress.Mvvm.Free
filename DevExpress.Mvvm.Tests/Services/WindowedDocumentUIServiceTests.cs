@@ -297,7 +297,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             documentContent.DocumentOwner.Close(documentContent, force);
         }
         void CloseDocumentWithClosingWindow(IDocument document) {
-            var window = ((WindowedDocumentUIService.WindowDocument)document).Window.RealWindow;
+            Window window = ((WindowedDocumentUIService.WindowDocument)document).Window.RealWindow;
             window.Close();
         }
         [Test, Asynchronous]
@@ -377,6 +377,9 @@ namespace DevExpress.Mvvm.UI.Tests {
         object IViewLocator.ResolveView(string name) {
             Type type;
             return types.TryGetValue(name, out type) ? Activator.CreateInstance(type) : innerViewLocator.With(i => i.ResolveView(name));
+        }
+        Type IViewLocator.ResolveViewType(string name) {
+            throw new NotImplementedException();
         }
     }
 }

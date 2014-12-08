@@ -7,8 +7,9 @@ namespace DevExpress.Mvvm.UI.Tests {
         public virtual int SecondsTimeout { get { return Debugger.IsAttached ? 180 : 25; } }
         public int MillisecondsTimeout { get { return SecondsTimeout * 1000; } }
         public TimeSpan Timeout { get { return new TimeSpan(0, 0, SecondsTimeout); } }
-        public virtual int SecondsTestTimeout { get { return 180; } }
+        public virtual int SecondsTestTimeout { get { return Debugger.IsAttached ? 240 : 120; } }
         public int MillisecondsTestTimeout { get { return SecondsTestTimeout * 1000; } }
+        public TimeSpan TestTimeout { get { return new TimeSpan(0, 0, SecondsTestTimeout); } }
         public void WaitOne(WaitHandle waitHandle, int millisecondsTimeout = 0) {
             if(millisecondsTimeout == 0)
                 millisecondsTimeout = MillisecondsTimeout;
