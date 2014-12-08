@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleCustomAttachedBehavior.Wpf.Free", "Examples\ExampleCustomAttachedBehavior\ExampleCustomAttachedBehavior.Wpf.Free.csproj", "{022EB334-7BF3-4859-99A7-2A77B58C30E4}"
 EndProject
@@ -46,73 +46,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleEnumItemsSourceBehavior.Wpf.Free", "Examples\ExampleEnumItemsSourceBehavior\ExampleEnumItemsSourceBehavior.Wpf.Free.csproj", "{11023FC0-333F-4A24-93CF-69C735AF2B83}"
 EndProject
 Global
-	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 22
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = Examples\\ExampleCustomAttachedBehavior\\ExampleCustomAttachedBehavior.Wpf.Free.csproj
-		SccProjectName1 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleCustomAttachedBehavior\u0022
-		SccLocalPath1 = Examples\\ExampleCustomAttachedBehavior
-		SccProjectUniqueName2 = Examples\\ExampleCustomService\\ExampleCustomService.Wpf.Free.csproj
-		SccProjectName2 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleCustomService\u0022
-		SccLocalPath2 = Examples\\ExampleCustomService
-		SccProjectUniqueName3 = Examples\\ExampleDelegateCommand\\ExampleDelegateCommand.Wpf.Free.csproj
-		SccProjectName3 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleDelegateCommand\u0022
-		SccLocalPath3 = Examples\\ExampleDelegateCommand
-		SccProjectUniqueName4 = Examples\\ExamplePOCO\\ExamplePOCO.Wpf.Free.csproj
-		SccProjectName4 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExamplePOCO\u0022
-		SccLocalPath4 = Examples\\ExamplePOCO
-		SccProjectUniqueName5 = Examples\\ExampleViewModelBase\\ExampleViewModelBase.Wpf.Free.csproj
-		SccProjectName5 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleViewModelBase\u0022
-		SccLocalPath5 = Examples\\ExampleViewModelBase
-		SccProjectUniqueName6 = Examples\\ExampleFileDialogServices\\ExampleFileDialogServices.Wpf.Free.csproj
-		SccProjectName6 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleFileDialogServices\u0022
-		SccLocalPath6 = Examples\\ExampleFileDialogServices
-		SccProjectUniqueName7 = Examples\\ExampleDispatcherService\\ExampleDispatcherService.Wpf.Free.csproj
-		SccProjectName7 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleDispatcherService\u0022
-		SccLocalPath7 = Examples\\ExampleDispatcherService
-		SccProjectUniqueName8 = Examples\\ExampleDataErrorInfo\\ExampleDataErrorInfo.Wpf.Free.csproj
-		SccProjectName8 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleDataErrorInfo\u0022
-		SccLocalPath8 = Examples\\ExampleDataErrorInfo
-		SccProjectUniqueName9 = Examples\\ExampleTaskbarService\\ExampleTaskbarService.Wpf.Free.csproj
-		SccProjectName9 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleTaskbarService\u0022
-		SccLocalPath9 = Examples\\ExampleTaskbarService
-		SccProjectUniqueName10 = Examples\\ExampleJumpListService\\ExampleJumpListService.Wpf.Free.csproj
-		SccProjectName10 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleJumpListService\u0022
-		SccLocalPath10 = Examples\\ExampleJumpListService
-		SccProjectUniqueName11 = Examples\\ExampleNotificationService\\ExampleNotificationService.Wpf.Free.csproj
-		SccProjectName11 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleNotificationService\u0022
-		SccLocalPath11 = Examples\\ExampleNotificationService
-		SccProjectUniqueName12 = Examples\\ExampleWindowService\\ExampleWindowService.Wpf.Free.csproj
-		SccProjectName12 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleWindowService\u0022
-		SccLocalPath12 = Examples\\ExampleWindowService
-		SccProjectUniqueName13 = Examples\\ExampleSplashScreenService\\ExampleSplashScreenService.Wpf.Free.csproj
-		SccProjectName13 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleSplashScreenService\u0022
-		SccLocalPath13 = Examples\\ExampleSplashScreenService
-		SccProjectUniqueName14 = Examples\\ExampleWindowedDocumentUIService\\ExampleWindowedDocumentUIService.Wpf.Free.csproj
-		SccProjectName14 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleWindowedDocumentUIService\u0022
-		SccLocalPath14 = Examples\\ExampleWindowedDocumentUIService
-		SccProjectUniqueName15 = Examples\\ExampleConfirmationBehavior\\ExampleConfirmationBehavior.Wpf.Free.csproj
-		SccProjectName15 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleConfirmationBehavior\u0022
-		SccLocalPath15 = Examples\\ExampleConfirmationBehavior
-		SccProjectUniqueName16 = Examples\\ExampleDependencyPropertyBehavior\\ExampleDependencyPropertyBehavior.Wpf.Free.csproj
-		SccProjectName16 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleDependencyPropertyBehavior\u0022
-		SccLocalPath16 = Examples\\ExampleDependencyPropertyBehavior
-		SccProjectUniqueName17 = Examples\\ExampleFocusBehavior\\ExampleFocusBehavior.Wpf.Free.csproj
-		SccProjectName17 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleFocusBehavior\u0022
-		SccLocalPath17 = Examples\\ExampleFocusBehavior
-		SccProjectUniqueName18 = Examples\\ExampleValidationErrorsHostBehavior\\ExampleValidationErrorsHostBehavior.Wpf.Free.csproj
-		SccProjectName18 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleValidationErrorsHostBehavior\u0022
-		SccLocalPath18 = Examples\\ExampleValidationErrorsHostBehavior
-		SccProjectUniqueName19 = Examples\\ExampleAsyncCommand\\ExampleAsyncCommand.Wpf.Free.csproj
-		SccProjectName19 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleAsyncCommand\u0022
-		SccLocalPath19 = Examples\\ExampleAsyncCommand
-		SccProjectUniqueName20 = Examples\\ExampleEventToCommand\\ExampleEventToCommand.Wpf.Free.csproj
-		SccProjectName20 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleEventToCommand\u0022
-		SccLocalPath20 = Examples\\ExampleEventToCommand
-		SccProjectUniqueName21 = Examples\\ExampleEnumItemsSourceBehavior\\ExampleEnumItemsSourceBehavior.Wpf.Free.csproj
-		SccProjectName21 = \u0022$/2014.2/XPF/DevExpress.Mvvm/Examples/ExampleEnumItemsSourceBehavior\u0022
-		SccLocalPath21 = Examples\\ExampleEnumItemsSourceBehavior
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 	EndGlobalSection
