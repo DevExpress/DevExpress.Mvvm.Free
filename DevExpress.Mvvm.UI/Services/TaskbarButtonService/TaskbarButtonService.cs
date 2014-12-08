@@ -16,9 +16,10 @@ using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Native;
 
 namespace DevExpress.Mvvm.UI {
-    [TargetTypeAttribute(typeof(UserControl))]
-    [TargetTypeAttribute(typeof(Window))]
-    public class TaskbarButtonService : ServiceBase, ITaskbarButtonService {
+    [TargetType(typeof(UserControl))]
+    [TargetType(typeof(Window))]
+    [ContentProperty("ThumbButtonInfos")]
+    public class TaskbarButtonService : WindowAwareServiceBase, ITaskbarButtonService {
         #region Dependency Properties
         public static readonly DependencyProperty ProgressStateProperty =
             DependencyProperty.Register("ProgressState", typeof(TaskbarItemProgressState), typeof(TaskbarButtonService),
@@ -67,13 +68,6 @@ namespace DevExpress.Mvvm.UI {
         static readonly DependencyProperty ItemInfoThumbnailClipMarginProperty =
             DependencyProperty.Register("ItemInfoThumbnailClipMargin", typeof(Thickness), typeof(TaskbarButtonService), new PropertyMetadata(new Thickness(),
                 (d, e) => ((TaskbarButtonService)d).OnItemInfoThumbnailClipMarginChanged(e)));
-        public static readonly DependencyProperty WindowProperty =
-            DependencyProperty.Register("Window", typeof(Window), typeof(TaskbarButtonService), new PropertyMetadata(null,
-                (d, e) => ((TaskbarButtonService)d).OnWindowChanged(e)));
-        static readonly DependencyPropertyKey ActualWindowPropertyKey =
-            DependencyProperty.RegisterReadOnly("ActualWindow", typeof(Window), typeof(TaskbarButtonService), new PropertyMetadata(null,
-                (d, e) => ((TaskbarButtonService)d).OnActualWindowChanged(e)));
-        public static readonly DependencyProperty ActualWindowProperty = ActualWindowPropertyKey.DependencyProperty;
         [IgnoreDependencyPropertiesConsistencyCheckerAttribute]
         static readonly DependencyProperty WindowItemInfoProperty =
             DependencyProperty.Register("WindowItemInfo", typeof(TaskbarItemInfo), typeof(TaskbarButtonService), new PropertyMetadata(null,
@@ -94,7 +88,6 @@ namespace DevExpress.Mvvm.UI {
         #endregion
 
         TaskbarItemInfo itemInfo;
-        bool associatedObjectIsLoaded = false;
 
         public TaskbarButtonService() {
             SetInternalItems(this, new FreezableCollection<TaskbarThumbButtonInfo>());
@@ -107,8 +100,6 @@ namespace DevExpress.Mvvm.UI {
         public TaskbarThumbButtonInfoCollection ThumbButtonInfos { get { return (TaskbarThumbButtonInfoCollection)GetValue(ThumbButtonInfosProperty); } set { SetValue(ThumbButtonInfosProperty, value); } }
         public Thickness ThumbnailClipMargin { get { return (Thickness)GetValue(ThumbnailClipMarginProperty); } set { SetValue(ThumbnailClipMarginProperty, value); } }
         public Func<Size, Thickness> ThumbnailClipMarginCallback { get { return (Func<Size, Thickness>)GetValue(ThumbnailClipMarginCallbackProperty); } set { SetValue(ThumbnailClipMarginCallbackProperty, value); } }
-        public Window Window { get { return (Window)GetValue(WindowProperty); } set { SetValue(WindowProperty, value); } }
-        public Window ActualWindow { get { return (Window)GetValue(ActualWindowProperty); } private set { SetValue(ActualWindowPropertyKey, value); } }
         public void UpdateThumbnailClipMargin() {
             if(ActualWindow != null && ThumbnailClipMarginCallback != null)
                 ThumbnailClipMargin = ThumbnailClipMarginCallback(new Size(ActualWindow.Width, ActualWindow.Height));
@@ -136,20 +127,6 @@ namespace DevExpress.Mvvm.UI {
         }
         protected virtual void OnWindowSizeChanged(object sender, SizeChangedEventArgs e) {
             UpdateThumbnailClipMargin();
-        }
-        protected override void OnAttached() {
-            base.OnAttached();
-            AssociatedObject.Loaded += OnAssociatedObjectLoaded;
-            AssociatedObject.Unloaded += OnAssociatedObjectUnloaded;
-            if(AssociatedObject.IsLoaded)
-                OnAssociatedObjectLoaded(AssociatedObject, null);
-        }
-        protected override void OnDetaching() {
-            base.OnDetaching();
-            AssociatedObject.Loaded -= OnAssociatedObjectLoaded;
-            AssociatedObject.Unloaded -= OnAssociatedObjectUnloaded;
-            if(AssociatedObject.IsLoaded)
-                OnAssociatedObjectUnloaded(AssociatedObject, null);
         }
         TaskbarItemInfo ItemInfo {
             get { return itemInfo; }
@@ -193,14 +170,10 @@ namespace DevExpress.Mvvm.UI {
         void OnItemInfoThumbnailClipMarginChanged(DependencyPropertyChangedEventArgs e) {
             ThumbnailClipMargin = (Thickness)e.NewValue;
         }
-        void OnWindowChanged(DependencyPropertyChangedEventArgs e) {
-            UpdateActualWindow();
-        }
-        void OnActualWindowChanged(DependencyPropertyChangedEventArgs e) {
-            Window oldWindow = (Window)e.OldValue;
+        protected override void OnActualWindowChanged(Window oldWindow) {
             if(oldWindow != null)
                 oldWindow.SizeChanged -= OnWindowSizeChanged;
-            Window window = (Window)e.NewValue;
+            Window window = ActualWindow;
             if(window == null) {
                 BindingOperations.ClearBinding(this, WindowItemInfoProperty);
                 ItemInfo = new TaskbarItemInfo();
@@ -230,17 +203,6 @@ namespace DevExpress.Mvvm.UI {
                 ActualWindow.TaskbarItemInfo = itemInfo;
             }
             ItemInfo = itemInfo;
-        }
-        void OnAssociatedObjectLoaded(object sender, RoutedEventArgs e) {
-            associatedObjectIsLoaded = true;
-            UpdateActualWindow();
-        }
-        void OnAssociatedObjectUnloaded(object sender, RoutedEventArgs e) {
-            associatedObjectIsLoaded = false;
-            UpdateActualWindow();
-        }
-        void UpdateActualWindow() {
-            ActualWindow = Window ?? (!associatedObjectIsLoaded || AssociatedObject == null ? null : Window.GetWindow(AssociatedObject));
         }
         IList<TaskbarThumbButtonInfo> ITaskbarButtonService.ThumbButtonInfos { get { return ThumbButtonInfos; } }
     }

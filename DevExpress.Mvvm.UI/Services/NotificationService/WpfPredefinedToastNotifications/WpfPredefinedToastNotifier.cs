@@ -1,6 +1,9 @@
 using DevExpress.Internal;
 using System;
 using System.Drawing;
+using System.Runtime.InteropServices;
+using System.Security;
+using System.Text;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 
@@ -69,16 +72,30 @@ namespace DevExpress.Mvvm.UI.Native {
             }
             #endregion
             static PredefinedToastNotificationVewModel CreateDefaultViewModel() {
-                Icon icon = Icon.ExtractAssociatedIcon(Environment.GetCommandLineArgs()[0]);
-                BitmapSource bitmapSource = Imaging.CreateBitmapSourceFromHIcon(
+                var vm = new PredefinedToastNotificationVewModel();
+                Icon icon = ExtractAssociatedIcon(Environment.GetCommandLineArgs()[0]);
+                if(icon != null) {
+                    BitmapSource bitmapSource = Imaging.CreateBitmapSourceFromHIcon(
                             icon.Handle,
                             new System.Windows.Int32Rect(0, 0, icon.Width, icon.Height),
                             BitmapSizeOptions.FromEmptyOptions());
-                var vm = new PredefinedToastNotificationVewModel();
-                vm.Icon = bitmapSource;
-                vm.BackgroundColor = BackgroundCalculator.GetBestMatch(icon.ToBitmap());
+                    vm.Icon = bitmapSource;
+                    vm.BackgroundColor = BackgroundCalculator.GetBestMatch(icon.ToBitmap());
+                } else {
+                    vm.BackgroundColor = BackgroundCalculator.DefaultGrayColor;
+                }
                 return vm;
             }
+            [SecuritySafeCritical]
+            static Icon ExtractAssociatedIcon(string path) {
+                int index = 0;
+                IntPtr handle = ExtractAssociatedIcon(IntPtr.Zero, new StringBuilder(path), ref index);
+                if(handle != IntPtr.Zero)
+                    return Icon.FromHandle(handle);
+                return null;
+            }
+            [DllImport("shell32.dll", EntryPoint = "ExtractAssociatedIcon", CharSet = CharSet.Auto)]
+            internal static extern IntPtr ExtractAssociatedIcon(IntPtr hInst, StringBuilder iconPath, ref int index);
         }
     }
 }

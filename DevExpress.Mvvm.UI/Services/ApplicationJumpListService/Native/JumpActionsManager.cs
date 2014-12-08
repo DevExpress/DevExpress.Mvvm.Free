@@ -74,6 +74,7 @@ namespace DevExpress.Mvvm.UI.Native {
         readonly Dictionary<string, RegisteredJumpAction> jumpActions = new Dictionary<string, RegisteredJumpAction>();
         GuidData applicationInstanceId;
         ServiceHost applicationInstanceHost;
+        Tuple<IntPtr, IntPtr> isAliveFlagFile;
         volatile bool registered = false;
         ICurrentProcess currentProcess;
         volatile bool updating = false;
@@ -87,8 +88,7 @@ namespace DevExpress.Mvvm.UI.Native {
                 if(disposing)
                     Monitor.Enter(jumpActions);
                 try {
-                    Mutex mainMutex = GetMainMutex(!disposing);
-                    WaitOne(mainMutex);
+                    Mutex mainMutex = WaitMainMutex(!disposing);
                     try {
                         UnregisterInstance(!disposing);
                     } finally {
@@ -98,6 +98,9 @@ namespace DevExpress.Mvvm.UI.Native {
                     if(disposing)
                         Monitor.Exit(jumpActions);
                 }
+            } catch(TimeoutException) {
+                if(disposing)
+                    throw;
             } finally {
                 base.Dispose(disposing);
             }
@@ -107,8 +110,7 @@ namespace DevExpress.Mvvm.UI.Native {
                 throw new InvalidOperationException();
             Monitor.Enter(jumpActions);
             try {
-                Mutex mainMutex = GetMainMutex(false);
-                WaitOne(mainMutex);
+                Mutex mainMutex = WaitMainMutex(false);
                 try {
                     ClearActions();
                 } catch {
@@ -165,6 +167,9 @@ namespace DevExpress.Mvvm.UI.Native {
             return registeredJumpAction;
         }
         protected override string ApplicationId { get { return currentProcess.ApplicationId; } }
+#if DEBUG
+        protected override object CurrentProcessTag { get { return currentProcess; } }
+#endif
         bool ShouldExecute(string command, string commandLineArgumentPrefix) {
             string arg = commandLineArgumentPrefix + Uri.EscapeDataString(command);
             return currentProcess.CommandLineArgs.Skip(1).Where(a => string.Equals(a, arg)).Any();
@@ -194,13 +199,19 @@ namespace DevExpress.Mvvm.UI.Native {
             UpdateInstancesFile(newApplicationInstances);
             registered = true;
         }
+        [SecuritySafeCritical]
         void CreateInstance() {
             applicationInstanceId = new GuidData(Guid.NewGuid());
             applicationInstanceHost = new ServiceHost(new ApplicationInstance(this), new Uri(GetServiceUri(applicationInstanceId)));
             applicationInstanceHost.AddServiceEndpoint(typeof(IApplicationInstance), new NetNamedPipeBinding(), EndPointName);
             applicationInstanceHost.Open(new TimeSpan(0, 0, 0, 0, MillisecondsTimeout));
+            bool alreadyExists;
+            isAliveFlagFile = CreateFileMappingAndMapView(1, GetIsAliveFlagFileName(applicationInstanceId), out alreadyExists);
         }
+        [SecuritySafeCritical]
         void DeleteInstance() {
+            UnmapViewAndCloseFileMapping(isAliveFlagFile);
+            isAliveFlagFile = null;
             applicationInstanceHost.Close(new TimeSpan(0, 0, 0, 0, MillisecondsTimeout));
             applicationInstanceHost = null;
             applicationInstanceId = new GuidData(Guid.Empty);

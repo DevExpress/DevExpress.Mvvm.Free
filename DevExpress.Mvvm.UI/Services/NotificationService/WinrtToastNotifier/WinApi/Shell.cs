@@ -8,7 +8,7 @@ using System.Security;
 using System.Text;
 
 namespace DevExpress.Internal.WinApi {
-    public enum STGM : long {
+    enum STGM : long {
         STGM_READ = 0x00000000L,
         STGM_WRITE = 0x00000001L,
         STGM_READWRITE = 0x00000002L,
@@ -36,11 +36,10 @@ namespace DevExpress.Internal.WinApi {
         internal const string IPropertyStore = "886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99";
     }
 
-    [CLSCompliant(false)]
     [ComImport,
     Guid(ShellIIDGuid.IShellLinkW),
     InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IShellLinkW {
+    interface IShellLinkW {
         UInt32 GetPath(
             [Out(), MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile,
             int cchMaxPath,
@@ -83,11 +82,10 @@ namespace DevExpress.Internal.WinApi {
             [MarshalAs(UnmanagedType.LPWStr)] string pszFile);
     }
 
-    [CLSCompliant(false)]
     [ComImport,
     Guid(ShellIIDGuid.IPersistFile),
     InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IPersistFile {
+    interface IPersistFile {
         UInt32 GetCurFile(
             [Out(), MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile
         );
@@ -102,11 +100,10 @@ namespace DevExpress.Internal.WinApi {
             [MarshalAs(UnmanagedType.LPWStr)] string pszFileName);
     }
 
-    [CLSCompliant(false)]
     [ComImport]
     [Guid(ShellIIDGuid.IPropertyStore)]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IPropertyStore {
+    interface IPropertyStore {
         UInt32 GetCount([Out] out uint propertyCount);
         UInt32 GetAt([In] uint propertyIndex, out PropertyKey key);
         UInt32 GetValue([In] ref PropertyKey key, [Out] PropVariant pv);
@@ -117,10 +114,10 @@ namespace DevExpress.Internal.WinApi {
     [ComImport,
     Guid(ShellIIDGuid.CShellLink),
     ClassInterface(ClassInterfaceType.None)]
-    public class CShellLink { }
+    class CShellLink { }
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    public struct PropertyKey : IEquatable<PropertyKey> {
+    struct PropertyKey : IEquatable<PropertyKey> {
         Guid formatId;
         Int32 propertyId;
         public Guid FormatId { get { return formatId; } }
@@ -155,9 +152,8 @@ namespace DevExpress.Internal.WinApi {
         }
     }
 
-    [CLSCompliant(false)]
     [StructLayout(LayoutKind.Explicit)]
-    public sealed class PropVariant : IDisposable {
+    sealed class PropVariant : IDisposable {
         private static Dictionary<Type, Action<PropVariant, Array, uint>> _vectorActions = null;
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private static Dictionary<Type, Action<PropVariant, Array, uint>> GenerateVectorActions() {
@@ -626,7 +622,7 @@ namespace DevExpress.Internal.WinApi {
         }
     }
 
-    internal static class PropVariantNativeMethods {
+    static class PropVariantNativeMethods {
         [DllImport("Ole32.dll", PreserveSig = false)]
         internal extern static void PropVariantClear([In, Out] PropVariant pvar);
 

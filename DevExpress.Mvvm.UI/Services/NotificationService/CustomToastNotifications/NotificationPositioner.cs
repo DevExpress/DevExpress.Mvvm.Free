@@ -10,7 +10,7 @@ namespace DevExpress.Mvvm.UI.Native {
         }
 
         internal NotificationPosition position;
-        System.Drawing.Rectangle screen;
+        Rect screen;
         const double verticalMargin = 10;
         const double verticalScreenMargin = 20;
         int maxCount;
@@ -19,11 +19,11 @@ namespace DevExpress.Mvvm.UI.Native {
         double itemWidth;
         double itemHeight;
 
-        public void Update(System.Drawing.Rectangle screen) {
+        public void Update(Rect screen) {
             Update(screen, position, maxCount);
         }
 
-        public void Update(System.Drawing.Rectangle screen, NotificationPosition position, int maxCount) {
+        public void Update(Rect screen, NotificationPosition position, int maxCount) {
             if(this.screen == screen && this.position == position && this.maxCount == maxCount)
                 return;
             this.screen = screen;

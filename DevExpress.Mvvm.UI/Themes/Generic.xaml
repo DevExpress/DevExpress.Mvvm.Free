@@ -3,5 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="/DevExpress.Mvvm.UI;component/Services/NotificationService/PredefinedToastNotification.xaml" />
+        <ResourceDictionary Source="/DevExpress.Mvvm.UI;component/Behaviors/EnumItemsSourceBehavior/EnumMemberInfoPresenter.xaml" />
+        <ResourceDictionary Source="/DevExpress.Mvvm.UI;component/Themes/WaitIndicators.xaml" />
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>

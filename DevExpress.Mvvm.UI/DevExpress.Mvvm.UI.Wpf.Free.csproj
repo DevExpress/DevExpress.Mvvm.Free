@@ -68,16 +68,23 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Behaviors\CompositeCommandBehavior.cs" />
     <Compile Include="Behaviors\ConfirmationBehavior.cs" />
     <Compile Include="Behaviors\DependencyPropertyBehavior.cs" />
+    <Compile Include="Behaviors\EnumItemsSourceBehavior\EnumItemsSourceBehavior.cs" />
     <Compile Include="Behaviors\EventToCommand\EventToCommand.cs" />
     <Compile Include="Behaviors\EventToCommand\EventToCommandBase.cs" />
     <Compile Include="Behaviors\EventToCommand\IEventArgsConverter.cs" />
+    <Compile Include="Behaviors\EventToCommand\ItemsControlMouseEventArgsConverter.cs" />
     <Compile Include="Behaviors\EventToCommand\KeyToCommand.cs" />
     <Compile Include="Behaviors\FocusBehavior.cs" />
+    <Compile Include="Behaviors\FunctionBindingBehavior\FunctionBindingBehavior.cs" />
+    <Compile Include="Behaviors\FunctionBindingBehavior\FunctionBindingBehaviorBase.cs" />
+    <Compile Include="Behaviors\FunctionBindingBehavior\MethodToCommandBehavior.cs" />
     <Compile Include="Behaviors\ValidationErrorsHostBehavior.cs" />
     <Compile Include="Behaviors\WindowFadeAnimationBehavior.cs" />
     <Compile Include="Converters.cs" />
+    <Compile Include="ConvertersExtensions.cs" />
     <Compile Include="Interactivity\AttachableCollection.cs" />
     <Compile Include="Interactivity\AttachableObject.cs" />
     <Compile Include="Interactivity\Behavior.cs" />
@@ -90,6 +97,7 @@
     <Compile Include="Native\DPConsistencyCheckerAttribute.cs" />
     <Compile Include="Native\ImageLoader2.cs" />
     <Compile Include="Native\LayoutHelper.cs" />
+    <Compile Include="Native\ObjectPropertyHelper.cs" />
     <Compile Include="Native\VisualTreeEnumerator.cs" />
     <Compile Include="Native\WeakEventHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -112,6 +120,7 @@
     <Compile Include="Services\Core\ViewHelper.cs" />
     <Compile Include="Services\Core\ViewModelExtensions.cs" />
     <Compile Include="Services\Core\ViewServiceBase.cs" />
+    <Compile Include="Services\Core\WindowAwareServiceBase.cs" />
     <Compile Include="Services\CurrentWindowService.cs" />
     <Compile Include="Services\DispatcherService.cs" />
     <Compile Include="Services\FileDialogServiceBase.cs" />
@@ -169,16 +178,21 @@
     <Compile Include="Services\TaskbarButtonService\Native\TaskbarThumbButtonInfoWrapper.cs" />
     <Compile Include="Services\TaskbarButtonService\TaskbarButtonService.cs" />
     <Compile Include="Services\TaskbarButtonService\TaskbarThumbButtonInfoCollection.cs" />
+    <Compile Include="Services\ViewInjectionService\ViewInjectionService.cs" />
+    <Compile Include="Services\ViewInjectionService\ViewInjectionStrategies.cs" />
     <Compile Include="Services\WindowDocumentManagerService.cs" />
     <Compile Include="Native\WindowSurrogate.cs" />
     <Compile Include="Services\WindowService.cs" />
     <Compile Include="SplashScreen\DXSplashScreen.cs" />
     <Compile Include="SplashScreen\DXSplashScreenExceptions.cs" />
     <Compile Include="SplashScreen\ISplashScreen.cs" />
+    <Compile Include="SplashScreen\LoadingDecorator.cs" />
     <Compile Include="SplashScreen\SplashScreenViewModel.cs" />
+    <Compile Include="SplashScreen\WaitIndicators.cs" />
     <Compile Include="ViewLocator\IViewLocator.cs" />
     <Compile Include="ViewLocator\ViewLocator.cs" />
     <Compile Include="ViewLocator\ViewLocatorBase.cs" />
+    <Compile Include="ViewLocator\ViewSelector.cs" />
     <Compile Include="ViewModelSourceExtension.cs" />
     <Compile Include="LayoutTreeHelper.cs" />
   </ItemGroup>
@@ -188,11 +202,23 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Behaviors\EnumItemsSourceBehavior\EnumItemsSourceDefaultTemplate.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Behaviors\EnumItemsSourceBehavior\EnumMemberInfoPresenter.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Services\NotificationService\CustomToastNotifications\ToastWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Services\NotificationService\PredefinedToastNotification.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\WaitIndicators.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

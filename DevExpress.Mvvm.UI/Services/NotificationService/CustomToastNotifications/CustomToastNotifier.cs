@@ -5,7 +5,9 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Forms;
+using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm.UI.Native {
     public delegate void UnregisterCallback<E>(EventHandler<E> eventHandler) where E : EventArgs;
@@ -50,7 +52,7 @@ namespace DevExpress.Mvvm.UI.Native {
     }
 
     public interface IScreen {
-        Rectangle GetWorkingArea();
+        Rect GetWorkingArea();
         event Action WorkingAreaChanged;
     }
 
@@ -72,8 +74,19 @@ namespace DevExpress.Mvvm.UI.Native {
                     WorkingAreaChanged();
             }, handler => DisplaySettingsChanged -= handler);
         }
-        public Rectangle GetWorkingArea() {
-            return Screen.GetWorkingArea(new System.Drawing.Point());
+
+        double GetDpiScaleProperty(string name) {
+            PropertyInfo pi = typeof(FrameworkElement).GetProperty(name, BindingFlags.NonPublic | BindingFlags.Static);
+            if (pi != null)
+                return (double) pi.GetValue(null, null);
+            return 1d;
+        }
+
+        public Rect GetWorkingArea() {
+            double xScale = GetDpiScaleProperty("DpiScaleX");
+            double yScale = GetDpiScaleProperty("DpiScaleY");
+            var area = Screen.GetWorkingArea(new System.Drawing.Point());
+            return new Rect(area.X / xScale, area.Y / yScale, area.Width / xScale, area.Height / yScale);
         }
         public event Action WorkingAreaChanged;
     }
@@ -140,7 +153,10 @@ namespace DevExpress.Mvvm.UI.Native {
             var content = new ToastContentControl() { Toast = info.toast };
             content.Content = info.toast.ViewModel;
             content.Style = Style;
-            content.ContentTemplate = ContentTemplate ?? NotificationServiceTemplatesHelper.DefaultCustomToastTemplate;
+            if(ContentTemplateSelector == null) {
+                content.ContentTemplate = ContentTemplate ?? NotificationServiceTemplatesHelper.DefaultCustomToastTemplate;
+            }
+            content.ContentTemplateSelector = ContentTemplateSelector;
 
             info.win.Content = content;
             info.win.DataContext = info.toast.ViewModel;
@@ -206,13 +222,14 @@ namespace DevExpress.Mvvm.UI.Native {
         }
 
         internal void StopTimer(CustomNotification toast) {
-            GetVisibleToastInfo(toast).timer.Stop();
+            GetVisibleToastInfo(toast).Do(t => t.timer.Stop());
         }
 
         internal void ResetTimer(CustomNotification toast) {
-            GetVisibleToastInfo(toast).timer.Start();
+            GetVisibleToastInfo(toast).Do(t => t.timer.Start());
         }
 
         public DataTemplate ContentTemplate { get; set; }
+        public DataTemplateSelector ContentTemplateSelector { get; set; }
     }
 }

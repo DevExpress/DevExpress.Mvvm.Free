@@ -3,63 +3,46 @@ using DevExpress.Mvvm.UI.Interactivity;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System;
+using DevExpress.Mvvm.Native;
+using System.Windows.Input;
+using System.ComponentModel;
 
 namespace DevExpress.Mvvm.UI {
     [TargetTypeAttribute(typeof(UserControl))]
     [TargetTypeAttribute(typeof(Window))]
-    public class CurrentWindowService : ServiceBase, ICurrentWindowService {
-        public static readonly DependencyProperty WindowProperty =
-            DependencyProperty.Register("Window", typeof(Window), typeof(CurrentWindowService), new PropertyMetadata(null));
-        public Window Window {
-            get { return (Window)GetValue(WindowProperty); }
-            set { SetValue(WindowProperty, value); }
-        }
-        Window actualWindow = null;
-        Window ActualWindow {
-            get {
-                if(Window != null)
-                    return Window;
-                if(AssociatedObject is Window)
-                    return (Window)AssociatedObject;
-                bool isWindowPropertyBound = GetBindingExp(this, WindowProperty) != null;
-                if(!isWindowPropertyBound) {
-                    if(actualWindow == null && AssociatedObject != null) {
-                        actualWindow = LayoutHelper.FindParentObject<Window>(AssociatedObject);
-                    }
-                    return actualWindow;
-                }
-                return null;
-            }
-        }
-        static BindingExpression GetBindingExp(DependencyObject d, DependencyProperty dp) {
-#if !SILVERLIGHT
-            return BindingOperations.GetBindingExpression(d, dp);
-#else
-            if(d is FrameworkElement)
-                return ((FrameworkElement)d).GetBindingExpression(dp);
-            return d.ReadLocalValue(dp) as BindingExpression;
-#endif
+    public class CurrentWindowService : WindowAwareServiceBase, ICurrentWindowService {
+        public ICommand ClosingCommand {
+            get { return (ICommand)GetValue(ClosingCommandProperty); }
+            set { SetValue(ClosingCommandProperty, value); }
         }
 
+        public static readonly DependencyProperty ClosingCommandProperty =
+            DependencyProperty.Register("ClosingCommand", typeof(ICommand), typeof(CurrentWindowService), new PropertyMetadata(null));
+
+
         void ICurrentWindowService.Close() {
-            if(ActualWindow != null)
-                ActualWindow.Close();
+            ActualWindow.Do(x => x.Close());
         }
         void ICurrentWindowService.Activate() {
-            if(ActualWindow != null)
-                ActualWindow.Activate();
+            ActualWindow.Do(x => x.Activate());
         }
         void ICurrentWindowService.Hide() {
-            if(ActualWindow != null)
-                ActualWindow.Hide();
+            ActualWindow.Do(x => x.Hide());
         }
         void ICurrentWindowService.SetWindowState(WindowState state) {
-            if(ActualWindow != null)
-                ActualWindow.WindowState = state;
+            ActualWindow.Do(x => x.WindowState = state);
         }
         void ICurrentWindowService.Show() {
-            if(ActualWindow != null)
-                ActualWindow.Show();
+            ActualWindow.Do(x => x.Show());
+        }
+
+        protected override void OnActualWindowChanged(Window oldWindow) {
+            oldWindow.Do(x => x.Closing -= OnClosing);
+            ActualWindow.Do(x => x.Closing += OnClosing);
+        }
+        void OnClosing(object sender, CancelEventArgs e) {
+            ClosingCommand.Do(x => x.Execute(e));
         }
     }
 }

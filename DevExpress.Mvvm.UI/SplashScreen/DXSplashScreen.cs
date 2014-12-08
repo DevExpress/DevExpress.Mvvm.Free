@@ -58,6 +58,14 @@ namespace DevExpress.Mvvm.UI {
             owner.Dispatcher.BeginInvoke(new Func<bool>(owner.Activate), DispatcherPriority.Loaded);
         }
 
+        public static void Show<T>(Action action) {
+            Show<T>();
+            try {
+                action();
+            } finally {
+                Close();
+            }
+        }
         public static void Show(Func<object, Window> windowCreator, Func<object, object> splashScreenCreator, object windowCreatorParameter, object splashScreenCreatorParameter) {
             if(IsActive) throw new InvalidOperationException(DXSplashScreenExceptions.Exception1);
             if(windowCreator == null)
@@ -124,6 +132,7 @@ namespace DevExpress.Mvvm.UI {
             internal volatile Window SplashScreen = null;
             internal volatile Thread InternalThread = null;
             internal volatile AutoResetEvent SyncEvent = new AutoResetEvent(false);
+            internal volatile AutoResetEvent EndSyncEvent = new AutoResetEvent(false);
             public bool IsActive { get { return InternalThread != null; } }
 
             public void Show(Func<object, Window> windowCreator, Func<object, object> splashScreenCreator, object windowCreatorParameter, object splashScreenCreatorParameter) {
@@ -146,6 +155,7 @@ namespace DevExpress.Mvvm.UI {
                     SplashScreen.Close();
                 };
                 SplashScreen.Dispatcher.BeginInvoke(closeAction);
+                EndSyncEvent.WaitOne();
             }
             public void Progress(double value, double maxValue) {
                 if(ViewModelBase.IsInDesignMode) return;
@@ -155,16 +165,10 @@ namespace DevExpress.Mvvm.UI {
                     if(SplashScreen is ISplashScreen) {
                         ((ISplashScreen)SplashScreen).Progress(v1);
                         SetProgressStateCore(false);
-                        return;
-                    }
-                    if(SplashScreen.Content is FrameworkElement) {
-                        SplashScreenViewModel splashScreenViewModel = ((FrameworkElement)SplashScreen.Content).DataContext as SplashScreenViewModel;
-                        if(splashScreenViewModel == null)
-                            return;
-                        splashScreenViewModel.IsIndeterminate = false;
-                        splashScreenViewModel.Progress = v1;
-                        splashScreenViewModel.MaxProgress = v2;
-                        return;
+                    } else if(SplashScreen.Content is FrameworkElement) {
+                        ((FrameworkElement)SplashScreen.Content).DataContext.With(x => x as SplashScreenViewModel).Do(x => {
+                            x.Progress = v1; x.MaxProgress = v2;
+                        });
                     }
                 };
                 SplashScreen.Dispatcher.BeginInvoke(progressCore, new object[] { value, maxValue });
@@ -196,7 +200,6 @@ namespace DevExpress.Mvvm.UI {
                     throw new InvalidOperationException(DXSplashScreenExceptions.Exception5);
                 SplashScreen.Dispatcher.BeginInvoke(action, SplashScreen);
             }
-
             void InternalThreadEntryPoint(object parameter) {
                 Func<object, Window> windowCreator = ((object[])parameter)[0] as Func<object, Window>;
                 Func<object, object> splashScreenCreator = ((object[])parameter)[1] as Func<object, object>;
@@ -204,9 +207,7 @@ namespace DevExpress.Mvvm.UI {
                 object splashScreenCreatorParameter = ((object[])parameter)[3];
 
                 SplashScreen = windowCreator(windowCreatorParameter);
-                if(splashScreenCreator != null)
-                    SplashScreen.Content = splashScreenCreator(splashScreenCreatorParameter);
-
+                splashScreenCreator.Do(x => SplashScreen.Content = x(splashScreenCreatorParameter));
                 SetProgressStateCore(true);
                 SyncEvent.Set();
                 SplashScreen.ShowDialog();
@@ -218,6 +219,7 @@ namespace DevExpress.Mvvm.UI {
                 InternalThread = null;
                 isIndeterminateCore = null;
                 Dispatcher.CurrentDispatcher.InvokeShutdown();
+                EndSyncEvent.Set();
             }
 
             bool? isIndeterminateCore = null;

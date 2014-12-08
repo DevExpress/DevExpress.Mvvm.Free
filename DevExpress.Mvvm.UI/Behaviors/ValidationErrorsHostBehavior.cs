@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 
 namespace DevExpress.Mvvm.UI {
+    [TargetType(typeof(FrameworkElement))]
     public class ValidationErrorsHostBehavior : Behavior<FrameworkElement> {
         #region Dependency Properties
         public static readonly DependencyProperty ErrorsProperty =

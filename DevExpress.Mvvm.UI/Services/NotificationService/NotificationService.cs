@@ -107,6 +107,10 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("CustomNotificationTemplate", typeof(DataTemplate), typeof(NotificationService), new PropertyMetadata(null,
                 (d, e) => ((NotificationService)d).OnCustomNotificationTemplateChanged()));
 
+        public static readonly DependencyProperty CustomNotificationTemplateSelectorProperty =
+            DependencyProperty.Register("CustomNotificationTemplateSelector", typeof(DataTemplateSelector), typeof(NotificationService), new PropertyMetadata(null,
+                (d, e) => ((NotificationService)d).OnCustomNotificationTemplateSelectorChanged()));
+
         public static readonly DependencyProperty CustomNotificationDurationProperty =
             DependencyProperty.Register("CustomNotificationDuration", typeof(TimeSpan), typeof(NotificationService), new PropertyMetadata(TimeSpan.FromMilliseconds(6000)));
 
@@ -166,6 +170,10 @@ namespace DevExpress.Mvvm.UI {
             get { return (DataTemplate)GetValue(CustomNotificationTemplateProperty); }
             set { SetValue(CustomNotificationTemplateProperty, value); }
         }
+        public DataTemplateSelector CustomNotificationTemplateSelector {
+            get { return (DataTemplateSelector)GetValue(CustomNotificationTemplateSelectorProperty); }
+            set { SetValue(CustomNotificationTemplateSelectorProperty, value); }
+        }
         public TimeSpan CustomNotificationDuration {
             get { return (TimeSpan)GetValue(CustomNotificationDurationProperty); }
             set { SetValue(CustomNotificationDurationProperty, value); }
@@ -183,6 +191,9 @@ namespace DevExpress.Mvvm.UI {
         }
         void OnCustomNotificationTemplateChanged() {
             CustomNotifier.ContentTemplate = CustomNotificationTemplate;
+        }
+        void OnCustomNotificationTemplateSelectorChanged() {
+            CustomNotifier.ContentTemplateSelector = CustomNotificationTemplateSelector;
         }
         void OnCustomNotificationStyleChanged() {
             CustomNotifier.Style = CustomNotificationStyle;

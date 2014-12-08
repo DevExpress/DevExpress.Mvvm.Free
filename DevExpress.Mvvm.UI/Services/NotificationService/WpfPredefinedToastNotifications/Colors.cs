@@ -114,13 +114,17 @@ namespace DevExpress.Mvvm.UI.Native {
                 map[nearest]++;
             }
             if(!map.Values.Any(v => v > count * 0.05))
-                return System.Windows.Media.Color.FromRgb(89, 89, 89);
+                return DefaultGrayColor;
             var test = map.OrderByDescending(p => p.Value).ToList();
             var test2 = test.Select(v => (double)v.Value / test.Count()).ToList();
             double t = test2[0] - test2[1];
             Color left = map.OrderBy(p => p.Value).Last().Key;
             Color res = colorTable.First(p => p[0] == left)[1];
             return System.Windows.Media.Color.FromRgb(res.R, res.G, res.B);
+        }
+
+        public static System.Windows.Media.Color DefaultGrayColor {
+            get { return System.Windows.Media.Color.FromRgb(89, 89, 89); }
         }
 
         class Rgb {
