@@ -13,7 +13,9 @@ using System.Windows;
 [assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
+#if !NETFX_CORE
 [assembly: CLSCompliant(true)]
+#endif
 [assembly: ComVisible(false)]
 [assembly: NeutralResourcesLanguage("en-US")]
 
