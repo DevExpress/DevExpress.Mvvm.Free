@@ -1,8 +1,11 @@
+using DevExpress.Mvvm.UI.Interactivity;
 using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 
 namespace DevExpress.Mvvm.UI {
+    [TargetType(typeof(UserControl)), TargetType(typeof(Window))]
     public class DispatcherService : ServiceBase, IDispatcherService {
         #region Dependency Properties
         public static readonly DependencyProperty DelayProperty =

@@ -2,11 +2,20 @@ using DevExpress.Mvvm.Native;
 using System;
 using System.ComponentModel;
 using System.Windows;
+#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Media;
+#else
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media;
+#endif
 
 namespace DevExpress.Mvvm.UI {
     public static class ViewHelper {
+        internal const string Error_CreateViewMissArguments = "It is impossible to create a view based on passed parameters. ViewTemplate/ViewTemplateSelector or DocumentType should be set.";
+        internal const string HelpLink_CreateViewMissArguments = "https://documentation.devexpress.com/#WPF/CustomDocument17469";
+#if !NETFX_CORE
         [Obsolete("This method is obsolete. Use other method overloads.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static object CreateAndInitializeView(IViewLocator viewLocator, string documentType, object parameter, object parentViewModel = null, bool useParameterAsViewModel = false, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {
@@ -15,6 +24,7 @@ namespace DevExpress.Mvvm.UI {
             else
                 return CreateAndInitializeView(viewLocator, documentType, null, parameter, parentViewModel, viewTemplate, viewTemplateSelector);
         }
+#endif
         public static object CreateAndInitializeView(IViewLocator viewLocator, string documentType, object viewModel, object parameter, object parentViewModel, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {
             return CreateAndInitializeView(viewLocator, documentType, viewModel, parameter, parentViewModel, null, viewTemplate, viewTemplateSelector);
         }
@@ -24,6 +34,8 @@ namespace DevExpress.Mvvm.UI {
             return view;
         }
         public static void InitializeView(object view, object viewModel, object parameter, object parentViewModel, IDocumentOwner documentOwner = null) {
+            if(documentOwner is DependencyObject)
+                documentOwner = DocumentOwnerWrapper.Create(documentOwner);
             if(viewModel != null) {
                 if(parameter != null) viewModel.With(x => x as ISupportParameter).Do(x => x.Parameter = parameter);
                 if(parentViewModel != null) viewModel.With(x => x as ISupportParentViewModel).Do(x => x.ParentViewModel = parentViewModel);
@@ -34,14 +46,16 @@ namespace DevExpress.Mvvm.UI {
                 return;
             }
             if(!(view is DependencyObject)) return;
-            if(ViewModelExtensions.GetParameter((DependencyObject)view) == null)
+            if(ViewModelExtensions.GetParameter((DependencyObject)view) == null || parameter != null)
                 ViewModelExtensions.SetParameter((DependencyObject)view, parameter);
-            if(ViewModelExtensions.GetParentViewModel((DependencyObject)view) == null)
+            if(ViewModelExtensions.GetParentViewModel((DependencyObject)view) == null || parentViewModel != null)
                 ViewModelExtensions.SetParentViewModel((DependencyObject)view, parentViewModel);
-            if(ViewModelExtensions.GetDocumentOwner((DependencyObject)view) == null)
+            if(ViewModelExtensions.GetDocumentOwner((DependencyObject)view) == null || documentOwner != null)
                 ViewModelExtensions.SetDocumentOwner((DependencyObject)view, documentOwner);
         }
         public static object CreateView(IViewLocator viewLocator, string documentType, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {
+            if(documentType == null && viewTemplate == null & viewTemplateSelector == null)
+                throw new InvalidOperationException(string.Format("{0}{1}To learn more, see: {2}", Error_CreateViewMissArguments, System.Environment.NewLine, HelpLink_CreateViewMissArguments));
             if(viewTemplate != null || viewTemplateSelector != null) {
                 return new ViewPresenter(viewTemplate, viewTemplateSelector);
             }
@@ -70,6 +84,33 @@ namespace DevExpress.Mvvm.UI {
                 if(parameter != null) ViewModelExtensions.SetParameter((DependencyObject)child, parameter);
                 if(parentViewModel != null) ViewModelExtensions.SetParentViewModel((DependencyObject)child, parentViewModel);
                 if(documentOwner != null) ViewModelExtensions.SetDocumentOwner((DependencyObject)child, documentOwner);
+            }
+        }
+        public sealed class DocumentOwnerWrapper : IDocumentOwner {
+            public static DocumentOwnerWrapper Create(IDocumentOwner owner) {
+                if(owner == null)
+                    return null;
+                return owner as DocumentOwnerWrapper ?? new DocumentOwnerWrapper(owner);
+            }
+            public IDocumentOwner ActualOwner { get { return actualOwner; } }
+            readonly IDocumentOwner actualOwner;
+
+            DocumentOwnerWrapper(IDocumentOwner actualOwner) {
+                this.actualOwner = actualOwner;
+            }
+
+            public void Close(IDocumentContent documentContent, bool force = true) {
+                ActualOwner.Close(documentContent, force);
+            }
+            public override bool Equals(object obj) {
+                if(obj is DocumentOwnerWrapper)
+                    return ActualOwner.Equals((obj as DocumentOwnerWrapper).ActualOwner);
+                if(obj is IDocumentOwner)
+                    return ActualOwner.Equals(obj);
+                return false;
+            }
+            public override int GetHashCode() {
+                return actualOwner.GetHashCode();
             }
         }
     }

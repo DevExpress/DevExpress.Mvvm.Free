@@ -2,47 +2,43 @@ using DevExpress.Mvvm;
 
 namespace DevExpress.Mvvm.UI {
     public class SplashScreenViewModel : ViewModelBase, ISupportSplashScreen {
+        public const double ProgressDefaultValue = 0d;
+        public const double MaxProgressDefaultValue = 100d;
+        public const string StateDefaultValue = "Loading...";
+
         static SplashScreenViewModel designTimeData = null;
         public static SplashScreenViewModel DesignTimeData {
-            get {
-                if(designTimeData == null) {
-                    designTimeData = new SplashScreenViewModel();
-                    designTimeData.InitializeInDesignModeCore();
-                }
-                return designTimeData;
-            }
+            get { return designTimeData ?? (designTimeData = new SplashScreenViewModel()); }
         }
 
         public bool IsIndeterminate {
-            get { return isIndeterminate; }
-            set { SetProperty(ref isIndeterminate, value, () => IsIndeterminate); }
+            get { return GetProperty(() => IsIndeterminate); }
+            set { SetProperty(() => IsIndeterminate, value); }
         }
         public double MaxProgress {
-            get { return maxProgress; }
-            set { SetProperty(ref maxProgress, value, () => MaxProgress); }
+            get { return GetProperty(() => MaxProgress); }
+            set { SetProperty(() => MaxProgress, value, DisableMarquee); }
         }
         public double Progress {
-            get { return progress; }
-            set { SetProperty(ref progress, value, () => Progress); }
+            get { return GetProperty(() => Progress); }
+            set { SetProperty(() => Progress, value, DisableMarquee); }
         }
         public object State {
-            get { return state; }
-            set { SetProperty(ref state, value, () => State); }
+            get { return GetProperty(() => State); }
+            set { SetProperty(() => State, value); }
         }
-        protected override void OnInitializeInDesignMode() {
-            base.OnInitializeInDesignMode();
-            InitializeInDesignModeCore();
+        public SplashScreenViewModel() {
+            allowDisableMarquee = false;
+            IsIndeterminate = true;
+            MaxProgress = MaxProgressDefaultValue;
+            Progress = ProgressDefaultValue;
+            State = StateDefaultValue;
+            allowDisableMarquee = true;
         }
-        void InitializeInDesignModeCore() {
+        void DisableMarquee() {
+            if(!allowDisableMarquee) return;
             IsIndeterminate = false;
-            MaxProgress = 100;
-            Progress = 50;
-            State = "Loading...";
         }
-
-        bool isIndeterminate = true;
-        object state = null;
-        double progress = 0;
-        double maxProgress = 100;
+        bool allowDisableMarquee = false;
     }
 }

@@ -1,37 +1,49 @@
 using System.Collections.Generic;
 using System.Windows;
+#if !FREE && !NETFX_CORE
+using DevExpress.Mvvm.UI.Native;
+#endif
+using System;
+#if NETFX_CORE
+using DevExpress.Mvvm.Native;
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Media;
+#else
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+#endif
 
 namespace DevExpress.Mvvm.UI {
     public static class LayoutTreeHelper {
-        static DependencyObject GetVisualParent(DependencyObject element) {
-#if !SILVERLIGHT
-            return (element is Visual || element is Visual3D) ? VisualTreeHelper.GetParent(element) : null;
+        static DependencyObject GetParent(DependencyObject element) {
+#if !SILVERLIGHT && !NETFX_CORE
+            if(element is Visual || element is Visual3D)
+                return VisualTreeHelper.GetParent(element);
+            if(element is FrameworkContentElement)
+                return LogicalTreeHelper.GetParent(element);
+            return null;
 #else
             return VisualTreeHelper.GetParent(element);
 #endif
         }
 
-
         public static IEnumerable<DependencyObject> GetVisualParents(DependencyObject child, DependencyObject stopNode = null) {
-            foreach(DependencyObject parent in GetVisualParentsCore(child, stopNode, false))
-                yield return parent;
+            return GetVisualParentsCore(child, stopNode, false);
         }
         public static IEnumerable<DependencyObject> GetVisualChildren(DependencyObject parent) {
-            foreach(DependencyObject child in GetVisualChildrenCore(parent, false))
-                yield return child;
+            return GetVisualChildrenCore(parent, false);
         }
         internal static IEnumerable<DependencyObject> GetVisualParentsCore(DependencyObject child, DependencyObject stopNode, bool includeStartNode) {
             if(includeStartNode)
                 yield return child;
-            DependencyObject parent = GetVisualParent(child);
-            bool isStopSearchNode = false;
-            while(parent != null && !isStopSearchNode) {
+            DependencyObject parent = GetParent(child);
+            bool isStopNode = false;
+            bool checkStopNode = stopNode != null;
+            while(parent != null && !isStopNode) {
                 yield return parent;
-                parent = GetVisualParent(parent);
-                if(parent == stopNode) {
-                    isStopSearchNode = true;
+                parent = GetParent(parent);
+                if(checkStopNode && parent == stopNode) {
+                    isStopNode = true;
                     yield return parent;
                 }
             }

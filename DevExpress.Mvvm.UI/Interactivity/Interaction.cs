@@ -1,12 +1,18 @@
-using DevExpress.Mvvm.UI.Native;
+
 using System;
 using System.ComponentModel;
 using System.Windows;
+#if NETFX_CORE
+using Windows.UI.Xaml;
+using DevExpress.Mvvm.UI.Native;
+#else
+using DevExpress.Mvvm.UI.Native;
+#endif
 
 namespace DevExpress.Mvvm.UI.Interactivity {
     public static class Interaction {
         #region Dependency Properties
-#if SILVERLIGHT
+#if SILVERLIGHT || NETFX_CORE
         const string BehaviorsPropertyName = "Behaviors";
         const string TriggersPropertyName = "Triggers";
 #else
@@ -16,11 +22,13 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         [IgnoreDependencyPropertiesConsistencyChecker]
         public static readonly DependencyProperty BehaviorsProperty =
             DependencyProperty.RegisterAttached(BehaviorsPropertyName, typeof(BehaviorCollection), typeof(Interaction), new PropertyMetadata(null, OnCollectionChanged));
+#if !NETFX_CORE
         [IgnoreDependencyPropertiesConsistencyChecker]
         [Obsolete("This property is obsolete. Use the Behaviors property instead.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static readonly DependencyProperty TriggersProperty =
             DependencyProperty.RegisterAttached(TriggersPropertyName, typeof(TriggerCollection), typeof(Interaction), new PropertyMetadata(null, OnCollectionChanged));
+#endif
         #endregion
 
         public static BehaviorCollection GetBehaviors(DependencyObject d) {
@@ -31,6 +39,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             }
             return behaviors;
         }
+#if !NETFX_CORE
         [Obsolete("This method is obsolete. Use the GetBehaviors method instead.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static TriggerCollection GetTriggers(DependencyObject d) {
@@ -41,6 +50,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             }
             return triggers;
         }
+#endif
         static void OnCollectionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) {
             IAttachableObject oldValue = (IAttachableObject)e.OldValue;
             IAttachableObject newValue = (IAttachableObject)e.NewValue;

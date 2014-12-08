@@ -86,9 +86,11 @@
     <Compile Include="Behaviors\EventToCommand\EventToCommand.cs" />
     <Compile Include="Behaviors\EventToCommand\EventToCommandBase.cs" />
     <Compile Include="Behaviors\EventToCommand\IEventArgsConverter.cs" />
+    <Compile Include="Behaviors\EventToCommand\ItemsControlMouseEventArgsConverter.cs" />
     <Compile Include="Behaviors\EventToCommand\KeyToCommand.cs" />
     <Compile Include="Behaviors\FocusBehavior.cs" />
     <Compile Include="Converters.cs" />
+    <Compile Include="ConvertersExtensions.cs" />
     <Compile Include="Interactivity\AttachableCollection.cs" />
     <Compile Include="Interactivity\AttachableObject.cs" />
     <Compile Include="Interactivity\Behavior.cs" />
@@ -97,7 +99,6 @@
     <Compile Include="Interactivity\TargetTypeAttribute.cs" />
     <Compile Include="Interactivity\Trigger.cs" />
     <Compile Include="KeyGesture.cs" />
-    <Compile Include="LayoutTreeHelper.cs" />
     <Compile Include="Native\ApplicationHelper.cs" />
     <Compile Include="Native\ComponentModel.cs" />
     <Compile Include="Native\DPConsistencyCheckerAttribute.cs" />
@@ -126,6 +127,7 @@
     <Compile Include="ViewLocator\ViewLocator.cs" />
     <Compile Include="ViewLocator\ViewLocatorBase.cs" />
     <Compile Include="ViewModelSourceExtension.cs" />
+    <Compile Include="LayoutTreeHelper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Silverlight\$(SilverlightVersion)\Microsoft.Silverlight.CSharp.targets" />
   <ProjectExtensions>

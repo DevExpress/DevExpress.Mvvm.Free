@@ -1,8 +1,15 @@
 using System;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
+#if !NETFX_CORE
+using System.Windows.Controls;
 using System.Windows.Threading;
+#else
+using Windows.UI.Xaml;
+using Windows.UI.Core;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Input;
+#endif
 
 namespace DevExpress.Mvvm.UI {
     public abstract class EventToCommandBase : DevExpress.Mvvm.UI.Interactivity.EventTrigger {
@@ -22,7 +29,7 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty UseDispatcherProperty =
             DependencyProperty.Register("UseDispatcher", typeof(bool?), typeof(EventToCommandBase),
             new PropertyMetadata(null));
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public static readonly DependencyProperty DispatcherPriorityProperty =
             DependencyProperty.Register("DispatcherPriority", typeof(DispatcherPriority?), typeof(EventToCommandBase),
             new PropertyMetadata(null));
@@ -51,7 +58,7 @@ namespace DevExpress.Mvvm.UI {
         protected internal bool ActualUseDispatcher {
             get {
                 if(UseDispatcher == null) {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
                     return DispatcherPriority != null;
 #else
                     return false;
@@ -60,7 +67,7 @@ namespace DevExpress.Mvvm.UI {
                 return UseDispatcher.Value;
             }
         }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public DispatcherPriority? DispatcherPriority {
             get { return (DispatcherPriority?)GetValue(DispatcherPriorityProperty); }
             set { SetValue(DispatcherPriorityProperty, value); }
@@ -76,7 +83,7 @@ namespace DevExpress.Mvvm.UI {
                 OnEventCore(sender, eventArgs);
                 return;
             }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             bool commandIsBound = System.Windows.Data.BindingOperations.GetBindingExpression(this, CommandProperty) != null;
             if(Command == null && commandIsBound) {
                 Dispatcher.BeginInvoke(new Action(() => {
@@ -91,27 +98,34 @@ namespace DevExpress.Mvvm.UI {
             if(!ActualUseDispatcher)
                 Invoke(sender, eventArgs);
             else {
-#if !SILVERLIGHT
-                Dispatcher.BeginInvoke(new Action<object, object>(Invoke), ActualDispatcherPriority, new object[] { sender, eventArgs });
-#else
+#if SILVERLIGHT
                 Dispatcher.BeginInvoke(new Action<object, object>(Invoke), new object[] { sender, eventArgs });
+#elif NETFX_CORE
+#pragma warning disable 4014
+                Dispatcher.RunAsync(CoreDispatcherPriority.Low, new DispatchedHandler(() => Invoke(sender, eventArgs)));
+#pragma warning restore 4014
+#else
+                Dispatcher.BeginInvoke(new Action<object, object>(Invoke), ActualDispatcherPriority, new object[] { sender, eventArgs });
 #endif
             }
             if(MarkRoutedEventsAsHandled) {
-#if !SILVERLIGHT
-                if(eventArgs is RoutedEventArgs)
-                    ((RoutedEventArgs)eventArgs).Handled = true;
-#else
+#if SILVERLIGHT
                 if(eventArgs is MouseButtonEventArgs)
                     ((MouseButtonEventArgs)eventArgs).Handled = true;
                 if(eventArgs is KeyEventArgs)
                     ((KeyEventArgs)eventArgs).Handled = true;
+#elif NETFX_CORE
+                if(eventArgs is KeyEventArgs)
+                    ((KeyEventArgs)eventArgs).Handled = true;
+#else
+                if(eventArgs is RoutedEventArgs)
+                    ((RoutedEventArgs)eventArgs).Handled = true;
 #endif
             }
         }
         protected abstract void Invoke(object sender, object eventArgs);
         protected virtual bool CanInvoke(object sender, object eventArgs) {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             FrameworkElement associatedFrameworkObject = Source as FrameworkElement;
 #else
             Control associatedFrameworkObject = Source as Control;

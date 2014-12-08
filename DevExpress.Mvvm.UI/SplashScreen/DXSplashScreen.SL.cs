@@ -163,6 +163,7 @@ namespace DevExpress.Mvvm.UI {
             SplashScreen.InvalidateMeasure();
             SplashScreen.InvalidateArrange();
             SplashScreen.UpdateLayout();
+            if(SplashPopup == null) return;
             Dispatcher.BeginInvoke(new Action(() => {
                 Size res = SplashScreen.DesiredSize;
                 Size appSize = new Size(AppHelper.HostWidth, AppHelper.HostHeight);

@@ -1,9 +1,13 @@
-using DevExpress.Mvvm.Native;
 using System;
+using System.Reflection;
+using DevExpress.Mvvm.Native;
+#if !NETFX_CORE
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Reflection;
 using System.Windows;
+#else
+using Windows.UI.Xaml;
+#endif
 
 namespace DevExpress.Mvvm.UI.Interactivity.Internal {
     public static class InteractionHelper {
@@ -44,6 +48,9 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
     class EventTriggerEventSubscriber {
         Action<object, object> EventHandler;
         Delegate subscribedEventHandler;
+#if NETFX_CORE
+        object handlerRegistrationToken;
+#endif
         public EventTriggerEventSubscriber(Action<object, object> eventHandler) {
             EventHandler = eventHandler;
         }
@@ -56,9 +63,13 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
             }
             this.subscribedEventHandler = GetEventHandlerToSubscrive(eventInfo.EventHandlerType);
             if(this.subscribedEventHandler == null) return;
+#if NETFX_CORE
+            this.handlerRegistrationToken = eventInfo.AddEventHandlerEx(obj, this.subscribedEventHandler);
+#else
             eventInfo.AddEventHandler(obj, this.subscribedEventHandler);
+#endif
         }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public void SubscribeToEvent(object obj, RoutedEvent routedEvent) {
             UIElement eventSource = obj as UIElement;
             if(eventSource == null || routedEvent == null) return;
@@ -72,10 +83,20 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
             if(this.subscribedEventHandler == null) return;
             Type type = obj.GetType();
             EventInfo info = type.GetEvent(eventName);
+#if NETFX_CORE
+            if (this.handlerRegistrationToken is Delegate)
+                info.RemoveEventHandlerEx(obj, handlerRegistrationToken as Delegate);
+            else
+                info.RemoveEventHandlerEx(obj, handlerRegistrationToken);
+#else
             info.RemoveEventHandler(obj, this.subscribedEventHandler);
+#endif
             this.subscribedEventHandler = null;
+#if NETFX_CORE
+            this.handlerRegistrationToken = null;
+#endif
         }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public void UnsubscribeFromEvent(object obj, RoutedEvent routedEvent) {
             UIElement eventSource = obj as UIElement;
             if(eventSource == null || routedEvent == null) return;
@@ -89,7 +110,12 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
             ParameterInfo[] parameters = GetParameters(eventHandlerType);
             Type handlerType = typeof(EventTriggerGenericHandler<,>).MakeGenericType(parameters[0].ParameterType, parameters[1].ParameterType);
             object instance = Activator.CreateInstance(handlerType, new object[] { EventHandler });
+#if !NETFX_CORE
             return Delegate.CreateDelegate(eventHandlerType, instance, instance.GetType().GetMethod("Handler"));
+#else
+            return instance.GetType().GetMethod("Handler").CreateDelegate(eventHandlerType, instance);
+#endif
+
         }
         bool IsEventCorrect(Type eventHandlerType) {
             if(!typeof(Delegate).IsAssignableFrom(eventHandlerType)) return false;

@@ -1,7 +1,14 @@
+#if !NETFX_CORE
 using DevExpress.Mvvm.UI.Interactivity.Internal;
 using System;
 using System.Windows;
 using System.Windows.Media.Animation;
+#else
+using System;
+using Windows.UI.Xaml;
+using DevExpress.Mvvm.Native;
+using DevExpress.Mvvm.UI.Interactivity.Internal;
+#endif
 
 namespace DevExpress.Mvvm.UI.Interactivity {
     public interface IAttachableObject {
@@ -10,10 +17,12 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         void Detach();
     }
 
-#if !SILVERLIGHT
-    public abstract class AttachableObjectBase : Animatable, IAttachableObject {
-#else
+#if SILVERLIGHT
     public abstract class AttachableObjectBase : DependencyObject, IAttachableObject {
+#elif NETFX_CORE
+    public abstract class AttachableObjectBase : FrameworkElement, IAttachableObject {
+#else
+    public abstract class AttachableObjectBase : Animatable, IAttachableObject {
 #endif
         public bool IsAttached { get; private set; }
         internal bool _AllowAttachInDesignMode { get { return AllowAttachInDesignMode; } }
@@ -72,27 +81,49 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             IsAttached = false;
         }
         protected virtual void OnAttached() {
+#if NETFX_CORE
+            if(AssociatedObject is FrameworkElement) {
+                var frameworkElement = AssociatedObject as FrameworkElement;
+                DataContext = frameworkElement.DataContext;
+                frameworkElement.DataContextChanged += frameworkElement_DataContextChanged;
+            }
+#endif
         }
+#if NETFX_CORE
+        void frameworkElement_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args) {
+            OnDataContextChange(args.NewValue);
+        }
+        protected virtual void OnDataContextChange(object dataContext) {
+            DataContext = dataContext;
+        }
+#endif
         protected virtual void OnDetaching() {
+#if NETFX_CORE
+            if(AssociatedObject is FrameworkElement) {
+                var frameworkElement = AssociatedObject as FrameworkElement;
+                DataContext = null;
+                frameworkElement.DataContextChanged -= frameworkElement_DataContextChanged;
+            }
+#endif
         }
 
         protected void VerifyRead() {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             ReadPreamble();
 #endif
         }
         protected void VerifyWrite() {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             WritePreamble();
 #endif
         }
         protected void NotifyChanged() {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             WritePostscript();
 #endif
         }
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         protected override Freezable CreateInstanceCore() {
             return (Freezable)Activator.CreateInstance(GetType());
         }

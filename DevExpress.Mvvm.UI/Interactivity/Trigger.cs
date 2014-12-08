@@ -1,8 +1,16 @@
 using System;
 using System.Windows;
-using System.Windows.Data;
 using DevExpress.Mvvm.UI.Interactivity.Internal;
+
+#if !NETFX_CORE
+using System.Windows.Data;
 using DevExpress.Mvvm.UI.Native;
+#else
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Data;
+using Windows.ApplicationModel;
+using DevExpress.Mvvm.UI.Native;
+#endif
 
 namespace DevExpress.Mvvm.UI.Interactivity {
     public abstract class TriggerBase : Behavior {
@@ -10,7 +18,11 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             : base(type) {
         }
     }
+#if !NETFX_CORE
     public abstract class TriggerBase<T> : TriggerBase where T : DependencyObject {
+#else
+    public abstract class TriggerBase<T> : TriggerBase where T : FrameworkElement {
+#endif
         protected TriggerBase()
             : base(typeof(T)) {
         }
@@ -18,14 +30,17 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             get { return (T)base.AssociatedObject; }
         }
     }
-
+#if !NETFX_CORE
     public class EventTriggerBase<T> : TriggerBase<T> where T : DependencyObject {
+#else
+    public class EventTriggerBase<T> : TriggerBase<T> where T : FrameworkElement {
+#endif
         #region Static
         [IgnoreDependencyPropertiesConsistencyChecker]
         public static readonly DependencyProperty EventNameProperty =
             DependencyProperty.Register("EventName", typeof(string), typeof(EventTriggerBase<T>),
             new PropertyMetadata("Loaded", (d, e) => ((EventTriggerBase<T>)d).OnEventNameChanged((string)e.OldValue, (string)e.NewValue)));
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         [IgnoreDependencyPropertiesConsistencyChecker]
         public static readonly DependencyProperty EventProperty =
             DependencyProperty.Register("Event", typeof(RoutedEvent), typeof(EventTriggerBase<T>),
@@ -41,7 +56,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             new PropertyMetadata(null, (d, e) => ((EventTriggerBase<T>)d).OnSourceObjectChanged()));
 
         static BindingExpression GetBindingExp(DependencyObject d, DependencyProperty dp) {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             return BindingOperations.GetBindingExpression(d, dp);
 #else
             if(d is FrameworkElement)
@@ -53,7 +68,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             FrameworkElement fe = obj as FrameworkElement;
             if(fe != null)
                 return fe.Name;
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             FrameworkContentElement fce = obj as FrameworkContentElement;
             if(fce != null)
                 return fce.Name;
@@ -67,7 +82,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             FrameworkElement feParent = fe.Parent as FrameworkElement;
             FrameworkElement el = feParent ?? fe;
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             try {
                 res = LogicalTreeHelper.FindLogicalNode(el, elementName);
             } catch { }
@@ -96,7 +111,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             get { return (string)GetValue(EventNameProperty); }
             set { SetValue(EventNameProperty, value); }
         }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public RoutedEvent Event {
             get { return (RoutedEvent)GetValue(EventProperty); }
             set { SetValue(EventProperty, value); }
@@ -136,12 +151,11 @@ namespace DevExpress.Mvvm.UI.Interactivity {
                 Source = SourceObject;
                 return;
             }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             bool useVisualTreeCore = useVisualTree ?? false;
 #else
             bool useVisualTreeCore = useVisualTree ?? true;
 #endif
-
             var sourceObjectBinding = GetBindingExp(this, SourceObjectProperty);
             if(sourceObjectBinding != null) {
                 string elementName = null;
@@ -173,17 +187,17 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         protected virtual void OnEvent(object sender, object eventArgs) { }
         protected virtual void OnSourceChanged(object oldSource, object newSource) {
             RaiseSourceChangedCount++;
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             EventHelper.UnsubscribeFromEvent(oldSource, Event);
 #endif
             EventHelper.UnsubscribeFromEvent(oldSource, EventName);
             EventHelper.SubscribeToEvent(newSource, EventName);
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             EventHelper.SubscribeToEvent(newSource, Event);
 #endif
         }
         protected virtual void OnEventNameChanged(string oldEventName, string newEventName) {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             if(newEventName != null)
                 Event = null;
 #endif
@@ -191,7 +205,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             EventHelper.UnsubscribeFromEvent(Source, oldEventName);
             EventHelper.SubscribeToEvent(Source, newEventName);
         }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         protected virtual void OnEventChanged(RoutedEvent oldRoutedEvent, RoutedEvent newRoutedEvent) {
             if(newRoutedEvent != null)
                 EventName = null;
@@ -202,22 +216,30 @@ namespace DevExpress.Mvvm.UI.Interactivity {
 #endif
         protected override void OnAttached() {
             base.OnAttached();
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             EventHelper.UnsubscribeFromEvent(Source, Event);
 #endif
             EventHelper.UnsubscribeFromEvent(Source, EventName);
             EventHelper.SubscribeToEvent(Source, EventName);
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             EventHelper.SubscribeToEvent(Source, Event);
 #endif
             ResolveSource(false);
+#if !NETFX_CORE
             Dispatcher.BeginInvoke(new Action(() => ResolveSource(false)));
+#else
+#pragma warning disable 4014
+            if (!DesignMode.DesignModeEnabled)
+                Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Low, new Windows.UI.Core.DispatchedHandler(() => ResolveSource(false)));
+#pragma warning restore 4014
+
+#endif
             SubsribeAssociatedObject();
         }
         protected override void OnDetaching() {
             UnsubscribeAssociatedObject();
             EventHelper.UnsubscribeFromEvent(Source, EventName);
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             EventHelper.UnsubscribeFromEvent(Source, Event);
 #endif
             Source = null;
@@ -227,15 +249,15 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             UnsubscribeAssociatedObject();
             FrameworkElement fe = AssociatedObject as FrameworkElement;
             if(fe != null) {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
                 fe.Initialized += OnAssociatedObjectUpdated;
 #endif
-                fe.LayoutUpdated += OnAssociatedObjectUpdated;
-                fe.SizeChanged += OnAssociatedObjectUpdated;
-                fe.Loaded += OnAssociatedObjectUpdated;
+                fe.LayoutUpdated += AssociatedObjectLayoutUpdated;
+                fe.SizeChanged += AssociatedObjectSizeChanged;
+                fe.Loaded += AssociatedObjectLoaded;
                 return;
             }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             FrameworkContentElement fce = AssociatedObject as FrameworkContentElement;
             if(fce != null) {
                 fce.Initialized += OnAssociatedObjectUpdated;
@@ -244,17 +266,30 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             }
 #endif
         }
+
+        void AssociatedObjectLoaded(object sender, RoutedEventArgs e) {
+            OnAssociatedObjectUpdated(sender, EventArgs.Empty);
+        }
+
+        void AssociatedObjectSizeChanged(object sender, SizeChangedEventArgs e) {
+            OnAssociatedObjectUpdated(sender, EventArgs.Empty);
+        }
+
+        void AssociatedObjectLayoutUpdated(object sender, object e) {
+            OnAssociatedObjectUpdated(sender, EventArgs.Empty);
+        }
+
         void UnsubscribeAssociatedObject() {
             FrameworkElement fe = AssociatedObject as FrameworkElement;
             if(fe != null) {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
                 fe.Initialized -= OnAssociatedObjectUpdated;
 #endif
-                fe.LayoutUpdated -= OnAssociatedObjectUpdated;
-                fe.SizeChanged -= OnAssociatedObjectUpdated;
-                fe.Loaded -= OnAssociatedObjectUpdated;
+                fe.LayoutUpdated -= AssociatedObjectLayoutUpdated;
+                fe.SizeChanged -= AssociatedObjectSizeChanged;
+                fe.Loaded -= AssociatedObjectLoaded;
             }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             FrameworkContentElement fce = AssociatedObject as FrameworkContentElement;
             if(fce != null) {
                 fce.Initialized -= OnAssociatedObjectUpdated;
@@ -275,8 +310,11 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             }
         }
     }
-
+#if !NETFX_CORE
     public class EventTrigger : EventTriggerBase<DependencyObject> {
+#else
+    public class EventTrigger : EventTriggerBase<FrameworkElement> {
+#endif
         public EventTrigger() { }
         public EventTrigger(string eventName)
             : this() {

@@ -2,34 +2,36 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Windows;
+#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Media;
+#else
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml;
+using Windows.UI;
+using Windows.UI.Xaml.Media;
+using DevExpress.Mvvm.Native;
+#endif
 
 namespace DevExpress.Mvvm.UI {
     public abstract class ViewLocatorBase : IViewLocator {
         protected abstract IEnumerable<Assembly> Assemblies { get; }
-        protected Dictionary<string, Type> types = new Dictionary<string, Type>();
-        protected IEnumerator<Type> enumerator;
+        Dictionary<string, Type> types = new Dictionary<string, Type>();
+        IEnumerator<Type> enumerator;
 
-        object IViewLocator.ResolveView(string name) {
-            return ResolveViewCore(name) ?? CreateFallbackView(name);
+        object IViewLocator.ResolveView(string viewName) {
+            Type viewType = ((IViewLocator)this).ResolveViewType(viewName);
+            if(viewType != null)
+                return Activator.CreateInstance(viewType);
+            return CreateFallbackView(viewName);
         }
-        protected virtual object CreateFallbackView(string documentType) {
-            return new ContentPresenter() {
-                Content = new TextBlock() {
-                    Text = string.Format("\"{0}\" type not found.", documentType),
-                    FontSize = 25,
-                    Foreground = new System.Windows.Media.SolidColorBrush(Colors.Red),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                }
-            };
-        }
+        Type IViewLocator.ResolveViewType(string viewName) {
+            if(string.IsNullOrEmpty(viewName))
+                return null;
 
-       protected object ResolveViewCore(string name) {
             Type typeFromDictioanry;
-            if(types.TryGetValue(name, out typeFromDictioanry))
-                return CreateInstance(typeFromDictioanry);
+            if(types.TryGetValue(viewName, out typeFromDictioanry))
+                return typeFromDictioanry;
 
             if(enumerator == null)
                 enumerator = GetTypes();
@@ -37,17 +39,26 @@ namespace DevExpress.Mvvm.UI {
                 if(!types.ContainsKey(enumerator.Current.Name)) {
                     types[enumerator.Current.Name] = enumerator.Current;
                 }
-                if(enumerator.Current.Name == name)
-                    return CreateInstance(enumerator.Current);
+                if(enumerator.Current.Name == viewName)
+                    return enumerator.Current;
             }
             return null;
         }
-        object CreateInstance(Type type) {
-            return Activator.CreateInstance(type);
+
+        protected virtual object CreateFallbackView(string documentType) {
+            return ViewLocatorExtensions.CreateFallbackView(GetErrorMessage(documentType));
+        }
+        protected string GetErrorMessage(string documentType) {
+            return ViewLocatorExtensions.GetErrorMessage_CannotResolveViewType(documentType);
         }
         protected virtual IEnumerator<Type> GetTypes() {
             foreach(Assembly asm in Assemblies) {
-                foreach(Type type in asm.GetTypes()) {
+#if !NETFX_CORE
+                Type[] types = asm.GetTypes();
+#else
+                Type[] types = asm.GetExportedTypes();
+#endif
+                foreach(Type type in types) {
                     yield return type;
                 }
             }

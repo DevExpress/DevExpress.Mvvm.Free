@@ -1,10 +1,14 @@
 using System;
 using System.Collections;
 using System.Windows;
-using System.Windows.Media;
 using System.Collections.Generic;
 using System.Linq;
-
+#if !NETFX_CORE
+using System.Windows.Media;
+#else
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Media;
+#endif
 namespace DevExpress.Mvvm.UI.Native {
 
     public enum EnumeratorDirection { Forward, Backward }
@@ -90,7 +94,7 @@ namespace DevExpress.Mvvm.UI.Native {
             this.direction = direction;
         }
         protected virtual bool IsObjectVisual(DependencyObject d) {
-#if !SILVERLIGHT || SLDESIGN
+#if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
             return d is Visual;
 #else
             return d is UIElement;
@@ -107,7 +111,7 @@ namespace DevExpress.Mvvm.UI.Native {
             return GetParents().Cast<DependencyObject>();
         }
     }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
     public class LogicalTreeEnumerator : VisualTreeEnumerator {
         static IEnumerator GetVisualAndLogicalChilder(object obj, IEnumerator visualChildren, bool dependencyObjectsOnly) {
             while(visualChildren.MoveNext())

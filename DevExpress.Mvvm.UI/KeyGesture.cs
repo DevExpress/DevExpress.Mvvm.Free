@@ -2,9 +2,20 @@ using System;
 using System.ComponentModel;
 using System.Globalization;
 using System.Windows.Input;
+#if NETFX_CORE
+using DevExpress.Mvvm.UI.Native;
+using DevExpress.Mvvm.Native;
+using Windows.System;
+using Key = Windows.System.VirtualKey;
+
+#endif
 
 namespace DevExpress.Mvvm.UI {
+#if NETFX_CORE && !MVVM
+    [DevExpress.Data.Native.TypeConverter(typeof(KeyGestureConverter))]
+#else
     [TypeConverter(typeof(KeyGestureConverter))]
+#endif
     public class KeyGesture {
         public Key Key { get; private set; }
         public ModifierKeys ModifierKeys { get; private set; }
@@ -15,6 +26,11 @@ namespace DevExpress.Mvvm.UI {
             Key = key;
             ModifierKeys = modifiers;
         }
+#if NETFX_CORE
+        public static implicit operator KeyGesture(string value) {
+            return ModifierKeysConverter.ConvertStringToKeyGesture(value, System.Globalization.CultureInfo.CurrentCulture);
+        }
+#endif
     }
 
     public class ModifierKeysConverter : TypeConverter {
@@ -28,7 +44,12 @@ namespace DevExpress.Mvvm.UI {
         }
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType) {
             if(destinationType != typeof(string)) return false;
+#if !NETFX_CORE
             return context != null && context.Instance is ModifierKeys;
+#else
+            return true;
+#endif
+
         }
         public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType) {
             if(destinationType != typeof(string))
@@ -80,7 +101,11 @@ namespace DevExpress.Mvvm.UI {
         }
         protected static internal ModifierKeys? ConvertStringToModifierKey(string modifierString, CultureInfo culture) {
             modifierString = modifierString.Trim();
+#if !NETFX_CORE
             modifierString = culture != null ? modifierString.ToUpper(culture) : modifierString.ToUpper();
+#else
+            modifierString = modifierString.ToUpper();
+#endif
             switch(modifierString) {
                 case "CONTROL":
                 case "CTRL":
@@ -111,7 +136,11 @@ namespace DevExpress.Mvvm.UI {
         }
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType) {
             if(destinationType != typeof(string)) return false;
+#if !NETFX_CORE
             return context != null && context.Instance is KeyGesture;
+#else
+            return true;
+#endif
         }
         public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType) {
             if(destinationType != typeof(string))

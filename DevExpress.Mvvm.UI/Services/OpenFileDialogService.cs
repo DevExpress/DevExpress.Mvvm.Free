@@ -8,9 +8,11 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.ComponentModel;
+using DevExpress.Mvvm.UI.Interactivity;
 
 namespace DevExpress.Mvvm.UI {
     [Browsable(true), EditorBrowsable(EditorBrowsableState.Always)]
+    [TargetType(typeof(System.Windows.Controls.UserControl)), TargetType(typeof(Window))]
     public class OpenFileDialogService : FileDialogServiceBase, IOpenFileDialogService {
         public static readonly DependencyProperty MultiselectProperty =
             DependencyProperty.Register("Multiselect", typeof(bool), typeof(OpenFileDialogService), new PropertyMetadata(false));

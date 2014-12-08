@@ -1,17 +1,24 @@
 using System;
 using System.Collections;
 using System.Windows;
+using System.Collections.Generic;
+using System.ComponentModel;
+#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
-using System.Collections.Generic;
-using System.ComponentModel;
-
+#else
+using Windows.UI.Xaml;
+using Windows.Foundation;
+using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Controls.Primitives;
+using DevExpress.Mvvm.Native;
+#endif
 namespace DevExpress.Mvvm.UI.Native {
     public static class LayoutHelper {
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
         public static UIElement GetTopContainerWithAdornerLayer(UIElement element) {
             FrameworkElement fElement = element as FrameworkElement;
             if(fElement != null && GetParent(element) == null) {
@@ -70,7 +77,12 @@ namespace DevExpress.Mvvm.UI.Native {
 
         public static bool IsInVisualTree(DependencyObject o) {
             DependencyObject root = FindRoot(o);
+#if !NETFX_CORE
             return Application.Current.RootVisual != null && root == Application.Current.RootVisual || (root is Popup && ((Popup)root).IsOpen);
+#else
+            return Window.Current.Content != null && root == Window.Current.Content || (root is Popup && ((Popup)root).IsOpen);
+#endif
+
         }
         public static DependencyObject FindVisualRoot(DependencyObject d) {
             DependencyObject current = d;
@@ -102,7 +114,7 @@ namespace DevExpress.Mvvm.UI.Native {
             return res;
         }
 #endif
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         public static FrameworkElement GetTopLevelVisual(DependencyObject d) {
             FrameworkElement topElement = d as FrameworkElement;
             while(d != null) {
@@ -124,6 +136,16 @@ namespace DevExpress.Mvvm.UI.Native {
             }
             return o as T;
         }
+#if !FREE && !NETFX_CORE
+        public static Rect GetRelativeElementRect(UIElement element, UIElement parent) {
+#if !SILVERLIGHT || SLDESIGN
+            GeneralTransform transform = element.TransformToVisual(parent);
+            return transform.TransformBounds(new Rect(element.RenderSize));
+#else
+            return ((FrameworkElement)element).GetBounds((FrameworkElement)parent);
+#endif
+        }
+#endif
 
         public static IEnumerable GetRootPath(DependencyObject root, DependencyObject element) {
             DependencyObject parent = element;
@@ -144,7 +166,7 @@ namespace DevExpress.Mvvm.UI.Native {
             return current;
         }
         public static DependencyObject GetParent(DependencyObject d, bool uselogicalTree = false) {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
             if(DesignerProperties.GetIsInDesignMode(d)) {
                 if(CheckIsDesignTimeRoot(d)) return null;
             }
@@ -152,7 +174,7 @@ namespace DevExpress.Mvvm.UI.Native {
             return GetParentCore(d, uselogicalTree);
         }
         static DependencyObject GetParentCore(DependencyObject d, bool uselogicalTree = false) {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
             DependencyObject parent = LogicalTreeHelper.GetParent(d);
             if(!uselogicalTree || parent == null)
                 if(d is Visual) parent = VisualTreeHelper.GetParent(d);
@@ -229,6 +251,33 @@ namespace DevExpress.Mvvm.UI.Native {
             return false;
         }
 
+#if !FREE && !NETFX_CORE
+        public static bool IsChildElementEx(DependencyObject root, DependencyObject element, bool useLogicalTree = false) {
+#if !SILVERLIGHT || SLDESIGN
+            DependencyObject parent = element;
+            while(parent != null) {
+                if(parent == root)
+                    return true;
+                if(parent is ContextMenu)
+                    parent = ((ContextMenu)parent).PlacementTarget;
+                else if(parent is Popup)
+                    parent = ((Popup)parent).PlacementTarget;
+                else
+                    parent = GetParentCore(parent, useLogicalTree);
+            }
+            return false;
+#else
+            if(useLogicalTree && root is ILogicalOwnerEx) {
+                IEnumerator enumerator = ((ILogicalOwnerEx)root).LogicalChildren;
+                while(enumerator.MoveNext()) {
+                    if(LayoutHelper.IsChildElement(enumerator.Current as DependencyObject, element))
+                        return true;
+                }
+            }
+            return IsChildElement(root, element);
+#endif
+        }
+#endif
 
         public static void ForEachElement(FrameworkElement treeRoot, ElementHandler elementHandler) {
             VisualTreeEnumerator en = new VisualTreeEnumerator(treeRoot);
@@ -243,21 +292,30 @@ namespace DevExpress.Mvvm.UI.Native {
             return rect.Contains(position);
         }
 
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
         public static bool IsVisibleInTree(UIElement element, bool visualTreeOnly = false) {
             return element.IsVisible;
         }
 #else
         public static bool IsVisibleInTree(UIElement element, bool visualTreeOnly = false) {
             DependencyObject node = element;
+#if !NETFX_CORE
             UIElement rootVisual = Application.Current.RootVisual;
+#else
+            UIElement rootVisual = Window.Current.Content;
+#endif
             UIElement uiElem = node as UIElement;
             while(node != null) {
                 uiElem = node as UIElement;
                 if(uiElem != null && uiElem.Visibility != Visibility.Visible)
                     return false;
+#if !MVVM && !NETFX_CORE
+                if(uiElem == rootVisual || (uiElem is DXWindow && ((DXWindow)uiElem).IsVisible))
+                    return true;
+#else
                 if(uiElem == rootVisual)
                     return true;
+#endif
                 node = GetNearestParent(node, visualTreeOnly);
             }
             return IsPopupVisible(uiElem, visualTreeOnly);
@@ -267,24 +325,35 @@ namespace DevExpress.Mvvm.UI.Native {
             if(parent is Popup) {
                 return ((Popup)parent).IsOpen;
             }
+#if !MVVM && !NETFX_CORE
+            if(parent is SLPopup) {
+                return ((SLPopup)parent).IsOpen;
+            }
+#endif
             return false;
         }
 #endif
 
         public static bool IsElementLoaded(FrameworkElement element) {
-#if !SILVERLIGHT
+#if !SILVERLIGHT  && !NETFX_CORE || SLDESIGN
             return element.IsLoaded;
 #else
             if(element.Parent != null) return true;
             if(VisualTreeHelper.GetParent(element) != null) return true;
+#if !NETFX_CORE
             Application application = Application.Current;
             if(application == null) return false;
             UIElement rootVisual = application.RootVisual;
+#else
+            Window window = Window.Current;
+            if(window == null) return false;
+            UIElement rootVisual = window.Content;
+#endif
             return element == rootVisual;
 #endif
         }
 
-#if !SILVERLIGHT && !DESIGN
+#if !SILVERLIGHT && !DESIGN  && !NETFX_CORE
         public static Rect GetScreenRect(FrameworkElement element) {
             if(element is Window) {
                 Window elementWindow = (Window)element;
