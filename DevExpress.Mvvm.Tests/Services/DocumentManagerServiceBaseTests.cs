@@ -1,5 +1,7 @@
 #if SILVERLIGHT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+#elif NETFX_CORE
+using DevExpress.TestFramework.NUnit;
 #else
 using NUnit.Framework;
 #endif
@@ -8,9 +10,13 @@ using System.Collections.Generic;
 using System.Linq;
 using DevExpress.Mvvm.UI;
 using System.Windows;
-using Moq;
 using System.ComponentModel;
+#if !NETFX_CORE
+using Moq;
 using DevExpress.Mvvm.POCO;
+#else
+using Windows.UI.Xaml;
+#endif
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
@@ -47,6 +53,9 @@ namespace DevExpress.Mvvm.Tests {
             public object ParentViewModel { get; private set; }
             public object ViewModel { get; private set; }
             object IViewLocator.ResolveView(string name) { return this; }
+            Type IViewLocator.ResolveViewType(string viewName) {
+                throw new NotImplementedException();
+            }
         }
         public class TestDocumentManagerService : IDocumentManagerService {
             List<IDocument> docs = new List<IDocument>();

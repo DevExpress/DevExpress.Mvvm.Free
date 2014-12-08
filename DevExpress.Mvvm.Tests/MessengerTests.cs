@@ -1,5 +1,10 @@
+#if !FREE && !NETFX_CORE
+using DevExpress.Xpf.Core.Tests;
+#endif
 #if SILVERLIGHT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+#elif NETFX_CORE
+using DevExpress.TestFramework.NUnit;
 #else
 using NUnit.Framework;
 #endif

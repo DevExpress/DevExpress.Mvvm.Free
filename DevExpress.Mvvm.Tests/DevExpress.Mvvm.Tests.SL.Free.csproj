@@ -112,13 +112,16 @@
     <Compile Include="DefaultMessageBoxButtonLocalizerTests.cs" />
     <Compile Include="DelegateCommandTests.cs" />
     <Compile Include="DesignTimeHelperTests.cs" />
+    <Compile Include="EnumHelperTests.cs" />
     <Compile Include="ExpressionHelperTests.cs" />
     <Compile Include="MessengerTests.cs" />
     <Compile Include="MetadataBuilderTests.cs" />
     <Compile Include="Mvvm.UI\ConvertersTests.cs" />
     <Compile Include="Mvvm.UI\EventToCommandTests.cs" />
+    <Compile Include="Mvvm.UI\ItemsControlMouseEventArgsConverterTests.cs" />
     <Compile Include="Mvvm.UI\KeyGestureTests.cs" />
     <Compile Include="Mvvm.UI\LayoutTreeHelperTests.cs" />
+    <Compile Include="Mvvm.UI\ViewLocatorTests.cs" />
     <Compile Include="Mvvm.UI\ViewModelExtensionsTests.cs" />
     <Compile Include="Mvvm.UI\ViewModelSourceExtensionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

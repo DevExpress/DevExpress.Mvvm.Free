@@ -1,5 +1,7 @@
 #if SILVERLIGHT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+#elif NETFX_CORE
+using DevExpress.TestFramework.NUnit;
 #else
 using NUnit.Framework;
 #endif
@@ -9,6 +11,19 @@ using System.Collections.Generic;
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class BindableBaseTests {
+        [Test]
+        public void PropertyChangedCallbackAndPropertyChangedEventOrderTest() {
+            BindableBaseTest bb = new BindableBaseTest();
+            bool propertyChangedCalled = false;
+            bb.PropertyChanged += (s, e) => {
+                propertyChangedCalled = true;
+                Assert.AreEqual("SomeProperty7", e.PropertyName);
+                Assert.AreEqual(0, bb.ChangedCallbackCallCount);
+            };
+            bb.SomeProperty7 = 777;
+            Assert.IsTrue(propertyChangedCalled);
+            Assert.AreEqual(1, bb.ChangedCallbackCallCount);
+        }
         [Test]
         public void OnPropertiesChangedTest() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -105,7 +120,7 @@ namespace DevExpress.Mvvm.Tests {
             bb.SomeProperty3 = 150;
             Assert.AreEqual(1, count);
         }
-
+#if !NETFX_CORE
         [Test, ExpectedException(typeof(ArgumentException))]
         public void SetPropertyInvalidLambdaTest() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -123,7 +138,7 @@ namespace DevExpress.Mvvm.Tests {
             BindableBaseTest bb = new BindableBaseTest();
             bb.SomeProperty6 = 150;
         }
-
+#endif
         [Test]
         public void SetPropertyWithCallbackTest() {
             BindableBaseTest bb = new BindableBaseTest();

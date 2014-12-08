@@ -1,4 +1,7 @@
-#if !SILVERLIGHT
+#if SILVERLIGHT
+#elif NETFX_CORE
+using DevExpress.TestFramework;
+#else
 using NUnit.Framework;
 #endif
 using DevExpress.Mvvm.Native;
@@ -8,7 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 namespace DevExpress {
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
     public class SetNotEqualsException : AssertionException {
         public SetNotEqualsException(string message) : base(message) { }
     }
@@ -64,6 +67,7 @@ namespace DevExpress {
             Assert.IsFalse(val);
             return val;
         }
+#if !NETFX_CORE
         public static TInput IsInstanceOfType<TInput>(this TInput obj, Type expectedType) where TInput : class {
             Assert.IsInstanceOf(expectedType, obj);
             return obj;
@@ -72,6 +76,7 @@ namespace DevExpress {
             Assert.IsInstanceOf(expectedType, valueEvaluator(obj));
             return obj;
         }
+#endif
         static object GetActualValue<TInput>(TInput obj, Func<TInput, object> valueEvaluator) {
             return valueEvaluator == null ? obj : valueEvaluator(obj);
         }
@@ -142,7 +147,7 @@ namespace DevExpress {
                 }
                 message += "\n";
             }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
             throw new SetNotEqualsException(message);
 #else
       throw new Exception(message);

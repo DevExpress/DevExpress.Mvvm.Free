@@ -22,7 +22,7 @@ namespace DevExpress {
         public static void EnsureCollected(IEnumerable<WeakReference> references) {
             AssertCollectedCore(references, -1);
         }
-#if SILVERLIGHT
+#if SILVERLIGHT || NETFX_CORE
         static void AssertCollectedCore(IEnumerable<WeakReference> references, int alreadyCollectedGen) {
             SlowButSureAssertCollected(references.ToArray());
         }
@@ -84,7 +84,7 @@ namespace DevExpress {
             }
         }
         public static void CollectOptional(IEnumerable<WeakReference> references) {
-#if SILVERLIGHT
+#if SILVERLIGHT || NETFX_CORE
             GC.Collect();
             GC.GetTotalMemory(true);
 #else

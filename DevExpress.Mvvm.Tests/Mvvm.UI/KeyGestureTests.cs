@@ -1,13 +1,19 @@
-#if !SILVERLIGHT
-using NUnit.Framework;
-#else
+#if SILVERLIGHT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+#elif NETFX_CORE
+using DevExpress.Mvvm.UI.Native;
+using TestFixture = DevExpress.TestFramework.TestClassAttribute;
+using Test = DevExpress.TestFramework.TestMethodAttribute;
+using DevExpress.TestFramework;
+using Key = Windows.System.VirtualKey;
+#else
+using NUnit.Framework;
 #endif
 using System;
 using System.Windows.Input;
 
 namespace DevExpress.Mvvm.UI.Tests {
-#if SILVERLIGHT
+#if SILVERLIGHT || NETFX_CORE
     [TestFixture]
     public class ModifierKeysConverterTests {
         protected virtual ModifierKeys? ConvertStringToModifierKey(string value) {
@@ -91,8 +97,10 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(Key.A, KeyGestureConverter.ConvertStringToKey("  a ", null));
 
             Assert.AreEqual(Key.F10, KeyGestureConverter.ConvertStringToKey("  f10 ", null));
+#if !NETFX_CORE
             Assert.AreEqual(Key.D0, KeyGestureConverter.ConvertStringToKey("  D0 ", null));
             Assert.AreEqual(Key.D0, KeyGestureConverter.ConvertStringToKey("  d0 ", null));
+#endif
 
             Assert.IsNull(KeyGestureConverter.ConvertStringToKey("bla", null));
         }

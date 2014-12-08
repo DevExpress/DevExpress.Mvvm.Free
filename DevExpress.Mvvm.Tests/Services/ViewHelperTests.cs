@@ -36,17 +36,34 @@ namespace DevExpress.Mvvm.UI.Tests {
 
         void ITestViewServiceBase.CreateChildView(string documentType, object viewModel, object parameter, object parentViewModel) {
             var view = base.CreateAndInitializeView(documentType, viewModel, parameter, parentViewModel);
+            if(((Panel)AssociatedObject).Children.Contains((UIElement)view)) return;
             ((Panel)AssociatedObject).Children.Add((UIElement)view);
         }
     }
     [TestFixture]
     public class ViewHelperTests : BaseWpfFixture {
         public class TestViewLocator : IViewLocator {
+            Grid testView = null;
+            Grid testViewWithViewModel = null;
+            public bool AllowCaching = false;
             public object ResolveView(string name) {
                 if(name == "testView")
-                    return new Grid();
+                    return CreateTestView();
                 if(name == "testViewWithViewModel")
-                    return new Grid() { DataContext = new ChildViewModel() };
+                    return CreateTestViewWithViewModel();
+                throw new NotImplementedException();
+            }
+            Grid CreateTestView() {
+                if(!AllowCaching) return new Grid();
+                return testView ?? (testView = new Grid());
+            }
+            Grid CreateTestViewWithViewModel() {
+                if(!AllowCaching) return new Grid() { DataContext = new ChildViewModel() };
+                return testViewWithViewModel ?? (testViewWithViewModel = new Grid() { DataContext = new ChildViewModel() });
+            }
+
+
+            public Type ResolveViewType(string name) {
                 throw new NotImplementedException();
             }
         }
@@ -58,7 +75,6 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
         public class ChildViewModel : ViewModelBase {
         }
-
 
         [Test, Asynchronous]
         public void ViewModelExtensions1() {
@@ -144,17 +160,26 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueTestComplete();
         }
 
-
+        void Init_ViewModelExtensionsWithService_TestView(out ITestViewServiceBase service, out ChildViewModel childVM, out ParentViewModel parentVM) {
+            parentVM = new ParentViewModel() { TestParameter = "parameter" };
+            childVM = new ChildViewModel();
+            Grid parentView = new Grid();
+            service = new TestViewServiceBase();
+            Interactivity.Interaction.GetBehaviors(parentView).Add((TestViewServiceBase)service);
+            Window.Content = parentView;
+        }
+        void FinalCheck_ViewModelExtensionsWithService_TestView(ChildViewModel childVM, ParentViewModel parentVM) {
+            Grid parentView = (Grid)Window.Content;
+            Grid childView = parentView.Children[0] as Grid;
+            Assert.AreSame(childVM, childView.DataContext);
+            Assert.AreSame(parentVM, ((ISupportParentViewModel)childVM).ParentViewModel);
+            Assert.AreEqual(parentVM.TestParameter, ((ISupportParameter)childVM).Parameter);
+        }
         [Test, Asynchronous]
         public void ViewModelExtensionsWithService1() {
-            var parentVM = new ParentViewModel() { TestParameter = "parameter" };
-            var childVM = new ChildViewModel();
-            Grid parentView = new Grid();
-            Grid childView;
-            TestViewServiceBase service = new TestViewServiceBase();
-            ITestViewServiceBase iService = service;
-            Interactivity.Interaction.GetBehaviors(parentView).Add(service);
-            Window.Content = parentView;
+            ParentViewModel parentVM; ChildViewModel childVM;
+            ITestViewServiceBase iService;
+            Init_ViewModelExtensionsWithService_TestView(out iService, out childVM, out parentVM);
             EnqueueShowWindow();
             EnqueueCallback(() => {
                 ((ISupportParameter)childVM).Parameter = parentVM.TestParameter;
@@ -163,13 +188,68 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
-                childView = parentView.Children[0] as Grid;
-                Assert.AreSame(childVM, childView.DataContext);
-                Assert.AreSame(parentVM, ((ISupportParentViewModel)childVM).ParentViewModel);
-                Assert.AreEqual(parentVM.TestParameter, ((ISupportParameter)childVM).Parameter);
+                FinalCheck_ViewModelExtensionsWithService_TestView(childVM, parentVM);
             });
             EnqueueTestComplete();
         }
+        [Test, Asynchronous]
+        public void ViewModelExtensionsWithService3() {
+            ParentViewModel parentVM; ChildViewModel childVM;
+            ITestViewServiceBase iService;
+            Init_ViewModelExtensionsWithService_TestView(out iService, out childVM, out parentVM);
+            EnqueueShowWindow();
+            EnqueueCallback(() => {
+                iService.CreateChildView("testView", childVM, parentVM.TestParameter, parentVM);
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(() => {
+                FinalCheck_ViewModelExtensionsWithService_TestView(childVM, parentVM);
+            });
+            EnqueueTestComplete();
+        }
+        [Test, Asynchronous]
+        public void ViewModelExtensionsWithService4_T155859() {
+            ParentViewModel parentVM; ChildViewModel childVM;
+            ITestViewServiceBase iService;
+            Init_ViewModelExtensionsWithService_TestView(out iService, out childVM, out parentVM);
+            EnqueueShowWindow();
+            EnqueueCallback(() => {
+                iService.CreateChildView("testView", childVM, parentVM.TestParameter, parentVM);
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(() => {
+                parentVM.TestParameter = "parameter2";
+                iService.CreateChildView("testView", childVM, parentVM.TestParameter, parentVM);
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(() => {
+                FinalCheck_ViewModelExtensionsWithService_TestView(childVM, parentVM);
+            });
+            EnqueueTestComplete();
+        }
+        [Test, Asynchronous]
+        public void ViewModelExtensionsWithService5_T155859() {
+            ParentViewModel parentVM; ChildViewModel childVM;
+            ITestViewServiceBase iService;
+            Init_ViewModelExtensionsWithService_TestView(out iService, out childVM, out parentVM);
+            (((TestViewServiceBase)iService).ViewLocator as TestViewLocator).AllowCaching = true;
+            EnqueueShowWindow();
+            EnqueueCallback(() => {
+                iService.CreateChildView("testView", childVM, parentVM.TestParameter, parentVM);
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(() => {
+                parentVM.TestParameter = "parameter2";
+                iService.CreateChildView("testView", childVM, parentVM.TestParameter, parentVM);
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(() => {
+                FinalCheck_ViewModelExtensionsWithService_TestView(childVM, parentVM);
+            });
+            EnqueueTestComplete();
+        }
+
+
         [Test, Asynchronous]
         public void ViewModelExtensionsWithService2() {
             var parentVM = new ParentViewModel() { TestParameter = "parameter" };
@@ -194,25 +274,30 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueTestComplete();
         }
         [Test, Asynchronous]
-        public void ViewModelExtensionsWithService3() {
+        public void ViewModelExtensionsWithService6_T155859() {
             var parentVM = new ParentViewModel() { TestParameter = "parameter" };
             ChildViewModel childVM = new ChildViewModel();
             Grid parentView = new Grid();
             Grid childView;
             TestViewServiceBase service = new TestViewServiceBase();
+            ((TestViewLocator)service.ViewLocator).AllowCaching = true;
             ITestViewServiceBase iService = service;
             Interactivity.Interaction.GetBehaviors(parentView).Add(service);
             Window.Content = parentView;
             EnqueueShowWindow();
             EnqueueCallback(() => {
-                iService.CreateChildView("testView", childVM, parentVM.TestParameter, parentVM);
+                iService.CreateChildView("testViewWithViewModel", null, parentVM.TestParameter, parentVM);
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(() => {
+                parentVM.TestParameter = "parameter2";
+                iService.CreateChildView("testViewWithViewModel", null, parentVM.TestParameter, parentVM);
             });
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
                 childView = parentView.Children[0] as Grid;
-                Assert.AreEqual(childVM, childView.DataContext);
-                Assert.AreSame(parentVM, ((ISupportParentViewModel)childVM).ParentViewModel);
-                Assert.AreEqual(parentVM.TestParameter, ((ISupportParameter)childVM).Parameter);
+                Assert.AreSame(parentVM, ((ISupportParentViewModel)childView.DataContext).ParentViewModel);
+                Assert.AreEqual(parentVM.TestParameter, ((ISupportParameter)childView.DataContext).Parameter);
             });
             EnqueueTestComplete();
         }

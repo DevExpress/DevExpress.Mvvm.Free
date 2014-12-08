@@ -23,13 +23,13 @@ namespace DevExpress.Mvvm.UI.Tests {
         public class TestMessageBoxService : IMessageBoxService {
             public string MessageBoxTest;
             public string Caption;
-            public MessageBoxButton Button;
-            public MessageBoxResult Result = MessageBoxResult.Yes;
-            public MessageBoxResult DefaultResult;
+            public MessageButton Button;
+            public MessageResult Result = MessageResult.Yes;
+            public MessageResult DefaultResult;
             public int ShowCount = 0;
 #if !SILVERLIGHT
-            public MessageBoxImage Icon;
-            public MessageBoxResult Show(string messageBoxText, string caption, MessageBoxButton button, MessageBoxImage icon, MessageBoxResult defaultResult) {
+            public MessageIcon Icon;
+            public MessageResult Show(string messageBoxText, string caption, MessageButton button, MessageIcon icon, MessageResult defaultResult) {
                 MessageBoxTest = messageBoxText;
                 Caption = caption;
                 Button = button;
@@ -39,7 +39,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 return Result;
             }
 #else
-            public MessageBoxResult Show(string messageBoxText, string caption, MessageBoxButton button, MessageBoxResult defaultResult) {
+            public MessageResult Show(string messageBoxText, string caption, MessageButton button, MessageResult defaultResult) {
                 MessageBoxTest = messageBoxText;
                 Caption = caption;
                 Button = button;
@@ -192,12 +192,12 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual("Confirmation", service.Caption);
             Assert.AreEqual("Do you want to perform this action?", service.MessageBoxTest);
 #if !SILVERLIGHT
-            Assert.AreEqual(MessageBoxImage.None, service.Icon);
-            Assert.AreEqual(MessageBoxButton.YesNo, service.Button);
+            Assert.AreEqual(MessageIcon.None, service.Icon);
+            Assert.AreEqual(MessageButton.YesNo, service.Button);
 #else
-            Assert.AreEqual(MessageBoxButton.OKCancel, service.Button);
+            Assert.AreEqual(MessageButton.OKCancel, service.Button);
 #endif
-            Assert.AreEqual(MessageBoxResult.None, service.DefaultResult);
+            Assert.AreEqual(MessageResult.None, service.DefaultResult);
 
             b.MessageText = "MessageText";
             b.MessageTitle = "MessageTitle";
@@ -206,19 +206,19 @@ namespace DevExpress.Mvvm.UI.Tests {
 #endif
             b.MessageButton = MessageBoxButton.OKCancel;
             b.MessageDefaultResult = MessageBoxResult.Cancel;
-            service.Result = MessageBoxResult.OK;
+            service.Result = MessageResult.OK;
             control.Command.Execute(null);
             Assert.AreEqual(2, executeCount);
             Assert.AreEqual(2, service.ShowCount);
             Assert.AreEqual("MessageTitle", service.Caption);
             Assert.AreEqual("MessageText", service.MessageBoxTest);
 #if !SILVERLIGHT
-            Assert.AreEqual(MessageBoxImage.Hand, service.Icon);
+            Assert.AreEqual(MessageIcon.Hand, service.Icon);
 #endif
-            Assert.AreEqual(MessageBoxButton.OKCancel, service.Button);
-            Assert.AreEqual(MessageBoxResult.Cancel, service.DefaultResult);
+            Assert.AreEqual(MessageButton.OKCancel, service.Button);
+            Assert.AreEqual(MessageResult.Cancel, service.DefaultResult);
 
-            service.Result = MessageBoxResult.Cancel;
+            service.Result = MessageResult.Cancel;
             control.Command.Execute(null);
             Assert.AreEqual(2, executeCount);
             Assert.AreEqual(3, service.ShowCount);

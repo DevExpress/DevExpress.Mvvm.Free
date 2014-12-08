@@ -149,7 +149,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void CustomLocalizerTest() {
             var service = new TestDialogService2();
-            service.ShowDialog(MessageBoxButton.OKCancel, "test", "test");
+            service.ShowDialog(MessageButton.OKCancel, "test", "test");
             Assert.AreEqual("test", service.Commands.ElementAt(0).Caption);
             Assert.AreEqual("test", service.Commands.ElementAt(1).Caption);
         }

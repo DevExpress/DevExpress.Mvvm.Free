@@ -1,6 +1,8 @@
 #if SILVERLIGHT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MessageBoxButton = DevExpress.Mvvm.DXMessageBoxButton;
+#elif NETFX_CORE
+using DevExpress.TestFramework.NUnit;
 #else
 using NUnit.Framework;
 #endif
@@ -8,6 +10,8 @@ using System.ComponentModel;
 using DevExpress.Mvvm.Native;
 using System.Collections.Generic;
 using System.Windows;
+using System.Linq.Expressions;
+using System;
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
@@ -45,17 +49,17 @@ namespace DevExpress.Mvvm.Tests {
             bool isDefaultChanged = false;
 
             PropertyChangedEventHandler propertyChanged = (s, e) => {
-                if(e.PropertyName == ExpressionHelper.GetPropertyName(() => command.Id))
+                if(e.PropertyName == GetPropertyName(() => command.Id))
                     idChanged = true;
-                if(e.PropertyName == ExpressionHelper.GetPropertyName(() => command.Command))
+                if(e.PropertyName == GetPropertyName(() => command.Command))
                     commandChanged = true;
-                if(e.PropertyName == ExpressionHelper.GetPropertyName(() => command.Tag))
+                if(e.PropertyName == GetPropertyName(() => command.Tag))
                     tagChanged = true;
-                if(e.PropertyName == ExpressionHelper.GetPropertyName(() => command.Caption))
+                if(e.PropertyName == GetPropertyName(() => command.Caption))
                     labelChanged = true;
-                if(e.PropertyName == ExpressionHelper.GetPropertyName(() => command.IsDefault))
+                if(e.PropertyName == GetPropertyName(() => command.IsDefault))
                     isDefaultChanged = true;
-                if(e.PropertyName == ExpressionHelper.GetPropertyName(() => command.IsCancel))
+                if(e.PropertyName == GetPropertyName(() => command.IsCancel))
                     isCancelChanged = true;
             };
             command.PropertyChanged += propertyChanged;
@@ -73,18 +77,20 @@ namespace DevExpress.Mvvm.Tests {
             command.Caption = "label";
             Assert.IsTrue(labelChanged);
         }
-
+        static string GetPropertyName<T>(Expression<Func<T>> expression) {
+            return (expression.Body as MemberExpression).Member.Name;
+        }
         [Test]
         public void GenerateUICommandsTest1() {
             IList<UICommand> commands;
 
-            commands = GenerateUICommandsCore(MessageBoxButton.OK);
+            commands = GenerateUICommandsCore(MessageButton.OK);
             Assert.AreEqual(1, commands.Count);
             Assert.AreEqual("OK", commands[0].Caption);
             Assert.AreEqual(true, commands[0].IsDefault);
             Assert.AreEqual(false, commands[0].IsCancel);
 
-            commands = GenerateUICommandsCore(MessageBoxButton.OKCancel);
+            commands = GenerateUICommandsCore(MessageButton.OKCancel);
             Assert.AreEqual(2, commands.Count);
             Assert.AreEqual("OK", commands[0].Caption);
             Assert.AreEqual(true, commands[0].IsDefault);
@@ -93,7 +99,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(false, commands[1].IsDefault);
             Assert.AreEqual(true, commands[1].IsCancel);
 
-            commands = GenerateUICommandsCore(MessageBoxButton.YesNo);
+            commands = GenerateUICommandsCore(MessageButton.YesNo);
             Assert.AreEqual(2, commands.Count);
             Assert.AreEqual("Yes", commands[0].Caption);
             Assert.AreEqual(true, commands[0].IsDefault);
@@ -102,7 +108,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(false, commands[1].IsDefault);
             Assert.AreEqual(true, commands[1].IsCancel);
 
-            commands = GenerateUICommandsCore(MessageBoxButton.YesNoCancel);
+            commands = GenerateUICommandsCore(MessageButton.YesNoCancel);
             Assert.AreEqual(3, commands.Count);
             Assert.AreEqual("Yes", commands[0].Caption);
             Assert.AreEqual(true, commands[0].IsDefault);
@@ -118,13 +124,13 @@ namespace DevExpress.Mvvm.Tests {
         public void GenerateUICommandsTest2() {
             IList<UICommand> commands;
 
-            commands = GenerateUICommandsCore(MessageBoxButton.OK, MessageBoxResult.Cancel, MessageBoxResult.OK);
+            commands = GenerateUICommandsCore(MessageButton.OK, MessageResult.Cancel, MessageResult.OK);
             Assert.AreEqual(1, commands.Count);
             Assert.AreEqual("OK", commands[0].Caption);
             Assert.AreEqual(false, commands[0].IsDefault);
             Assert.AreEqual(true, commands[0].IsCancel);
 
-            commands = GenerateUICommandsCore(MessageBoxButton.OKCancel, MessageBoxResult.Cancel, MessageBoxResult.No);
+            commands = GenerateUICommandsCore(MessageButton.OKCancel, MessageResult.Cancel, MessageResult.No);
             Assert.AreEqual(2, commands.Count);
             Assert.AreEqual("OK", commands[0].Caption);
             Assert.AreEqual(false, commands[0].IsDefault);
@@ -133,7 +139,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(true, commands[1].IsDefault);
             Assert.AreEqual(false, commands[1].IsCancel);
 
-            commands = GenerateUICommandsCore(MessageBoxButton.YesNo, MessageBoxResult.OK, MessageBoxResult.Yes);
+            commands = GenerateUICommandsCore(MessageButton.YesNo, MessageResult.OK, MessageResult.Yes);
             Assert.AreEqual(2, commands.Count);
             Assert.AreEqual("Yes", commands[0].Caption);
             Assert.AreEqual(false, commands[0].IsDefault);
@@ -142,7 +148,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(false, commands[1].IsDefault);
             Assert.AreEqual(false, commands[1].IsCancel);
 
-            commands = GenerateUICommandsCore(MessageBoxButton.YesNoCancel, MessageBoxResult.No, MessageBoxResult.Cancel);
+            commands = GenerateUICommandsCore(MessageButton.YesNoCancel, MessageResult.No, MessageResult.Cancel);
             Assert.AreEqual(3, commands.Count);
             Assert.AreEqual("Yes", commands[0].Caption);
             Assert.AreEqual(false, commands[0].IsDefault);
@@ -155,8 +161,8 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(true, commands[2].IsCancel);
         }
 
-        List<UICommand> GenerateUICommandsCore(MessageBoxButton dialogButtons, MessageBoxResult? defaultButton = null, MessageBoxResult? cancelButton = null) {
-            return UICommand.GenerateFromMessageBoxButton(dialogButtons, new DefaultMessageBoxButtonLocalizer(), defaultButton, cancelButton);
+        List<UICommand> GenerateUICommandsCore(MessageButton dialogButtons, MessageResult? defaultButton = null, MessageResult? cancelButton = null) {
+            return UICommand.GenerateFromMessageButton(dialogButtons, new DefaultMessageButtonLocalizer(), defaultButton, cancelButton);
         }
     }
 }

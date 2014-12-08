@@ -1,3 +1,4 @@
+#if !NETFX_CORE
 using System.Windows;
 
 namespace DevExpress.Mvvm.Tests {
@@ -11,3 +12,25 @@ namespace DevExpress.Mvvm.Tests {
         }
     }
 }
+#else
+using Windows.ApplicationModel;
+using Windows.ApplicationModel.Activation;
+using Windows.UI.Xaml;
+
+namespace DevExpress.Mvvm.Tests {
+    sealed partial class App : Application {
+        public App() {
+            this.UnhandledException += DevExpress.TestFramework.TestRunner.AppUnhandledException;
+            this.InitializeComponent();
+            this.Suspending += OnSuspending;
+        }
+        protected override void OnLaunched(LaunchActivatedEventArgs args) {
+            DevExpress.TestFramework.TestRunner.RunTests(this.GetType());
+        }
+        private void OnSuspending(object sender, SuspendingEventArgs e) {
+            var deferral = e.SuspendingOperation.GetDeferral();
+            deferral.Complete();
+        }
+    }
+}
+#endif

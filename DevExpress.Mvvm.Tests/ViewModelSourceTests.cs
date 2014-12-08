@@ -160,7 +160,7 @@ namespace DevExpress.Mvvm.Tests {
         public void POCOViewModel_PrivateClassTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
                 ViewModelSource.Create<POCOViewModel_PrivateClass>();
-            }, x => Assert.AreEqual("Cannot create dynamic class for the private class: POCOViewModel_PrivateClass.", x.Message));
+            }, x => Assert.AreEqual("Cannot create dynamic class for the internal class: POCOViewModel_PrivateClass.", x.Message));
         }
 
         public class POCOViewModel_TwoPropertyChangedMethods {
@@ -887,6 +887,14 @@ namespace DevExpress.Mvvm.Tests {
 
             viewModel.RaisePropertiesChanged();
             Assert.AreEqual(string.Empty, propertyName);
+        }
+        [Test]
+        public void GetSetParentViewModel() {
+            var viewModel = ViewModelSource.Create<POCOViewModel>();
+            Assert.IsNull(viewModel.GetParentViewModel<Button>());
+            var b = new Button();
+            Assert.AreSame(viewModel, viewModel.SetParentViewModel(b));
+            Assert.AreEqual(b, viewModel.GetParentViewModel<Button>());
         }
         #endregion
 
@@ -1849,6 +1857,46 @@ namespace DevExpress.Mvvm.Tests {
             var supportInitMock = new Mock<ISupportInitialize>(MockBehavior.Strict);
             ((ISupportServices)viewModel).ServiceContainer.RegisterService(supportInitMock.Object);
             Assert.AreSame(supportInitMock.Object, viewModel.SupportInitialize);
+        }
+
+        public class GetServiceViewModel { }
+        [Test]
+        public void GetServiceMethodTest() {
+            var viewModel = ViewModelSource.Create<GetServiceViewModel>();
+            var parentViewModel = ViewModelSource.Create<GetServiceViewModel>();
+            viewModel.SetParentViewModel(parentViewModel);
+
+            Assert.IsNull(viewModel.GetService<IMessageBoxService>());
+            TestHelper.AssertThrows<ServiceNotFoundException>(() => viewModel.GetRequiredService<IMessageBoxService>());
+
+            var messageBoxMock1 = new Mock<IMessageBoxService>(MockBehavior.Strict);
+            var messageBoxMock2 = new Mock<IMessageBoxService>(MockBehavior.Strict);
+
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(messageBoxMock1.Object);
+            ((ISupportServices)parentViewModel).ServiceContainer.RegisterService(messageBoxMock2.Object);
+            Assert.AreSame(messageBoxMock1.Object, viewModel.GetService<IMessageBoxService>());
+            Assert.AreSame(messageBoxMock1.Object, viewModel.GetRequiredService<IMessageBoxService>());
+            TestHelper.AssertThrows<ViewModelSourceException>(() => new GetServiceViewModel().GetService<IMessageBoxService>());
+        }
+        [Test]
+        public void GetServiceByNameMethodTest() {
+            var viewModel = ViewModelSource.Create<GetServiceViewModel>();
+            var parentViewModel = ViewModelSource.Create<GetServiceViewModel>();
+            viewModel.SetParentViewModel(parentViewModel);
+
+            Assert.IsNull(viewModel.GetService<IMessageBoxService>("svc1"));
+            TestHelper.AssertThrows<ServiceNotFoundException>(() => viewModel.GetRequiredService<IMessageBoxService>("svc1"));
+
+            var messageBoxMock1 = new Mock<IMessageBoxService>(MockBehavior.Strict);
+            var messageBoxMock2 = new Mock<IMessageBoxService>(MockBehavior.Strict);
+            var messageBoxMock3 = new Mock<IMessageBoxService>(MockBehavior.Strict);
+
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService("svc1", messageBoxMock1.Object);
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService("svc2", messageBoxMock2.Object);
+            ((ISupportServices)parentViewModel).ServiceContainer.RegisterService("svc3", messageBoxMock3.Object);
+            Assert.AreSame(messageBoxMock1.Object, viewModel.GetService<IMessageBoxService>("svc1"));
+            Assert.AreSame(messageBoxMock2.Object, viewModel.GetService<IMessageBoxService>("svc2"));
+            TestHelper.AssertThrows<ViewModelSourceException>(() => new GetServiceViewModel().GetService<IMessageBoxService>("svc1"));
         }
         #endregion
 
