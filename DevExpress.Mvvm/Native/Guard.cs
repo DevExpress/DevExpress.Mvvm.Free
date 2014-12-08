@@ -23,6 +23,14 @@ namespace DevExpress.Utils {
             if (value <= 0)
                 ThrowArgumentException(name, value);
         }
+        public static void ArgumentNonNegative(double value, string name) {
+            if (value < 0)
+                ThrowArgumentException(name, value);
+        }
+        public static void ArgumentPositive(double value, string name) {
+            if (value <= 0)
+                ThrowArgumentException(name, value);
+        }
         public static void ArgumentIsNotNullOrEmpty(string value, string name) {
             if (string.IsNullOrEmpty(value))
                 ThrowArgumentException(name, value);

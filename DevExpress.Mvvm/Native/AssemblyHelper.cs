@@ -10,9 +10,7 @@ using System.Windows;
 using System.Text;
 using System.Linq;
 
-#if !SILVERLIGHT
 using System.IO.Compression;
-#endif
 
 using DevExpress.Internal;
 
@@ -24,16 +22,20 @@ namespace DevExpress.Utils {
         public static Assembly EntryAssembly {
             get {
                 if(entryAssembly == null)
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
                     entryAssembly = Assembly.GetEntryAssembly();
 #else
+#if !NETFX_CORE
                     entryAssembly = Application.Current == null ? null : Application.Current.GetType().Assembly;
+#else
+                    entryAssembly = Windows.UI.Xaml.Application.Current == null ? null : Windows.UI.Xaml.Application.Current.GetType().GetTypeInfo().Assembly;
+#endif
 #endif
                 return entryAssembly;
             }
             set { entryAssembly = value; }
         }
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
         static Assembly GetReflectionOnlyLoadedAssembly(string asmName) {
             try {
                 return Assembly.ReflectionOnlyLoad(asmName);
@@ -161,20 +163,11 @@ namespace DevExpress.Utils {
             return NameContains(assemblyName, AssemblyInfo.ThemePrefixWithoutSeparator);
         }
         public static bool IsEntryAssembly(Assembly assembly) {
-#if SILVERLIGHT
-            string entryAssemblyName = Deployment.Current.EntryPointAssembly;
-            return NameContains(assembly, entryAssemblyName);
-#else
             Assembly entryAssembly = EntryAssembly;
             return entryAssembly == assembly;
-#endif
         }
         public static bool IsEntryAssembly(string assemblyName) {
-#if SILVERLIGHT
-            string entryAssembly = Deployment.Current.EntryPointAssembly;
-#else
             Assembly entryAssembly = EntryAssembly;
-#endif
             if(entryAssembly == null)
                 return false;
             return NameContains(entryAssembly, assemblyName);
@@ -217,39 +210,27 @@ namespace DevExpress.Utils {
             return rs == null ? null : rs.GetEnumerator();
         }
         public static Uri GetResourceUri(Assembly assembly, string path) {
-#if SILVERLIGHT
-            return new Uri(string.Format("/{0};component/{1}", GetPartialName(assembly), path), UriKind.Relative);
-#else
             return new Uri(string.Format("{0}/{1};component/{2}", "pack://application:,,,", AssemblyHelper.GetPartialName(assembly), path));
-#endif
         }
         public static Stream GetResourceStream(Assembly assembly, string path, bool pathIsFull) {
             path = path.ToLowerInvariant();
             Stream stream = GetResourceStreamCore(assembly, path, pathIsFull);
-#if SILVERLIGHT
-            return stream;
-#else
             if(stream == null) {
                 stream = GetResourceStreamCore(assembly, path + ".zip", pathIsFull);
                 if(stream != null)
                     stream = new GZipStream(stream, CompressionMode.Decompress);
             }
             return stream;
-#endif
         }
         public static Stream GetEmbeddedResourceStream(Assembly assembly, string name, bool nameIsFull) {
             name = name.Replace('/', '.');
             Stream stream = GetEmbeddedResourceStreamCore(assembly, name, nameIsFull);
-#if SILVERLIGHT
-            return stream;
-#else
             if(stream == null) {
                 stream = GetEmbeddedResourceStreamCore(assembly, name + ".zip", nameIsFull);
                 if(stream != null)
                     stream = new GZipStream(stream, CompressionMode.Decompress);
             }
             return stream;
-#endif
         }
         public static string GetNamespace(Type type) {
             string typeName = type.FullName;
