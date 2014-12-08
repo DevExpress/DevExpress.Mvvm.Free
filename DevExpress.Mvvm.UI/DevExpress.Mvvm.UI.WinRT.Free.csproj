@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <GenerateLibraryLayout>true</GenerateLibraryLayout>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{B6A93A32-AF05-4DFF-9E3C-23F00063D547}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DevExpress.Mvvm.UI</RootNamespace>
+    <AssemblyName>DevExpress.Mvvm.UI</AssemblyName>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <TargetPlatformVersion>8.1</TargetPlatformVersion>
+    <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\DevExpress.Mvvm.Key\StrongKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\Bin\WinRT\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;MVVM;FREE;NETFX_CORE;WINDOWS_APP</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\Bin\WinRT\</OutputPath>
+    <DefineConstants>TRACE;MVVM;FREE;NETFX_CORE;WINDOWS_APP</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="DevExpress.Mvvm">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Bin\WinRT\DevExpress.Mvvm.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Behaviors\DependencyPropertyBehavior.cs" />
+    <Compile Include="Behaviors\EventToCommand\EventToCommand.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Behaviors\EventToCommand\EventToCommandBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Behaviors\EventToCommand\IEventArgsConverter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Behaviors\EventToCommand\ItemsControlMouseEventArgsConverter.cs" />
+    <Compile Include="Behaviors\EventToCommand\KeyToCommand.cs" />
+    <Compile Include="Behaviors\FocusBehavior.cs" />
+    <Compile Include="Converters.cs" />
+    <Compile Include="Interactivity\DependencyObjectCollection.cs" />
+    <Compile Include="Interactivity\AttachableCollection.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Interactivity\AttachableObject.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Interactivity\Behavior.cs" />
+    <Compile Include="Interactivity\Interaction.cs" />
+    <Compile Include="Interactivity\Native.cs" />
+    <Compile Include="Interactivity\TargetTypeAttribute.cs" />
+    <Compile Include="Interactivity\Trigger.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="KeyGesture.cs" />
+    <Compile Include="Native\DPConsistencyCheckerAttribute.cs" />
+    <Compile Include="Native\EventAwaiter.cs" />
+    <Compile Include="Native\LayoutHelper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Native\ModifierKeysHelper.cs" />
+    <Compile Include="Native\VisualTreeEnumerator.cs" />
+    <Compile Include="Native\WeakEventHandler.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\Core\DocumentUIServiceBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\Core\ServiceBase.cs" />
+    <Compile Include="Services\Core\ViewHelper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\Core\ViewModelExtensions.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Services\Core\ViewServiceBase.cs" />
+    <Compile Include="Native\DialogContentControl.cs" />
+    <Compile Include="Services\DialogService.cs" />
+    <Compile Include="Services\MessageBoxService.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ViewLocator\IViewLocator.cs" />
+    <Compile Include="ViewLocator\ViewLocator.cs" />
+    <Compile Include="ViewLocator\ViewLocatorBase.cs" />
+    <Compile Include="LayoutTreeHelper.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Themes.WinRT\generic.xaml">
+      <SubType>Designer</SubType>
+    </Content>
+    <Page Include="Themes\DialogContentControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Content Include="Themes.WinRT\generic.xaml">
+      <Link>Themes\generic.xaml</Link>
+    </Content>
+  </ItemGroup>
+  <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
+    <VisualStudioVersion>12.0</VisualStudioVersion>
+  </PropertyGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
+</Project>
