@@ -9,27 +9,28 @@
         <ViewModel:MainViewModel/>
     </UserControl.DataContext>
 
-    <Grid x:Name="LayoutRoot" Background="White">
-        <StackPanel Orientation="Vertical">
+    <Grid x:Name="LayoutRoot" Background="White" ShowGridLines="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
             <StackPanel Orientation="Horizontal" Margin="10">
                 <Button Content="AutoUpdateCommand" Command="{Binding AutoUpdateCommand}" 
                         Margin="3" VerticalAlignment="Center"/>
                 <CheckBox Content="IsAutoUpdateCommandEnabled" IsChecked="{Binding IsAutoUpdateCommandEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           Margin="3" VerticalAlignment="Center"/>
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="10">
+            <StackPanel Orientation="Horizontal" Margin="10" Grid.Row="1">
                 <Button Content="ManualUpdateCommand" Command="{Binding ManualUpdateCommand}"
                         Margin="3" VerticalAlignment="Center"/>
                 <CheckBox Content="IsManualUpdateCommandEnabled" IsChecked="{Binding IsManualUpdateCommandEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           Margin="3" VerticalAlignment="Center"/>
-                <Button Content="ForceUpdateManualUpdateCommand" Command="{Binding ForceUpdateManualUpdateCommand}"
-                        Margin="3" VerticalAlignment="Center"/>
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="10">
+            <StackPanel Orientation="Horizontal" Margin="10" Grid.Row="2">
                 <TextBox Text="Message" x:Name="message" Width="80"/>
                 <Button Content="CommandWithParameter" Command="{Binding CommandWithParameter}" CommandParameter="{Binding ElementName=message, Path=Text}"
                         Margin="3" VerticalAlignment="Center"/>
             </StackPanel>
-        </StackPanel>
     </Grid>
 </UserControl>

@@ -3,6 +3,7 @@ using System.Windows;
 
 namespace Example.ViewModel {
     public class MainViewModel : ViewModelBase {
+        #region AutoUpdateCommand
         public DelegateCommand AutoUpdateCommand { get; private set; }
         public bool IsAutoUpdateCommandEnabled {
             get { return GetProperty(() => IsAutoUpdateCommandEnabled); }
@@ -14,11 +15,15 @@ namespace Example.ViewModel {
         bool AutoUpdateCommandCanExecute() {
             return IsAutoUpdateCommandEnabled;
         }
-
+        #endregion
+        #region ManualUpdateCommand
         public DelegateCommand ManualUpdateCommand { get; private set; }
         public bool IsManualUpdateCommandEnabled {
             get { return GetProperty(() => IsManualUpdateCommandEnabled); }
-            set { SetProperty(() => IsManualUpdateCommandEnabled, value); }
+            set { SetProperty(() => IsManualUpdateCommandEnabled, value, IsManualUpdateCommandEnabledChanged); }
+        }
+        void IsManualUpdateCommandEnabledChanged() {
+            ManualUpdateCommand.RaiseCanExecuteChanged();
         }
         void ManualUpdateCommandExecute() {
             MessageBox.Show("Hello");
@@ -26,11 +31,8 @@ namespace Example.ViewModel {
         bool ManualUpdateCommandCanExecute() {
             return IsManualUpdateCommandEnabled;
         }
-        public DelegateCommand ForceUpdateManualUpdateCommand { get; private set; }
-        void ForceUpdateManualUpdateCommandExecute() {
-            ManualUpdateCommand.RaiseCanExecuteChanged();
-        }
-
+        #endregion
+        #region CommandWithParameter
         public DelegateCommand<string> CommandWithParameter { get; private set; }
         void CommandWithParameterExecute(string parameter) {
             MessageBox.Show(parameter);
@@ -38,11 +40,10 @@ namespace Example.ViewModel {
         bool CommandWithParameterCanExecute(string parameter) {
             return !string.IsNullOrEmpty(parameter);
         }
-
+        #endregion
         public MainViewModel() {
             AutoUpdateCommand = new DelegateCommand(AutoUpdateCommandExecute, AutoUpdateCommandCanExecute);
             ManualUpdateCommand = new DelegateCommand(ManualUpdateCommandExecute, ManualUpdateCommandCanExecute, false);
-            ForceUpdateManualUpdateCommand = new DelegateCommand(ForceUpdateManualUpdateCommandExecute);
             CommandWithParameter = new DelegateCommand<string>(CommandWithParameterExecute, CommandWithParameterCanExecute);
         }
     }
