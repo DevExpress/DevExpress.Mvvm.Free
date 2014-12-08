@@ -1,0 +1,60 @@
+﻿<UserControl x:Class="Example.View.MainView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:ViewModel="clr-namespace:Example.ViewModel" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300"
+             DataContext="{dxmvvm:ViewModelSource Type=ViewModel:MainViewModel}">
+
+    <Grid Margin="10,30,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Enum sort mode selection:"/>
+        <ListView Grid.Row="0" Grid.Column="1" Name="sortModeSelector" SelectedIndex="0">
+            <dxmvvm:Interaction.Behaviors>
+                <dxmvvm:EnumItemsSourceBehavior EnumType="dxmvvm:EnumMembersSortMode" SplitNames="False"/>
+            </dxmvvm:Interaction.Behaviors>
+        </ListView>
+
+        <TextBlock Grid.Row="1" Grid.Column="0" TextWrapping="Wrap" Text="Export selection (ComboBox control):" Margin="0,10,0,0"/>
+        <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,10,0,0" SelectedItem="{Binding ItemsSource[0],  RelativeSource={RelativeSource Self}}">
+            <dxmvvm:Interaction.Behaviors>
+                <dxmvvm:EnumItemsSourceBehavior EnumType="ViewModel:ExportSettings" 
+                                                SortMode="{Binding ElementName=sortModeSelector, Path=SelectedItem.Name}"/>
+            </dxmvvm:Interaction.Behaviors>
+        </ComboBox>
+
+        <TextBlock Grid.Row="2" Grid.Column="0" TextWrapping="Wrap" Text="Export selection (ListView control):" Margin="0,10,0,10"/>
+        <ListView Grid.Row="2" Grid.Column="1" Margin="0,10,0,10">
+            <dxmvvm:Interaction.Behaviors>
+                <dxmvvm:EnumItemsSourceBehavior EnumType="ViewModel:ExportSettings" 
+                                                SplitNames="{Binding ElementName=splitNamesSelector, Path=IsChecked}"
+                                                SortMode="{Binding ElementName=sortModeSelector, Path=SelectedItem.Name}"/>
+            </dxmvvm:Interaction.Behaviors>
+        </ListView>
+        <CheckBox Grid.Row="2" Grid.Column="2" Name="splitNamesSelector" Content="Split names" IsChecked="True" Margin="10,10,0,10"/>
+
+
+        <TextBlock Grid.Row="4" Grid.Column="0" TextWrapping="Wrap" Text="Horizontal alignment view (Items Control):"/>
+        <ItemsControl Grid.Row="4" Grid.Column="1">
+            <dxmvvm:Interaction.Behaviors>
+                <dxmvvm:EnumItemsSourceBehavior EnumType="HorizontalAlignment"
+                                                SortMode="{Binding ElementName=sortModeSelector, Path=SelectedItem.Name}"/>
+            </dxmvvm:Interaction.Behaviors>
+        </ItemsControl>
+    </Grid>
+</UserControl>
