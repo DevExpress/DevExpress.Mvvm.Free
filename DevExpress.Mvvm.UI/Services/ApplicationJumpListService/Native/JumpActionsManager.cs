@@ -167,9 +167,6 @@ namespace DevExpress.Mvvm.UI.Native {
             return registeredJumpAction;
         }
         protected override string ApplicationId { get { return currentProcess.ApplicationId; } }
-#if DEBUG
-        protected override object CurrentProcessTag { get { return currentProcess; } }
-#endif
         bool ShouldExecute(string command, string commandLineArgumentPrefix) {
             string arg = commandLineArgumentPrefix + Uri.EscapeDataString(command);
             return currentProcess.CommandLineArgs.Skip(1).Where(a => string.Equals(a, arg)).Any();

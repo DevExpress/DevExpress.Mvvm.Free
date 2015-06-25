@@ -78,10 +78,10 @@ namespace DevExpress.Mvvm.UI {
                 Notification.Hide();
             }
         }
-        class MvvmCustomNotification : INotification {
+        internal class MvvmCustomNotification : INotification {
             CustomNotifier notifier;
             CustomNotification notification;
-            int duration;
+            internal int duration;
             public MvvmCustomNotification(object viewModel, CustomNotifier notifier, int duration) {
                 this.notifier = notifier;
                 this.duration = duration;
@@ -221,7 +221,8 @@ namespace DevExpress.Mvvm.UI {
             get { return DevExpress.Internal.WinApi.ToastNotificationManager.AreToastNotificationsSupported; }
         }
         public INotification CreateCustomNotification(object viewModel) {
-            return new MvvmCustomNotification(viewModel, CustomNotifier, (int)CustomNotificationDuration.TotalMilliseconds);
+            return new MvvmCustomNotification(viewModel, CustomNotifier,
+                (int)Math.Max(0, Math.Min(int.MaxValue, CustomNotificationDuration.TotalMilliseconds)));
         }
 
         public INotification CreatePredefinedNotification(

@@ -56,7 +56,7 @@ namespace DevExpress.Mvvm.UI.Native {
         event Action WorkingAreaChanged;
     }
 
-    class PrimaryScreen : IScreen {
+    public class PrimaryScreen : IScreen {
         static PrimaryScreen() {
             Microsoft.Win32.SystemEvents.DisplaySettingsChanged += SystemEvents_DisplaySettingsChanged;
         }
@@ -82,11 +82,15 @@ namespace DevExpress.Mvvm.UI.Native {
             return 1d;
         }
 
-        public Rect GetWorkingArea() {
+        public Rect GetWorkingArea(System.Windows.Point point) {
             double xScale = GetDpiScaleProperty("DpiScaleX");
             double yScale = GetDpiScaleProperty("DpiScaleY");
-            var area = Screen.GetWorkingArea(new System.Drawing.Point());
+            var area = Screen.GetWorkingArea(new System.Drawing.Point((int)point.X, (int)point.Y));
             return new Rect(area.X / xScale, area.Y / yScale, area.Width / xScale, area.Height / yScale);
+        }
+
+        public Rect GetWorkingArea() {
+            return GetWorkingArea(new System.Windows.Point());
         }
         public event Action WorkingAreaChanged;
     }
@@ -160,6 +164,9 @@ namespace DevExpress.Mvvm.UI.Native {
 
             info.win.Content = content;
             info.win.DataContext = info.toast.ViewModel;
+
+            if(double.IsNaN(content.Width) || double.IsNaN(content.Height))
+                throw new InvalidOperationException("The height or width of a custom notification can not be set to Auto");
 
             System.Windows.Point position = positioner.Add(info, content.Width, content.Height);
 

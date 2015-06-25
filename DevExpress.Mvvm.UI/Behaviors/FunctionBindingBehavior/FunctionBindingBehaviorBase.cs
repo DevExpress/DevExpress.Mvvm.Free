@@ -20,7 +20,10 @@ namespace DevExpress.Mvvm.UI {
         #region Dependency Properties
         public static readonly DependencyProperty SourceProperty =
             DependencyProperty.Register("Source", typeof(object), typeof(FunctionBindingBehaviorBase),
-            new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnSourceObjectChanged()));
+            new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnSourceChanged()));
+        public static readonly DependencyProperty TargetProperty =
+            DependencyProperty.Register("Target", typeof(object), typeof(FunctionBindingBehaviorBase),
+            new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnTargetChanged(e)));
         public static readonly DependencyProperty Arg1Property =
             DependencyProperty.Register("Arg1", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
@@ -70,6 +73,10 @@ namespace DevExpress.Mvvm.UI {
         public object Source {
             get { return GetValue(SourceProperty); }
             set { SetValue(SourceProperty, value); }
+        }
+        public object Target {
+            get { return GetValue(TargetProperty); }
+            set { SetValue(TargetProperty, value); }
         }
         public object Arg1 {
             get { return GetValue(Arg1Property); }
@@ -133,17 +140,17 @@ namespace DevExpress.Mvvm.UI {
         }
         #endregion
 
-        static readonly Regex regExp = new Regex(@"^Arg\d", RegexOptions.Compiled);
-        static readonly Regex numbers = new Regex(@"\d+", RegexOptions.Compiled);
+        static readonly Regex argNameRegExp = new Regex(@"^Arg\d", RegexOptions.Compiled);
+        static readonly Regex argOrderRegExp = new Regex(@"\d+", RegexOptions.Compiled);
         protected object ActualSource { get; private set; }
         protected abstract string ActualFunction { get; }
+        protected object ActualTarget { get { return Target ?? AssociatedObject; } }
 
         protected override void OnAttached() {
             base.OnAttached();
             (AssociatedObject as FrameworkElement).Do(x => x.DataContextChanged += OnAssociatedObjectDataContextChanged);
             (AssociatedObject as FrameworkContentElement).Do(x => x.DataContextChanged += OnAssociatedObjectDataContextChanged);
             UpdateActualSource();
-            OnResultAffectedPropertyChanged();
         }
         protected override void OnDetaching() {
             (AssociatedObject as FrameworkElement).Do(x => x.DataContextChanged -= OnAssociatedObjectDataContextChanged);
@@ -152,31 +159,33 @@ namespace DevExpress.Mvvm.UI {
             ActualSource = null;
             base.OnDetaching();
         }
-        void OnAssociatedObjectDataContextChanged(object sender, DependencyPropertyChangedEventArgs e) {
-            if(Source == null) {
-                UpdateActualSource();
-                OnResultAffectedPropertyChanged();
-            }
-        }
-        void OnSourceObjectChanged() {
-            UpdateActualSource();
-            OnResultAffectedPropertyChanged();
-        }
         protected virtual void UpdateActualSource() {
             (ActualSource as INotifyPropertyChanged).Do(x => x.PropertyChanged -= OnSourceObjectPropertyChanged);
             ActualSource = Source ?? GetAssociatedObjectDataContext();
             (ActualSource as INotifyPropertyChanged).Do(x => x.PropertyChanged += OnSourceObjectPropertyChanged);
+            OnResultAffectedPropertyChanged();
+        }
+        protected virtual void OnResultAffectedPropertyChanged() { }
 
+        void OnAssociatedObjectDataContextChanged(object sender, DependencyPropertyChangedEventArgs e) {
+            if(Source == null)
+                UpdateActualSource();
+        }
+        void OnSourceChanged() {
+            UpdateActualSource();
+        }
+        protected virtual void OnTargetChanged(DependencyPropertyChangedEventArgs e) {
+            if(e.NewValue == e.OldValue)
+                return;
+            OnResultAffectedPropertyChanged();
         }
         object GetAssociatedObjectDataContext() {
-            object result = (AssociatedObject as FrameworkElement).Return(x => x.DataContext, () => null);
-            return result ?? (AssociatedObject as FrameworkContentElement).Return(x => x.DataContext, () => null);
+            return (AssociatedObject as FrameworkElement).With(x => x.DataContext) ?? (AssociatedObject as FrameworkContentElement).With(x => x.DataContext);
         }
         void OnSourceObjectPropertyChanged(object sender, PropertyChangedEventArgs e) {
             if(e.PropertyName == ActualFunction)
                 OnResultAffectedPropertyChanged();
         }
-        protected virtual void OnResultAffectedPropertyChanged() { }
 
         #region get method value
         protected class ArgInfo {
@@ -189,22 +198,20 @@ namespace DevExpress.Mvvm.UI {
                 IsUnsetValue = value == DependencyProperty.UnsetValue;
                 if(!IsUnsetValue) {
                     Value = value is BindingExpression ? obj.GetValue(prop) : value;
-                    if(Value != null)
-                        Type = Value.GetType();
+                    Type = Value.With(x => x.GetType());
                 }
             }
             public ArgInfo(object value) {
                 IsUnsetValue = value == DependencyProperty.UnsetValue;
                 if(!IsUnsetValue) {
                     Value = value;
-                    if(Value != null)
-                        Type = Value.GetType();
+                    Type = Value.With(x => x.GetType());
                 }
             }
         }
         protected static List<ArgInfo> GetArgsInfo(FunctionBindingBehaviorBase instance) {
             return typeof(FunctionBindingBehaviorBase).GetFields(BindingFlags.Public | BindingFlags.Static)
-                .Where(x => regExp.IsMatch(x.Name)).OrderBy(x => int.Parse(numbers.Match(x.Name).Value))
+                .Where(x => argNameRegExp.IsMatch(x.Name)).OrderBy(x => int.Parse(argOrderRegExp.Match(x.Name).Value))
                 .Select(x => new ArgInfo(instance, (DependencyProperty)x.GetValue(instance))).ToList();
         }
         protected static object InvokeSourceFunction(object source, string functionName, List<ArgInfo> argsInfo, Func<MethodInfo, Type, string, bool> functionChecker) {
@@ -215,7 +222,7 @@ namespace DevExpress.Mvvm.UI {
             int argsCount = argsInfo.FindLastIndex(x => !x.IsUnsetValue) + 1;
             Type targetType = (source as Type).Return(x => x.IsAbstract && x.IsSealed, () => false) ? source as Type : source.GetType();
             MethodInfo info = GetMethodInfo(targetType, functionName, argsCount, argsInfo.Take(argsCount).Select(x => x.Type).ToArray());
-            if(!functionChecker(info, targetType, functionName))
+            if(!functionChecker.Invoke(info, targetType, functionName))
                 return DependencyProperty.UnsetValue;
 
             ParameterInfo[] paramsInfo = info.GetParameters();

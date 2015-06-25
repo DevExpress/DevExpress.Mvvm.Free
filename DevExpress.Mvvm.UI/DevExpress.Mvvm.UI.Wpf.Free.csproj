@@ -93,6 +93,7 @@
     <Compile Include="Interactivity\TargetTypeAttribute.cs" />
     <Compile Include="Interactivity\Trigger.cs" />
     <Compile Include="Native\ApplicationHelper.cs" />
+    <Compile Include="Native\CollectionWrapper.cs" />
     <Compile Include="Native\DependencyObjectExt.cs" />
     <Compile Include="Native\DPConsistencyCheckerAttribute.cs" />
     <Compile Include="Native\ImageLoader2.cs" />
@@ -187,6 +188,7 @@
     <Compile Include="SplashScreen\DXSplashScreenExceptions.cs" />
     <Compile Include="SplashScreen\ISplashScreen.cs" />
     <Compile Include="SplashScreen\LoadingDecorator.cs" />
+    <Compile Include="SplashScreen\SplashScreenOwner.cs" />
     <Compile Include="SplashScreen\SplashScreenViewModel.cs" />
     <Compile Include="SplashScreen\WaitIndicators.cs" />
     <Compile Include="ViewLocator\IViewLocator.cs" />
@@ -203,12 +205,12 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="Behaviors\EnumItemsSourceBehavior\EnumItemsSourceDefaultTemplate.xaml">
-      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Behaviors\EnumItemsSourceBehavior\EnumMemberInfoPresenter.xaml">
-      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Services\NotificationService\CustomToastNotifications\ToastWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -218,13 +220,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Themes\Generic.xaml">
+    <Page Include="Themes\WaitIndicators.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Themes\WaitIndicators.xaml">
-      <SubType>Designer</SubType>
+    <Page Include="Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
   <ItemGroup />

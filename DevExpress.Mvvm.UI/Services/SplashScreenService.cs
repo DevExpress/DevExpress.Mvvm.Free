@@ -1,10 +1,11 @@
-using DevExpress.Mvvm;
-using DevExpress.Mvvm.UI;
 using DevExpress.Mvvm.UI.Interactivity;
 using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Linq;
+using System.Collections.Generic;
+using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm.UI {
     [TargetTypeAttribute(typeof(UserControl))]
@@ -23,13 +24,27 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("ShowSplashScreenOnLoading", typeof(bool), typeof(DXSplashScreenService), new PropertyMetadata(false));
         public static readonly DependencyProperty ProgressProperty =
             DependencyProperty.Register("Progress", typeof(double), typeof(DXSplashScreenService),
-            new PropertyMetadata(SplashScreenViewModel.ProgressDefaultValue, (d,e) => ((DXSplashScreenService)d).OnProgressChanged()));
+            new PropertyMetadata(SplashScreenViewModel.ProgressDefaultValue, (d, e) => ((DXSplashScreenService)d).OnProgressChanged()));
         public static readonly DependencyProperty MaxProgressProperty =
             DependencyProperty.Register("MaxProgress", typeof(double), typeof(DXSplashScreenService),
-            new PropertyMetadata(SplashScreenViewModel.MaxProgressDefaultValue, (d,e) => ((DXSplashScreenService)d).OnMaxProgressChanged()));
+            new PropertyMetadata(SplashScreenViewModel.MaxProgressDefaultValue, (d, e) => ((DXSplashScreenService)d).OnMaxProgressChanged()));
         public static readonly DependencyProperty StateProperty =
             DependencyProperty.Register("State", typeof(object), typeof(DXSplashScreenService),
-            new PropertyMetadata(SplashScreenViewModel.StateDefaultValue, (d,e) => ((DXSplashScreenService)d).OnStateChanged()));
+            new PropertyMetadata(SplashScreenViewModel.StateDefaultValue, (d, e) => ((DXSplashScreenService)d).OnStateChanged()));
+        public static readonly DependencyProperty SplashScreenOwnerProperty =
+            DependencyProperty.Register("SplashScreenOwner", typeof(FrameworkElement), typeof(DXSplashScreenService));
+        public static readonly DependencyProperty SplashScreenClosingModeProperty =
+            DependencyProperty.Register("SplashScreenClosingMode", typeof(SplashScreenClosingMode), typeof(DXSplashScreenService), new PropertyMetadata(SplashScreenClosingMode.OnParentClosed));
+        public static readonly DependencyProperty OwnerSearchModeProperty =
+            DependencyProperty.Register("OwnerSearchMode", typeof(SplashScreenOwnerSearchMode), typeof(DXSplashScreenService), new PropertyMetadata(SplashScreenOwnerSearchMode.Full));
+        public static readonly DependencyProperty FadeInDurationProperty =
+            DependencyProperty.Register("FadeInDuration", typeof(TimeSpan), typeof(DXSplashScreenService), new PropertyMetadata(TimeSpan.FromSeconds(0.2)));
+        public static readonly DependencyProperty FadeOutDurationProperty =
+            DependencyProperty.Register("FadeOutDuration", typeof(TimeSpan), typeof(DXSplashScreenService), new PropertyMetadata(TimeSpan.FromSeconds(0.2)));
+        public static readonly DependencyProperty UseIndependentWindowProperty =
+            DependencyProperty.Register("UseIndependentWindow", typeof(bool), typeof(DXSplashScreenService),
+            new PropertyMetadata(false, (d, e) => ((DXSplashScreenService)d).OnUseIndependentWindowChanged()));
+
         public Type SplashScreenType {
             get { return (Type)GetValue(SplashScreenTypeProperty); }
             set { SetValue(SplashScreenTypeProperty, value); }
@@ -58,9 +73,59 @@ namespace DevExpress.Mvvm.UI {
             get { return (object)GetValue(StateProperty); }
             set { SetValue(StateProperty, value); }
         }
+        public FrameworkElement SplashScreenOwner {
+            get { return (FrameworkElement)GetValue(SplashScreenOwnerProperty); }
+            set { SetValue(SplashScreenOwnerProperty, value); }
+        }
+        public SplashScreenClosingMode SplashScreenClosingMode {
+            get { return (SplashScreenClosingMode)GetValue(SplashScreenClosingModeProperty); }
+            set { SetValue(SplashScreenClosingModeProperty, value); }
+        }
+        public SplashScreenOwnerSearchMode OwnerSearchMode {
+            get { return (SplashScreenOwnerSearchMode)GetValue(OwnerSearchModeProperty); }
+            set { SetValue(OwnerSearchModeProperty, value); }
+        }
+        public TimeSpan FadeInDuration {
+            get { return (TimeSpan)GetValue(FadeInDurationProperty); }
+            set { SetValue(FadeInDurationProperty, value); }
+        }
+        public TimeSpan FadeOutDuration {
+            get { return (TimeSpan)GetValue(FadeOutDurationProperty); }
+            set { SetValue(FadeOutDurationProperty, value); }
+        }
+        public bool UseIndependentWindow {
+            get { return (bool)GetValue(UseIndependentWindowProperty); }
+            set { SetValue(UseIndependentWindowProperty, value); }
+        }
 
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public new DataTemplateSelector ViewTemplateSelector { get { return null; } set { OnViewTemplateSelectorChanged(null, null); } }
+        DependencyObject Owner {
+            get {
+                if(SplashScreenOwner != null)
+                    return SplashScreenOwner;
+
+                if(OwnerSearchMode == SplashScreenOwnerSearchMode.Full)
+                    return AssociatedObject ?? SplashScreenHelper.GetApplicationActiveWindow(true);
+                else if(OwnerSearchMode == SplashScreenOwnerSearchMode.IgnoreAssociatedObject)
+                    return SplashScreenHelper.GetApplicationActiveWindow(true);
+
+                return null;
+            }
+        }
+        bool IsSplashScreenActive { get { return (splashContainer != null && splashContainer.IsActive) || (!UseIndependentWindow && DXSplashScreen.IsActive); } }
+        bool ISplashScreenService.IsSplashScreenActive { get { return IsSplashScreenActive; } }
+        bool SplashScreenIsShownOnLoading = false;
+        bool isSplashScreenShown = false;
+        DXSplashScreen.SplashScreenContainer splashContainer = null;
+
+        internal DXSplashScreen.SplashScreenContainer GetSplashContainer(bool ensureInstance) {
+            if(splashContainer == null && ensureInstance)
+                splashContainer = new DXSplashScreen.SplashScreenContainer();
+
+            return splashContainer;
+        }
+
         protected override void OnViewTemplateSelectorChanged(DataTemplateSelector oldValue, DataTemplateSelector newValue) {
             throw new InvalidOperationException("ViewTemplateSelector is not supported by DXSplashScreenService");
         }
@@ -74,10 +139,9 @@ namespace DevExpress.Mvvm.UI {
                 newValue.Seal();
         }
 
-        bool SplashScreenIsShownOnLoading = false;
         protected override void OnAttached() {
             base.OnAttached();
-            if(ShowSplashScreenOnLoading && !AssociatedObject.IsLoaded && !DXSplashScreen.IsActive) {
+            if(ShowSplashScreenOnLoading && !AssociatedObject.IsLoaded && !IsSplashScreenActive) {
                 AssociatedObject.Loaded += OnAssociatedObjectLoaded;
                 SplashScreenIsShownOnLoading = true;
                 ((ISplashScreenService)this).ShowSplashScreen();
@@ -110,23 +174,38 @@ namespace DevExpress.Mvvm.UI {
             if(isSplashScreenShown)
                 ((ISplashScreenService)this).SetSplashScreenState(State);
         }
-
-        bool isSplashScreenShown = false;
-        bool ISplashScreenService.IsSplashScreenActive {
-            get { return DXSplashScreen.IsActive; }
+        void OnUseIndependentWindowChanged() {
+            if(isSplashScreenShown)
+                throw new InvalidOperationException("The property value cannot be changed while the DXSplashScreenService is active.");
         }
+
         void ISplashScreenService.ShowSplashScreen(string documentType) {
             if(SplashScreenType != null && (!string.IsNullOrEmpty(documentType) || ViewTemplate != null || ViewLocator != null))
                 throw new InvalidOperationException(DXSplashScreenExceptions.ServiceException1);
-            if(DXSplashScreen.IsActive) return;
+            if(IsSplashScreenActive)
+                return;
 
-            if(SplashScreenType != null)
-                DXSplashScreen.Show(SplashScreenType);
+            Func<object, object> contentCreator = null;
+            object contentCreatorParams = null;
+            IList<object> windowCreatorParams = new List<object>() { SplashScreenWindowStyle, SplashScreenStartupLocation, Owner.With(x => new SplashScreenOwner(x)),
+                SplashScreenClosingMode, FadeInDuration, FadeOutDuration };
+            if(SplashScreenType == null) {
+                contentCreator = CreateSplashScreen;
+                contentCreatorParams = new object[] { documentType, ViewLocator, ViewTemplate };
+            } else {
+                DXSplashScreen.CheckSplashScreenType(SplashScreenType);
+                if(typeof(Window).IsAssignableFrom(SplashScreenType))
+                    windowCreatorParams.Add(SplashScreenType);
+                else if(typeof(FrameworkElement).IsAssignableFrom(SplashScreenType)) {
+                    contentCreator = DXSplashScreen.DefaultSplashScreenContentCreator;
+                    contentCreatorParams = SplashScreenType;
+                }
+            }
+            if(UseIndependentWindow)
+                GetSplashContainer(true).Show(CreateSplashScreenWindow, contentCreator, windowCreatorParams.ToArray(), contentCreatorParams);
             else
-                DXSplashScreen.Show(CreateSplashScreenWindow, CreateSplashScreen,
-                    new object[] { SplashScreenWindowStyle, SplashScreenStartupLocation },
-                    new object[] { documentType, ViewLocator, ViewTemplate });
-            isSplashScreenShown = DXSplashScreen.IsActive;
+                DXSplashScreen.Show(CreateSplashScreenWindow, contentCreator, windowCreatorParams.ToArray(), contentCreatorParams);
+            isSplashScreenShown = UseIndependentWindow || DXSplashScreen.IsActive;
             if(Math.Abs(Progress - SplashScreenViewModel.ProgressDefaultValue) > 0.0001)
                 OnProgressChanged();
             if(Math.Abs(MaxProgress - SplashScreenViewModel.MaxProgressDefaultValue) > 0.0001)
@@ -135,36 +214,52 @@ namespace DevExpress.Mvvm.UI {
                 OnStateChanged();
         }
         void ISplashScreenService.HideSplashScreen() {
-            if(!DXSplashScreen.IsActive) return;
-            DXSplashScreen.Close();
-            if(AssociatedObject != null) {
-                Window ownerWindow = Window.GetWindow(AssociatedObject);
-                if(ownerWindow != null && !ownerWindow.IsActive)
-                    ownerWindow.Activate();
+            if(!IsSplashScreenActive) {
+                isSplashScreenShown = false;
+                return;
             }
-            isSplashScreenShown = DXSplashScreen.IsActive;
+
+            if(UseIndependentWindow && splashContainer.IsActive) {
+                GetSplashContainer(true).Close();
+                isSplashScreenShown = false;
+            } else {
+                DXSplashScreen.Close();
+                isSplashScreenShown = DXSplashScreen.IsActive;
+            }
         }
         void ISplashScreenService.SetSplashScreenProgress(double progress, double maxProgress) {
-            if(!DXSplashScreen.IsActive) return;
-            DXSplashScreen.Progress(progress, maxProgress);
+            if(!IsSplashScreenActive) return;
+            if(UseIndependentWindow)
+                GetSplashContainer(false).Progress(progress, maxProgress);
+            else
+                DXSplashScreen.Progress(progress, maxProgress);
         }
         void ISplashScreenService.SetSplashScreenState(object state) {
-            if(!DXSplashScreen.IsActive) return;
-            DXSplashScreen.SetState(state);
+            if(!IsSplashScreenActive) return;
+            if(UseIndependentWindow)
+                GetSplashContainer(false).SetState(state);
+            else
+                DXSplashScreen.SetState(state);
         }
 
         static Window CreateSplashScreenWindow(object parameter) {
-            object[] parameters = (object[])parameter;
-            Style windowStyle = (Style)parameters[0];
-            WindowStartupLocation startupLocation = (WindowStartupLocation)parameters[1];
+            Type windowType = SplashScreenHelper.FindParameter<Type>(parameter);
+            Style windowStyle = SplashScreenHelper.FindParameter<Style>(parameter);
+            IList<TimeSpan> fadeDurations = SplashScreenHelper.FindParameters<TimeSpan>(parameter);
             Window res;
-            if(windowStyle != null) {
-                res = new Window() { Style = windowStyle, WindowStartupLocation = startupLocation };
-            } else {
-                res = DXSplashScreen.DefaultSplashScreenWindowCreator(null);
-                res.WindowStartupLocation = startupLocation;
-                WindowFadeAnimationBehavior.SetEnableAnimation(res, true);
-            }
+            if(windowType != null)
+                res = (Window)Activator.CreateInstance(windowType);
+            else if(windowStyle != null)
+                res = new DXSplashScreen.SplashScreenWindow();
+            else
+                res = DXSplashScreen.DefaultSplashScreenWindowCreator(parameter);
+
+            res.WindowStartupLocation = SplashScreenHelper.FindParameter<WindowStartupLocation>(parameter, WindowStartupLocation.CenterScreen);
+            if(windowStyle != null)
+                res.Style = windowStyle;
+            if(fadeDurations.Any(x => x.TotalMilliseconds > 0) && !Interaction.GetBehaviors(res).Any(x => x is WindowFadeAnimationBehavior))
+                Interaction.GetBehaviors(res).Add(new WindowFadeAnimationBehavior() { FadeInDuration = fadeDurations[0], FadeOutDuration = fadeDurations[1] });
+
             return res;
         }
         static object CreateSplashScreen(object parameter) {
@@ -175,5 +270,10 @@ namespace DevExpress.Mvvm.UI {
             var SplashScreenViewModel = new SplashScreenViewModel();
             return ViewHelper.CreateAndInitializeView(viewLocator, documentType, SplashScreenViewModel, null, null, viewTemplate, null);
         }
+    }
+    public enum SplashScreenOwnerSearchMode {
+        Full,
+        IgnoreAssociatedObject,
+        OwnerOnly
     }
 }

@@ -7,9 +7,6 @@ using System.Globalization;
 namespace DevExpress.Mvvm.UI {
     public class FunctionBindingBehavior : FunctionBindingBehaviorBase {
         #region Dependency Properties
-        public static readonly DependencyProperty TargetProperty =
-            DependencyProperty.Register("Target", typeof(object), typeof(FunctionBindingBehavior),
-            new PropertyMetadata(null, (d, e) => ((FunctionBindingBehavior)d).OnTargetPropertyChanged(e)));
         public static readonly DependencyProperty PropertyProperty =
              DependencyProperty.Register("Property", typeof(string), typeof(FunctionBindingBehavior),
              new PropertyMetadata(null, (d, e) => ((FunctionBindingBehavior)d).OnResultAffectedPropertyChanged()));
@@ -23,10 +20,6 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("Function", typeof(string), typeof(FunctionBindingBehavior),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehavior)d).OnResultAffectedPropertyChanged()));
 
-        public object Target {
-            get { return GetValue(TargetProperty); }
-            set { SetValue(TargetProperty, value); }
-        }
         public string Property {
             get { return (string)GetValue(PropertyProperty); }
             set { SetValue(PropertyProperty, value); }
@@ -45,25 +38,17 @@ namespace DevExpress.Mvvm.UI {
         }
         #endregion
 
-        protected object ActualTarget { get { return Target ?? AssociatedObject; } }
         protected override string ActualFunction { get { return Function; } }
 
         protected object GetSourceMethodValue() {
             object result = InvokeSourceFunction(ActualSource, ActualFunction, GetArgsInfo(this), DefaultMethodInfoChecker);
             return Converter.Return(x => x.Convert(result, null, ConverterParameter, CultureInfo.InvariantCulture), () => result);
         }
-        Action<object> GetTargetPropertySetter() {
-            return GetObjectPropertySetter(ActualTarget, Property, false);
-        }
-        void OnTargetPropertyChanged(DependencyPropertyChangedEventArgs e) {
-            if(e.OldValue == e.NewValue) return;
-            OnResultAffectedPropertyChanged();
-        }
         protected override void OnResultAffectedPropertyChanged() {
             if(ActualTarget == null || ActualSource == null || string.IsNullOrEmpty(ActualFunction) || string.IsNullOrEmpty(Property) || !IsAttached)
                 return;
 
-            Action<object> propertySetter = GetTargetPropertySetter();
+            Action<object> propertySetter = GetObjectPropertySetter(ActualTarget, Property, false);
             if(propertySetter == null)
                 return;
 
@@ -71,7 +56,7 @@ namespace DevExpress.Mvvm.UI {
             if(value == DependencyProperty.UnsetValue)
                 return;
 
-            propertySetter(value);
+            propertySetter.Invoke(value);
         }
     }
 }

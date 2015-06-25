@@ -29,30 +29,27 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty WindowProperty =
             DependencyProperty.Register("Window", typeof(Window), typeof(WindowFadeAnimationBehavior),
             new PropertyMetadata(null, (d, e) => ((WindowFadeAnimationBehavior)d).OnWindowChanged((Window)e.OldValue)));
-        public static readonly DependencyProperty AnimationDurationProperty =
-            DependencyProperty.Register("AnimationDuration", typeof(TimeSpan), typeof(WindowFadeAnimationBehavior), new PropertyMetadata(TimeSpan.FromSeconds(0.2)));
-        public static readonly DependencyProperty EnableShowAnimationProperty =
-            DependencyProperty.Register("EnableShowAnimation", typeof(bool), typeof(WindowFadeAnimationBehavior), new PropertyMetadata(true));
-        public static readonly DependencyProperty EnableCloseAnimationProperty =
-            DependencyProperty.Register("EnableCloseAnimation", typeof(bool), typeof(WindowFadeAnimationBehavior), new PropertyMetadata(true));
+        public static readonly DependencyProperty FadeInDurationProperty =
+            DependencyProperty.Register("FadeInDuration", typeof(TimeSpan), typeof(WindowFadeAnimationBehavior), new PropertyMetadata(TimeSpan.FromSeconds(0.2)));
+        public static readonly DependencyProperty FadeOutDurationProperty =
+            DependencyProperty.Register("FadeOutDuration", typeof(TimeSpan), typeof(WindowFadeAnimationBehavior), new PropertyMetadata(TimeSpan.FromSeconds(0.2)));
+
         public Window Window {
             get { return (Window)GetValue(WindowProperty); }
             set { SetValue(WindowProperty, value); }
         }
-        public TimeSpan AnimationDuration {
-            get { return (TimeSpan)GetValue(AnimationDurationProperty); }
-            set { SetValue(AnimationDurationProperty, value); }
+        public TimeSpan FadeInDuration {
+            get { return (TimeSpan)GetValue(FadeInDurationProperty); }
+            set { SetValue(FadeInDurationProperty, value); }
         }
-        public bool EnableShowAnimation {
-            get { return (bool)GetValue(EnableShowAnimationProperty); }
-            set { SetValue(EnableShowAnimationProperty, value); }
-        }
-        public bool EnableCloseAnimation {
-            get { return (bool)GetValue(EnableCloseAnimationProperty); }
-            set { SetValue(EnableCloseAnimationProperty, value); }
+        public TimeSpan FadeOutDuration {
+            get { return (TimeSpan)GetValue(FadeOutDurationProperty); }
+            set { SetValue(FadeOutDurationProperty, value); }
         }
 
         protected Window ActualWindow { get { return Window ?? AssociatedObject as Window; } }
+        Storyboard fadeInAnimaiton = null;
+
         protected override void OnAttached() {
             base.OnAttached();
             Initialize();
@@ -81,20 +78,23 @@ namespace DevExpress.Mvvm.UI {
         void OnWindowLoaded(object sender, RoutedEventArgs e) {
             Window w = (Window)sender;
             w.Loaded -= OnWindowLoaded;
-            if(!EnableShowAnimation) return;
-            Storyboard st = CreateStoryboard(w, 0, 1, AnimationDuration);
-            st.Begin();
+            if(FadeInDuration.TotalMilliseconds == 0) return;
+            fadeInAnimaiton = CreateStoryboard(w, 0, 1, FadeInDuration);
+            fadeInAnimaiton.Completed += (d, ee) => fadeInAnimaiton = null;
+            fadeInAnimaiton.Begin();
         }
         void OnWindowClosing(object sender, CancelEventArgs e) {
             if(e.Cancel)
                 return;
+            if(fadeInAnimaiton != null) {
+                fadeInAnimaiton.Stop();
+                fadeInAnimaiton = null;
+            }
             Window w = (Window)sender;
             w.Closing -= OnWindowClosing;
-            if(!EnableCloseAnimation) return;
-            Storyboard st = CreateStoryboard(w, 1, 0, AnimationDuration);
-            st.Completed += (dd, ee) => {
-                w.Close();
-            };
+            if(FadeOutDuration.TotalMilliseconds == 0) return;
+            Storyboard st = CreateStoryboard(w, 1, 0, FadeOutDuration);
+            st.Completed += (d, ee) => w.Close();
             e.Cancel = true;
             st.Begin();
         }

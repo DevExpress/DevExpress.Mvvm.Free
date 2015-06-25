@@ -1,15 +1,13 @@
-using DevExpress.Mvvm.Native;
 using System;
-using System.Runtime.InteropServices;
-using System.Security;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Interop;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
-using System.Collections.Concurrent;
-using DevExpress.Mvvm.UI.Native;
+using DevExpress.Mvvm.Native;
+using DevExpress.Mvvm.UI.Interactivity;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DevExpress.Mvvm.UI {
 
@@ -19,16 +17,22 @@ namespace DevExpress.Mvvm.UI {
 
         #region Static
         public static readonly DependencyProperty UseFadeEffectProperty;
+        public static readonly DependencyProperty FadeInDurationProperty;
+        public static readonly DependencyProperty FadeOutDurationProperty;
         public static readonly DependencyProperty UseSplashScreenProperty;
         public static readonly DependencyProperty SplashScreenTemplateProperty;
         public static readonly DependencyProperty SplashScreenDataContextProperty;
         public static readonly DependencyProperty IsSplashScreenShownProperty;
-        public static readonly DependencyProperty LockWindowProperty;
+        public static readonly DependencyProperty OwnerLockProperty;
         public static readonly DependencyProperty SplashScreenLocationProperty;
 
         static LoadingDecorator() {
             UseFadeEffectProperty = DependencyProperty.Register("UseFadeEffect", typeof(bool), typeof(LoadingDecorator),
                 new PropertyMetadata(true));
+            FadeInDurationProperty = DependencyProperty.Register("FadeInDuration", typeof(TimeSpan), typeof(LoadingDecorator),
+                new PropertyMetadata(TimeSpan.FromSeconds(0.2)));
+            FadeOutDurationProperty = DependencyProperty.Register("FadeOutDuration", typeof(TimeSpan), typeof(LoadingDecorator),
+                new PropertyMetadata(TimeSpan.FromSeconds(0.2)));
             UseSplashScreenProperty = DependencyProperty.Register("UseSplashScreen", typeof(bool), typeof(LoadingDecorator),
                 new PropertyMetadata(true));
             SplashScreenTemplateProperty = DependencyProperty.Register("SplashScreenTemplate", typeof(DataTemplate), typeof(LoadingDecorator),
@@ -37,8 +41,8 @@ namespace DevExpress.Mvvm.UI {
                 new PropertyMetadata(null));
             IsSplashScreenShownProperty = DependencyProperty.Register("IsSplashScreenShown", typeof(bool?), typeof(LoadingDecorator),
                 new PropertyMetadata(null, (d, e) => ((LoadingDecorator)d).OnIsSplashScreenShownChanged()));
-            LockWindowProperty = DependencyProperty.Register("LockWindow", typeof(bool), typeof(LoadingDecorator),
-                new PropertyMetadata(true));
+            OwnerLockProperty = DependencyProperty.Register("OwnerLock", typeof(SplashScreenLock), typeof(LoadingDecorator),
+                new PropertyMetadata(SplashScreenLock.Full));
             SplashScreenLocationProperty = DependencyProperty.Register("SplashScreenLocation", typeof(SplashScreenLocation), typeof(LoadingDecorator),
                 new PropertyMetadata(SplashScreenLocation.CenterContainer));
         }
@@ -48,6 +52,14 @@ namespace DevExpress.Mvvm.UI {
         public bool UseFadeEffect {
             get { return (bool)GetValue(UseFadeEffectProperty); }
             set { SetValue(UseFadeEffectProperty, value); }
+        }
+        public TimeSpan FadeInDuration {
+            get { return (TimeSpan)GetValue(FadeInDurationProperty); }
+            set { SetValue(FadeInDurationProperty, value); }
+        }
+        public TimeSpan FadeOutDuration {
+            get { return (TimeSpan)GetValue(FadeOutDurationProperty); }
+            set { SetValue(FadeOutDurationProperty, value); }
         }
         public bool UseSplashScreen {
             get { return (bool)GetValue(UseSplashScreenProperty); }
@@ -65,9 +77,9 @@ namespace DevExpress.Mvvm.UI {
             get { return (bool?)GetValue(IsSplashScreenShownProperty); }
             set { SetValue(IsSplashScreenShownProperty, value); }
         }
-        public bool LockWindow {
-            get { return (bool)GetValue(LockWindowProperty); }
-            set { SetValue(LockWindowProperty, value); }
+        public SplashScreenLock OwnerLock {
+            get { return (SplashScreenLock)GetValue(OwnerLockProperty); }
+            set { SetValue(OwnerLockProperty, value); }
         }
         public SplashScreenLocation SplashScreenLocation {
             get { return (SplashScreenLocation)GetValue(SplashScreenLocationProperty); }
@@ -88,7 +100,8 @@ namespace DevExpress.Mvvm.UI {
         public FrameworkElement LoadingChild {
             get { return loadingChild; }
             set {
-                if(loadingChild == value) return;
+                if(loadingChild == value)
+                    return;
                 loadingChild = value;
                 if(ViewModelBase.IsInDesignMode) {
                     Child = loadingChild;
@@ -109,7 +122,7 @@ namespace DevExpress.Mvvm.UI {
                 if(IsLoaded)
                     ShowSplashScreen();
                 else
-                    InvokeOnThread(Dispatcher, () => { if(IsSplashScreenShown == true) ShowSplashScreen(); }, DispatcherPriority.Render);
+                    SplashScreenHelper.InvokeAsync(this, () => { if(IsSplashScreenShown == true) ShowSplashScreen(); }, DispatcherPriority.Render);
             }
             if(IsSplashScreenShown == false)
                 CloseSplashScreen();
@@ -129,12 +142,13 @@ namespace DevExpress.Mvvm.UI {
         }
         void OnLoadingChildChanged() {
             Child = null;
-            if(!IsLoaded || LoadingChild == null)
+            if(LoadingChild == null || !IsLoaded)
                 return;
             LoadingChild.Loaded += OnLoadingChildLoaded;
-            if(IsSplashScreenShown == null)
+            if(IsSplashScreenShown == null && IsVisible)
                 ShowSplashScreen();
-            InvokeOnThread(Dispatcher, () => Child = LoadingChild);
+
+            SplashScreenHelper.InvokeAsync(this, () => Child = LoadingChild);
         }
         void OnLoadingChildLoaded(object sender, RoutedEventArgs e) {
             FrameworkElement child = (FrameworkElement)sender;
@@ -161,19 +175,22 @@ namespace DevExpress.Mvvm.UI {
             if(IsSplashScreenShown != null || !SplashContainer.IsActive)
                 return;
 
-            InvokeOnThread(Dispatcher, CloseSplashScreen, DispatcherPriority.Render);
+            SplashScreenHelper.InvokeAsync(this, CloseSplashScreen, DispatcherPriority.Render);
         }
         object[] GetSplashScreenCreatorParams() {
-            return new object[] { UseFadeEffect, new SplashScreenOwner(this), SplashScreenLocation, LockWindow };
+            return new object[] { UseFadeEffect, new WindowArrangerContainer(this, SplashScreenLocation), OwnerLock, FadeInDuration, FadeOutDuration };
         }
         static Window CreateSplashScreenWindow(object parameter) {
             object[] parameters = (object[])parameter;
             bool useFadeEffect = (bool)parameters[0];
-            SplashScreenOwner owner = (SplashScreenOwner)parameters[1];
-            SplashScreenLocation childLocation = (SplashScreenLocation)parameters[2];
-            bool lockWindow = (bool)parameters[3];
-            return new LoadingDecoratorWindow(useFadeEffect, owner, childLocation, lockWindow);
+            WindowArrangerContainer owner = (WindowArrangerContainer)parameters[1];
+            SplashScreenLock lockMode = (SplashScreenLock)parameters[2];
+            IList<TimeSpan> durations = SplashScreenHelper.FindParameters<TimeSpan>(parameter);
+            var window = new LoadingDecoratorWindow(owner, lockMode);
+            if(useFadeEffect && durations.Any(x => x.TotalMilliseconds > 0))
+                Interaction.GetBehaviors(window).Add(new WindowFadeAnimationBehavior() { FadeInDuration = durations[0], FadeOutDuration = durations[1] });
 
+            return window;
         }
         static object CreateSplashScreen(object parameter) {
             object[] parameters = (object[])parameter;
@@ -190,59 +207,27 @@ namespace DevExpress.Mvvm.UI {
                 };
             } else {
                 var res = splashScreenTemplate.LoadContent();
-                if(res is FrameworkElement)
-                    ((FrameworkElement)res).DataContext = splashScreenDataContext;
+                (res as FrameworkElement).Do(x => x.DataContext = splashScreenDataContext);
                 return res;
             }
         }
-        static void InvokeOnThread(Dispatcher dispatcher, Action action, DispatcherPriority priority = DispatcherPriority.Normal, bool forceAsyncInvoke = true) {
-            if(dispatcher == null)
-                return;
 
-            if(!forceAsyncInvoke && dispatcher.CheckAccess())
-                action();
-            else
-                dispatcher.BeginInvoke(action, priority);
-        }
-
-        class LoadingDecoratorWindow : Window {
-            #region Props
-            WindowArranger arranger;
+        class LoadingDecoratorWindow : DXSplashScreen.SplashScreenWindow {
             WindowLocker locker;
-            bool hasFocusOnClosing;
-            #endregion
-
-            public LoadingDecoratorWindow(bool useFadeEffect, SplashScreenOwner parentContainer, SplashScreenLocation childLocation, bool lockParent) {
+            public LoadingDecoratorWindow(WindowArrangerContainer parentContainer, SplashScreenLock lockMode) {
                 WindowStyle = WindowStyle.None;
                 AllowsTransparency = true;
+                Topmost = false;
+                Focusable = false;
                 ShowInTaskbar = false;
                 Background = new SolidColorBrush(Colors.Transparent);
                 SizeToContent = SizeToContent.WidthAndHeight;
                 WindowStartupLocation = WindowStartupLocation.Manual;
-                Left = parentContainer.ControlStartupPosition.Left;
-                Top = parentContainer.ControlStartupPosition.Top;
-                Width = parentContainer.ControlStartupPosition.Width;
-                Height = parentContainer.ControlStartupPosition.Height;
-                Topmost = false;
-                ShowActivated = false;
-                IsHitTestVisible = false;
-                Focusable = false;
-                CreateArranger(parentContainer, childLocation);
-                CreateLocker(parentContainer, lockParent);
-                WindowFadeAnimationBehavior.SetEnableAnimation(this, useFadeEffect);
-                Loaded += OnWindowLoaded;
+                SetWindowStartupPosition(parentContainer.ControlStartupPosition.IsEmpty ? parentContainer.WindowStartupPosition : parentContainer.ControlStartupPosition);
+                CreateLocker(parentContainer, lockMode);
             }
 
-            void OnWindowLoaded(object sender, RoutedEventArgs e) {
-                Loaded -= OnWindowLoaded;
-                if(SizeToContent != SizeToContent.Manual) {
-                    SizeToContent oldValue = SizeToContent;
-                    SizeToContent = SizeToContent.Manual;
-                    SizeToContent = oldValue;
-                }
-            }
             protected override void OnClosing(System.ComponentModel.CancelEventArgs e) {
-                hasFocusOnClosing = IsActive;
                 if(!e.Cancel)
                     ReleaseBorderDecorator();
                 base.OnClosing(e);
@@ -250,428 +235,29 @@ namespace DevExpress.Mvvm.UI {
             protected override void OnClosed(EventArgs e) {
                 ReleaseBorderDecorator();
                 ReleaseLocker();
-                ReleaseArranger();
                 base.OnClosed(e);
             }
-            void OnParentWindowClosed(object sender, EventArgs e) {
-                Dispatcher.Invoke(new Action(Close), null);
-            }
-            [SecuritySafeCritical]
-            protected override void OnSourceInitialized(EventArgs e) {
-                base.OnSourceInitialized(e);
-                var wndHelper = new WindowInteropHelper(this);
-                int exStyle = GetWindowLong(wndHelper.Handle, GWL_EXSTYLE);
-                SetWindowLong(wndHelper.Handle, GWL_EXSTYLE, exStyle | WS_EX_TRANSPARENT);
-            }
 
+            void SetWindowStartupPosition(Rect bounds) {
+                if(bounds.IsEmpty)
+                    return;
+
+                Left = bounds.Left;
+                Top = bounds.Top;
+                Width = bounds.Width;
+                Height = bounds.Height;
+            }
             #region Helpers
             void ReleaseLocker() {
-                if(locker != null) {
-                    locker.Release(hasFocusOnClosing);
-                    locker = null;
-                }
+                locker.Release(IsActiveOnClosing);
+                locker = null;
             }
-            void CreateLocker(SplashScreenOwner parentContainer, bool lockWindow) {
-                if(lockWindow)
-                    locker = new WindowLocker(parentContainer);
-            }
-            void ReleaseArranger() {
-                if(arranger != null) {
-                    arranger.ParentClosed -= OnParentWindowClosed;
-                    arranger.Release();
-                    arranger = null;
-                }
-            }
-            void CreateArranger(SplashScreenOwner parentContainer, SplashScreenLocation childLocation) {
-                arranger = new WindowArranger(parentContainer, childLocation);
-                arranger.ParentClosed += OnParentWindowClosed;
-                arranger.AttachChild(this);
+            void CreateLocker(WindowContainer parentContainer, SplashScreenLock lockMode) {
+                locker = new WindowLocker(parentContainer, lockMode);
             }
             void ReleaseBorderDecorator() {
             }
             #endregion
-
-            #region Static
-            [DllImport("user32.dll", SetLastError = true)]
-            static extern int GetWindowLong(IntPtr hWnd, int nIndex);
-            [DllImport("user32.dll")]
-            static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
-            public const int WS_EX_TRANSPARENT = 0x00000020;
-            public const int GWL_EXSTYLE = (-20);
-            #endregion
         }
-
-        class WindowLocker {
-            #region Static
-            [DllImport("user32.dll")]
-            static extern bool EnableWindow(IntPtr hWnd, bool bEnable);
-            static ConcurrentDictionary<IntPtr, int> windowLockCounter = new ConcurrentDictionary<IntPtr, int>();
-            #endregion
-
-            #region Props
-            SplashScreenOwner owner;
-            #endregion
-
-            public WindowLocker(SplashScreenOwner owner) {
-                this.owner = owner;
-                if(!owner.IsInitialized)
-                    owner.Initialized += OnOwnerInitialized;
-                else
-                    OnInitialized();
-            }
-
-            #region Initialization
-            void OnOwnerInitialized(object sender, EventArgs e) {
-                ((SplashScreenOwner)sender).Initialized -= OnOwnerInitialized;
-                OnInitialized();
-            }
-            void OnInitialized() {
-                if(owner != null)
-                    LockWindow(owner.WindowHandle);
-            }
-            #endregion
-
-            #region Lock logic
-            [SecuritySafeCritical]
-            static void LockWindow(IntPtr windowHandle) {
-                if(windowHandle == IntPtr.Zero)
-                    return;
-
-                while(true) {
-                    int lockCount = 0;
-                    if(!windowLockCounter.TryGetValue(windowHandle, out lockCount)) {
-                        if(!windowLockCounter.TryAdd(windowHandle, 0))
-                            continue;
-                    }
-                    if(!windowLockCounter.TryUpdate(windowHandle, lockCount + 1, lockCount))
-                        continue;
-                    if(++lockCount == 1)
-                        EnableWindow(windowHandle, false);
-                    break;
-                }
-            }
-            [SecuritySafeCritical]
-            static void UnlockWindow(IntPtr windowHandle) {
-                if(windowHandle == IntPtr.Zero)
-                    return;
-
-                while(true) {
-                    int lockCount = 0;
-                    if(!windowLockCounter.TryGetValue(windowHandle, out lockCount)) {
-                        if(!windowLockCounter.TryAdd(windowHandle, 0))
-                            continue;
-                    }
-                    if(!windowLockCounter.TryUpdate(windowHandle, lockCount - 1, lockCount))
-                        continue;
-                    if(--lockCount == 0)
-                        EnableWindow(windowHandle, true);
-                    break;
-                }
-            }
-            public void Release(bool activateWindowIfNeeded) {
-                if(owner == null)
-                    return;
-
-                var window = owner.Window;
-                IntPtr handle = owner.WindowHandle;
-                owner.Initialized -= OnOwnerInitialized;
-                owner = null;
-                if(window == null)
-                    return;
-
-                InvokeOnThread(window.Dispatcher, () => {
-                    if(activateWindowIfNeeded && !window.IsActive)
-                        window.Activate();
-
-                    UnlockWindow(handle);
-                }, DispatcherPriority.Render, false);
-            }
-            #endregion
-        }
-        class WindowArranger {
-            #region Static
-            [DllImport("user32.dll")]
-            static extern int SetWindowLong(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
-            const int GWL_HWNDPARENT = -8;
-            #endregion
-
-            #region Props
-            Window childWindow;
-            IntPtr childHandle;
-            Window ParentWindow { get { return parent.Window; } }
-            IntPtr ParentHandle { get { return parent.WindowHandle; } }
-            FrameworkElement ParentContainer { get { return parent.Control; } }
-            SplashScreenOwner parent;
-            SplashScreenLocation childLocation;
-            Rect lastChildPos = Rect.Empty;
-            Rect lastParentPos = Rect.Empty;
-            Rect nextParentPos = Rect.Empty;
-            bool isInitialized;
-            bool isDisposed;
-            bool isParentClosed;
-            #endregion
-
-            public WindowArranger(SplashScreenOwner parent, SplashScreenLocation childLocation) {
-                if(parent == null)
-                    throw new ArgumentNullException("parent");
-
-                this.childLocation = childLocation;
-                this.parent = parent;
-                if(parent.IsInitialized)
-                    ParentInitializationComplete();
-                else
-                    parent.Initialized += OnParentInitialized;
-            }
-
-            #region Initialization and Release
-            void OnParentInitialized(object sender, EventArgs e) {
-                ((SplashScreenOwner)sender).Initialized -= OnParentInitialized;
-                ParentInitializationComplete();
-            }
-            void ParentInitializationComplete() {
-                if(isDisposed || isInitialized)
-                    return;
-
-                SubscribeParentEvents();
-                CompleteInitialization();
-            }
-            void InitializeChild(Window child) {
-                if(child != null) {
-                    childWindow = child;
-                    SubscribeChildEvents();
-                }
-
-                if(!childWindow.IsInitialized || !childWindow.IsLoaded)
-                    return;
-
-                childHandle = new WindowInteropHelper(childWindow).Handle;
-                CompleteInitialization();
-            }
-            [SecuritySafeCritical]
-            void CompleteInitialization() {
-                if(isDisposed || childHandle == IntPtr.Zero || ParentHandle == IntPtr.Zero || isInitialized)
-                    return;
-
-                if(childWindow.Dispatcher.CheckAccess()) {
-                    nextParentPos = childLocation == SplashScreenLocation.CenterContainer ? parent.ControlStartupPosition : parent.WindowStartupPosition;
-                    UpdateChildPosition();
-                }
-                InvokeOnParentThread(() => UpdateNextParentRectAndChildPosition(true), DispatcherPriority.Normal);
-                InvokeOnChildThread(SetChildParent, DispatcherPriority.Render, true);
-                isInitialized = true;
-            }
-            [SecuritySafeCritical]
-            void SetChildParent() {
-                if(isDisposed || childHandle == IntPtr.Zero || ParentHandle == IntPtr.Zero)
-                    return;
-
-                SetWindowLong(childHandle, GWL_HWNDPARENT, ParentHandle);
-            }
-            public void AttachChild(Window child) {
-                if(childWindow != null)
-                    throw new ArgumentException("Child property is already set");
-
-                InitializeChild(child);
-            }
-            public void Release() {
-                if(isDisposed)
-                    return;
-
-                UnsubscribeChildEvents();
-                UnsubscribeParentEvents();
-                childWindow = null;
-                childHandle = IntPtr.Zero;
-                parent.Initialized -= OnParentInitialized;
-                parent = null;
-                isDisposed = true;
-            }
-            #endregion
-
-            #region Invoke via dispatcher
-            public void InvokeOnParentThread(Action action, DispatcherPriority priority, bool forceAsyncInvoke = false) {
-                InvokeOnThread(ParentWindow.Return(x => x.Dispatcher, () => null), action, priority, forceAsyncInvoke);
-            }
-            void InvokeOnChildThread(Action action, DispatcherPriority priority, bool forceAsyncInvoke = false) {
-                InvokeOnThread(childWindow.Return(x => x.Dispatcher, () => null), action, priority, forceAsyncInvoke);
-            }
-            #endregion
-
-            #region Arrange
-            void UpdateNextParentRectAndChildPosition(bool skipSizeCheck) {
-                if(!isInitialized || isDisposed)
-                    return;
-
-                nextParentPos = isParentClosed
-                    ? Rect.Empty
-                    : childLocation == SplashScreenLocation.CenterContainer ? parent.GetControlRect() : parent.GetWindowRect();
-                if(!skipSizeCheck && lastParentPos == nextParentPos || nextParentPos.IsEmpty)
-                    return;
-
-                InvokeOnChildThread(() => UpdateChildPosition(), DispatcherPriority.Normal);
-            }
-            void UpdateChildPosition() {
-                Rect bounds = nextParentPos;
-                if(childWindow == null || (bounds == lastParentPos && lastChildPos.Width == childWindow.ActualWidth && lastChildPos.Height == childWindow.ActualHeight))
-                    return;
-
-                childWindow.Left = (int)(bounds.X + (bounds.Width - childWindow.ActualWidth) * 0.5);
-                childWindow.Top = (int)(bounds.Y + (bounds.Height - childWindow.ActualHeight) * 0.5);
-                lastChildPos = new Rect(childWindow.Left, childWindow.Top, childWindow.Width, childWindow.Height);
-                lastParentPos = bounds;
-            }
-            #endregion
-
-            #region Child
-            void SubscribeChildEvents() {
-                if(childWindow == null)
-                    return;
-
-                childWindow.Loaded += ChildInitializeComplete;
-                childWindow.Initialized += ChildInitializeComplete;
-                childWindow.SizeChanged += ChildSizeChanged;
-                childWindow.Closed += ChildClosed;
-            }
-            void UnsubscribeChildEvents() {
-                if(childWindow == null)
-                    return;
-
-                childWindow.Loaded -= ChildInitializeComplete;
-                childWindow.Initialized -= ChildInitializeComplete;
-                childWindow.SizeChanged -= ChildSizeChanged;
-                childWindow.Closed -= ChildClosed;
-            }
-            void ChildClosed(object sender, EventArgs e) {
-                UnsubscribeChildEvents();
-            }
-            void ChildSizeChanged(object sender, EventArgs e) {
-                if(ParentHandle == IntPtr.Zero || childWindow == null ||
-                    (lastChildPos.Width == childWindow.ActualWidth && lastChildPos.Height == childWindow.ActualHeight))
-                    return;
-
-                if(lastParentPos.IsEmpty)
-                    InvokeOnParentThread(() => UpdateNextParentRectAndChildPosition(true), DispatcherPriority.Normal);
-                else
-                    UpdateChildPosition();
-            }
-            void ChildInitializeComplete(object sender, EventArgs e) {
-                InitializeChild(null);
-            }
-            #endregion
-
-            #region Parent
-            void SubscribeParentEvents() {
-                if(ParentWindow != null) {
-                    ParentWindow.LocationChanged += OnParentSizeOrPositionChanged;
-                    ParentWindow.SizeChanged += OnParentSizeOrPositionChanged;
-                    ParentWindow.Closed += OnParentClosed;
-                }
-
-                if(childLocation == SplashScreenLocation.CenterContainer && ParentContainer != null && ParentWindow != ParentContainer) {
-                    ParentContainer.SizeChanged += OnParentSizeOrPositionChanged;
-                    ParentContainer.LayoutUpdated += OnParentSizeOrPositionChanged;
-                }
-            }
-            void UnsubscribeParentEvents() {
-                if(ParentWindow != null) {
-                    ParentWindow.LocationChanged -= OnParentSizeOrPositionChanged;
-                    ParentWindow.SizeChanged -= OnParentSizeOrPositionChanged;
-                    ParentWindow.Closed -= OnParentClosed;
-                }
-
-                if(childLocation == SplashScreenLocation.CenterContainer && ParentContainer != null && ParentWindow != ParentContainer) {
-                    try {
-                        ParentContainer.SizeChanged -= OnParentSizeOrPositionChanged;
-                        ParentContainer.LayoutUpdated -= OnParentSizeOrPositionChanged;
-                    } catch { }
-                }
-            }
-            void OnParentSizeOrPositionChanged(object sender, EventArgs e) {
-                if(childWindow == null)
-                    return;
-
-                UpdateNextParentRectAndChildPosition(false);
-            }
-            void OnParentClosed(object sender, EventArgs e) {
-                isParentClosed = true;
-                RaiseParentCloseEvent();
-            }
-            #endregion
-
-            #region Event
-            public event EventHandler ParentClosed;
-            void RaiseParentCloseEvent() {
-                ParentClosed.Do(x => x(this, EventArgs.Empty));
-            }
-            #endregion
-        }
-        class SplashScreenOwner {
-            #region Props
-            public FrameworkElement Control { get; private set; }
-            public Window Window { get; private set; }
-            public IntPtr WindowHandle { get; private set; }
-            public bool IsInitialized { get; private set; }
-            public Rect ControlStartupPosition { get; private set; }
-            public Rect WindowStartupPosition { get; private set; }
-            #endregion
-
-            public SplashScreenOwner(FrameworkElement control) {
-                if(control == null)
-                    throw new ArgumentNullException("control");
-
-                Control = control;
-                Initialize();
-            }
-
-            #region Initialize
-            void Initialize() {
-                if(IsInitialized)
-                    return;
-
-                if(!Control.IsLoaded) {
-                    Control.Loaded += OnControlLoaded;
-                    return;
-                }
-
-                InvokeOnThread(Control.Dispatcher, CompleteInitialization, DispatcherPriority.Normal, false);
-            }
-            void CompleteInitialization() {
-                if(IsInitialized)
-                    return;
-
-                HwndSource hwnd = (HwndSource)HwndSource.FromVisual(Control);
-                Window = hwnd.RootVisual as Window;
-                WindowHandle = hwnd.Handle;
-
-                ControlStartupPosition = GetControlRect();
-                WindowStartupPosition = GetWindowRect();
-                IsInitialized = true;
-                RaiseInitialized();
-            }
-            void OnControlLoaded(object sender, RoutedEventArgs e) {
-                Control.Loaded -= OnControlLoaded;
-                Initialize();
-            }
-            #endregion
-
-            #region Location
-            public Rect GetWindowRect() {
-                return Window == null || !Window.IsLoaded ? Rect.Empty : LayoutHelper.GetScreenRect(Window);
-            }
-            public Rect GetControlRect() {
-                return Control == null || !Control.IsLoaded || PresentationSource.FromVisual(Control) == null ? Rect.Empty : LayoutHelper.GetScreenRect(Control);
-            }
-            #endregion
-
-            #region Event
-            public event EventHandler Initialized;
-            void RaiseInitialized() {
-                Initialized.Do(x => x(this, EventArgs.Empty));
-            }
-            #endregion
-        }
-    }
-    public enum SplashScreenLocation {
-        CenterContainer,
-        CenterWindow
     }
 }

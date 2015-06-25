@@ -43,10 +43,10 @@ namespace DevExpress.Mvvm.UI {
         }
         #endregion
 
-        bool IsActive { get { return IsAttached && !string.IsNullOrEmpty(Command) && ActualSource != null && !string.IsNullOrEmpty(ActualFunction); } }
-        string ActualCanExecuteFunction { get { return !string.IsNullOrEmpty(CanExecuteFunction) ? CanExecuteFunction : string.Format("CanExecute{0}", ActualFunction); } }
         protected ICommand ResultCommand { get; private set; }
         protected override string ActualFunction { get { return Method; } }
+        bool IsActive { get { return IsAttached && !string.IsNullOrEmpty(Command) && ActualSource != null && !string.IsNullOrEmpty(ActualFunction); } }
+        string ActualCanExecuteFunction { get { return !string.IsNullOrEmpty(CanExecuteFunction) ? CanExecuteFunction : string.Format("CanExecute{0}", ActualFunction); } }
 
         public MethodToCommandBehavior() {
             ResultCommand = new DelegateCommand<object>(ExecuteCommand, CanExecuteCommand, false);
@@ -54,27 +54,13 @@ namespace DevExpress.Mvvm.UI {
 
         protected override void OnAttached() {
             base.OnAttached();
-            SetTargetCommandValue(Command);
+            SetTargetProperty(ActualTarget, Command, ResultCommand, true);
         }
         protected override void OnDetaching() {
-            ReleaseTargetCommandValue(Command);
+            SetTargetProperty(ActualTarget, Command, null, null);
+            SetTargetProperty(ActualTarget, CommandParameter, null, null);
             base.OnDetaching();
         }
-        void OnCommandChanged(DependencyPropertyChangedEventArgs e) {
-            ReleaseTargetCommandValue((string)e.OldValue);
-            SetTargetCommandValue((string)e.NewValue);
-        }
-        void SetTargetCommandValue(string commandProperty) {
-            if(!IsAttached || string.IsNullOrEmpty(commandProperty))
-                return;
-            GetObjectPropertySetter(AssociatedObject, commandProperty, true).Do(x => x(ResultCommand));
-        }
-        void ReleaseTargetCommandValue(string commandProperty) {
-            if(!IsAttached || string.IsNullOrEmpty(commandProperty))
-                return;
-            GetObjectPropertySetter(AssociatedObject, commandProperty).Do(x => x(null));
-        }
-
         protected List<ArgInfo> UnpackArgs(object parameter) {
             if(parameter == null)
                 return null;
@@ -83,15 +69,27 @@ namespace DevExpress.Mvvm.UI {
 
             return ((IEnumerable)parameter).Cast<object>().Select(x => x is ArgInfo ? x as ArgInfo : new ArgInfo(x)).ToList();
         }
+        protected override void OnTargetChanged(DependencyPropertyChangedEventArgs e) {
+            SetTargetProperty(e.OldValue, Command, null, null);
+            SetTargetProperty(e.OldValue, CommandParameter, null, null);
+            SetTargetProperty(ActualTarget, Command, ResultCommand, true);
+            base.OnTargetChanged(e);
+        }
         protected override void OnResultAffectedPropertyChanged() {
             if(!IsActive || string.IsNullOrEmpty(CommandParameter))
                 return;
 
-            Action<object> parameterSetter = GetObjectPropertySetter(AssociatedObject, CommandParameter, true);
-            if(parameterSetter != null)
-                parameterSetter(GetArgsInfo(this));
-
+            SetTargetProperty(ActualTarget, CommandParameter, GetArgsInfo(this), true);
             ((IDelegateCommand)ResultCommand).RaiseCanExecuteChanged();
+        }
+        void OnCommandChanged(DependencyPropertyChangedEventArgs e) {
+            SetTargetProperty(ActualTarget, (string)e.OldValue, null, null);
+            SetTargetProperty(ActualTarget, (string)e.NewValue, ResultCommand, true);
+        }
+        void SetTargetProperty(object target, string property, object value, bool? throwExceptionOnNotFound) {
+            if(target == null || !IsAttached || string.IsNullOrEmpty(property))
+                return;
+            GetObjectPropertySetter(target, property, throwExceptionOnNotFound).Do(x => x.Invoke(value));
         }
         void ExecuteCommand(object parameter) {
             if(!IsActive)

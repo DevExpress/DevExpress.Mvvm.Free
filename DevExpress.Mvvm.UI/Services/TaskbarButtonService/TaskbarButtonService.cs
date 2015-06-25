@@ -77,12 +77,12 @@ namespace DevExpress.Mvvm.UI {
                 (d, e) => ((TaskbarButtonService)d).OnThumbnailClipMarginCallbackChanged(e)));
 
         [IgnoreDependencyPropertiesConsistencyChecker]
-        static readonly DependencyProperty InternalItemsProperty =
+        internal static readonly DependencyProperty InternalItemsProperty =
             DependencyProperty.RegisterAttached("InternalItems", typeof(FreezableCollection<TaskbarThumbButtonInfo>), typeof(TaskbarButtonService), new PropertyMetadata(null));
-        static FreezableCollection<TaskbarThumbButtonInfo> GetInternalItems(DependencyObject obj) {
+        internal static FreezableCollection<TaskbarThumbButtonInfo> GetInternalItems(TaskbarButtonService obj) {
             return (FreezableCollection<TaskbarThumbButtonInfo>)obj.GetValue(InternalItemsProperty);
         }
-        static void SetInternalItems(DependencyObject obj, FreezableCollection<TaskbarThumbButtonInfo> value) {
+        internal static void SetInternalItems(TaskbarButtonService obj, FreezableCollection<TaskbarThumbButtonInfo> value) {
             obj.SetValue(InternalItemsProperty, value);
         }
         #endregion
@@ -104,6 +104,15 @@ namespace DevExpress.Mvvm.UI {
             if(ActualWindow != null && ThumbnailClipMarginCallback != null)
                 ThumbnailClipMargin = ThumbnailClipMarginCallback(new Size(ActualWindow.Width, ActualWindow.Height));
         }
+        protected override void OnAttached() {
+            base.OnAttached();
+            UpdateInternalItems();
+        }
+        protected override void OnDetaching() {
+            GetInternalItems(this).Clear();
+            base.OnDetaching();
+        }
+
         protected override Freezable CreateInstanceCore() { return this; }
         protected virtual void OnProgressStateChanged(DependencyPropertyChangedEventArgs e) {
             ItemInfo.ProgressState = (TaskbarItemProgressState)e.NewValue;
@@ -159,10 +168,33 @@ namespace DevExpress.Mvvm.UI {
         protected virtual void OnThumbButtonInfosChanged(DependencyPropertyChangedEventArgs e) {
             TaskbarThumbButtonInfoCollection collection = (TaskbarThumbButtonInfoCollection)e.NewValue;
             ItemInfo.ThumbButtonInfos = collection.InternalCollection;
-
+            UpdateInternalItems();
+        }
+        bool lockUpdateInternalItems;
+        void UpdateInternalItems() {
+            if(lockUpdateInternalItems) return;
+            if(!ShouldUpdateInternalItems()) return;
+            try {
+                lockUpdateInternalItems = true;
+                UpdateInternalItemsCore();
+            } finally { lockUpdateInternalItems = false; }
+        }
+        internal virtual void UpdateInternalItemsCore() {
             GetInternalItems(this).Clear();
-            foreach(TaskbarThumbButtonInfo item in collection)
+            foreach(TaskbarThumbButtonInfo item in ThumbButtonInfos)
                 GetInternalItems(this).Add(item);
+        }
+        bool ShouldUpdateInternalItems() {
+            if(!IsAttached) return false;
+            TaskbarThumbButtonInfoCollection collection = ThumbButtonInfos;
+            FreezableCollection<TaskbarThumbButtonInfo> collection2 = GetInternalItems(this);
+            if(collection.Count != collection2.Count) return true;
+            for(int i = 0; i < collection.Count; i++) {
+                var item1 = collection[i];
+                var item2 = collection2[i];
+                if(item1 != item2) return true;
+            }
+            return false;
         }
         void OnItemInfoThumbButtonInfosChanged(DependencyPropertyChangedEventArgs e) {
             ThumbButtonInfos = new TaskbarThumbButtonInfoCollection((ThumbButtonInfoCollection)e.NewValue);

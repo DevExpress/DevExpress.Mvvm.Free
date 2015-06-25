@@ -105,8 +105,8 @@ namespace DevExpress.Mvvm.UI {
             DocumentViewModelHelper.OnClose(GetViewModel(window.RealWindow), e);
         }
         void OnWindowClosed(object sender, EventArgs e) {
-            window.RealWindow.Closing -= OnWindowClosing;
-            window.RealWindow.Closed -= OnWindowClosed;
+            window.Closing -= OnWindowClosing;
+            window.Closed -= OnWindowClosed;
             DocumentViewModelHelper.OnDestroy(GetViewModel(window.RealWindow));
             window = null;
         }
@@ -127,8 +127,8 @@ namespace DevExpress.Mvvm.UI {
             window = CreateWindow(view);
             window.RealWindow.Title = Title ?? string.Empty;
             SetTitleBinding();
-            window.RealWindow.Closing += OnWindowClosing;
-            window.RealWindow.Closed += OnWindowClosed;
+            window.Closing += OnWindowClosing;
+            window.Closed += OnWindowClosed;
             if(WindowShowMode == WindowShowMode.Dialog)
                 window.ShowDialog();
             else
@@ -137,7 +137,7 @@ namespace DevExpress.Mvvm.UI {
 
         void IWindowService.Activate() {
             if(window != null) {
-                window.RealWindow.Activate();
+                window.Activate();
             }
         }
         void IWindowService.Restore() {
@@ -153,7 +153,7 @@ namespace DevExpress.Mvvm.UI {
         void IWindowService.Hide() {
             if(window != null) {
 #if !SILVERLIGHT
-                window.RealWindow.Hide();
+                window.Hide();
 #else
                 window.RealWindow.Visibility = Visibility.Collapsed;
 #endif
@@ -161,13 +161,13 @@ namespace DevExpress.Mvvm.UI {
         }
         void IWindowService.Close() {
             if(window != null)
-                window.RealWindow.Close();
+                window.Close();
         }
         void IDocumentOwner.Close(IDocumentContent documentContent, bool force) {
             if(window == null || GetViewModel(window.RealWindow) != documentContent) return;
             if(force)
-                window.RealWindow.Closing -= OnWindowClosing;
-            window.RealWindow.Close();
+                window.Closing -= OnWindowClosing;
+            window.Close();
         }
 #if !SILVERLIGHT
         void IWindowService.SetWindowState(WindowState state) {

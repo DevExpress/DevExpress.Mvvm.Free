@@ -16,7 +16,7 @@ namespace DevExpress.Mvvm.UI.Native {
         public const string CompanyNameEnvironmentVariable = "%_COMPANY_%";
         public const string ProductNameEnvironmentVariable = "%_PRODUCT_%";
         public const string VersionEnvironmentVariable = "%_VERSION_%";
-        public const string ResourcesFolderName = "R-3B849FCF-333E-41D2-A306-5DE5A24DB817";
+        public const string ResourcesFolderName = "RDB817";
         static object resourcesFolderLock = new object();
         static string companyNameOverride;
         static string productNameOverride;
@@ -27,6 +27,7 @@ namespace DevExpress.Mvvm.UI.Native {
         static Dictionary<string, Func<string>> variables;
         static object variablesLock = new object();
         static Tuple<string, string, string, string> configurationPathParts;
+        static Assembly entryAssembly;
 
         public static string CompanyNameOverride {
             get {
@@ -67,7 +68,7 @@ namespace DevExpress.Mvvm.UI.Native {
         public static string ApplicationExecutablePath {
             get {
                 if(applicationExecutablePath == null)
-                    applicationExecutablePath = AssemblyHelper.EntryAssembly.Return(a => a.Location, () => Path.Combine(Environment.CurrentDirectory, Environment.GetCommandLineArgs()[0]));
+                    applicationExecutablePath = EntryAssembly.Return(a => a.Location, () => Path.Combine(Environment.CurrentDirectory, Environment.GetCommandLineArgs()[0]));
                 return applicationExecutablePath;
             }
         }
@@ -117,9 +118,9 @@ namespace DevExpress.Mvvm.UI.Native {
                             else
                                 configurationPathParts = new Tuple<string, string, string, string>(Path.Combine(appDataDirectory, Path.Combine(pathParts.Take(pathParts.Length - 1).ToArray())), string.Empty, string.Empty, pathParts[pathParts.Length - 1]);
                         } catch {
-                            string companyName = AssemblyHelper.EntryAssembly.With(a => a.GetCustomAttributes(typeof(AssemblyCompanyAttribute), false).Cast<AssemblyCompanyAttribute>().SingleOrDefault().With(t => t.Company));
-                            string productName = AssemblyHelper.EntryAssembly.With(a => a.GetCustomAttributes(typeof(AssemblyProductAttribute), false).Cast<AssemblyProductAttribute>().SingleOrDefault().With(t => t.Product));
-                            string version = AssemblyHelper.EntryAssembly.With(a => a.GetName().Version.ToString(4));
+                            string companyName = EntryAssembly.With(a => a.GetCustomAttributes(typeof(AssemblyCompanyAttribute), false).Cast<AssemblyCompanyAttribute>().SingleOrDefault().With(t => t.Company));
+                            string productName = EntryAssembly.With(a => a.GetCustomAttributes(typeof(AssemblyProductAttribute), false).Cast<AssemblyProductAttribute>().SingleOrDefault().With(t => t.Product));
+                            string version = EntryAssembly.With(a => a.GetName().Version.ToString(4));
                             companyName = companyName == null || !companyName.Where(c => char.IsLetterOrDigit(c)).Any() ? ApplicationIdHash : NativeResourceManager.CreateFileName(companyName);
                             productName = productName == null || !productName.Where(c => char.IsLetterOrDigit(c)).Any() ? ApplicationIdHash : NativeResourceManager.CreateFileName(productName);
                             version = version == null || !version.Where(c => char.IsLetterOrDigit(c)).Any() ? ApplicationIdHash : NativeResourceManager.CreateFileName(version);
@@ -128,6 +129,13 @@ namespace DevExpress.Mvvm.UI.Native {
                     }
                     return configurationPathParts;
                 }
+            }
+        }
+        public static Assembly EntryAssembly {
+            get {
+                if(entryAssembly == null)
+                    entryAssembly = Assembly.GetEntryAssembly();
+                return entryAssembly;
             }
         }
         public static string ExpandVariables(string name) {

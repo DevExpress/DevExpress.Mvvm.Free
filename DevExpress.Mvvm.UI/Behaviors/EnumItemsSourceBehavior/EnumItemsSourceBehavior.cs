@@ -1,9 +1,12 @@
 using DevExpress.Internal;
 using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.UI.Interactivity.Internal;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,8 +14,9 @@ using System.Windows.Data;
 
 namespace DevExpress.Mvvm.UI {
     [TargetType(typeof(ItemsControl))]
-    public class EnumItemsSourceBehavior : Behavior<ItemsControl> {
+    public class EnumItemsSourceBehavior : Behavior<FrameworkElement> {
         public EnumItemsSourceBehavior() {
+            InteractionHelper.SetBehaviorInDesignMode(this, InteractionBehaviorInDesignMode.AsWellAsNotInDesignMode);
             GetDefaultDataTemplate();
         }
         #region Dependency Properties
@@ -81,26 +85,29 @@ namespace DevExpress.Mvvm.UI {
         }
         void ChangeAssociatedObjectItemsSource() {
             if(this.AssociatedObject != null) {
+                PropertyDescriptor descriptor = TypeDescriptor.GetProperties(this.AssociatedObject).Find("ItemsSource", true);
                 if(EnumType == null)
                     throw new Exception("EnumType required");
-                else
-                    this.AssociatedObject.ItemsSource = EnumSourceHelper.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter, SplitNames, SortMode);
+                else {
+                    if(descriptor == null)
+                        throw new Exception("ItemsSource dependency property required");
+                    else
+                        descriptor.SetValue(this.AssociatedObject, EnumSourceHelper.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter, SplitNames, SortMode));
+                }
             }
         }
         void ChangeItemTemplate() {
-            if(this.AssociatedObject != null)
-                this.AssociatedObject.ItemTemplate = ItemTemplate;
+            ItemsControl itemsControl = this.AssociatedObject as ItemsControl;
+            if(itemsControl != null)
+                itemsControl.ItemTemplate = ItemTemplate;
         }
 
-#if DEBUG
-        public
-#endif
-        DataTemplate defaultDataTemplate;
+ internal DataTemplate defaultDataTemplate;
 
         void GetDefaultDataTemplate() {
             ResourceDictionary resourceDictionary = new ResourceDictionary() {
-            Source = new Uri(string.Format("pack://application:,,,/{0};component/Behaviors/EnumItemsSourceBehavior/EnumItemsSourceDefaultTemplate.xaml",
-                AssemblyInfo.SRAssemblyXpfMvvmUIFree), UriKind.Absolute)
+                Source = new Uri(string.Format("pack://application:,,,/{0};component/Behaviors/EnumItemsSourceBehavior/EnumItemsSourceDefaultTemplate.xaml",
+                    AssemblyInfo.SRAssemblyXpfMvvmUIFree), UriKind.Absolute)
             };
             defaultDataTemplate = (DataTemplate)resourceDictionary["ItemsSourceDefaultTemplate"];
         }

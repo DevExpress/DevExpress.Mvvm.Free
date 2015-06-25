@@ -14,6 +14,7 @@ namespace DevExpress.Mvvm.UI {
     public class CompositeCommandBehavior : Behavior<DependencyObject> {
         #region Static
         public static readonly DependencyProperty CommandPropertyNameProperty;
+        [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Code Defects", "DXCA001")]
         [IgnoreDependencyPropertiesConsistencyChecker]
         static readonly DependencyProperty CanExecuteProperty;
         [IgnoreDependencyPropertiesConsistencyChecker]
@@ -27,12 +28,6 @@ namespace DevExpress.Mvvm.UI {
                 new PropertyMetadata(false, (d, e) => ((CompositeCommandBehavior)d).OnCanExecuteChanged(e)));
             InternalItemsProperty = DependencyProperty.RegisterAttached("InternalItems", typeof(CommandsCollection), owner,
                 new PropertyMetadata(null));
-        }
-        static CommandsCollection GetInternalItems(DependencyObject obj) {
-            return (CommandsCollection)obj.GetValue(InternalItemsProperty);
-        }
-        static void SetInternalItems(DependencyObject obj, CommandsCollection value) {
-            obj.SetValue(InternalItemsProperty, value);
         }
         #endregion
 
