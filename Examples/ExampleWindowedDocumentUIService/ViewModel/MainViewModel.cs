@@ -16,7 +16,6 @@ namespace Example.ViewModel {
 
 
         public void ShowWindowedDocument() {
-            DocumentManagerService.ActiveDocumentChanged += OnActiveDocumentChanged;
             IDocument document = DocumentManagerService.CreateDocument("TestView", ViewModelSource.Create(() => new TestViewModel()));
             document.Title = "WindowedDocument " + (GetTotalNumberOfDocuments() - 1);
             document.Show();
@@ -33,7 +32,7 @@ namespace Example.ViewModel {
             DocumentManagerService.ActiveDocument = Enumerable.ElementAt<IDocument>(DocumentManagerService.Documents, ActivateDocumentIndex);
         }
 
-        void OnActiveDocumentChanged(object sender, ActiveDocumentChangedEventArgs e) {
+        public void OnActiveDocumentChanged() {
             GetServiceInfo();
         }
 

@@ -9,6 +9,9 @@ using System.Windows;
 
 namespace Example.ViewModel {
     public enum ExportSettings {
+        [Image("pack://application:,,,/Images/ExportToTxt.png")]
+        [Display(Description = "Export file to .txt format", Order = 0)]
+        TxtExport,
         [Image("pack://application:,,,/Images/ExportToPdf.png")]
         [Display(Description = "Export file to .pdf format")]
         PdfExport,
