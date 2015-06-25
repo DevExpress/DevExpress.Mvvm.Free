@@ -10,6 +10,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm.UI {
     [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
@@ -39,8 +40,6 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("ValidateNames", typeof(bool), typeof(FileDialogServiceBase), new PropertyMetadata(true));
         public static readonly DependencyProperty RestorePreviouslySelectedDirectoryProperty =
             DependencyProperty.Register("RestorePreviouslySelectedDirectory", typeof(bool), typeof(FileDialogServiceBase), new PropertyMetadata(true));
-        public static readonly DependencyProperty FileOkCommandProperty =
-            DependencyProperty.Register("FileOkCommand", typeof(ICommand), typeof(FileDialogServiceBase), new PropertyMetadata(null));
         public static readonly DependencyProperty HelpRequestCommandProperty =
             DependencyProperty.Register("HelpRequestCommand", typeof(ICommand), typeof(FileDialogServiceBase), new PropertyMetadata(null));
 
@@ -93,52 +92,46 @@ namespace DevExpress.Mvvm.UI {
             set { SetValue(RestorePreviouslySelectedDirectoryProperty, value); }
         }
 
-        public ICommand FileOkCommand {
-            get { return (ICommand)GetValue(FileOkCommandProperty); }
-            set { SetValue(FileOkCommandProperty, value); }
-        }
         public ICommand HelpRequestCommand {
             get { return (ICommand)GetValue(HelpRequestCommandProperty); }
             set { SetValue(HelpRequestCommandProperty, value); }
         }
-        public event CancelEventHandler FileOk {
-            add {
-                FileDialog dialog = (FileDialog)FileDialog;
-                dialog.FileOk += value;
-            }
-            remove {
-                FileDialog dialog = (FileDialog)FileDialog;
-                dialog.FileOk -= value;
-            }
-        }
-        public event EventHandler HelpRequest {
-            add {
-                FileDialog dialog = (FileDialog)FileDialog;
-                dialog.HelpRequest += value;
-            }
-            remove {
-                FileDialog dialog = (FileDialog)FileDialog;
-                dialog.HelpRequest -= value;
-            }
-        }
+        public event EventHandler HelpRequest;
 #endif
+        public static readonly DependencyProperty FileOkCommandProperty =
+            DependencyProperty.Register("FileOkCommand", typeof(ICommand), typeof(FileDialogServiceBase), new PropertyMetadata(null));
+        public ICommand FileOkCommand {
+            get { return (ICommand)GetValue(FileOkCommandProperty); }
+            set { SetValue(FileOkCommandProperty, value); }
+        }
+        public event CancelEventHandler FileOk;
 
         object FileDialog;
         IEnumerable<FileInfoWrapper> FilesCore;
+        Action<CancelEventArgs> fileOK;
         public FileDialogServiceBase() {
             FileDialog = CreateFileDialog();
             FilesCore = new List<FileInfoWrapper>();
 #if !SILVERLIGHT
-            FileOk += (d, e) => {
-                if(FileOkCommand != null && FileOkCommand.CanExecute(e))
-                    FileOkCommand.Execute(e);
-            };
-            HelpRequest += (d, e) => {
-                if(HelpRequestCommand != null && HelpRequestCommand.CanExecute(e))
-                    HelpRequestCommand.Execute(e);
-            };
+            FileDialog dialog = (FileDialog)FileDialog;
+            dialog.FileOk += OnDialogFileOk;
+            dialog.HelpRequest += OnDialogHelpRequest;
 #endif
         }
+        void OnDialogFileOk(object sender, CancelEventArgs e) {
+            UpdateFiles();
+            FileOk.Do(x => x(sender, e));
+            FileOkCommand.If(x => x.CanExecute(e)).Do(x => x.Execute(e));
+            fileOK.Do(x => x(e));
+        }
+#if !SILVERLIGHT
+        void OnDialogHelpRequest(object sender, EventArgs e) {
+            HelpRequest.Do(x => x(sender, e));
+            HelpRequestCommand.If(x => x.CanExecute(e)).Do(x => x.Execute(e));
+        }
+#endif
+
+
         protected abstract object CreateFileDialog();
         protected abstract void InitFileDialog();
         protected abstract List<FileInfoWrapper> GetFileInfos();
@@ -164,9 +157,7 @@ namespace DevExpress.Mvvm.UI {
 
 #endif
         }
-        void UpdateFiles(bool dialogResult) {
-            ((IList)FilesCore).Clear();
-            if(!dialogResult) return;
+        void UpdateFiles() {
             var fileInfos = GetFileInfos();
             foreach(FileInfoWrapper fileInfo in fileInfos)
                 ((IList)FilesCore).Add(fileInfo);
@@ -190,22 +181,40 @@ namespace DevExpress.Mvvm.UI {
         protected IEnumerable<FileInfoWrapper> GetFiles() {
             return FilesCore;
         }
-        protected bool Show() {
+        protected bool Show(Action<CancelEventArgs> fileOK) {
+            this.fileOK = fileOK;
             InitFileDialogCore();
             InitFileDialog();
+            ((IList)FilesCore).Clear();
+            bool res = ShowCore();
+#if SILVERLIGHT
+            if(res) {
+                CancelEventArgs fileOKArgs = new CancelEventArgs();
+                OnDialogFileOk(this, fileOKArgs);
+                if(fileOKArgs.Cancel)
+                    res = false;
+            }
+#endif
+            return res;
+        }
+        bool ShowCore() {
 #if !SILVERLIGHT
             DialogResult result = ((FileDialog)FileDialog).ShowDialog();
+             if(result == DialogResult.OK)
+                return true;
+            if(result == DialogResult.Cancel)
+                return false;
+            throw new InvalidOperationException("The Dialog has returned a not supported value");
 #else
             bool? result = null;
             if(FileDialog is OpenFileDialog)
                 result = ((OpenFileDialog)FileDialog).ShowDialog();
             if(FileDialog is SaveFileDialog)
                 result = ((SaveFileDialog)FileDialog).ShowDialog();
+            return result.Value;
 #endif
-            bool res = ConvertDialogResultToBoolean(result);
-            UpdateFiles(res);
-            return res;
         }
+
 #if !SILVERLIGHT
         void IFileDialogServiceBase.Reset() {
             ((FileDialog)FileDialog).Reset();
@@ -226,9 +235,6 @@ namespace DevExpress.Mvvm.UI {
         }
         FileInfo IFileInfo.CopyTo(string destFileName, bool overwrite) {
             return FileInfo.CopyTo(destFileName, overwrite);
-        }
-        FileInfo IFileInfo.CopyTo(string destFileName) {
-            return FileInfo.CopyTo(destFileName);
         }
         FileStream IFileInfo.Create() {
             return FileInfo.Create();
@@ -257,12 +263,6 @@ namespace DevExpress.Mvvm.UI {
         FileStream IFileInfo.Open(FileMode mode, FileAccess access, FileShare share) {
             return FileInfo.Open(mode, access, share);
         }
-        FileStream IFileInfo.Open(FileMode mode, FileAccess access) {
-            return FileInfo.Open(mode, access);
-        }
-        FileStream IFileInfo.Open(FileMode mode) {
-            return FileInfo.Open(mode);
-        }
         FileStream IFileInfo.OpenRead() {
             return FileInfo.OpenRead();
         }
@@ -271,6 +271,10 @@ namespace DevExpress.Mvvm.UI {
         }
         FileStream IFileInfo.OpenWrite() {
             return FileInfo.OpenWrite();
+        }
+        FileAttributes IFileInfo.Attributes {
+            get { return FileInfo.Attributes; }
+            set { FileInfo.Attributes = value; }
         }
     }
 }

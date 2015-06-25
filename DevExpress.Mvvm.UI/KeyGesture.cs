@@ -3,19 +3,15 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Windows.Input;
 #if NETFX_CORE
-using DevExpress.Mvvm.UI.Native;
 using DevExpress.Mvvm.Native;
+using DevExpress.Mvvm.UI.Native;
 using Windows.System;
 using Key = Windows.System.VirtualKey;
 
 #endif
 
 namespace DevExpress.Mvvm.UI {
-#if NETFX_CORE && !MVVM
-    [DevExpress.Data.Native.TypeConverter(typeof(KeyGestureConverter))]
-#else
     [TypeConverter(typeof(KeyGestureConverter))]
-#endif
     public class KeyGesture {
         public Key Key { get; private set; }
         public ModifierKeys ModifierKeys { get; private set; }

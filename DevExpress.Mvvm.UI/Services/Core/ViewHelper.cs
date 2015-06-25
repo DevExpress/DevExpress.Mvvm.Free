@@ -46,7 +46,7 @@ namespace DevExpress.Mvvm.UI {
                 return;
             }
             if(!(view is DependencyObject)) return;
-            if(ViewModelExtensions.GetParameter((DependencyObject)view) == null || parameter != null)
+            if(ViewModelExtensions.NotSetParameter == ViewModelExtensions.GetParameter((DependencyObject)view) || parameter != null)
                 ViewModelExtensions.SetParameter((DependencyObject)view, parameter);
             if(ViewModelExtensions.GetParentViewModel((DependencyObject)view) == null || parentViewModel != null)
                 ViewModelExtensions.SetParentViewModel((DependencyObject)view, parentViewModel);
@@ -54,8 +54,13 @@ namespace DevExpress.Mvvm.UI {
                 ViewModelExtensions.SetDocumentOwner((DependencyObject)view, documentOwner);
         }
         public static object CreateView(IViewLocator viewLocator, string documentType, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {
-            if(documentType == null && viewTemplate == null & viewTemplateSelector == null)
-                throw new InvalidOperationException(string.Format("{0}{1}To learn more, see: {2}", Error_CreateViewMissArguments, System.Environment.NewLine, HelpLink_CreateViewMissArguments));
+            if(documentType == null && viewTemplate == null & viewTemplateSelector == null) {
+                var ex = new InvalidOperationException(string.Format("{0}{1}To learn more, see: {2}", Error_CreateViewMissArguments, System.Environment.NewLine, HelpLink_CreateViewMissArguments));
+#if !SILVERLIGHT
+                ex.HelpLink = HelpLink_CreateViewMissArguments;
+#endif
+                throw ex;
+            }
             if(viewTemplate != null || viewTemplateSelector != null) {
                 return new ViewPresenter(viewTemplate, viewTemplateSelector);
             }

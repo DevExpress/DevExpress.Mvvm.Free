@@ -1,27 +1,37 @@
-
 using System;
-using System.ComponentModel;
-using System.Windows;
+using System.Linq;
+using System.Collections.Generic;
 #if NETFX_CORE
 using Windows.UI.Xaml;
-using DevExpress.Mvvm.UI.Native;
+using Windows.UI.Xaml.Controls;
 #else
-using DevExpress.Mvvm.UI.Native;
+using System.Windows.Controls;
+using System.Windows;
+using System.ComponentModel;
 #endif
+using DevExpress.Mvvm.UI.Native;
 
 namespace DevExpress.Mvvm.UI.Interactivity {
     public static class Interaction {
         #region Dependency Properties
 #if SILVERLIGHT || NETFX_CORE
         const string BehaviorsPropertyName = "Behaviors";
+        const string BehaviorsTemplatePropertyName = "BehaviorsTemplate";
         const string TriggersPropertyName = "Triggers";
 #else
         const string BehaviorsPropertyName = "BehaviorsInternal";
+        const string BehaviorsTemplatePropertyName = "BehaviorsTemplate";
         const string TriggersPropertyName = "TriggersInternal";
 #endif
         [IgnoreDependencyPropertiesConsistencyChecker]
         public static readonly DependencyProperty BehaviorsProperty =
             DependencyProperty.RegisterAttached(BehaviorsPropertyName, typeof(BehaviorCollection), typeof(Interaction), new PropertyMetadata(null, OnCollectionChanged));
+        [IgnoreDependencyPropertiesConsistencyChecker]
+        public static readonly DependencyProperty BehaviorsTemplateProperty =
+            DependencyProperty.RegisterAttached(BehaviorsTemplatePropertyName, typeof(DataTemplate), typeof(Interaction), new PropertyMetadata(null, OnBehaviorsTemplateChanged));
+        [IgnoreDependencyPropertiesConsistencyChecker]
+        static readonly DependencyProperty BehaviorsTemplateItemsProperty =
+            DependencyProperty.RegisterAttached("BehaviorsTemplateItems", typeof(IList<Behavior>), typeof(Interaction), new PropertyMetadata(null));
 #if !NETFX_CORE
         [IgnoreDependencyPropertiesConsistencyChecker]
         [Obsolete("This property is obsolete. Use the Behaviors property instead.")]
@@ -38,6 +48,12 @@ namespace DevExpress.Mvvm.UI.Interactivity {
                 d.SetValue(BehaviorsProperty, behaviors);
             }
             return behaviors;
+        }
+        public static DataTemplate GetBehaviorsTemplate(DependencyObject d) {
+            return (DataTemplate)d.GetValue(BehaviorsProperty);
+        }
+        public static void SetBehaviorsTemplate(DependencyObject d, DataTemplate template) {
+            d.SetValue(BehaviorsTemplateProperty, template);
         }
 #if !NETFX_CORE
         [Obsolete("This method is obsolete. Use the GetBehaviors method instead.")]
@@ -62,6 +78,45 @@ namespace DevExpress.Mvvm.UI.Interactivity {
                     throw new InvalidOperationException();
                 newValue.Attach(d);
             }
+        }
+        static void OnBehaviorsTemplateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) {
+            BehaviorCollection objectBehaviors = GetBehaviors(d);
+            IList<Behavior> oldItems = d.GetValue(BehaviorsTemplateItemsProperty) as IList<Behavior>;
+            DataTemplate newValue = e.NewValue as DataTemplate;
+            if(oldItems != null) {
+                foreach(Behavior behavior in oldItems)
+                    if(objectBehaviors.Contains(behavior))
+                        objectBehaviors.Remove(behavior);
+            }
+            if(newValue == null) {
+                d.SetValue(BehaviorsTemplateItemsProperty, null);
+                return;
+            }
+
+#if !NETFX_CORE && !SILVERLIGHT
+            if(!newValue.IsSealed)
+                newValue.Seal();
+#endif
+            IList<Behavior> newItems;
+            DependencyObject content = newValue.LoadContent();
+
+            if(content is ContentControl) {
+                newItems = new List<Behavior>();
+                var behavior = ((ContentControl)content).Content as Behavior;
+                ((ContentControl)content).Content = null;
+                if(behavior != null)
+                    newItems.Add(behavior);
+            } else if(content is ItemsControl) {
+                var ic = content as ItemsControl;
+                newItems = ic.Items.OfType<Behavior>().ToList();
+                ic.Items.Clear();
+                ic.ItemsSource = null;
+            } else
+                throw new InvalidOperationException("Use ContentControl or ItemsControl in the template to specify Behaviors.");
+
+            d.SetValue(BehaviorsTemplateItemsProperty, newItems.Count > 0 ? newItems : null);
+            foreach(Behavior behavior in newItems)
+                objectBehaviors.Add(behavior);
         }
     }
 }

@@ -33,9 +33,15 @@ namespace DevExpress.Mvvm.UI {
         }
         KeyGesture keyGesture = null;
 #endif
+#if !NETFX_CORE && !SILVERLIGHT
+        static KeyToCommand() {
+            EventNameProperty.OverrideMetadata(typeof(KeyToCommand), new PropertyMetadata("KeyUp"));
+        }
+#else
         public KeyToCommand() {
             EventName = "KeyUp";
         }
+#endif
         protected override void Invoke(object sender, object eventArgs) {
             if(Command.CanExecute(CommandParameter))
                 Command.Execute(CommandParameter);

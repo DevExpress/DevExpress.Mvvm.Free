@@ -1,3 +1,4 @@
+using System.ComponentModel;
 #if !NETFX_CORE
 using DevExpress.Mvvm.UI.Interactivity.Internal;
 using System;
@@ -18,11 +19,11 @@ namespace DevExpress.Mvvm.UI.Interactivity {
     }
 
 #if SILVERLIGHT
-    public abstract class AttachableObjectBase : DependencyObject, IAttachableObject {
+    public abstract class AttachableObjectBase : DependencyObject, IAttachableObject, INotifyPropertyChanged {
 #elif NETFX_CORE
-    public abstract class AttachableObjectBase : FrameworkElement, IAttachableObject {
+    public abstract class AttachableObjectBase : FrameworkElement, IAttachableObject, INotifyPropertyChanged {
 #else
-    public abstract class AttachableObjectBase : Animatable, IAttachableObject {
+    public abstract class AttachableObjectBase : Animatable, IAttachableObject, INotifyPropertyChanged {
 #endif
         public bool IsAttached { get; private set; }
         internal bool _AllowAttachInDesignMode { get { return AllowAttachInDesignMode; } }
@@ -56,6 +57,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
                 EventHandler handler = AssociatedObjectChanged;
                 if(handler != null)
                     handler(this, EventArgs.Empty);
+                RaisePropertyChanged("AssociatedObject");
             }
         }
         internal event EventHandler AssociatedObjectChanged;
@@ -63,6 +65,16 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         internal AttachableObjectBase(Type type) {
             associatedType = type;
         }
+        PropertyChangedEventHandler propertyChanged;
+        event PropertyChangedEventHandler INotifyPropertyChanged.PropertyChanged {
+            add { propertyChanged += value; }
+            remove { propertyChanged -= value; }
+        }
+        protected void RaisePropertyChanged(string name) {
+            if(propertyChanged != null)
+                propertyChanged(this, new PropertyChangedEventArgs(name));
+        }
+
         public void Attach(DependencyObject obj) {
             if(AssociatedObject == obj)
                 return;
@@ -80,6 +92,11 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             AssociatedObject = null;
             IsAttached = false;
         }
+ #if !SILVERLIGHT && !NETFX_CORE
+        protected override bool FreezeCore(bool isChecking) {
+            return false;
+        }
+#endif
         protected virtual void OnAttached() {
 #if NETFX_CORE
             if(AssociatedObject is FrameworkElement) {

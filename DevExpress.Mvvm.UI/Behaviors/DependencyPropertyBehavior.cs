@@ -16,9 +16,9 @@ namespace DevExpress.Mvvm.UI {
 #endif
         public static readonly DependencyProperty BindingProperty = DependencyProperty.RegisterAttached("Binding", typeof(object), typeof(DependencyPropertyBehavior),
 #if !SILVERLIGHT && !NETFX_CORE
-            new FrameworkPropertyMetadata(null, (d, e) => ((DependencyPropertyBehavior)d).OnBindingPropertyChanged(e))  { BindsTwoWayByDefault = true } );
+            new FrameworkPropertyMetadata(null, (d, e) => ((DependencyPropertyBehavior)d).OnBindingPropertyChanged())  { BindsTwoWayByDefault = true } );
 #else
-            new PropertyMetadata(null, (d, e) => ((DependencyPropertyBehavior)d).OnBindingPropertyChanged(e)));
+            new PropertyMetadata(null, (d, e) => ((DependencyPropertyBehavior)d).OnBindingPropertyChanged()));
 #endif
         EventTriggerEventSubscriber EventHelper;
         public DependencyPropertyBehavior() {
@@ -51,22 +51,25 @@ namespace DevExpress.Mvvm.UI {
             get { return GetShortName(PropertyName); }
         }
         protected override void OnAttached() {
+            if(Binding != null) OnBindingPropertyChanged();
+            if(string.IsNullOrEmpty(EventName)) return;
             EventHelper.UnsubscribeFromEvent(EventAssociatedObject, ShortEventName);
             EventHelper.SubscribeToEvent(EventAssociatedObject, ShortEventName);
         }
         protected override void OnDetaching() {
+            if(string.IsNullOrEmpty(EventName)) return;
             EventHelper.UnsubscribeFromEvent(EventAssociatedObject, ShortEventName);
         }
         void OnEvent(object sender, object eventArgs) {
             Binding = PropertyInfo.GetValue(PropertyAssociatedObject, null);
         }
-        void OnBindingPropertyChanged(DependencyPropertyChangedEventArgs e) {
+        void OnBindingPropertyChanged() {
             if(PropertyAssociatedObject == null)
                 return;
             object oldValue = PropertyInfo.GetValue(PropertyAssociatedObject, null);
-            if(oldValue.Equals(e.NewValue)) return;
+            if(object.Equals(oldValue, Binding)) return;
             if(PropertyInfo.CanWrite)
-                PropertyInfo.SetValue(PropertyAssociatedObject, Convert.ChangeType(e.NewValue, PropertyInfo.PropertyType, null), null);
+                PropertyInfo.SetValue(PropertyAssociatedObject, Convert.ChangeType(Binding, PropertyInfo.PropertyType, null), null);
         }
         protected virtual object GetAssociatedObjectForName(string name) {
             if(AssociatedObject == null)

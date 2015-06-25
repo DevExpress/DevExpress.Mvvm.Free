@@ -15,8 +15,13 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Controls.Primitives;
 using DevExpress.Mvvm.Native;
 #endif
+#if MVVM || NETFX_CORE
 namespace DevExpress.Mvvm.UI.Native {
     public static class LayoutHelper {
+#else
+namespace DevExpress.Xpf.Core.Native {
+    public static class LayoutHelper {
+#endif
 
 #if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
         public static UIElement GetTopContainerWithAdornerLayer(UIElement element) {
@@ -68,8 +73,16 @@ namespace DevExpress.Mvvm.UI.Native {
             DependencyObject result = null;
             try {
                 result = VisualTreeHelper.GetParent(o);
+#if NETFX_CORE
+                DependencyObject logicalParent = (o as FrameworkElement).With(x => x.Parent);
+                if(!visualTreeOnly && result != logicalParent && logicalParent is Popup)
+                    result = logicalParent;
+                if(!visualTreeOnly && result == null)
+                    result = logicalParent;
+#else
                 if(!visualTreeOnly && result == null && o is FrameworkElement)
                     result = (o as FrameworkElement).Parent;
+#endif
             } catch {
             }
             return result;
@@ -79,10 +92,11 @@ namespace DevExpress.Mvvm.UI.Native {
             DependencyObject root = FindRoot(o);
 #if !NETFX_CORE
             return Application.Current.RootVisual != null && root == Application.Current.RootVisual || (root is Popup && ((Popup)root).IsOpen);
-#else
+#elif SILVERLIGHT
             return Window.Current.Content != null && root == Window.Current.Content || (root is Popup && ((Popup)root).IsOpen);
+#else
+            return true;
 #endif
-
         }
         public static DependencyObject FindVisualRoot(DependencyObject d) {
             DependencyObject current = d;
@@ -188,7 +202,7 @@ namespace DevExpress.Mvvm.UI.Native {
             while(child != null) {
                 if(child is T)
                     return child as T;
-#if !SILVERLIGHT
+#if !SILVERLIGHT && !NETFX_CORE
                 child = VisualTreeHelper.GetParent(child);
 #else
                 child = GetParent(child);
@@ -236,7 +250,11 @@ namespace DevExpress.Mvvm.UI.Native {
             return FindElement(treeRoot, element => element.Name == name);
         }
         public static FrameworkElement FindElementByType(FrameworkElement treeRoot, Type type) {
+#if NETFX_CORE
+            return FindElement(treeRoot, element => type.IsAssignableFrom(element.GetType()));
+#else
             return FindElement(treeRoot, element => element.GetType() == type);
+#endif
         }
         public static T FindElementByType<T>(FrameworkElement treeRoot) where T : FrameworkElement {
             return (T)FindElementByType(treeRoot, typeof(T));
@@ -245,7 +263,8 @@ namespace DevExpress.Mvvm.UI.Native {
         public static bool IsChildElement(DependencyObject root, DependencyObject element) {
             DependencyObject parent = element;
             while(parent != null) {
-                if(parent == root) return true;
+                if(parent == root)
+                    return true;
                 parent = GetParentCore(parent);
             }
             return false;
@@ -335,25 +354,28 @@ namespace DevExpress.Mvvm.UI.Native {
 #endif
 
         public static bool IsElementLoaded(FrameworkElement element) {
-#if !SILVERLIGHT  && !NETFX_CORE || SLDESIGN
+#if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
             return element.IsLoaded;
 #else
-            if(element.Parent != null) return true;
-            if(VisualTreeHelper.GetParent(element) != null) return true;
+            if(element.Parent != null)
+                return true;
+            if(VisualTreeHelper.GetParent(element) != null)
+                return true;
 #if !NETFX_CORE
             Application application = Application.Current;
             if(application == null) return false;
             UIElement rootVisual = application.RootVisual;
 #else
             Window window = Window.Current;
-            if(window == null) return false;
+            if(window == null)
+                return false;
             UIElement rootVisual = window.Content;
 #endif
             return element == rootVisual;
 #endif
         }
 
-#if !SILVERLIGHT && !DESIGN  && !NETFX_CORE
+#if !SILVERLIGHT && !DESIGN && !NETFX_CORE
         public static Rect GetScreenRect(FrameworkElement element) {
             if(element is Window) {
                 Window elementWindow = (Window)element;
@@ -398,5 +420,50 @@ namespace DevExpress.Mvvm.UI.Native {
 #endif
 
         public delegate void ElementHandler(FrameworkElement e);
+
+#if NETFX_CORE
+        public static T FindParentObject<T>(DependencyObject child, Func<T, bool> isSearchTarget = null) where T : class {
+            while(child != null) {
+                if(child is T && (isSearchTarget == null || isSearchTarget(child as T)))
+                    return child as T;
+                child = GetParent(child);
+            }
+            return null;
+        }
+        public static Rect GetRelativeElementRect(UIElement element, UIElement parent) {
+            GeneralTransform transform = element.TransformToVisual(parent);
+            return transform.TransformBounds(new Rect(new Point(), element.RenderSize));
+        }
+        public static T FindAmongLogicalParents<T>(DependencyObject o, DependencyObject stopObject) where T : DependencyObject {
+            while(!(o == null || o is T || o == stopObject)) {
+                o = GetNearestLogicalParent(o);
+            }
+            return o as T;
+        }
+        public static DependencyObject GetNearestLogicalParent(DependencyObject o) {
+            DependencyObject result = null;
+            try {
+                if(o is FrameworkElement)
+                    result = (o as FrameworkElement).Parent;
+                if(result == null)
+                    result = VisualTreeHelper.GetParent(o);
+            } catch {
+            }
+            return result;
+        }
+        public static T FindElementByName<T>(FrameworkElement treeRoot, string name) where T : FrameworkElement {
+            Type type = typeof(T);
+            return (T)FindElement(treeRoot, element => type.IsAssignableFrom(element.GetType()) && element.Name == name);
+        }
+        public static bool IsChildElement(DependencyObject root, DependencyObject element, Func<DependencyObject, DependencyObject> getParent) {
+            DependencyObject parent = element;
+            while(parent != null) {
+                if(parent == root)
+                    return true;
+                parent = getParent(parent);
+            }
+            return false;
+        }
+#endif
     }
 }

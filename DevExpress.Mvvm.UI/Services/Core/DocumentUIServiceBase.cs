@@ -30,9 +30,9 @@ namespace DevExpress.Mvvm.UI {
             if(!isDocumentAlive)
                 throw new InvalidOperationException("Cannot access the destroyed document.");
         }
-        public static void SetTitleBinding(object documentContentView, DependencyProperty property, FrameworkElement target, bool convertToString = false) {
+        public static void SetTitleBinding(object documentContentView, DependencyProperty property, DependencyObject target, bool convertToString = false) {
 #if !SILVERLIGHT && !NETFX_CORE
-            target.SetBinding(TitleListenProperty, new Binding() { Source = target, Path = new PropertyPath(property), Mode = BindingMode.OneWay });
+            BindingOperations.SetBinding(target, TitleListenProperty, new Binding() { Source = target, Path = new PropertyPath(property), Mode = BindingMode.OneWay });
 #endif
             object viewModel = ViewHelper.GetViewModelFromView(documentContentView);
             if(!DocumentViewModelHelper.IsDocumentContentOrDocumentViewModel(viewModel)) return;
@@ -42,7 +42,7 @@ namespace DevExpress.Mvvm.UI {
                 if(convertToString)
                     binding.Converter = new ObjectToStringConverter();
 #endif
-                target.SetBinding(property, binding);
+                BindingOperations.SetBinding(target, property, binding);
             } else {
                 new TitleUpdater(convertToString, viewModel, target, property).Update(target, viewModel);
             }

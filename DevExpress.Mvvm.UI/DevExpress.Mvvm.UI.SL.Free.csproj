@@ -86,15 +86,11 @@
     <Compile Include="Behaviors\EventToCommand\EventToCommand.cs" />
     <Compile Include="Behaviors\EventToCommand\EventToCommandBase.cs" />
     <Compile Include="Behaviors\EventToCommand\IEventArgsConverter.cs" />
-    <Compile Include="Behaviors\EventToCommand\ItemsControlMouseEventArgsConverter.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Behaviors\EventToCommand\ItemsControlMouseEventArgsConverter.cs" />
     <Compile Include="Behaviors\EventToCommand\KeyToCommand.cs" />
     <Compile Include="Behaviors\FocusBehavior.cs" />
     <Compile Include="Converters.cs" />
-    <Compile Include="ConvertersExtensions.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="ConvertersExtensions.cs" />
     <Compile Include="Interactivity\AttachableCollection.cs" />
     <Compile Include="Interactivity\AttachableObject.cs" />
     <Compile Include="Interactivity\Behavior.cs" />

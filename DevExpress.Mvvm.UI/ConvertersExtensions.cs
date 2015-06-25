@@ -3,6 +3,34 @@ using System.Windows.Data;
 using System.Windows.Markup;
 
 namespace DevExpress.Mvvm.UI {
+#if !SILVERLIGHT
+    public class ReflectionConverterExtension : MarkupExtension {
+        class TypeUnsetValue { }
+        Type convertBackMethodOwner = typeof(TypeUnsetValue);
+
+        public Type ConvertMethodOwner { get; set; }
+        public string ConvertMethod { get; set; }
+        public Type ConvertBackMethodOwner {
+            get { return convertBackMethodOwner == typeof(TypeUnsetValue) ? ConvertMethodOwner : convertBackMethodOwner; }
+            set { convertBackMethodOwner = value; }
+        }
+        public string ConvertBackMethod { get; set; }
+        public override object ProvideValue(IServiceProvider serviceProvider) {
+            return new ReflectionConverter() { ConvertMethodOwner = ConvertMethodOwner, ConvertMethod = ConvertMethod, ConvertBackMethodOwner = ConvertBackMethodOwner, ConvertBackMethod = ConvertBackMethod };
+        }
+    }
+    public class EnumerableConverterExtension : MarkupExtension {
+        public EnumerableConverterExtension() { }
+        public EnumerableConverterExtension(IValueConverter itemConverter) {
+            ItemConverter = itemConverter;
+        }
+        public IValueConverter ItemConverter { get; set; }
+        public Type TargetItemType { get; set; }
+        public override object ProvideValue(IServiceProvider serviceProvider) {
+            return new EnumerableConverter() { ItemConverter = ItemConverter, TargetItemType = TargetItemType };
+        }
+    }
+#endif
     public class TypeCastConverterExtension : MarkupExtension {
         public override object ProvideValue(System.IServiceProvider serviceProvider) {
             return new TypeCastConverter();

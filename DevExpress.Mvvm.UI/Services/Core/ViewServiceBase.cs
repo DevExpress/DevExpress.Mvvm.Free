@@ -47,8 +47,7 @@ namespace DevExpress.Mvvm.UI {
 #if !FREE && !SILVERLIGHT && !NETFX_CORE
             string themeName = null;
             if(AssociatedObject != null && DevExpress.Xpf.Core.ThemeManager.GetTreeWalker(target) == null) {
-                var themeTreeWalker = DevExpress.Xpf.Core.ThemeManager.GetTreeWalker(AssociatedObject);
-                themeName = themeTreeWalker != null ? themeTreeWalker.ThemeName : null;
+                themeName = DevExpress.Xpf.Editors.Helpers.ThemeHelper.GetWindowThemeName(AssociatedObject);
                 if(!string.IsNullOrEmpty(themeName))
                     DevExpress.Xpf.Core.ThemeManager.SetThemeName(target, themeName);
             }

@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using System.Windows;
+using System.Linq;
+using DevExpress.Mvvm.Native;
 #if !FREE && !NETFX_CORE
 using DevExpress.Mvvm.UI.Native;
 #endif
 using System;
 #if NETFX_CORE
-using DevExpress.Mvvm.Native;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Media;
 #else
@@ -34,28 +35,14 @@ namespace DevExpress.Mvvm.UI {
             return GetVisualChildrenCore(parent, false);
         }
         internal static IEnumerable<DependencyObject> GetVisualParentsCore(DependencyObject child, DependencyObject stopNode, bool includeStartNode) {
-            if(includeStartNode)
-                yield return child;
-            DependencyObject parent = GetParent(child);
-            bool isStopNode = false;
-            bool checkStopNode = stopNode != null;
-            while(parent != null && !isStopNode) {
-                yield return parent;
-                parent = GetParent(parent);
-                if(checkStopNode && parent == stopNode) {
-                    isStopNode = true;
-                    yield return parent;
-                }
-            }
+            var result = LinqExtensions.Unfold(child, x => x != stopNode ? GetParent(x) : null, x => x == null);
+            return includeStartNode ? result : result.Skip(1);
         }
         internal static IEnumerable<DependencyObject> GetVisualChildrenCore(DependencyObject parent, bool includeStartNode) {
-            if(includeStartNode)
-                yield return parent;
-            for(int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++) {
-                foreach(DependencyObject subChild in GetVisualChildrenCore(VisualTreeHelper.GetChild(parent, i), true)) {
-                    yield return subChild;
-                }
-            }
+            var result = parent
+                .Yield()
+                .Flatten(x => Enumerable.Range(0, VisualTreeHelper.GetChildrenCount(x)).Select(index => VisualTreeHelper.GetChild(x, index)));
+            return includeStartNode ? result : result.Skip(1);
         }
     }
 }

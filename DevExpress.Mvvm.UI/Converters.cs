@@ -20,7 +20,7 @@ using CultureInfo = System.String;
 #endif
 
 namespace DevExpress.Mvvm.UI {
-#if !NETFX_CORE && !FREE
+#if !NETFX_CORE && !SILVERLIGHT
     public class ReflectionConverter : IValueConverter {
         class TypeUnsetValue { }
         Type convertBackMethodOwner = typeof(TypeUnsetValue);
@@ -94,6 +94,7 @@ namespace DevExpress.Mvvm.UI {
             return ConvertByConstructor(value, targetType, parameter, culture, convertMethodOwner.GetConstructors());
         }
         static object ConvertByConstructor(object value, Type targetType, object parameter, CultureInfo culture, IEnumerable<ConstructorInfo> methods) {
+            if(value == null && (targetType == null || !targetType.IsValueType || targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))) return null;
             ConstructorInfo convertMethod = methods.Where(c => c.GetParameters().Length == 1).FirstOrDefault();
             if(convertMethod == null)
                 convertMethod = methods.Where(c => c.GetParameters().Length > 0 && !c.GetParameters().Skip(1).Any(p => !p.IsOptional)).FirstOrDefault();
@@ -237,6 +238,8 @@ namespace DevExpress.Mvvm.UI {
         }
         public Type CollectionType { get; private set; }
     }
+#endif
+#if !NETFX_CORE && !FREE
     public class CriteriaOperatorConverter : IValueConverter {
         public string Expression { get; set; }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {

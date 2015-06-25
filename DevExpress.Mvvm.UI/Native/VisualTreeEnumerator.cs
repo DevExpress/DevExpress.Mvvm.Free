@@ -76,7 +76,7 @@ namespace DevExpress.Mvvm.UI.Native {
             objects.Reset();
         }
     }
-    public class VisualTreeEnumerator : NestedObjectEnumeratorBase {
+    public class VisualTreeEnumerator : NestedObjectEnumeratorBase, IDisposable{
         static IEnumerator<object> GetDependencyObjectEnumerator(DependencyObject dObject, int startIndex, int endIndex, int step) {
             for(int i = startIndex; i != endIndex; i += step) {
                 yield return VisualTreeHelper.GetChild(dObject, i);
@@ -92,6 +92,9 @@ namespace DevExpress.Mvvm.UI.Native {
         protected VisualTreeEnumerator(DependencyObject dObject, EnumeratorDirection direction)
             : base(dObject) {
             this.direction = direction;
+        }
+        public void Dispose() {
+            Reset();
         }
         protected virtual bool IsObjectVisual(DependencyObject d) {
 #if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
@@ -113,28 +116,46 @@ namespace DevExpress.Mvvm.UI.Native {
     }
 #if !SILVERLIGHT && !NETFX_CORE
     public class LogicalTreeEnumerator : VisualTreeEnumerator {
-        static IEnumerator GetVisualAndLogicalChilder(object obj, IEnumerator visualChildren, bool dependencyObjectsOnly) {
-            while(visualChildren.MoveNext())
-                yield return visualChildren.Current;
+        Hashtable acceptedVisuals = new Hashtable();
+        static IEnumerator GetVisualAndLogicalChildren(object obj, IEnumerator visualChildren, bool dependencyObjectsOnly, Hashtable acceptedVisuals) {
+            while(visualChildren.MoveNext()) {
+                var visual = visualChildren.Current;
+                if(visual != null)
+                    acceptedVisuals.Add(visual, visual);
+                yield return visual;
+            }
             foreach(object logicalChild in LogicalTreeHelper.GetChildren((DependencyObject)obj)) {
                 if(dependencyObjectsOnly && !(logicalChild is DependencyObject)) continue;
+                if(acceptedVisuals.ContainsKey(logicalChild))
+                    continue;
                 yield return logicalChild;
             }
         }
         public LogicalTreeEnumerator(DependencyObject dObject)
             : base(dObject) {
         }
+        public override void Reset() {
+            acceptedVisuals.Clear();
+            base.Reset();
+        }
         protected virtual bool DependencyObjectsOnly { get { return false; } }
         protected override IEnumerator GetNestedObjects(object obj) {
-            return GetVisualAndLogicalChilder(obj, base.GetNestedObjects(obj), DependencyObjectsOnly);
+            return GetVisualAndLogicalChildren(obj, base.GetNestedObjects(obj), DependencyObjectsOnly, acceptedVisuals);
         }
     }
     public class SerializationEnumerator : LogicalTreeEnumerator {
+        Func<DependencyObject, bool> nestedChildrenPredicate;
         protected override bool DependencyObjectsOnly {
             get { return true; }
         }
-        public SerializationEnumerator(DependencyObject dObject)
+        protected override IEnumerator GetNestedObjects(object obj) {
+            if(nestedChildrenPredicate((DependencyObject)obj))
+                return base.GetNestedObjects(obj);
+            return Enumerable.Empty<object>().GetEnumerator();
+        }
+        public SerializationEnumerator(DependencyObject dObject, Func<DependencyObject, bool> nestedChildrenPredicate)
             : base(dObject) {
+            this.nestedChildrenPredicate = nestedChildrenPredicate;
         }
     }
     public class VisualTreeEnumeratorWithConditionalStop : IEnumerator<DependencyObject> {

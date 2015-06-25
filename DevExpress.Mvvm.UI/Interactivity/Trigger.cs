@@ -10,6 +10,10 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Data;
 using Windows.ApplicationModel;
 using DevExpress.Mvvm.UI.Native;
+#if FREE && !NETFX_CORE
+using DevExpress.Mvvm.UI.Native;
+#else
+#endif
 #endif
 
 namespace DevExpress.Mvvm.UI.Interactivity {

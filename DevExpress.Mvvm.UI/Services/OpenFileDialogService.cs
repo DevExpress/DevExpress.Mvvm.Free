@@ -92,8 +92,10 @@ namespace DevExpress.Mvvm.UI {
         }
         IFileInfo IOpenFileDialogService.File { get { return GetFiles().FirstOrDefault(); } }
         IEnumerable<IFileInfo> IOpenFileDialogService.Files { get { return GetFiles(); } }
-        bool IOpenFileDialogService.ShowDialog() {
-            return Show();
+        bool IOpenFileDialogService.ShowDialog(Action<CancelEventArgs> fileOK, string directoryName) {
+            if(directoryName != null)
+                InitialDirectory = directoryName;
+            return Show(fileOK);
         }
     }
 }

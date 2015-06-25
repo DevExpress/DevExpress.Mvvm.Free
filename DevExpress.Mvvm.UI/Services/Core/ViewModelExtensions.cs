@@ -8,9 +8,10 @@ using Windows.UI.Xaml;
 
 namespace DevExpress.Mvvm.UI {
     public static class ViewModelExtensions {
+        public static readonly object NotSetParameter = new object();
         public static readonly DependencyProperty ParameterProperty =
             DependencyProperty.RegisterAttached("Parameter", typeof(object), typeof(ViewModelExtensions),
-            new PropertyMetadata(null, (d,e) => OnParameterChanged(d, e.NewValue)));
+            new PropertyMetadata(NotSetParameter, (d, e) => OnParameterChanged(d, e.NewValue)));
         public static readonly DependencyProperty ParentViewModelProperty =
             DependencyProperty.RegisterAttached("ParentViewModel", typeof(object), typeof(ViewModelExtensions),
             new PropertyMetadata(null, (d,e) => OnParentViewModelChanged(d, e.NewValue)));
@@ -48,6 +49,7 @@ namespace DevExpress.Mvvm.UI {
 #endif
 
         static void OnParameterChanged(DependencyObject d, object newValue) {
+            if(NotSetParameter == newValue) return;
             SetParameterCore(d, newValue);
             ParameterAndParentViewModelSyncBehavior.AttachTo(d);
         }

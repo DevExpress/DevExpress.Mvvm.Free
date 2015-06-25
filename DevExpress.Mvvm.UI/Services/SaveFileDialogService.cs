@@ -89,28 +89,22 @@ namespace DevExpress.Mvvm.UI {
 #if !SILVERLIGHT
         IFileInfo ISaveFileDialogService.File { get { return GetFiles().FirstOrDefault(); } }
 #endif
-        bool ISaveFileDialogService.ShowDialog() {
-            return Show();
+        bool ISaveFileDialogService.ShowDialog(Action<CancelEventArgs> fileOK, string directoryName, string fileName) {
+#if !SILVERLIGHT
+            if(directoryName != null)
+                InitialDirectory = directoryName;
+#endif
+            if(fileName != null)
+                DefaultFileName = fileName;
+            return Show(fileOK);
         }
+#if SILVERLIGHT
         Stream ISaveFileDialogService.OpenFile() {
-#if !SILVERLIGHT
-            var file = ((ISaveFileDialogService)this).File;
-            if(file == null) return null;
-            return file.Open(FileMode.Create, FileAccess.Write);
-#else
             return SaveFileDialog.OpenFile();
-#endif
         }
-        string ISaveFileDialogService.SafeFileName {
-            get {
-#if !SILVERLIGHT
-                var file = ((ISaveFileDialogService)this).File;
-                if(file == null) return string.Empty;
-                return file.Name;
-#else
-                return SaveFileDialog.SafeFileName;
-#endif
-            }
+        string ISaveFileDialogService.SafeFileName() {
+            return SaveFileDialog.SafeFileName;
         }
+#endif
     }
 }

@@ -53,11 +53,16 @@ namespace DevExpress.Mvvm.UI {
         }
         protected virtual IEnumerator<Type> GetTypes() {
             foreach(Assembly asm in Assemblies) {
+                Type[] types;
+                try {
 #if !NETFX_CORE
-                Type[] types = asm.GetTypes();
+                    types = asm.GetTypes();
 #else
-                Type[] types = asm.GetExportedTypes();
+                    types = asm.GetExportedTypes();
 #endif
+                } catch(ReflectionTypeLoadException e) {
+                    types = e.Types;
+                }
                 foreach(Type type in types) {
                     yield return type;
                 }

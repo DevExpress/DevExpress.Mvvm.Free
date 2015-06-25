@@ -19,22 +19,14 @@ namespace DevExpress.Mvvm.UI {
 #endif
     public abstract class ServiceBase : Behavior<FrameworkElement> {
 #if !NETFX_CORE
-        public static readonly DependencyProperty NameProperty =
-            DependencyProperty.Register("Name", typeof(string), typeof(ServiceBase), new PropertyMetadata(null));
+        public static readonly DependencyProperty NameProperty = DependencyProperty.Register("Name", typeof(string), typeof(ServiceBase), new PropertyMetadata(null));
+        public string Name { get { return (string)GetValue(NameProperty); } set { SetValue(NameProperty, value); } }
 #endif
         [IgnoreDependencyPropertiesConsistencyCheckerAttribute]
-        static readonly DependencyProperty ServicesClientInternalProperty =
-            DependencyProperty.Register("ServicesClientInternal", typeof(object), typeof(ServiceBase),
-            new PropertyMetadata(null, (d, e) => ((ServiceBase)d).RegisterServices()));
-#if !NETFX_CORE
-        public string Name {
-            get { return (string)GetValue(NameProperty); }
-            set { SetValue(NameProperty, value); }
-        }
-#endif
+        static readonly DependencyProperty ServicesClientInternalProperty = DependencyProperty.Register("ServicesClientInternal", typeof(object), typeof(ServiceBase), new PropertyMetadata(null,
+            (d, e) => ((ServiceBase)d).OnServicesClientInternalChanged(e.OldValue as ISupportServices, e.NewValue as ISupportServices)));
         public bool YieldToParent { get; set; }
         internal bool ShouldInject { get; set; }
-        ISupportServices ServicesClientInternal { get { return GetValue(ServicesClientInternalProperty) as ISupportServices; } }
 
         protected ServiceBase() {
             ShouldInject = true;
@@ -42,6 +34,14 @@ namespace DevExpress.Mvvm.UI {
         protected override void OnAttached() {
             base.OnAttached();
             SetInjectBinding();
+        }
+        protected override void OnDetaching() {
+#if SILVERLIGHT || NETFX_CORE
+            ClearValue(ServicesClientInternalProperty);
+#else
+            BindingOperations.ClearBinding(this, ServicesClientInternalProperty);
+#endif
+            base.OnDetaching();
         }
         void SetInjectBinding() {
             if(ShouldInject)
@@ -53,16 +53,8 @@ namespace DevExpress.Mvvm.UI {
             SetInjectBinding();
         }
 #endif
-        protected override void OnDetaching() {
-#if SILVERLIGHT || NETFX_CORE
-            ClearValue(ServicesClientInternalProperty);
-#else
-            BindingOperations.ClearBinding(this, ServicesClientInternalProperty);
-#endif
-            base.OnDetaching();
-        }
         protected ISupportServices GetServicesClient() {
-            return ServicesClientInternal;
+            return GetValue(ServicesClientInternalProperty) as ISupportServices;
         }
 #if !SILVERLIGHT && !NETFX_CORE
         protected Uri GetBaseUri() {
@@ -71,11 +63,9 @@ namespace DevExpress.Mvvm.UI {
             return BaseUriHelper.GetBaseUri(AssociatedObject);
         }
 #endif
-        void RegisterServices() {
-            var servicesClient = GetServicesClient();
-            if(servicesClient == null)
-                return;
-            servicesClient.ServiceContainer.RegisterService(Name, this, YieldToParent);
+        void OnServicesClientInternalChanged(ISupportServices oldServiceClient, ISupportServices newServiceClient) {
+            oldServiceClient.Do(x => x.ServiceContainer.UnregisterService(this));
+            newServiceClient.Do(x => x.ServiceContainer.RegisterService(Name, this, YieldToParent));
         }
     }
 }
@@ -113,10 +103,13 @@ namespace DevExpress.Mvvm.UI.Native {
         }
     }
     public static class AssignableServiceHelper2<TOwner, TService>
-        where TOwner : FrameworkElement
         where TService : class {
         public static DependencyProperty RegisterServiceTemplateProperty(string name) {
-            return DependencyProperty.Register(name, typeof(DataTemplate), typeof(TOwner), new PropertyMetadata(null));
+            return RegisterServiceTemplateProperty<DependencyObject>(name, null);
+        }
+        public static DependencyProperty RegisterServiceTemplateProperty<T>(string name, Action<T> onChanged) {
+            var metadata = onChanged == null ? new PropertyMetadata(null) : new PropertyMetadata(null, (d, e) => onChanged((T)(object)d));
+            return DependencyProperty.Register(name, typeof(DataTemplate), typeof(TOwner), metadata);
         }
         public static void DoServiceAction(DependencyObject owner, DataTemplate template, Action<TService> action) {
             TService service = TemplateHelper.LoadFromTemplate<TService>(template);
