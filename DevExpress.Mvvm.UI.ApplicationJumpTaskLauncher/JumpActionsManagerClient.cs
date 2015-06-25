@@ -80,9 +80,6 @@ namespace DevExpress.Mvvm.UI.Native {
                     throw;
             }
         }
-#if DEBUG
-        protected abstract object CurrentProcessTag { get; }
-#endif
         [SecuritySafeCritical]
         void DisposeInstancesFile() {
             if(instancesFile == null) return;
@@ -166,36 +163,10 @@ namespace DevExpress.Mvvm.UI.Native {
         }
         protected abstract string ApplicationId { get; }
 
-#if DEBUG
-        class MemoryMappedFileInfo {
-            public MemoryMappedFileInfo(IntPtr fileObject, IntPtr fileView, object owner) {
-                FileObject = fileObject;
-                FileView = fileView;
-                Owner = owner;
-            }
-            public IntPtr FileObject { get; private set; }
-            public IntPtr FileView { get; private set; }
-            public object Owner { get; private set; }
-        }
-        static Dictionary<string, HashSet<MemoryMappedFileInfo>> memoryMappedFiles = new Dictionary<string, HashSet<MemoryMappedFileInfo>>();
-        public static void ClearMamoryMappedFiles() {
-            memoryMappedFiles.Clear();
-        }
-        [SecuritySafeCritical]
-        public static void EmulateProcessKill(object processTag) {
-            MemoryMappedFileInfo[] openFiles = memoryMappedFiles.SelectMany(x => x.Value).Where(m => object.Equals(m.Owner, processTag)).ToArray();
-            foreach(var openFile in openFiles)
-                UnmapViewAndCloseFileMapping(new Tuple<IntPtr, IntPtr>(openFile.FileObject, openFile.FileView));
-        }
-#endif
         [SecurityCritical]
         protected Tuple<IntPtr, IntPtr> CreateFileMappingAndMapView(int dwMaximumSizeLow, string lpName, out bool alreadyExists) {
             if(dwMaximumSizeLow == 0) {
                 dwMaximumSizeLow = 1;
-#if DEBUG
-                if(!memoryMappedFiles.ContainsKey(lpName))
-                    throw new FileNotFoundException(lpName, lpName);
-#endif
             }
             IntPtr fileObject = Import.CreateFileMapping(Import.InvalidHandleValue, IntPtr.Zero, Import.PageReadwrite, 0, (uint)dwMaximumSizeLow, lpName);
             if(fileObject == IntPtr.Zero)
@@ -204,23 +175,10 @@ namespace DevExpress.Mvvm.UI.Native {
             IntPtr fileView = Import.MapViewOfFile(fileObject, Import.FileMapAllAccess, 0, 0, UIntPtr.Zero);
             if(fileView == IntPtr.Zero)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
-#if DEBUG
-            HashSet<MemoryMappedFileInfo> refs;
-            if(!memoryMappedFiles.TryGetValue(lpName, out refs)) {
-                refs = new HashSet<MemoryMappedFileInfo>();
-                memoryMappedFiles.Add(lpName, refs);
-            }
-            refs.Add(new MemoryMappedFileInfo(fileObject, fileView, CurrentProcessTag));
-#endif
             return new Tuple<IntPtr, IntPtr>(fileObject, fileView);
         }
         [SecurityCritical]
         protected static void UnmapViewAndCloseFileMapping(Tuple<IntPtr, IntPtr> file) {
-#if DEBUG
-            var fileData = memoryMappedFiles.Where(p => p.Value.RemoveWhere(f => f.FileObject == file.Item1) == 1).Single();
-            if(fileData.Value.Count == 0)
-                memoryMappedFiles.Remove(fileData.Key);
-#endif
             Import.UnmapViewOfFile(file.Item2);
             Import.CloseHandle(file.Item1);
         }
@@ -258,13 +216,7 @@ namespace DevExpress.Mvvm.UI.Native {
     }
     public class JumpActionsManagerClient : JumpActionsManagerBase {
         string applicationId;
-#if DEBUG
-        object currentProcessTag;
-#endif
         public JumpActionsManagerClient(int millisecondsTimeout = DefaultMillisecondsTimeout, object currentProcessTag = null) : base(millisecondsTimeout) {
-#if DEBUG
-            this.currentProcessTag = currentProcessTag;
-#endif
         }
         [SecuritySafeCritical]
         public void Run(string[] args, Action<ProcessStartInfo> startProcess) {
@@ -292,9 +244,6 @@ namespace DevExpress.Mvvm.UI.Native {
             }
         }
         protected override string ApplicationId { get { return applicationId; } }
-#if DEBUG
-        protected override object CurrentProcessTag { get { return currentProcessTag; } }
-#endif
         void SendExecuteMessage(IEnumerable<GuidData> applicationInstances, string command) {
             List<Exception> exceptions = null;
             foreach(GuidData applicationInstanceId in applicationInstances) {
