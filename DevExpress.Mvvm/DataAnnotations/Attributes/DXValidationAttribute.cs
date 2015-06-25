@@ -17,13 +17,13 @@ namespace DevExpress.Mvvm.Native {
             if(memberName == null) {
                 throw new ArgumentNullException("memberName");
             }
-            if(!IsValid(value) || !IsInstanceValid(instance)) {
+            if(!IsValid(value) || !IsInstanceValid(value, instance)) {
                 return FormatErrorMessage(memberName);
             }
             return null;
         }
         protected abstract bool IsValid(object value);
-        protected virtual bool IsInstanceValid(object instance) { return true; }
+        protected virtual bool IsInstanceValid(object value, object instance) { return true; }
         protected string ErrorMessageString { get { return errorMessageAccessor(); } }
     }
 }

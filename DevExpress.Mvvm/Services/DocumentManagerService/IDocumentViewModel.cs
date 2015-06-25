@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 
 namespace DevExpress.Mvvm {
-    [Obsolete("This interface is obsolete. Use the IDocumentContent interface instead.")]
+    [Obsolete("Use the IDocumentContent interface instead.")]
     public interface IDocumentViewModel {
         bool Close();
         object Title { get; }

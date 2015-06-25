@@ -11,9 +11,10 @@ namespace DevExpress.Mvvm.Native {
     public class PropertyValidator {
         public static PropertyValidator FromAttributes(IEnumerable attributes, string propertyName) {
             try {
+                var displayName = DataAnnotationsAttributeHelper.GetDisplayName(attributes.OfType<Attribute>()) ?? propertyName;
                 var validationAttributes = attributes != null ? attributes.OfType<ValidationAttribute>().ToArray() : new ValidationAttribute[0];
                 var dxValidationAttributes = attributes != null ? attributes.OfType<DXValidationAttribute>().ToArray() : new DXValidationAttribute[0];
-                return validationAttributes.Any() || dxValidationAttributes.Any() ? new PropertyValidator(validationAttributes, dxValidationAttributes, propertyName) : null;
+                return validationAttributes.Any() || dxValidationAttributes.Any() ? new PropertyValidator(validationAttributes, dxValidationAttributes, propertyName, displayName) : null;
             } catch(TypeAccessException) {
                 return null;
             }
@@ -21,10 +22,12 @@ namespace DevExpress.Mvvm.Native {
         readonly IEnumerable<ValidationAttribute> attributes;
         readonly IEnumerable<DXValidationAttribute> dxAttributes;
         readonly string propertyName;
-        PropertyValidator(IEnumerable<ValidationAttribute> attributes, IEnumerable<DXValidationAttribute> dxAttributes, string propertyName) {
+        readonly string displayName;
+        PropertyValidator(IEnumerable<ValidationAttribute> attributes, IEnumerable<DXValidationAttribute> dxAttributes, string propertyName, string displayName) {
             this.attributes = attributes;
             this.dxAttributes = dxAttributes;
             this.propertyName = propertyName;
+            this.displayName = displayName;
         }
 
         public string GetErrorText(object value, object instance) {
@@ -40,11 +43,14 @@ namespace DevExpress.Mvvm.Native {
             return attributes.Select(x => {
                 ValidationResult vr = x.GetValidationResult(value, CreateValidationContext(instance));
                 return vr != null ? vr.ErrorMessage : null;
-            }).Concat(dxAttributes.Select(x => x.GetValidationResult(value, propertyName, instance)))
+            }).Concat(dxAttributes.Select(x => x.GetValidationResult(value, displayName ?? propertyName, instance)))
             .Where(x => !string.IsNullOrEmpty(x));
         }
         ValidationContext CreateValidationContext(object instance) {
-            return new ValidationContext(instance, null, null) { MemberName = propertyName };
+            return new ValidationContext(instance, null, null) {
+                MemberName = propertyName,
+                DisplayName = displayName,
+            };
         }
     }
 }

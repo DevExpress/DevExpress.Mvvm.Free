@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace DevExpress.Mvvm {
@@ -8,17 +9,34 @@ namespace DevExpress.Mvvm {
         bool Exists { get; }
 
         StreamWriter AppendText();
-        FileInfo CopyTo(string destFileName);
         FileInfo CopyTo(string destFileName, bool overwrite);
         FileStream Create();
         StreamWriter CreateText();
         void Delete();
         void MoveTo(string destFileName);
-        FileStream Open(FileMode mode);
-        FileStream Open(FileMode mode, FileAccess access);
         FileStream Open(FileMode mode, FileAccess access, FileShare share);
         FileStream OpenRead();
         StreamReader OpenText();
         FileStream OpenWrite();
+        FileAttributes Attributes { get; set; }
+    }
+    public static class FileInfoExtensions {
+        public static FileStream Open(this IFileInfo fileInfo, FileMode mode) {
+            Verify(fileInfo);
+            return fileInfo.Open(mode, FileAccess.ReadWrite, FileShare.None);
+        }
+        public static FileStream Open(this IFileInfo fileInfo, FileMode mode, FileAccess access) {
+            Verify(fileInfo);
+            return fileInfo.Open(mode, access, FileShare.None);
+        }
+        public static FileInfo CopyTo(this IFileInfo fileInfo, string destFileName) {
+            Verify(fileInfo);
+            return fileInfo.CopyTo(destFileName, false);
+        }
+
+        internal static void Verify(IFileInfo fileInfo) {
+            if(fileInfo == null)
+                throw new ArgumentNullException("fileInfo");
+        }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -54,6 +55,17 @@ namespace DevExpress.Mvvm.Native {
         }
 
         public static string GetPropertyName<T>(Expression<Func<T>> expression) {
+            return GetPropertyNameCore(expression);
+        }
+        public static string GetPropertyName<T, TProperty>(Expression<Func<T, TProperty>> expression) {
+            return GetPropertyNameCore(expression);
+        }
+#if !SILVERLIGHT && !NETFX_CORE
+        public static PropertyDescriptor GetProperty<T, TProperty>(Expression<Func<T, TProperty>> expression) {
+            return TypeDescriptor.GetProperties(typeof(T))[GetPropertyName(expression)];
+        }
+#endif
+        static string GetPropertyNameCore(LambdaExpression expression) {
             MemberExpression memberExpression = GetMemberExpression(expression);
             MemberExpression nextMemberExpression = memberExpression.Expression as MemberExpression;
             if(IsPropertyExpression(nextMemberExpression)) {
@@ -65,7 +77,7 @@ namespace DevExpress.Mvvm.Native {
         static bool IsPropertyExpression(MemberExpression expression) {
             return expression != null && expression.Member.MemberType == MemberTypes.Property;
         }
-        static MemberExpression GetMemberExpression<T>(Expression<Func<T>> expression) {
+        static MemberExpression GetMemberExpression(LambdaExpression expression) {
             if(expression == null)
                 throw new ArgumentNullException("expression");
             Expression body = expression.Body;
@@ -79,7 +91,7 @@ namespace DevExpress.Mvvm.Native {
             return memberExpression;
         }
 
-        public static bool PropertyHasImplicitImplementation<TInterface, TPropertyType>(TInterface iface, Expression<Func<TInterface, TPropertyType>> property) {
+        public static bool PropertyHasImplicitImplementation<TInterface, TPropertyType>(TInterface iface, Expression<Func<TInterface, TPropertyType>> property, bool tryInvoke = true) {
             if(iface == null)
                 throw new ArgumentNullException("iface");
             string propertyName = GetArgumentPropertyStrict(property).Name;
@@ -92,7 +104,9 @@ namespace DevExpress.Mvvm.Native {
                 .First()];
             if(!getMethod.IsPublic || !string.Equals(getMethod.Name, getMethodName)) return false;
             try {
-                getMethod.Invoke(iface, null);
+                if(tryInvoke) {
+                    getMethod.Invoke(iface, null);
+                }
             } catch(Exception e) {
                 if(e is TargetException) return false;
                 if(e is ArgumentException) return false;

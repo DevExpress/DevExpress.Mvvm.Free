@@ -14,6 +14,7 @@ namespace DevExpress.Mvvm.Native {
     public static class EnumSourceHelperCore {
         public static readonly string ValueMemberName = BindableBase.GetPropertyName(() => new EnumMemberInfo(null, null, null, null).Id);
         public static readonly string DisplayMemberName = BindableBase.GetPropertyName(() => new EnumMemberInfo(null, null, null, null).Name);
+        const int DefaultDisplayOrder = 10000;
         public static int GetEnumCount(Type enumType) {
             return Enum.GetValues(enumType).Length;
         }
@@ -25,9 +26,9 @@ namespace DevExpress.Mvvm.Native {
                     string name = GetEnumName(field, value, nameConverter, splitNames);
 
                     var imageInfo = GetImageInfo(MetadataHelper.GetAttribute<ImageAttribute>(field), MetadataHelper.GetAttribute<DXImageAttribute>(field), null, getKnownImageUriCallback);
-                    ImageSource image = (imageInfo.Item1 ?? imageInfo.Item2).With(x => (ImageSource)new ImageSourceConverter().ConvertFrom(x));
-
-                    return new EnumMemberInfo(name, DataAnnotationsAttributeHelper.GetFieldDescription(field), useUnderlyingEnumValue ? GetUnderlyingEnumValue(value) : value, image, showImage, showName);
+                    ImageSource image = ViewModelBase.IsInDesignMode ? null : (imageInfo.Item1 ?? imageInfo.Item2).With(x => (ImageSource)new ImageSourceConverter().ConvertFrom(x));
+                    return new EnumMemberInfo(name, DataAnnotationsAttributeHelper.GetFieldDescription(field), useUnderlyingEnumValue ? GetUnderlyingEnumValue(value) : value, image, showImage, showName,
+                     DataAnnotationsAttributeHelper.GetFieldOrder(field));
                 });
             switch(sortMode) {
                 case EnumMembersSortMode.DisplayName:
@@ -43,18 +44,18 @@ namespace DevExpress.Mvvm.Native {
                     result = result.OrderByDescending(x => x.Name.Length);
                     break;
             }
-            return result.ToArray();
+            return result.OrderBy(x => (x.Order != null) ? x.Order : DefaultDisplayOrder).ToArray();
         }
         static string GetEnumName(FieldInfo field, Enum value, IValueConverter nameConverter, bool splitNames) {
             if(nameConverter != null)
                 return nameConverter.Convert(value, typeof(string), null, CultureInfo.CurrentCulture) as string;
             string name = DataAnnotationsAttributeHelper.GetFieldDisplayName(field) ??
 #if !SILVERLIGHT
-                TypeDescriptor.GetConverter(value.GetType()).ConvertTo(value, typeof(string)) as string
+ TypeDescriptor.GetConverter(value.GetType()).ConvertTo(value, typeof(string)) as string
 #else
                 value.ToString()
 #endif
-            ;
+;
             if(splitNames)
                 return SplitStringHelper.SplitPascalCaseString(name);
             return name;
@@ -63,7 +64,7 @@ namespace DevExpress.Mvvm.Native {
             Type enumType = Enum.GetUnderlyingType(value.GetType());
             return Convert.ChangeType(value, enumType, System.Globalization.CultureInfo.CurrentCulture);
         }
-        static Tuple<string, string> GetImageInfo(ImageAttribute image, DXImageAttribute dxImage, string defaultImageName, Func<string, bool, string> getKnownImageUriCallback) {
+ static Tuple<string, string> GetImageInfo(ImageAttribute image, DXImageAttribute dxImage, string defaultImageName, Func<string, bool, string> getKnownImageUriCallback) {
             if(image != null)
                 return Tuple.Create(image.ImageUri, (string)null);
             string imageName = dxImage.With(x => x.ImageName) ?? defaultImageName;
@@ -84,19 +85,21 @@ namespace DevExpress.Mvvm {
         }
     }
     public class EnumMemberInfo {
-        public EnumMemberInfo(string value, string description, object id, ImageSource image) : this(value, description, id, image, true, true) {
+        public EnumMemberInfo(string value, string description, object id, ImageSource image)
+            : this(value, description, id, image, true, true) {
             this.Name = value;
             this.Description = description;
             this.Id = id;
             this.Image = image;
         }
-        public EnumMemberInfo(string value, string description, object id, ImageSource image, bool showImage, bool showName) {
+        public EnumMemberInfo(string value, string description, object id, ImageSource image, bool showImage, bool showName, int? order = null) {
             this.Name = value;
             this.Description = description;
             this.Id = id;
             this.Image = image;
             this.ShowImage = showImage;
             this.ShowName = showName;
+            this.Order = order;
         }
         public string Name { get; private set; }
         public bool ShowName { get; private set; }
@@ -104,6 +107,7 @@ namespace DevExpress.Mvvm {
         public string Description { get; private set; }
         public ImageSource Image { get; private set; }
         public bool ShowImage { get; private set; }
+        public int? Order { get; private set; }
         public override string ToString() {
             return Name.ToString();
         }

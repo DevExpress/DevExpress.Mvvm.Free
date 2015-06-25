@@ -171,7 +171,7 @@ namespace DevExpress.Mvvm {
                     CommandAttribute attribute = GetAttribute<CommandAttribute>(x);
                     string name = attribute.Name ?? (x.Name.EndsWith(CommandNameSuffix) ? x.Name : GetCommandName(x));
 
-                    MethodInfo canExecuteMethod = GetCanExecuteMethod(type, x, attribute, s => new CommandAttributeException(s));
+                    MethodInfo canExecuteMethod = GetCanExecuteMethod(type, x, attribute, s => new CommandAttributeException(s), m => m.IsPublic);
                     var attributes = MetadataHelper.GetAllAttributes(x);
                     return new CommandProperty(x, canExecuteMethod, name, attribute.GetUseCommandManager(), attributes, type);
                 })
@@ -201,9 +201,9 @@ namespace DevExpress.Mvvm {
                 throw createException(string.Format(errorString, method.Name));
             return !value;
         }
-        internal static MethodInfo GetCanExecuteMethod(Type type, MethodInfo methodInfo, CommandAttribute commandAttribute, Func<string, Exception> createException) {
+        internal static MethodInfo GetCanExecuteMethod(Type type, MethodInfo methodInfo, CommandAttribute commandAttribute, Func<string, Exception> createException, Func<MethodInfo, bool> canAccessMethod) {
             if(commandAttribute != null && commandAttribute.CanExecuteMethod != null) {
-                CheckCanExecuteMethod(methodInfo, createException, commandAttribute.CanExecuteMethod);
+                CheckCanExecuteMethod(methodInfo, createException, commandAttribute.CanExecuteMethod, canAccessMethod);
                 return commandAttribute.CanExecuteMethod;
             }
             bool hasCustomCanExecuteMethod = commandAttribute != null && !string.IsNullOrEmpty(commandAttribute.CanExecuteMethodName);
@@ -212,19 +212,19 @@ namespace DevExpress.Mvvm {
             if(hasCustomCanExecuteMethod && canExecuteMethod == null)
                 throw createException(string.Format(Error_MethodNotFound, commandAttribute.CanExecuteMethodName));
             if(canExecuteMethod != null) {
-                CheckCanExecuteMethod(methodInfo, createException, canExecuteMethod);
+                CheckCanExecuteMethod(methodInfo, createException, canExecuteMethod, canAccessMethod);
             }
             return canExecuteMethod;
         }
 
-        static void CheckCanExecuteMethod(MethodInfo methodInfo, Func<string, Exception> createException, MethodInfo canExecuteMethod) {
+        static void CheckCanExecuteMethod(MethodInfo methodInfo, Func<string, Exception> createException, MethodInfo canExecuteMethod, Func<MethodInfo, bool> canAccessMethod) {
             ParameterInfo[] parameters = methodInfo.GetParameters();
             ParameterInfo[] canExecuteParameters = canExecuteMethod.GetParameters();
             if(parameters.Length != canExecuteParameters.Length)
                 throw createException(string.Format(Error_CanExecuteMethodHasIncorrectParameters, canExecuteMethod.Name));
             if(parameters.Length == 1 && (parameters[0].ParameterType != canExecuteParameters[0].ParameterType || parameters[0].IsOut != canExecuteParameters[0].IsOut))
                 throw createException(string.Format(Error_CanExecuteMethodHasIncorrectParameters, canExecuteMethod.Name));
-            if(!canExecuteMethod.IsPublic)
+            if(!canAccessMethod(canExecuteMethod))
                 throw createException(string.Format(Error_MethodShouldBePublic, canExecuteMethod.Name));
         }
         public static class CreateCommandHelper<T> {
@@ -355,9 +355,10 @@ namespace DevExpress.Mvvm {
         PropertyDescriptorCollection ICustomTypeDescriptor.GetProperties(Attribute[] attributes) {
             return TypeDescriptor.GetProperties(this, attributes, true);
         }
+        PropertyDescriptorCollection properties;
         PropertyDescriptorCollection ICustomTypeDescriptor.GetProperties() {
-            PropertyDescriptorCollection properties = new PropertyDescriptorCollection(TypeDescriptor.GetProperties(this, true).Cast<PropertyDescriptor>().Concat(commandProperties.Values).ToArray());
-            return properties;
+            return properties ??
+                (properties = new PropertyDescriptorCollection(TypeDescriptor.GetProperties(this, true).Cast<PropertyDescriptor>().Concat(commandProperties.Values).ToArray()));
         }
         object ICustomTypeDescriptor.GetPropertyOwner(PropertyDescriptor pd) {
             return this;

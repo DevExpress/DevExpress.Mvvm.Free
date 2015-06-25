@@ -70,8 +70,13 @@ namespace DevExpress.Mvvm.DataAnnotations {
         public PropertyMetadataBuilder<T, TProperty> MatchesRule(Func<TProperty, bool> isValidFunction, Func<string> errorMessageAccessor = null) {
             return AddOrReplaceAttribute(new CustomValidationAttribute(x => isValidFunction((TProperty)x), errorMessageAccessor));
         }
+        [Obsolete("Use the MatchesInstanceRule(Func<TProperty, T, bool> isValidFunction, Func<string> errorMessageAccessor = null) method instead.")]
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public PropertyMetadataBuilder<T, TProperty> MatchesInstanceRule(Func<T, bool> isValidFunction, Func<string> errorMessageAccessor = null) {
-            return AddOrReplaceAttribute(new CustomInstanceValidationAttribute(x => isValidFunction((T)x), errorMessageAccessor));
+            return AddOrReplaceAttribute(new CustomInstanceValidationAttribute((value, instance) => isValidFunction((T)instance), errorMessageAccessor));
+        }
+        public PropertyMetadataBuilder<T, TProperty> MatchesInstanceRule(Func<TProperty, T, bool> isValidFunction, Func<string> errorMessageAccessor = null) {
+            return AddOrReplaceAttribute(new CustomInstanceValidationAttribute((value, instance) => isValidFunction((TProperty)value, (T)instance), errorMessageAccessor));
         }
 
         public MetadataBuilder<T> EndProperty() {

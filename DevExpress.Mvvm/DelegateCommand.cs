@@ -23,7 +23,11 @@ namespace DevExpress.Mvvm {
         public static bool DefaultUseCommandManager { get { return defaultUseCommandManager; } set { defaultUseCommandManager = value; } }
 #endif
     }
-    public abstract class CommandBase<T> : CommandBase, ICommand, IDelegateCommand {
+    public interface ICommand<T> : ICommand {
+        void Execute(T param);
+        bool CanExecute(T param);
+    }
+    public abstract class CommandBase<T> : CommandBase, ICommand<T>, IDelegateCommand {
         protected Func<T, bool> canExecuteMethod = null;
         protected bool useCommandManager;
         event EventHandler canExecuteChanged;
@@ -221,6 +225,9 @@ namespace DevExpress.Mvvm {
         CancellationTokenSource cancellationTokenSource;
         bool shouldCancel = false;
         internal Task executeTask;
+#if !NETFX_CORE
+        DispatcherOperation completeTaskOperation;
+#endif
 
         public bool AllowMultipleExecution {
             get { return allowMultipleExecution; }
@@ -243,7 +250,7 @@ namespace DevExpress.Mvvm {
                 RaisePropertyChanged(BindableBase.GetPropertyName(() => CancellationTokenSource));
             }
         }
-        [Obsolete("This property is obsolete. Use the IsCancellationRequested property instead.")]
+        [Obsolete("Use the IsCancellationRequested property instead.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public bool ShouldCancel {
             get { return shouldCancel; }
@@ -286,7 +293,7 @@ namespace DevExpress.Mvvm {
         }
         public AsyncCommand(Func<T, Task> executeMethod, Func<T, bool> canExecuteMethod, bool allowMultipleExecution)
             : base(executeMethod, canExecuteMethod) {
-            CancelCommand = new DelegateCommand(Cancel);
+            CancelCommand = new DelegateCommand(Cancel, CanCancel);
             AllowMultipleExecution = allowMultipleExecution;
         }
 #endif
@@ -310,10 +317,10 @@ namespace DevExpress.Mvvm {
             CancellationTokenSource = new CancellationTokenSource();
             executeTask = executeMethod(parameter).ContinueWith(x => {
 #if !NETFX_CORE
-                dispatcher.BeginInvoke(new Action(() => {
+                completeTaskOperation = dispatcher.BeginInvoke(new Action(() => {
                     IsExecuting = false;
                     ShouldCancel = false;
-
+                    completeTaskOperation = null;
                 }));
 #else
 #pragma warning disable 4014
@@ -324,6 +331,13 @@ namespace DevExpress.Mvvm {
 #pragma warning restore 4014
 #endif
             });
+        }
+        public void Wait(TimeSpan timeout) {
+            if(executeTask == null || !IsExecuting) return;
+            executeTask.Wait(timeout);
+#if !SILVERLIGHT && !NETFX_CORE
+            completeTaskOperation.Do(x => x.Wait(timeout));
+#endif
         }
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public void Cancel() {

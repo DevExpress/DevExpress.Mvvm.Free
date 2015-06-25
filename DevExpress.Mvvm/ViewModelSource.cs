@@ -722,7 +722,7 @@ namespace DevExpress.Mvvm.POCO {
             return (commandAttribute != null && !string.IsNullOrEmpty(commandAttribute.Name)) ? commandAttribute.Name : ViewModelBase.GetCommandName(method);
         }
         static MethodInfo GetCanExecuteMethod(Type type, MethodInfo method) {
-            return ViewModelBase.GetCanExecuteMethod(type, method, ViewModelBase.GetAttribute<CommandAttribute>(method), x => new ViewModelSourceException(x));
+            return ViewModelBase.GetCanExecuteMethod(type, method, ViewModelBase.GetAttribute<CommandAttribute>(method), x => new ViewModelSourceException(x), CanAccessFromDescendant);
         }
         static MethodBuilder BuildGetCommandMethod(TypeBuilder type, MethodInfo commandMethod, MethodInfo canExecuteMethod, string commandName, bool? useCommandManager, bool isAsyncCommand) {
             bool hasParameter = commandMethod.GetParameters().Length == 1;
@@ -1061,12 +1061,12 @@ namespace DevExpress.Mvvm.POCO {
         }
         #endregion
 
-        [Obsolete("This method is obsolete. Use the GetAsyncCommand method instead.")]
+        [Obsolete("Use the GetAsyncCommand method instead.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static bool GetShouldCancel<T>(this T viewModel, Expression<Func<T, Task>> methodExpression) {
             return GetAsyncCommand(viewModel, methodExpression).ShouldCancel;
         }
-        [Obsolete("This method is obsolete. Use the GetAsyncCommand method instead.")]
+        [Obsolete("Use the GetAsyncCommand method instead.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static bool GetIsExecuting<T>(this T viewModel, Expression<Func<T, Task>> methodExpression) {
             return GetAsyncCommand(viewModel, methodExpression).IsExecuting;

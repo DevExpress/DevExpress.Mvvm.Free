@@ -188,12 +188,15 @@ namespace DevExpress.Mvvm.Native {
             return isValidFunction(value);
         }
     }
-    internal class CustomInstanceValidationAttribute : CustomValidationAttribute {
-        public CustomInstanceValidationAttribute(Func<object, bool> isValidFunction, Func<string> errorMessageAccessor)
-            : base(isValidFunction, errorMessageAccessor) { }
+    internal class CustomInstanceValidationAttribute : DXValidationAttribute {
+        readonly Func<object, object, bool> isValidFunction;
+        public CustomInstanceValidationAttribute(Func<object, object, bool> isValidFunction, Func<string> errorMessageAccessor)
+            : base(errorMessageAccessor, () => DataAnnotationsResourcesResolver.CustomValidationAttribute_ValidationError) {
+            this.isValidFunction = isValidFunction;
+        }
         protected override bool IsValid(object value) { return true; }
-        protected override bool IsInstanceValid(object instance) {
-            return isValidFunction(instance);
+        protected override bool IsInstanceValid(object value, object instance) {
+            return isValidFunction(value, instance);
         }
     }
     public class DXRequiredAttribute : DXValidationAttribute {

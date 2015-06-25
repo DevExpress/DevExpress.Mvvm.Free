@@ -8,7 +8,7 @@ using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm {
     public static class DocumentManagerServiceExtensions {
-        [Obsolete("This method is obsolete. Use other extension methods.")]
+        [Obsolete("Use other extension methods.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static IDocument CreateDocument(this IDocumentManagerService service, string documentType, object parameter, object parentViewModel, bool useParameterAsViewModel) {
             VerifyService(service);

@@ -11,6 +11,7 @@ namespace DevExpress.Mvvm {
         void Clear();
         void RegisterService(object service, bool yieldToParent = false);
         void RegisterService(string key, object service, bool yieldToParent = false);
+        void UnregisterService(object service);
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         T GetService<T>(string key, ServiceSearchMode searchMode, out bool serviceHasKey) where T : class;
         T GetService<T>(ServiceSearchMode searchMode = ServiceSearchMode.PreferLocal) where T : class;

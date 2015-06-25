@@ -7,91 +7,11 @@ using System.Linq;
 
 namespace DevExpress.Mvvm.Native {
     public static class SyncCollectionHelper {
-        class Disposable : IDisposable {
-            Action disposeAction;
-
-            public Disposable(Action disposeAction) { this.disposeAction = disposeAction; }
-            public void Dispose() { disposeAction(); }
-        }
-        public static IDisposable TwoWayBind<TSource, TTarget>(IList<TTarget> target, IList<TSource> source, Func<TSource, TTarget> itemConverter, Func<TTarget, TSource> itemBackConverter) {
-            if(target == null) throw new ArgumentNullException("target");
-            if(source == null) throw new ArgumentNullException("source");
-            bool doNotProcessSourceCollectionChanged = false;
-            bool doNotProcessTargetCollectionChanged = false;
-            NotifyCollectionChangedEventHandler onSourceCollectionChanged = (s, e) => OnCollectionChanged(source, target, e, ref doNotProcessSourceCollectionChanged, ref doNotProcessTargetCollectionChanged, itemConverter);
-            NotifyCollectionChangedEventHandler onTargetCollectionChanged = (s, e) => OnCollectionChanged(target, source, e, ref doNotProcessTargetCollectionChanged, ref doNotProcessSourceCollectionChanged, itemBackConverter);
-            INotifyCollectionChanged sourceNotify = source as INotifyCollectionChanged;
-            if(sourceNotify != null)
-                sourceNotify.CollectionChanged += onSourceCollectionChanged;
-            INotifyCollectionChanged targetNotify = target as INotifyCollectionChanged;
-            if(targetNotify != null)
-                targetNotify.CollectionChanged += onTargetCollectionChanged;
-            onSourceCollectionChanged(source, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
-            Action unbindAction = () => {
-                if(sourceNotify != null)
-                    sourceNotify.CollectionChanged -= onSourceCollectionChanged;
-                if(targetNotify != null)
-                    targetNotify.CollectionChanged -= onTargetCollectionChanged;
-            };
-            return new Disposable(unbindAction);
-        }
-        static void Add<TSource, TTarget>(NotifyCollectionChangedEventArgs e, IList<TTarget> target, Func<TSource, TTarget> itemConverter) {
-            int itemIndex = e.NewStartingIndex;
-            foreach(TSource item in e.NewItems) {
-                target.Insert(itemIndex, itemConverter(item));
-                ++itemIndex;
-            }
-        }
-        static void Remove<T>(NotifyCollectionChangedEventArgs e, IList<T> collection) {
-            for(int itemIndex = e.OldStartingIndex; itemIndex < e.OldStartingIndex + e.OldItems.Count; ++itemIndex) {
-                collection.RemoveAt(itemIndex);
-            }
-        }
-        static void Replace<TSource, TTarget>(NotifyCollectionChangedEventArgs e, IList<TTarget> target, Func<TSource, TTarget> itemConverter) {
-            int itemIndex = e.NewStartingIndex;
-            foreach(TSource item in e.NewItems) {
-                target[itemIndex] = itemConverter(item);
-                ++itemIndex;
-            }
-        }
-        static void Reset<TSource, TTarget>(NotifyCollectionChangedEventArgs e, IList<TTarget> target, IList<TSource> source, Func<TSource, TTarget> itemConverter) {
-            target.Clear();
-            foreach(TSource item in source) {
-                target.Add(itemConverter(item));
-            }
-        }
-        static void OnCollectionChanged<TSource, TTarget>(IList<TSource> source, IList<TTarget> target, NotifyCollectionChangedEventArgs e, ref bool doNotProcessSourceCollectionChanged,
-                ref bool doNotProcessTargetCollectionChanged, Func<TSource, TTarget> itemConverter) {
-            if(doNotProcessSourceCollectionChanged) return;
-            doNotProcessTargetCollectionChanged = true;
-            try {
-                switch(e.Action) {
-                    case NotifyCollectionChangedAction.Add:
-                        if(source.Count != target.Count)
-                            Add(e, target, itemConverter);
-                        break;
-                    case NotifyCollectionChangedAction.Remove:
-                        if(source.Count != target.Count)
-                            Remove(e, target);
-                        break;
 #if !SILVERLIGHT
-                    case NotifyCollectionChangedAction.Move:
-                        Remove(e, target);
-                        Add(e, target, itemConverter);
-                        break;
-#endif
-                    case NotifyCollectionChangedAction.Replace:
-                        Replace(e, target, itemConverter);
-                        break;
-                    default:
-                        Reset(e, target, source, itemConverter);
-                        break;
-                }
-            } finally {
-                doNotProcessTargetCollectionChanged = false;
-            }
+        public static IDisposable TwoWayBind<TSource, TTarget>(IList<TTarget> target, IList<TSource> source, Func<TSource, TTarget> itemConverter, Func<TTarget, TSource> itemBackConverter) {
+            return CollectionBindingHelper.Bind(target, itemConverter, source, itemBackConverter);
         }
-
+#endif
         public static void SyncCollection(
             NotifyCollectionChangedEventArgs e,
             IList target,

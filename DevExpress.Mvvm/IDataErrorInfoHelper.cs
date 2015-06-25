@@ -9,9 +9,19 @@ namespace DevExpress.Mvvm {
     public static class IDataErrorInfoHelper {
 #if !SILVERLIGHT
         public static bool HasErrors(IDataErrorInfo owner, int deep = 2) {
+            return HasErrors(owner, false, deep);
+        }
+        public static bool HasErrors(IDataErrorInfo owner, bool ignoreOwnerError, int deep = 2) {
             if(owner == null) throw new ArgumentNullException("owner");
             if(--deep < 0) return false;
-            return TypeDescriptor.GetProperties(owner).Cast<PropertyDescriptor>().Select(p => PropertyHasError(owner, p, deep)).Concat(new bool[] { !string.IsNullOrEmpty(owner.Error) }).Any(e => e);
+            var properties = TypeDescriptor.GetProperties(owner).Cast<PropertyDescriptor>();
+            var errorProperty = properties.FirstOrDefault(p => p.Name == "Error");
+            bool hasImplicitImplementation = ExpressionHelper.PropertyHasImplicitImplementation(owner, o => o.Error, false);
+            if(errorProperty != null && hasImplicitImplementation) {
+                properties = properties.Except(new[] { errorProperty });
+            }
+            bool propertiesHaveError = properties.Any(p => PropertyHasError(owner, p, deep));
+            return propertiesHaveError || (!ignoreOwnerError && !string.IsNullOrEmpty(owner.Error));
         }
         static bool PropertyHasError(IDataErrorInfo owner, PropertyDescriptor property, int deep) {
             string simplePropertyError = owner[property.Name];
@@ -67,13 +77,13 @@ namespace DevExpress.Mvvm {
         }
         static PropertyValidator GetPropertyValidator(Type type, string propertyName) {
             MemberInfo memberInfo = type.GetProperty(propertyName);
+            if(memberInfo == null)
+                return null;
             return PropertyValidator.FromAttributes(GetAllAttributes(memberInfo), propertyName);
         }
         static Attribute[] GetAllAttributes(MemberInfo member) {
             return MetadataHelper
-                .GetAllAttributes(member)
-                .Where(a => a is DXValidationAttribute || a is System.ComponentModel.DataAnnotations.ValidationAttribute)
-                .ToArray();
+                .GetAllAttributes(member);
         }
     }
 }

@@ -5,6 +5,9 @@ using System.Text;
 
 namespace DevExpress.Mvvm {
     public interface INavigationService {
+#if !NETFX_CORE
+        void ClearNavigationHistory();
+#endif
         void Navigate(string target, object param = null, object parentViewModel = null);
         void Navigate(string target, object param, object parentViewModel, bool saveToJournal);
         void GoBack();
