@@ -18,8 +18,8 @@ using DevExpress.Mvvm.UI.Interactivity;
 using System.Windows.Data;
 
 namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
-    public class TestView1 : Grid { }
-    public class TestView2 : Grid { }
+    public class TestInjectionView1 : Grid { }
+    public class TestInjectionView2 : Grid { }
 
     [TestFixture]
     public class ViewInjectionManagerTests : BaseWpfFixture {
@@ -158,7 +158,7 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
             object vm1 = null;
             object vm2 = null;
             object vm3 = null;
-            ViewInjectionManager.Default.Inject("region1", null, () => vm1 = new object(), "TestView1");
+            ViewInjectionManager.Default.Inject("region1", null, () => vm1 = new object(), "TestInjectionView1");
             ViewInjectionManager.Default.Inject("region2", null, () => vm2 = new object());
 
             ViewInjectionService service1 = new ViewInjectionService() { RegionName = "region1" };
@@ -180,7 +180,7 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
                 Assert.AreSame(vm1, target1.Content);
                 Assert.AreSame(vm2, target2.Content);
 
-                ViewInjectionManager.Default.Inject("region2", null, () => vm3 = new object(), typeof(TestView1));
+                ViewInjectionManager.Default.Inject("region2", null, () => vm3 = new object(), typeof(TestInjectionView1));
                 Assert.AreSame(vm1, target1.Content);
                 Assert.AreSame(vm3, target2.Content);
                 Assert.AreEqual(2, ((IViewInjectionService)service2).ViewModels.Count());
@@ -389,7 +389,7 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
             Grid container = new Grid();
             Window.Content = container;
 
-            ViewInjectionManager.PersistentManager.Inject("region", null, vmFactory, typeof(TestView1));
+            ViewInjectionManager.PersistentManager.Inject("region", null, vmFactory, typeof(TestInjectionView1));
 
             ViewInjectionService service1 = new ViewInjectionService() { RegionName = "region", ViewInjectionManager = ViewInjectionManager.PersistentManager };
             ContentPresenter target1 = new ContentPresenter();
@@ -660,13 +660,13 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
             EnqueueCallback(() => {
                 iService.Inject(null, vm1);
                 Assert.AreSame(vm1, target.Content);
-                iService.Inject(null, vm2, typeof(TestView1));
+                iService.Inject(null, vm2, typeof(TestInjectionView1));
                 Assert.AreEqual(2, iService.ViewModels.Count());
             });
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
                 Assert.AreSame(vm2, target.Content);
-                Assert.AreSame(vm2, LayoutTreeHelper.GetVisualChildren(service.AssociatedObject).OfType<TestView1>().First().DataContext);
+                Assert.AreSame(vm2, LayoutTreeHelper.GetVisualChildren(service.AssociatedObject).OfType<TestInjectionView1>().First().DataContext);
             });
             EnqueueTestComplete();
         }
@@ -682,7 +682,7 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
                 Assert.AreSame(vm1, target.Content);
                 Assert.AreSame(vm1, LayoutTreeHelper.GetVisualChildren(service.AssociatedObject).OfType<TextBox>().First().DataContext);
                 AssertHelper.AssertThrows<InvalidOperationException>(() => {
-                    iService.Inject(null, vm2, typeof(TestView1));
+                    iService.Inject(null, vm2, typeof(TestInjectionView1));
                 }, x => Assert.AreEqual("ViewInjectionService cannot create view by name or type, because the target control has the ContentTemplate/ContentTemplateSelector property set.", x.Message));
                 iService.Inject(null, vm2);
             });
@@ -871,14 +871,14 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
             EnqueueShowWindow();
             EnqueueCallback(() => {
                 iService.Inject(null, vm1);
-                iService.Inject(null, vm2, typeof(TestView1));
+                iService.Inject(null, vm2, typeof(TestInjectionView1));
                 Assert.AreEqual(2, iService.ViewModels.Count());
             });
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
                 Assert.AreSame(vm1, ((ContentPresenter)children[0]).Content);
                 Assert.AreSame(vm2, ((ContentPresenter)children[1]).Content);
-                Assert.AreSame(vm2, LayoutTreeHelper.GetVisualChildren(children[1]).OfType<TestView1>().First().DataContext);
+                Assert.AreSame(vm2, LayoutTreeHelper.GetVisualChildren(children[1]).OfType<TestInjectionView1>().First().DataContext);
             });
             EnqueueTestComplete();
         }
@@ -996,13 +996,13 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
                 Assert.AreSame(service.Strategy.ViewModels, target.ItemsSource);
                 iService.Inject(null, vm1);
                 Assert.AreEqual(1, iService.ViewModels.Count());
-                iService.Inject(null, vm2, typeof(TestView1));
+                iService.Inject(null, vm2, typeof(TestInjectionView1));
                 Assert.AreEqual(2, iService.ViewModels.Count());
             });
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
                 Assert.AreSame(vm1, LayoutTreeHelper.GetVisualChildren(service.AssociatedObject).OfType<ContentPresenter>().First().DataContext);
-                Assert.AreSame(vm2, LayoutTreeHelper.GetVisualChildren(service.AssociatedObject).OfType<TestView1>().First().DataContext);
+                Assert.AreSame(vm2, LayoutTreeHelper.GetVisualChildren(service.AssociatedObject).OfType<TestInjectionView1>().First().DataContext);
             });
             EnqueueTestComplete();
         }
@@ -1016,7 +1016,7 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
             EnqueueCallback(() => {
                 iService.Inject(null, vm1);
                 AssertHelper.AssertThrows<InvalidOperationException>(() => {
-                    iService.Inject(null, vm2, typeof(TestView1));
+                    iService.Inject(null, vm2, typeof(TestInjectionView1));
                 }, x => Assert.AreEqual("ViewInjectionService cannot create view by name or type, because the target control has the ItemTemplate/ItemTemplateSelector property set.", x.Message));
                 iService.Inject(null, vm2);
             });
@@ -1313,14 +1313,14 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
                 Assert.AreSame(vm1, LayoutTreeHelper.GetVisualChildren(headerPanel).OfType<TextBox>().First(x => x.DataContext == vm1).DataContext);
                 Assert.AreSame(vm1, LayoutTreeHelper.GetVisualChildren(contentHost).OfType<FrameworkElement>().First(x => x.DataContext == vm1).DataContext);
 
-                iService.Inject(null, vm2, typeof(TestView1));
+                iService.Inject(null, vm2, typeof(TestInjectionView1));
                 iService.SelectedViewModel = vm2;
                 Assert.AreEqual(2, iService.ViewModels.Count());
             });
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
                 Assert.AreSame(vm2, LayoutTreeHelper.GetVisualChildren(headerPanel).OfType<TextBox>().First(x => x.DataContext == vm2).DataContext);
-                Assert.AreSame(vm2, LayoutTreeHelper.GetVisualChildren(contentHost).OfType<TestView1>().First().DataContext);
+                Assert.AreSame(vm2, LayoutTreeHelper.GetVisualChildren(contentHost).OfType<TestInjectionView1>().First().DataContext);
                 iService.SelectedViewModel = vm2;
             });
             EnqueueTestComplete();
@@ -1352,7 +1352,7 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
                 Assert.AreSame(vm1, LayoutTreeHelper.GetVisualChildren(contentHost).OfType<TextBox>().First(x => x.DataContext == vm1).DataContext);
 
                 AssertHelper.AssertThrows<InvalidOperationException>(() => {
-                    iService.Inject(null, vm2, typeof(TestView1));
+                    iService.Inject(null, vm2, typeof(TestInjectionView1));
                 }, x => Assert.AreEqual("ViewInjectionService cannot create view by name or type, because the target control has the ItemTemplate/ItemTemplateSelector property set.", x.Message));
                 iService.Inject(null, vm2);
                 iService.SelectedViewModel = vm2;

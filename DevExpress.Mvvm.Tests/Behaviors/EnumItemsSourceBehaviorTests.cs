@@ -321,5 +321,11 @@ namespace DevExpress.Mvvm.UI.Tests {
             testViewModel.NewTemplate = testDataTemplate;
             Assert.AreEqual(testDataTemplate, control.ItemTemplate);
         }
+        [Test, ExpectedException(ExpectedMessage = "ItemsSource dependency property required")]
+        public void ItemsSourseRequiredException() {
+            FrameworkElement element = new FrameworkElement();
+            EnumItemsSourceBehavior behavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum1) };
+            Interaction.GetBehaviors(element).Add(behavior);
+        }
     }
 }

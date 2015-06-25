@@ -649,6 +649,26 @@ namespace DevExpress.Mvvm.UI.Tests {
             Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
             EnqueueShowRealWindow();
             Assert.AreEqual(POCOViewModelExtensions.GetCommand(vm, x => x.Do()), bt.Command);
+            EnqueueTestComplete();
+        }
+        [Test]
+        public void T207524() {
+            VM vm = VM.Create();
+            RealWindow.DataContext = vm;
+            TaskbarButtonServiceTest taskbarServiceImpl = new TaskbarButtonServiceTest();
+            TaskbarThumbButtonInfo bt1 = new TaskbarThumbButtonInfo();
+            TaskbarThumbButtonInfo bt2 = new TaskbarThumbButtonInfo();
+            TaskbarThumbButtonInfo bt3 = new TaskbarThumbButtonInfo();
+            BindingOperations.SetBinding(bt1, TaskbarThumbButtonInfo.CommandProperty, new Binding("DoCommand"));
+            BindingOperations.SetBinding(bt2, TaskbarThumbButtonInfo.CommandProperty, new Binding("DoCommand"));
+            BindingOperations.SetBinding(bt3, TaskbarThumbButtonInfo.CommandProperty, new Binding("DoCommand"));
+            taskbarServiceImpl.ThumbButtonInfos.Add(bt1);
+            taskbarServiceImpl.ThumbButtonInfos.Add(bt2);
+            taskbarServiceImpl.ThumbButtonInfos.Add(bt3);
+            Interaction.GetBehaviors(RealWindow).Add(taskbarServiceImpl);
+            EnqueueShowRealWindow();
+            Assert.AreEqual(1, taskbarServiceImpl.UpdateInternalItemsCount);
+            EnqueueTestComplete();
         }
 
         public class ButtonViewModel : BindableBase {
@@ -677,5 +697,13 @@ namespace DevExpress.Mvvm.UI.Tests {
 
             }
         }
+    }
+    public class TaskbarButtonServiceTest : TaskbarButtonService {
+        public int UpdateInternalItemsCount = 0;
+        internal override void UpdateInternalItemsCore() {
+            base.UpdateInternalItemsCore();
+            UpdateInternalItemsCount++;
+        }
+
     }
 }

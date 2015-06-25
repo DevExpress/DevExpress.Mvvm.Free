@@ -56,8 +56,8 @@ namespace DevExpress.Mvvm.UI.Tests {
         protected override void SetUpCore() {
             base.SetUpCore();
             ApplicationJumpListServiceTestsImageSourceHelper.RegisterPackScheme();
-            NativeResourceManager.CompanyNameOverride = "DevExpress Tests";
-            NativeResourceManager.ProductNameOverride = "DevExpress.Xpf.Core Tests";
+            NativeResourceManager.CompanyNameOverride = "DevExpress Tests Long Path Test Long Path Test Long Path Test Long Path Test";
+            NativeResourceManager.ProductNameOverride = "DevExpress.Xpf.Core Tests Long Path Test Long Path Test Long Path Test";
             NativeResourceManager.VersionOverride = AssemblyInfo.Version;
             nativeJumpList = new TestNativeJumpList();
             jumpActionsManager = new TestJumpActionsManager();

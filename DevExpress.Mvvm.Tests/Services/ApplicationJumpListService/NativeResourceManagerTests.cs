@@ -4,6 +4,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using DevExpress.Utils;
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
@@ -36,6 +37,16 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual("%NONE%_ABC_", NativeResourceManager.ExpandVariablesCore("%NONE%%ABC%", variables));
             Assert.AreEqual("_ABC_", NativeResourceManager.ExpandVariablesCore("%Abc%", variables));
             Assert.AreEqual("_DEF_ABC%XYZ%", NativeResourceManager.ExpandVariablesCore("%DEF%ABC%XYZ%", variables));
+        }
+        [Test]
+        public void UseRealEntryAssemblyTest() {
+            var savedEntryAssembly = AssemblyHelper.EntryAssembly;
+            AssemblyHelper.EntryAssembly = typeof(int).Assembly;
+            try {
+                Assert.AreNotEqual(NativeResourceManager.EntryAssembly, AssemblyHelper.EntryAssembly);
+            } finally {
+                AssemblyHelper.EntryAssembly = savedEntryAssembly;
+            }
         }
     }
 }

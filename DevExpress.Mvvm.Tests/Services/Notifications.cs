@@ -456,5 +456,47 @@ namespace DevExpress.Mvvm.UI.Tests {
             WaitWithDispatcher(customNotifier.ShowAsync(toast, 1));
             Assert.IsTrue(selector.Called);
         }
+
+        [Test]
+        public void ThrowOnAutoHeight() {
+            var style = new Style();
+            style.Setters.Add(new Setter(FrameworkElement.HeightProperty, double.NaN));
+
+            var service = new NotificationService();
+            service.CustomNotificationStyle = style;
+            var toast = service.CreateCustomNotification(null);
+            try {
+                toast.ShowAsync();
+                Assert.Fail();
+            } catch(InvalidOperationException) { }
+        }
+
+  [Test]
+        public void ConvertTimeSpanToMilliseconds() {
+            var service = new NotificationService();
+            service.CustomNotificationDuration = TimeSpan.MaxValue;
+            var toast = (NotificationService.MvvmCustomNotification)service.CreateCustomNotification(null);
+            Assert.AreEqual(int.MaxValue, toast.duration);
+
+            service.CustomNotificationDuration = TimeSpan.MinValue;
+            toast = (NotificationService.MvvmCustomNotification)service.CreateCustomNotification(null);
+            Assert.AreEqual(0, toast.duration);
+
+            service.CustomNotificationDuration = TimeSpan.FromMilliseconds((double)int.MaxValue + int.MaxValue);
+            toast = (NotificationService.MvvmCustomNotification)service.CreateCustomNotification(null);
+            Assert.AreEqual(int.MaxValue, toast.duration);
+
+            service.CustomNotificationDuration = TimeSpan.FromMilliseconds(int.MaxValue);
+            toast = (NotificationService.MvvmCustomNotification)service.CreateCustomNotification(null);
+            Assert.AreEqual(int.MaxValue, toast.duration);
+
+            service.CustomNotificationDuration = TimeSpan.FromMilliseconds(150);
+            toast = (NotificationService.MvvmCustomNotification)service.CreateCustomNotification(null);
+            Assert.AreEqual(150, toast.duration);
+
+            service.CustomNotificationDuration = TimeSpan.FromMilliseconds(1);
+            toast = (NotificationService.MvvmCustomNotification)service.CreateCustomNotification(null);
+            Assert.AreEqual(1, toast.duration);
+        }
     }
 }

@@ -199,6 +199,43 @@ namespace DevExpress.Mvvm.UI.Tests {
             Behavior.Source = null;
             Assert.AreEqual("CanExecuteOperation2", (Button.DataContext as FCBObject).CanExecuteResult);
         }
+        [Test]
+        public void SetTargetProperty_Test00() {
+            var source = new FCBObject();
+            PrepareBehavior("Command", "Operation4", source, attachToView: false);
+            var target = new Button();
+            Behavior.Target = target;
+            Interaction.GetBehaviors(Button).Add(Behavior);
+            Assert.IsNotNull(target.Command);
+            Assert.IsNotNull(target.CommandParameter);
+            Assert.IsNull(Button.Command);
+            Assert.IsNull(Button.CommandParameter);
+        }
+        [Test]
+        public void SetTargetProperty_Test01() {
+            var source = new FCBObject();
+            PrepareBehavior("Command", "Operation4", source);
+            Assert.IsNotNull(Button.Command);
+            Assert.IsNotNull(Button.CommandParameter);
+            Interaction.GetBehaviors(Button).Remove(Behavior);
+            Assert.IsNull(Button.Command);
+            Assert.IsNull(Button.CommandParameter);
+        }
+        [Test]
+        public void SetTargetProperty_Test02() {
+            var source = new FCBObject();
+            PrepareBehavior("Command", "Operation4", source, attachToView: false);
+            var target = new Button();
+            Behavior.Target = target;
+            Interaction.GetBehaviors(Button).Add(Behavior);
+            Assert.IsNotNull(target.Command);
+            Assert.IsNotNull(target.CommandParameter);
+            Assert.IsNull(Button.Command);
+            Assert.IsNull(Button.CommandParameter);
+            Interaction.GetBehaviors(Button).Remove(Behavior);
+            Assert.IsNull(target.Command);
+            Assert.IsNull(target.CommandParameter);
+        }
     }
 
     public class FCBPocoObject {

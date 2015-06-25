@@ -12,21 +12,36 @@ using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.POCO;
+using DevExpress.Mvvm.UI.Native;
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
+    public class IWindowSurrogateTests {
+        [Test]
+        public void WindowProxyTest() {
+            Window w = new Window();
+            var ws1 = WindowProxy.GetWindowSurrogate(w);
+            var ws2 = WindowProxy.GetWindowSurrogate(w);
+            Assert.AreSame(ws1, ws2);
+        }
+    }
+
+    [TestFixture]
     public class WindowedDocumentUIServiceTests : BaseWpfFixture {
+        public class View1 : FrameworkElement { }
+        public class View2 : FrameworkElement { }
         public class EmptyView : FrameworkElement { }
 #if !SILVERLIGHT
-        class TestStyleSelector : StyleSelector {
+        protected class TestStyleSelector : StyleSelector {
             public Style Style { get; set; }
             public override Style SelectStyle(object item, DependencyObject container) { return Style; }
         }
 #endif
-        class ViewModelWithNullTitle : IDocumentContent {
+        protected class ViewModelWithNullTitle : IDocumentContent {
             public IDocumentOwner DocumentOwner { get; set; }
             void IDocumentContent.OnClose(CancelEventArgs e) { }
             object IDocumentContent.Title { get { return null; } }
@@ -48,7 +63,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueShowWindow();
             IDocument document = null;
             EnqueueCallback(() => {
-                WindowedDocumentUIService service = new WindowedDocumentUIService();
+                WindowedDocumentUIService service = CreateService();
                 Interaction.GetBehaviors(Window).Add(service);
                 service.WindowType = typeof(Window);
                 Style windowStyle = new Style(typeof(Window));
@@ -74,7 +89,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void ActivateWhenDocumentShow() {
             EnqueueShowWindow();
             IDocument document = null;
-            WindowedDocumentUIService service = new WindowedDocumentUIService();
+            WindowedDocumentUIService service = CreateService();
             Interaction.GetBehaviors(Window).Add(service);
             IDocumentManagerService iService = service;
             EnqueueCallback(() => {
@@ -85,16 +100,20 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
                 Assert.AreEqual(iService.ActiveDocument, document);
+                Assert.IsNotNull(document.Content);
+                Assert.AreEqual(document.Content, ViewHelper.GetViewModelFromView(service.ActiveView));
                 document.Close();
             });
             EnqueueTestComplete();
         }
+
+
         [Test, Asynchronous]
         public void UnActiveDocumentClose() {
             EnqueueShowWindow();
             IDocument document1 = null;
             IDocument document2 = null;
-            WindowedDocumentUIService service = new WindowedDocumentUIService();
+            WindowedDocumentUIService service = CreateService();
             Interaction.GetBehaviors(Window).Add(service);
             IDocumentManagerService iService = service;
             int counter = 0;
@@ -112,11 +131,15 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
                 Assert.AreEqual(iService.ActiveDocument, document2);
+                Assert.IsNotNull(document2.Content);
+                Assert.AreEqual(document2.Content, ViewHelper.GetViewModelFromView(service.ActiveView));
                 document1.Close();
             });
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
                 Assert.AreEqual(iService.ActiveDocument, document2);
+                Assert.IsNotNull(document2.Content);
+                Assert.AreEqual(document2.Content, ViewHelper.GetViewModelFromView(service.ActiveView));
 #if !SILVERLIGHT
                 Assert.AreEqual(3, counter);
 #else
@@ -132,7 +155,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueShowWindow();
             IDocument document1 = null;
             IDocument document2 = null;
-            WindowedDocumentUIService service = new WindowedDocumentUIService();
+            WindowedDocumentUIService service = CreateService();
             Interaction.GetBehaviors(Window).Add(service);
             IDocumentManagerService iService = service;
             int counter = 0;
@@ -172,7 +195,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void ActivateDocumentsWhenClosed() {
             EnqueueShowWindow();
             List<IDocument> documents = new List<IDocument>();
-            WindowedDocumentUIService service = new WindowedDocumentUIService();
+            WindowedDocumentUIService service = CreateService();
             Interaction.GetBehaviors(Window).Add(service);
             IDocumentManagerService iService = service;
             int counter = 0;
@@ -211,11 +234,114 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
+
+
+        public class BindingTestClass : DependencyObject {
+            public static readonly DependencyProperty ActiveDocumentProperty =
+                DependencyProperty.Register("ActiveDocument", typeof(IDocument), typeof(BindingTestClass), new PropertyMetadata(null));
+            public IDocument ActiveDocument {
+                get { return (IDocument)GetValue(ActiveDocumentProperty); }
+                set { SetValue(ActiveDocumentProperty, value); }
+            }
+            static readonly DependencyPropertyKey ReadonlyActiveDocumentPropertyKey
+                = DependencyProperty.RegisterReadOnly("ReadonlyActiveDocument", typeof(IDocument), typeof(BindingTestClass), new PropertyMetadata(null));
+            public static readonly DependencyProperty ReadonlyActiveDocumentProperty = ReadonlyActiveDocumentPropertyKey.DependencyProperty;
+
+            public IDocument ReadonlyActiveDocument {
+                get { return (IDocument)GetValue(ReadonlyActiveDocumentProperty); }
+                private set { SetValue(ReadonlyActiveDocumentPropertyKey, value); }
+            }
+        }
+
+        [Test, Asynchronous]
+        public void TwoWayBinding() {
+            EnqueueShowWindow();
+            BindingTestClass testClass = new BindingTestClass();
+            WindowedDocumentUIService service = CreateService();
+            Interaction.GetBehaviors(Window).Add(service);
+            IDocumentManagerService iService = service;
+
+            IDocument document1 = null;
+            IDocument document2 = null;
+            BindingOperations.SetBinding(service, WindowedDocumentUIService.ActiveDocumentProperty,
+                new Binding() { Path = new PropertyPath(BindingTestClass.ActiveDocumentProperty), Source = testClass, Mode = BindingMode.Default });
+
+            EnqueueCallback(delegate {
+                document1 = iService.CreateDocument("View1", ViewModelSource.Create(() => new UITestViewModel() { Title = "Title1", Parameter = 1 }));
+                document1.Show();
+                DispatcherHelper.DoEvents();
+                document2 = iService.CreateDocument("View2", ViewModelSource.Create(() => new UITestViewModel() { Title = "Title2", Parameter = 2 }));
+                document2.Show();
+                DispatcherHelper.DoEvents();
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(delegate {
+                Assert.AreSame(document2, service.ActiveDocument);
+                Assert.AreSame(document2, testClass.ActiveDocument);
+                testClass.ActiveDocument = document1;
+                DispatcherHelper.DoEvents();
+                Assert.AreSame(document1, service.ActiveDocument);
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueTestComplete();
+        }
+
+        class TestDocumentContent : IDocumentContent {
+            public Action onClose = null;
+            public IDocumentOwner DocumentOwner { get; set; }
+            public void OnClose(CancelEventArgs e) {
+                onClose();
+            }
+            public void OnDestroy() {
+
+            }
+            public object Title {
+                get { return ""; }
+            }
+        }
+
+
+        [Test, Asynchronous]
+        public void ClosingDocumentOnWindowClosingShouldntThrow() {
+            EnqueueShowWindow();
+            BindingTestClass testClass = new BindingTestClass();
+            WindowedDocumentUIService service = CreateService();
+            Interaction.GetBehaviors(Window).Add(service);
+            IDocumentManagerService iService = service;
+
+            IDocument document = null;
+            WindowedDocumentUIService.WindowDocument typedDocument = null;
+            var content = new TestDocumentContent();
+            EnqueueCallback(delegate {
+                document = iService.CreateDocument("View1", content);
+                typedDocument = (WindowedDocumentUIService.WindowDocument)document;
+                document.Show();
+                DispatcherHelper.DoEvents();
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(delegate {
+                Window window = typedDocument.Window.RealWindow;
+                content.onClose = () => document.Close();
+                window.Close();
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueTestComplete();
+        }
+
+        [Test, ExpectedException(typeof(InvalidOperationException))]
+        public void TwoWayBindingReadonlyProperty() {
+            BindingTestClass testClass = new BindingTestClass();
+            WindowedDocumentUIService service = CreateService();
+            Interaction.GetBehaviors(Window).Add(service);
+            IDocumentManagerService iService = service;
+            BindingOperations.SetBinding(service, WindowedDocumentUIService.ActiveDocumentProperty,
+                new Binding() { Path = new PropertyPath(BindingTestClass.ReadonlyActiveDocumentProperty), Source = testClass, Mode = BindingMode.Default });
+        }
 #endif
 #if !SILVERLIGHT
         [Test]
         public void WindowStyleSelector() {
-            WindowedDocumentUIService service = new WindowedDocumentUIService();
+            WindowedDocumentUIService service = CreateService();
             Interaction.GetBehaviors(Window).Add(service);
             service.WindowType = typeof(Window);
             Style windowStyle = new Style(typeof(Window));
@@ -226,7 +352,37 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual("Style Selector Tag", windowDocument.Window.RealWindow.Tag);
         }
 #endif
+
+        protected virtual WindowedDocumentUIService CreateService() {
+            return new WindowedDocumentUIService();
+        }
     }
+#if !FREE && !SILVERLIGHT
+    [TestFixture]
+    public class WindowedDocumentUIServiceTests_DXWindow : WindowedDocumentUIServiceTests {
+        protected override WindowedDocumentUIService CreateService() {
+            return new WindowedDocumentUIService() { WindowType = typeof(DXWindow) };
+        }
+
+#if !FREE && !SILVERLIGHT
+        [Test]
+        public void UseDXWindowWithNullTitle() {
+            WindowedDocumentUIService service = CreateService();
+            Interaction.GetBehaviors(Window).Add(service);
+            IDocument document = service.CreateDocument("EmptyView", new ViewModelWithNullTitle());
+            Assert.AreEqual(string.Empty, document.Title);
+        }
+#endif
+    }
+    [TestFixture]
+    public class WindowedDocumentUIServiceTests_DXDialogWindow : WindowedDocumentUIServiceTests_DXWindow {
+        protected override WindowedDocumentUIService CreateService() {
+            return new WindowedDocumentUIService() { WindowType = typeof(DXDialogWindow) };
+        }
+    }
+#endif
+
+
     [TestFixture]
     public class WindowedDocumentUIServiceIDocumentContentCloseTests : BaseWpfFixture {
         public class EmptyView : FrameworkElement { }
@@ -256,6 +412,9 @@ namespace DevExpress.Mvvm.UI.Tests {
             ViewLocator.Default = null;
             base.TearDownCore();
         }
+        protected virtual WindowedDocumentUIService CreateService() {
+            return new WindowedDocumentUIService();
+        }
 
         void DoCloseTest(bool allowClose, bool destroyOnClose, bool destroyed, Action<IDocument> closeMethod) {
             DoCloseTest((bool?)allowClose, destroyOnClose, destroyed, (d, b) => closeMethod(d));
@@ -267,7 +426,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             bool destroyCalled = false;
             IDocument document = null;
             EnqueueCallback(() => {
-                WindowedDocumentUIService windowedDocumentUIService = new WindowedDocumentUIService();
+                WindowedDocumentUIService windowedDocumentUIService = CreateService();
                 Interaction.GetBehaviors(Window).Add(windowedDocumentUIService);
                 service = windowedDocumentUIService;
                 TestDocumentContent viewModel = new TestDocumentContent(() => {
@@ -372,7 +531,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public TestViewLocator(object ownerTypeInstance, IViewLocator innerViewLocator = null) : this(ownerTypeInstance.GetType(), innerViewLocator) { }
         public TestViewLocator(Type ownerType, IViewLocator innerViewLocator = null) {
             this.innerViewLocator = innerViewLocator;
-            types = ownerType.GetNestedTypes(BindingFlags.Public).ToDictionary(t => t.Name, t => t);
+            types = GetBaseTypes(ownerType).SelectMany(x => x.GetNestedTypes(BindingFlags.Public)).ToDictionary(t => t.Name, t => t);
         }
         object IViewLocator.ResolveView(string name) {
             Type type;
@@ -380,6 +539,10 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
         Type IViewLocator.ResolveViewType(string name) {
             throw new NotImplementedException();
+        }
+        IEnumerable<Type> GetBaseTypes(Type type) {
+            for(var baseType = type; baseType != null; baseType = baseType.BaseType)
+                yield return baseType;
         }
     }
 }

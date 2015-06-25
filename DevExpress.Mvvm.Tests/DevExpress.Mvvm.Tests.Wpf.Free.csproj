@@ -66,6 +66,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Entity" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
@@ -79,31 +80,30 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Behaviors\AttachedBehaviorTests.cs" />
+    <Compile Include="Behaviors\BehaviorsTemplateTests.cs" />
     <Compile Include="Behaviors\CompositeCommandBehaviorTests.cs" />
     <Compile Include="Behaviors\ConfirmationBehaviorTests.cs" />
     <Compile Include="Behaviors\DependencyPropertyBehaviorTests.cs" />
     <Compile Include="Behaviors\EnumItemsSourceBehaviorTests.cs" />
-    <Compile Include="Behaviors\FunctionBindingBehaviorTests.cs" />
     <Compile Include="Behaviors\FunctionToCommandBehaviorTests.cs" />
     <Compile Include="Behaviors\ValidationErrorsHostBehaviorTests.cs" />
     <Compile Include="BindableBaseTests.cs" />
+    <Compile Include="CollectionBindingHelperTests.cs" />
     <Compile Include="DefaultMessageBoxButtonLocalizerTests.cs" />
     <Compile Include="DelegateCommandTests.cs" />
     <Compile Include="DesignTimeHelperTests.cs" />
-    <Compile Include="EnumHelperTests.cs" />
     <Compile Include="ExpressionHelperTests.cs" />
     <Compile Include="MessengerTests.cs" />
     <Compile Include="MetadataBuilderTests.cs" />
     <Compile Include="Mvvm.UI\ItemsControlMouseEventArgsConverterTests.cs" />
     <Compile Include="Mvvm.UI\LayoutTreeHelperTests.cs" />
+    <Compile Include="Behaviors\FunctionBindingBehaviorTests.cs" />
     <Compile Include="Mvvm.UI\ViewLocatorTests.cs" />
     <Compile Include="Services\CurrentWindowServiceTests.cs" />
     <Compile Include="Services\DispatcherServiceTests.cs" />
-    <Compile Include="Services\SplashScreenServiceTests.cs" />
     <Compile Include="Services\TaskbarButtonServiceTests.cs" />
     <Compile Include="Services\ViewHelperTests.cs" />
     <Compile Include="Services\ViewInjectionServiceTests.cs" />
-    <Compile Include="SyncCollectionHelperTests.cs" />
     <Compile Include="Mvvm.UI\ConvertersTests.cs" />
     <Compile Include="Mvvm.UI\EventToCommandTests.cs" />
     <Compile Include="Behaviors\FocusBehaviorTests.cs" />
@@ -113,7 +113,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\ApplicationJumpListService\ApplicationJumpListServiceTests.cs" />
     <Compile Include="Services\ApplicationJumpListService\AsyncTestFixture.cs" />
-    <Compile Include="Services\ApplicationJumpListService\JumpActionsManagerTests.cs" />
     <Compile Include="Services\ApplicationJumpListService\NativeResourceManagerTests.cs" />
     <Compile Include="Services\DialogServiceBaseTests.cs" />
     <Compile Include="Services\DocumentManagerServiceBaseTests.cs" />
@@ -124,6 +123,7 @@
     <Compile Include="Services\WindowedDocumentUIServiceTests.cs" />
     <Compile Include="TestUtils\DispatcherHelper.cs" />
     <Compile Include="TestUtils\GCTestHelpers.cs" />
+    <Compile Include="TestUtils\IsolatedDomainTestHelper.cs" />
     <Compile Include="TestUtils\MemoryLeaksHelper.cs" />
     <Compile Include="UICommandTests.cs" />
     <Compile Include="ViewModelBaseTests.cs" />
