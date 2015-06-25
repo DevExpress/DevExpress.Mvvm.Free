@@ -109,7 +109,7 @@ namespace DevExpress.Utils {
             return GetThemeAssemblyName(themeName) + GetFullNameAppendix();
         }
         public static string GetThemeAssemblyName(string themeName) {
-            return AssemblyInfo.SRAssemblyXpfPrefix + AssemblyInfo.ThemePrefix + themeName + AssemblyInfo.VSuffix;
+            return AssemblyInfo.SRAssemblyXpfPrefix + AssemblyInfo.ThemePrefix + themeName.Split(';').First() + AssemblyInfo.VSuffix;
         }
         public static Assembly LoadDXAssembly(string assemblyName) {
             Assembly assembly = null;
