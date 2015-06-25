@@ -47,9 +47,6 @@ namespace DevExpress {
                 IgnoredCategories.Add("TODO");
             }
 
-#if DEBUG
-            settings.LogProviders.Add(new DebugLogger());
-#endif
             UnitTestProviders.Providers.Add(new BaseUnitTestProvider());
             app.RootVisual = CreateRootVisual(settings);
         }

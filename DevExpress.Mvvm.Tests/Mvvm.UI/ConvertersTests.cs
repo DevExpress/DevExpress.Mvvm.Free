@@ -12,12 +12,24 @@ using Windows.UI.Xaml.Data;
 #else
 using System.Globalization;
 using System.Windows.Data;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Moq;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using DevExpress.Mvvm.Native;
 #endif
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class ConvertersTest {
-#if !NETFX_CORE && !FREE
+#if !NETFX_CORE && !SILVERLIGHT
+        [Test]
+        public void ReflectionConverterShouldNotPassNullIntoContructorIfTargetTypeIsNotValueType() {
+            var converter1 = new ReflectionConverter();
+            Assert.AreEqual(null, (FromString)converter1.Convert(null, typeof(FromString), null, null));
+        }
         [Test]
         public void ReflectionConverterTest() {
             var converter1 = new ReflectionConverter();
@@ -148,6 +160,8 @@ namespace DevExpress.Mvvm.Tests {
         void TestEnumerableConverter<TCollection>(IValueConverter converter) where TCollection : IEnumerable {
             AssertHelper.AssertEnumerablesAreEqual(new string[] { "0", "1", "2" }, (TCollection)converter.Convert(new int[] { 0, 1, 2 }, typeof(TCollection), null, null));
         }
+#endif
+#if !NETFX_CORE && !FREE
         [Test]
         public void CriteriaOperatorConverter_ToUpperCaseTest() {
             var converter = new CriteriaOperatorConverter() { Expression = "Upper(This)" };

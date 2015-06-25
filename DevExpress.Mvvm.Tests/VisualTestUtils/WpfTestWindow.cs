@@ -11,9 +11,22 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
 using System.Diagnostics;
 using System.Text;
+using System.Linq;
+using System.Reflection;
+using System.Collections.Generic;
 
 namespace DevExpress {
     public class WpfTestWindow {
+        public static readonly DependencyProperty MethodsToSkipProperty = DependencyProperty.RegisterAttached("MethodsToSkip", typeof(IEnumerable<string>), typeof(WpfTestWindow), new PropertyMetadata(Enumerable.Empty<string>()));
+
+        public static IEnumerable<string> GetMethodsToSkip(DependencyObject obj) {
+            return (IEnumerable<string>)obj.GetValue(MethodsToSkipProperty);
+        }
+        public static void SetMethodsToSkip(DependencyObject obj, IEnumerable<string> value) {
+            obj.SetValue(MethodsToSkipProperty, value);
+        }
+
+
 #if SILVERLIGHT
         WorkItemTest workItemTest;
 #endif
@@ -25,31 +38,49 @@ namespace DevExpress {
             DispatcherHelper.ForceIncreasePriorityContextIdleMessages();
 #endif
         }
-        public WpfTestWindow() { }
+        public WpfTestWindow() {
+            MethodsToSkip = Enumerable.Empty<string>();
+        }
 
         public virtual int TimeoutInSeconds { get { return 5; } }
         protected virtual TestWindow CreateTestWindow() { return TestWindow.GetContainer(); }
         protected virtual Window CreateRealWindow() { return new Window(); }
+
         protected virtual void SetUpCore() {
 #if SILVERLIGHT
             System.Windows.Browser.HtmlPage.Plugin.Focus();
             workItemTest = new WorkItemTest() { UnitTestHarness = DevExpress.TestHelper.TestHarness };
 #endif
         }
+
         protected virtual void TearDownCore() {
             if(realWindow != null) {
+#if !SILVERLIGHT
+                realWindow.SourceInitialized -= OnRealWindowSourceInitialized;
+#endif
                 realWindow.Close();
                 realWindow.Content = null;
             }
             if (window != null) {
                 window.Close();
                 window.Content = null;
+                window.MaxWidth = double.PositiveInfinity;
+                window.MinWidth = 0.0;
+                window.MaxHeight = double.PositiveInfinity;
+                window.MinHeight = 0.0;
+                window.Width = double.NaN;
+                window.Height = double.NaN;
             }
             window = null;
             realWindow = null;
             DispatcherHelper.DoEvents();
         }
+        IEnumerable<string> MethodsToSkip;
+        static Type voidType = typeof(void);
+
         protected virtual void FixtureSetUpCore() {
+            List<string> methodsToSkip = new List<string>();
+            MethodsToSkip = methodsToSkip;
         }
         protected virtual void FixtureTearDownCore() {
         }
@@ -81,6 +112,7 @@ namespace DevExpress {
             get {
                 if(window == null) {
                     window = CreateTestWindow();
+                    SetMethodsToSkip(window, MethodsToSkip);
                     SetThemeForWindow(window);
                 }
                 return window;
@@ -90,10 +122,17 @@ namespace DevExpress {
             get {
                 if(realWindow == null) {
                     realWindow = CreateRealWindow();
+#if !SILVERLIGHT
+                    realWindow.SourceInitialized += OnRealWindowSourceInitialized;
+#endif
                     SetThemeForWindow(realWindow);
                 }
                 return realWindow;
             }
+        }
+
+        void OnRealWindowSourceInitialized(object sender, EventArgs e) {
+            CheckToSkip(MethodsToSkip);
         }
         protected virtual void SetThemeForWindow(System.Windows.Controls.ContentControl window) {
         }
@@ -304,7 +343,7 @@ namespace DevExpress {
         string GetActionTimeOutMessage(string message, Delegate testDelegate) {
             return string.IsNullOrEmpty(message) ? string.Format("Action aborted with timeout {0} seconds: {1}", TimeoutInSeconds, testDelegate.Method) : message;
         }
-        string GetTimeOutMessage(string message, Func<bool> conditionalDelegate) {
+        protected string GetTimeOutMessage(string message, Func<bool> conditionalDelegate) {
             return string.IsNullOrEmpty(message) ? string.Format("The condition failed with timeout {0} seconds: {1}", TimeoutInSeconds, conditionalDelegate.Method) : message;
         }
         public virtual void EnqueueConditional(Func<bool> conditionalDelegate) {
@@ -392,5 +431,9 @@ namespace DevExpress {
 #else
         protected void EnqueueWaitRenderAction() { }
 #endif
+        public static void CheckToSkip(IEnumerable<string> methodsToSkip) {
+            if (methodsToSkip.Count() == 0)
+                return;
+        }
     }
 }

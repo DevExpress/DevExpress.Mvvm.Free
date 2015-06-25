@@ -56,6 +56,9 @@ namespace DevExpress.Mvvm.Tests {
             Type IViewLocator.ResolveViewType(string viewName) {
                 throw new NotImplementedException();
             }
+            public DocumentState State {
+                get { throw new NotImplementedException(); }
+            }
         }
         public class TestDocumentManagerService : IDocumentManagerService {
             List<IDocument> docs = new List<IDocument>();

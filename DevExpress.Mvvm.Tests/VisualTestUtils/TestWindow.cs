@@ -32,6 +32,7 @@ namespace DevExpress {
         Size lastSize = sizeSmall;
         public virtual void Show() {
             if(StaticContainers[GetType()] == this) {
+                WpfTestWindow.CheckToSkip(WpfTestWindow.GetMethodsToSkip(this));
                 SetSize(GetNewSize());
                 return;
             }

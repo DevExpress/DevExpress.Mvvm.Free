@@ -1,3 +1,7 @@
+#if NETFX_CORE
+using DevExpress.TestFramework.NUnit;
+using Windows.UI.Xaml.Controls;
+#else
 #if !SILVERLIGHT
 using NUnit.Framework;
 #else
@@ -5,32 +9,44 @@ using Microsoft.Silverlight.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #endif
 using System.Windows.Controls;
-using System.Threading.Tasks;
+#endif
 using System;
-using System.Windows.Media;
-using System.Threading;
-using System.Windows.Data;
+using System.Threading.Tasks;
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
     public class DispatcherServiceTests : BaseWpfFixture {
         [Test, Asynchronous]
+#if NETFX_CORE
+        public async Task DispatcherServiceTest() {
+#else
         public void DispatcherServiceTest() {
+#endif
             TestVM vm = new TestVM();
             UserControl control = new UserControl() { DataContext = vm };
             DispatcherService service = new DispatcherService();
             Interactivity.Interaction.GetBehaviors(control).Add(service);
             Window.Content = control;
+#if NETFX_CORE
+            await EnqueueShowWindow();
+#else
             EnqueueShowWindow();
+#endif
             EnqueueCallback(() => {
                 Assert.IsFalse(vm.IsProgress);
                 vm.Calculate();
                 Assert.IsTrue(vm.IsProgress);
             });
+#if NETFX_CORE
+            await WaitConditional(() => vm.Task.IsCompleted);
+#else
             EnqueueWait(() => vm.Task.IsCompleted);
+#endif
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
+#if !NETFX_CORE
                 DispatcherHelper.DoEvents();
+#endif
                 Assert.IsFalse(vm.IsProgress);
                 Assert.IsTrue(vm.IsCompleted);
             });

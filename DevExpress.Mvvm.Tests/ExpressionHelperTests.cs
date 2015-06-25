@@ -104,6 +104,30 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("StringProperty", ExpressionHelper.GetPropertyName<object>(() => viewModel.StringProperty));
             Assert.AreEqual("IntProperty", ExpressionHelper.GetPropertyName<object>(() => viewModel.IntProperty));
         }
+        [Test]
+        public void GetPropertyName2() {
+            Assert.AreEqual("MyProperty", ExpressionHelper.GetPropertyName((ExpressionHelperTests x) => x.MyProperty));
+
+            TestHelper.AssertThrows<ArgumentException>(() => {
+                ExpressionHelper.GetPropertyName((ExpressionHelperTests x) => x.GetInt());
+            });
+            TestHelper.AssertThrows<ArgumentNullException>(() => {
+                ExpressionHelper.GetPropertyName<ExpressionHelperTests, int>(null);
+            });
+
+            Assert.AreEqual("StringProperty", ExpressionHelper.GetPropertyName((TestViewModel x) => x.StringProperty));
+
+            TestHelper.AssertThrows<ArgumentException>(() => {
+                ExpressionHelper.GetPropertyName((TestViewModel x) => x.NestedViewModel.NestedStringProperty);
+            });
+
+            Assert.AreEqual("StringProperty", ExpressionHelper.GetPropertyName<TestViewModel, object>(x => x.StringProperty));
+            Assert.AreEqual("IntProperty", ExpressionHelper.GetPropertyName<TestViewModel, object>(x => x.IntProperty));
+
+#if !SILVERLIGHT && !NETFX_CORE
+            Assert.AreEqual(System.ComponentModel.TypeDescriptor.GetProperties(this)["MyProperty"], ExpressionHelper.GetProperty((ExpressionHelperTests x) => x.MyProperty));
+#endif
+        }
 
         [Test]
         public void GetMemberInfo() {
@@ -143,14 +167,17 @@ namespace DevExpress.Mvvm.Tests {
             string Title { get; set; }
         }
         public class PublicClass : ISomeInterface {
-            public string Title { get { return null; } set { } }
+            public int TitleCalledTimes = 0;
+            public string Title { get { TitleCalledTimes++; return null; } set { } }
         }
         public class PublicClassWithExplicitImplementation : ISomeInterface {
-            public string Title { get; set; }
-            string ISomeInterface.Title { get { return null; } set { } }
+            public int TitleCalledTimes = 0;
+            public string Title { get { TitleCalledTimes++; return null; } set { } }
+            string ISomeInterface.Title { get { TitleCalledTimes++; return null; } set { } }
         }
         class PrivateClass : ISomeInterface {
-            public string Title { get { return null; } set { } }
+            public int TitleCalledTimes = 0;
+            public string Title { get { TitleCalledTimes++; return null; } set { } }
         }
 
         [Test]
@@ -163,6 +190,22 @@ namespace DevExpress.Mvvm.Tests {
             Assert.IsTrue(ExpressionHelper.PropertyHasImplicitImplementation((ISomeInterface)new PrivateClass(), i => i.Title));
 #endif
         }
+#if !SILVERLIGHT
+        [Test]
+        public void PropertyHasImplicitImplementationTest2() {
+            ISomeInterface obj;
+            Assert.IsTrue(ExpressionHelper.PropertyHasImplicitImplementation(obj = (ISomeInterface)new PublicClass(), i => i.Title, false));
+            Assert.AreEqual(0, ((PublicClass)obj).TitleCalledTimes);
+            Assert.IsFalse(ExpressionHelper.PropertyHasImplicitImplementation(obj = (ISomeInterface)new PublicClassWithExplicitImplementation(), i => i.Title, false));
+            Assert.AreEqual(0, ((PublicClassWithExplicitImplementation)obj).TitleCalledTimes);
+#if SILVERLIGHT
+            Assert.IsFalse(ExpressionHelper.PropertyHasImplicitImplementation(obj = (ISomeInterface)new PrivateClass(), i => i.Title, false));
+#else
+            Assert.IsTrue(ExpressionHelper.PropertyHasImplicitImplementation(obj = (ISomeInterface)new PrivateClass(), i => i.Title, false));
+            Assert.AreEqual(0, ((PrivateClass)obj).TitleCalledTimes);
+#endif
+        }
+#endif
     }
     public static class TestHelper {
         public static void AssertThrows<TException>(Action action) where TException : Exception {

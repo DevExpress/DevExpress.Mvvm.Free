@@ -16,6 +16,7 @@ using System.ComponentModel.DataAnnotations;
 #if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.ComponentModel;
 #endif
 
 namespace DevExpress.Mvvm.Tests {
@@ -163,11 +164,14 @@ namespace DevExpress.Mvvm.Tests {
             viewModel = new CommandAttributeViewModel();
             CommandAttribute_ViewModelTestCore(viewModel, () => viewModel.MethodWithCanExecute(), () => viewModel.MethodWithCustomCanExecute());
         }
+#if !SILVERLIGHT
         [Test]
         public void CommandAttribute_ViewModelTest_FluentAPI() {
             var viewModel = new CommandAttributeViewModel_FluentAPI();
             CommandAttribute_ViewModelTestCore(viewModel, () => viewModel.MethodWithCanExecute(), () => viewModel.MethodWithCustomCanExecute());
+            Assert.AreSame(((ICustomTypeDescriptor)viewModel).GetProperties(), ((ICustomTypeDescriptor)viewModel).GetProperties());
         }
+#endif
         void CommandAttribute_ViewModelTestCore(CommandAttributeViewModelBaseCounters viewModel, Expression<Action> methodWithCanExecuteExpression, Expression<Action> methodWithCustomCanExecuteExpression) {
             var button = new Button() { DataContext = viewModel };
 

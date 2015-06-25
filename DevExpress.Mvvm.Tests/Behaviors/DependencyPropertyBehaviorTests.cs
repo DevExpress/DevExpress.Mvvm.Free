@@ -8,6 +8,7 @@ using DevExpress.Mvvm.UI.Interactivity;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows;
+using System;
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
@@ -129,6 +130,22 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
+#if !SILVERLIGHT
+        [Test, Asynchronous]
+        public void OneWayBinding() {
+            var vm = new PropertyChangedViewModel();
+            var control = new DependencyPropertyBehaviorTestControl() { DataContext = vm };
+            vm.SetReadOnlyProperty("1");
+            var behavior = new DependencyPropertyBehavior() { PropertyName = "Property" };
+            BindingOperations.SetBinding(behavior, DependencyPropertyBehavior.BindingProperty, new Binding("ReadOnlyProperty") { Mode = BindingMode.OneWay });
+            Interaction.GetBehaviors(control).Add(behavior);
+            Assert.AreEqual(1, control.propertyChangedCounter);
+            Assert.AreEqual("1", control.Property);
+            vm.SetReadOnlyProperty("2");
+            Assert.AreEqual(2, control.propertyChangedCounter);
+            Assert.AreEqual("2", control.Property);
+        }
+#endif
     }
     public class PropertyChangedViewModel : BindableBase {
         public PropertyChangedViewModel NestedPropertyChangedViewModel { get; set; }
@@ -175,6 +192,24 @@ namespace DevExpress.Mvvm.UI.Tests {
             set {
                 SetProperty(ref floatProperty, value, () => FloatProperty);
                 FloatPropertyChangedCounter++;
+            }
+        }
+        public string ReadOnlyProperty {
+            get { return GetProperty(() => ReadOnlyProperty); }
+            protected set { SetProperty(() => ReadOnlyProperty, value); }
+        }
+        public void SetReadOnlyProperty(string value) {
+            ReadOnlyProperty = value;
+        }
+    }
+    public class DependencyPropertyBehaviorTestControl : Control {
+        public int propertyChangedCounter = 0;
+        string property;
+        public string Property {
+            get { return property; }
+            set {
+                property = value;
+                propertyChangedCounter++;
             }
         }
     }

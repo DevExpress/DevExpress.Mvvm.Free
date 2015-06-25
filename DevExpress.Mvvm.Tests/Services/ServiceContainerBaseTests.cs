@@ -2,19 +2,40 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #elif NETFX_CORE
 using DevExpress.TestFramework.NUnit;
+using Windows.UI.Xaml;
 #else
 using NUnit.Framework;
 #endif
 using System;
+using System.Windows;
+using System.Linq;
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
-    public class ServiceContainerTests {
+    public class ServiceContainerTests : BaseWpfFixture {
+        protected override void TearDownCore() {
+            base.TearDownCore();
+            ServiceContainer.Default = null;
+        }
         public interface IService1 { }
         public interface IService2 { }
         public class TestService1 : IService1 { }
         public class TestService2 : IService2 { }
         public class TestService1_2 : IService1, IService2 { }
+        [Test]
+        public void ContainersLoopTest() {
+            var child = new TestSupportServices();
+            var parent = new TestSupportServices();
+            child.ParentViewModel = parent;
+            parent.ParentViewModel = child;
+            var service1 = new TestService1();
+            child.ServiceContainer.RegisterService(service1, true);
+            AssertHelper.AssertThrows<Exception>(() => {
+                child.ServiceContainer.GetService<IService1>();
+            }, e => {
+                Assert.AreEqual("A ServiceContainer should not be a direct or indirect parent for itself.", e.Message);
+            });
+        }
         [Test]
         public void AddServicesWithoutKey() {
             IServiceContainer container = new ServiceContainer(null);
@@ -29,6 +50,43 @@ namespace DevExpress.Mvvm.Tests {
             container.RegisterService("svc1_", svc1_);
             Assert.AreEqual(svc1, container.GetService<IService1>());
             Assert.AreEqual(svc1_, container.GetService<IService1>("svc1_"));
+        }
+        [Test]
+        public void AddServicesWithoutKey_2() {
+            IServiceContainer container = new ServiceContainer(null);
+            TestService1 svc1 = new TestService1();
+            TestService1 svc1_ = new TestService1();
+            TestService2 svc2 = new TestService2();
+            container.RegisterService("svc1_", svc1_);
+            container.RegisterService(svc1);
+            container.RegisterService(svc2);
+            Assert.AreEqual(svc1, container.GetService<IService1>());
+            Assert.AreEqual(svc2, container.GetService<IService2>());
+            Assert.AreEqual(svc1_, container.GetService<IService1>("svc1_"));
+        }
+        [Test]
+        public void RemoveServices() {
+            IServiceContainer container = new ServiceContainer(null);
+            TestService1 svc1 = new TestService1();
+            TestService1 svc1_ = new TestService1();
+            TestService2 svc2 = new TestService2();
+            container.RegisterService(svc1);
+            container.RegisterService(svc2);
+            container.RegisterService("svc1_", svc1_);
+            Assert.AreEqual(svc1, container.GetService<IService1>());
+            Assert.AreEqual(svc1_, container.GetService<IService1>("svc1_"));
+            Assert.AreEqual(svc2, container.GetService<IService2>());
+
+            container.UnregisterService(svc1);
+            Assert.AreEqual(svc1_, container.GetService<IService1>());
+            Assert.AreEqual(svc1_, container.GetService<IService1>("svc1_"));
+            Assert.AreEqual(svc2, container.GetService<IService2>());
+            container.UnregisterService(svc1_);
+            Assert.AreEqual(null, container.GetService<IService1>());
+            Assert.AreEqual(null, container.GetService<IService1>("svc1_"));
+            Assert.AreEqual(svc2, container.GetService<IService2>());
+            container.UnregisterService(svc2);
+            Assert.AreEqual(null, container.GetService<IService2>());
         }
         [Test, ExpectedException(typeof(ArgumentException))]
         public void GetServiceNotByInterfaceType() {
@@ -49,9 +107,13 @@ namespace DevExpress.Mvvm.Tests {
             TestService1 svc1_ = new TestService1();
             container.RegisterService("svc1", svc1);
             container.RegisterService("svc1_", svc1_);
-            Assert.AreEqual(svc1, container.GetService<IService1>());
+            Assert.AreEqual(svc1_, container.GetService<IService1>());
             Assert.AreEqual(svc1, container.GetService<IService1>("svc1"));
             Assert.AreEqual(svc1_, container.GetService<IService1>("svc1_"));
+            container.RegisterService(svc1_);
+            Assert.AreEqual(svc1_, container.GetService<IService1>());
+            container.RegisterService(svc1);
+            Assert.AreEqual(svc1, container.GetService<IService1>());
         }
         [Test]
         public void GetServiceFromParent() {
@@ -296,6 +358,55 @@ namespace DevExpress.Mvvm.Tests {
                     tester.TestKeylessServiceSearch(44, parentHasKey: true, nestedHasKey: true, yieldToParent: true, preferLocal: true, assertActualIsNested: false);
                 }
         }
+
+        [Test]
+        public void GetApplicationService() {
+            var defaultServiceContainer = new DefaultServiceContainer2();
+            var service2InApp = new TestService2();
+            defaultServiceContainer.Resources.Add("testService2", service2InApp);
+            var service11 = new TestService1();
+            var service12 = new TestService1();
+            defaultServiceContainer.Resources.Add("testService11", service11);
+            defaultServiceContainer.Resources.Add("testService12", service12);
+            ServiceContainer.Default = defaultServiceContainer;
+            var parent = new TestSupportServices();
+            var child = new TestSupportServices();
+            var service2 = new TestService2();
+            child.ServiceContainer.RegisterService(service2);
+            child.ParentViewModel = parent;
+            Assert.AreEqual(service2, child.ServiceContainer.GetService<IService2>(ServiceSearchMode.PreferParents));
+            Assert.AreEqual(service2, child.ServiceContainer.GetService<IService2>());
+            Assert.IsNotNull(child.ServiceContainer.GetService<IService1>());
+            Assert.AreEqual(service11, child.ServiceContainer.GetService<IService1>("testService11"));
+        }
+        [Test]
+        public void GetLastParent() {
+            var root = new TestSupportServices();
+            var parent = new TestSupportServices();
+            var child = new TestSupportServices();
+            parent.ParentViewModel = root;
+            child.ParentViewModel = parent;
+
+            var rootSrv = new TestService1();
+            var parentSrv = new TestService1();
+            var childSrv = new TestService1();
+
+            root.ServiceContainer.RegisterService(rootSrv);
+            parent.ServiceContainer.RegisterService(parentSrv);
+            child.ServiceContainer.RegisterService(childSrv);
+
+            Assert.AreEqual(rootSrv, child.ServiceContainer.GetService<IService1>(ServiceSearchMode.PreferParents));
+        }
+        [Test]
+        public void GetApplicationService_DoNotUseServicesInMergedDictionaries() {
+            var defaultServiceContainer = new DefaultServiceContainer2();
+            var service1 = new TestService1();
+            var mergedDictionary = new ResourceDictionary();
+            mergedDictionary.Add("testService2", service1);
+            defaultServiceContainer.Resources.MergedDictionaries.Add(mergedDictionary);
+            Assert.IsNull(defaultServiceContainer.GetService<IService1>());
+        }
+
         class KeylessServiceSearchTestHelper {
             public bool? UseEmptyStringAsParentServiceKey;
             public bool? UseEmptyStringAsLocalServiceKey;
@@ -357,4 +468,69 @@ namespace DevExpress.Mvvm.Tests {
             set { throw new NotSupportedException(); }
         }
     }
+    class DefaultServiceContainer2 : DefaultServiceContainer {
+        public DefaultServiceContainer2() : base() {
+            Resources = new ResourceDictionary();
+        }
+        public ResourceDictionary Resources { get; private set; }
+        protected override ResourceDictionary GetApplicationResources() {
+            return Resources;
+        }
+    }
+
+#if !FREE && !NETFX_CORE && !SILVERLIGHT
+    [TestFixture]
+    public class ServiceBaseTests : BaseWpfFixture {
+        [Test]
+        public void UnregisterServiceOnDataContextChanged() {
+            Button control = new Button();
+            TestVM vm1 = TestVM.Create();
+            TestVM vm2 = TestVM.Create();
+            TestServiceBase service = new TestServiceBase();
+            Interaction.GetBehaviors(control).Add(service);
+            control.DataContext = vm1;
+            Assert.AreEqual(service, vm1.GetService<ITestService>());
+            control.DataContext = vm2;
+            Assert.AreEqual(null, vm1.GetService<ITestService>());
+            Assert.AreEqual(service, vm2.GetService<ITestService>());
+        }
+        [Test]
+        public void UnregisterServiceOnDetaching() {
+            Button control = new Button();
+            TestVM vm1 = TestVM.Create();
+            TestServiceBase service = new TestServiceBase();
+            Interaction.GetBehaviors(control).Add(service);
+            control.DataContext = vm1;
+            Assert.AreEqual(service, vm1.GetService<ITestService>());
+            Interaction.GetBehaviors(control).Remove(service);
+            Assert.AreEqual(null, vm1.GetService<ITestService>());
+        }
+        [Test]
+        public void T250427() {
+            Grid mainV = new Grid();
+            TestVM mainVM = TestVM.Create();
+            TestServiceBase mainService = new TestServiceBase();
+            Interaction.GetBehaviors(mainV).Add(mainService);
+            mainV.DataContext = mainVM;
+
+            Grid childV = new Grid();
+            TestVM childVM = TestVM.Create();
+            TestServiceBase childService = new TestServiceBase();
+            Interaction.GetBehaviors(childV).Add(childService);
+            mainV.Children.Add(childV);
+
+            Assert.AreEqual(childService, mainVM.GetService<ITestService>());
+            childV.DataContext = childVM;
+            Assert.AreEqual(mainService, mainVM.GetService<ITestService>());
+            Assert.AreEqual(childService, childVM.GetService<ITestService>());
+        }
+
+        public class TestVM {
+            public static TestVM Create() { return ViewModelSource.Create(() => new TestVM()); }
+            protected TestVM() { }
+        }
+        public interface ITestService { }
+        public class TestServiceBase : ServiceBase, ITestService { }
+    }
+#endif
 }

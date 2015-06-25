@@ -64,6 +64,8 @@ namespace DevExpress.Mvvm.Tests {
             public int IntRegExp { get; set; }
 
             public string CustomString_CustomError { get; set; }
+            public string CustomString_CustomError2 { get; set; }
+            public string CustomString_CustomError3 { get; set; }
             public string CustomString { get; set; }
 
             public string TwoErrorsProperty { get; set; }
@@ -123,6 +125,12 @@ namespace DevExpress.Mvvm.Tests {
                     .MatchesRule(x => x.Length <= 2);
                 builder.Property(x => x.CustomString_CustomError)
                     .MatchesRule(x => x.Length <= 2, () => ValidationEntity.CustomString_CustomErrorText);
+#pragma warning disable 618
+                builder.Property(x => x.CustomString_CustomError2)
+                    .MatchesInstanceRule(x => x.CustomString_CustomError2.Length <= 2, () => ValidationEntity.CustomString_CustomErrorText);
+#pragma warning restore 618
+                builder.Property(x => x.CustomString_CustomError3)
+                    .MatchesInstanceRule((value, instance) => instance.CustomString_CustomError2.Length <= 2 || value.Length <= 2, () => ValidationEntity.CustomString_CustomErrorText);
 
                 builder.Property(x => x.TwoErrorsProperty)
                     .MinLength(10)
@@ -233,16 +241,51 @@ namespace DevExpress.Mvvm.Tests {
             ValidationEntity.CustomString_CustomErrorText = "{0} custom";
             Assert.AreEqual("CustomString_CustomError custom", customStringValidator.GetErrorText("123", entity));
 
+            entity.CustomString_CustomError2 = "123";
+            customStringValidator = CreateValidator<ValidationEntity, string>(x => x.CustomString_CustomError2);
+            Assert.AreEqual("CustomString_CustomError2 custom", customStringValidator.GetErrorText(null, entity));
+
+            customStringValidator = CreateValidator<ValidationEntity, string>(x => x.CustomString_CustomError3);
+            Assert.AreEqual(string.Empty, customStringValidator.GetErrorText(string.Empty, entity));
+            Assert.AreEqual("CustomString_CustomError3 custom", customStringValidator.GetErrorText("123", entity));
+
             var twoErrorsValidator = CreateValidator<ValidationEntity, string>(x => x.TwoErrorsProperty);
             Assert.AreEqual("The field TwoErrorsProperty must be a string or array type with a minimum length of '10'. The field TwoErrorsProperty must be a string or array type with a maximum length of '1'.", twoErrorsValidator.GetErrorText("123", entity));
             Assert.AreEqual("The field TwoErrorsProperty must be a string or array type with a minimum length of '10'.", twoErrorsValidator.GetErrors("123", entity).ElementAt(0));
             Assert.AreEqual("The field TwoErrorsProperty must be a string or array type with a maximum length of '1'.", twoErrorsValidator.GetErrors("123", entity).ElementAt(1));
             Assert.AreEqual(2, twoErrorsValidator.GetErrors("123", entity).Count());
-
         }
         static PropertyValidator CreateValidator<T, TProperty>(Expression<Func<T, TProperty>> propertyExpression) {
             string propertyName = BindableBase.GetPropertyNameFast(propertyExpression);
-            return PropertyValidator.FromAttributes(MetadataHelper.GetExtenalAndFluentAPIAttrbutes(typeof(T), propertyName), propertyName);
+            return PropertyValidator.FromAttributes(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(T), propertyName), propertyName);
+        }
+        public class ValidationEntityWithDisplayNameAttributes {
+#if !SILVERLIGHT
+            [DisplayName("_PropertyWithDisplayNameAttribute_")]
+#endif
+            [StringLength(2)]
+            public string PropertyWithDisplayNameAttribute { get; set; }
+
+            [Display(Name = "_PropertyWithDisplayAttribute_", ShortName = "_______")]
+#if !SILVERLIGHT
+            [DisplayName("________")]
+#endif
+            [StringLength(2)]
+            public string PropertyWithDisplayAttribute { get; set; }
+
+            public string PropertyWithDisplayAttribute_Fluent { get; set; }
+        }
+        [Test]
+        public void ValidationEntityWithDisplayNameAttributesTest() {
+            var entity = new ValidationEntityWithDisplayNameAttributes {
+                PropertyWithDisplayNameAttribute = "asdf",
+                PropertyWithDisplayAttribute = "asdf",
+                PropertyWithDisplayAttribute_Fluent = "asdf",
+            };
+#if !SILVERLIGHT
+            Assert.AreEqual("The field _PropertyWithDisplayNameAttribute_ must be a string with a maximum length of 2.", IDataErrorInfoHelper.GetErrorText(entity, "PropertyWithDisplayNameAttribute"));
+#endif
+            Assert.AreEqual("The field _PropertyWithDisplayAttribute_ must be a string with a maximum length of 2.", IDataErrorInfoHelper.GetErrorText(entity, "PropertyWithDisplayAttribute"));
         }
 #if !SILVERLIGHT
         [Test]
@@ -289,8 +332,38 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void SeveralExternalMetadata() {
-            Assert.IsNotNull(MetadataHelper.GetExtenalAndFluentAPIAttrbutes(typeof(Class), "Property").OfType<ReadOnlyAttribute>().Single());
-            Assert.IsNotNull(MetadataHelper.GetExtenalAndFluentAPIAttrbutes(typeof(Class), "BaseProperty").OfType<ReadOnlyAttribute>().Single());
+            Assert.IsNotNull(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(Class), "Property").OfType<ReadOnlyAttribute>().Single());
+            Assert.IsNotNull(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(Class), "BaseProperty").OfType<ReadOnlyAttribute>().Single());
+        }
+        #endregion
+
+        #region metadata with Fluent API
+        [MetadataType(typeof(MetadataWithFluentApiMetadata))]
+        public class MetadataWithFluentApi {
+            public static void BuildMetadata(MetadataBuilder<MetadataWithFluentApi> builder) {
+                builder.Property(x => x.Property).Required();
+            }
+            public string Property { get; set; }
+            public string Property2 { get; set; }
+            public string Property3 { get; set; }
+        }
+        public class MetadataWithFluentApiMetadata : IMetadataProvider<MetadataWithFluentApi> {
+            [Display(Name = "test")]
+            public string Property2 { get; set; }
+
+            void IMetadataProvider<MetadataWithFluentApi>.BuildMetadata(MetadataBuilder<MetadataWithFluentApi> builder) {
+                builder.Property(x => x.Property3).MaxLength(10);
+            }
+        }
+        [MetadataType(typeof(MetadataWithFluentApi))]
+        public class MetadataWithFluentApiClient {
+            public string Property { get; set; }
+        }
+        [Test]
+        public void MetadataWithFluentApiTest() {
+            Assert.IsNotNull(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(MetadataWithFluentApiClient), "Property").OfType<DXRequiredAttribute>().Single());
+            Assert.IsNotNull(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(MetadataWithFluentApiClient), "Property2").OfType<DisplayAttribute>().Single());
+            Assert.IsNotNull(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(MetadataWithFluentApiClient), "Property3").OfType<DXMaxLengthAttribute>().Single());
         }
         #endregion
 

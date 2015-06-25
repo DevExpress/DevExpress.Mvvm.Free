@@ -105,6 +105,7 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="Behaviors\AttachedBehaviorTests.cs" />
+    <Compile Include="Behaviors\BehaviorsTemplateTests.cs" />
     <Compile Include="Behaviors\ConfirmationBehaviorTests.cs" />
     <Compile Include="Behaviors\DependencyPropertyBehaviorTests.cs" />
     <Compile Include="Behaviors\FocusBehaviorTests.cs" />
@@ -112,22 +113,15 @@
     <Compile Include="DefaultMessageBoxButtonLocalizerTests.cs" />
     <Compile Include="DelegateCommandTests.cs" />
     <Compile Include="DesignTimeHelperTests.cs" />
-    <Compile Include="EnumHelperTests.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="ExpressionHelperTests.cs" />
     <Compile Include="MessengerTests.cs" />
     <Compile Include="MetadataBuilderTests.cs" />
     <Compile Include="Mvvm.UI\ConvertersTests.cs" />
     <Compile Include="Mvvm.UI\EventToCommandTests.cs" />
-    <Compile Include="Mvvm.UI\ItemsControlMouseEventArgsConverterTests.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Mvvm.UI\ItemsControlMouseEventArgsConverterTests.cs" />
     <Compile Include="Mvvm.UI\KeyGestureTests.cs" />
     <Compile Include="Mvvm.UI\LayoutTreeHelperTests.cs" />
-    <Compile Include="Mvvm.UI\ViewLocatorTests.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Mvvm.UI\ViewLocatorTests.cs" />
     <Compile Include="Mvvm.UI\ViewModelExtensionsTests.cs" />
     <Compile Include="Mvvm.UI\ViewModelSourceExtensionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -138,7 +132,6 @@
     <Compile Include="Services\MessageBoxServiceBaseTests.cs" />
     <Compile Include="Services\ServiceContainerBaseTests.cs" />
     <Compile Include="Services\ViewHelperTests.cs" />
-    <Compile Include="SyncCollectionHelperTests.cs" />
     <Compile Include="TestHelper\AgTestHarness.cs" />
     <Compile Include="TestHelper\AgTestRunFilter.cs" />
     <Compile Include="TestHelper\Assert.cs" />

@@ -7,10 +7,20 @@ using NUnit.Framework;
 #endif
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class BindableBaseTests {
+        [System.Runtime.Serialization.DataContract]
+        public class SerializableAndBindable : BindableBase { }
+        [Test]
+        public void IsSerializableTest() {
+            SerializableAndBindable s = new SerializableAndBindable();
+            var serializer = new System.Runtime.Serialization.DataContractSerializer(typeof(SerializableAndBindable));
+            MemoryStream m = new MemoryStream();
+            serializer.WriteObject(m, s);
+        }
         [Test]
         public void PropertyChangedCallbackAndPropertyChangedEventOrderTest() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -79,6 +89,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("SomeProperty8", propName);
             Assert.AreEqual(2, count);
         }
+#if !NETFX_CORE
         [Test]
         public void RaisePropertyChangedWithNoParametersTest_B251476() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -88,7 +99,7 @@ namespace DevExpress.Mvvm.Tests {
             bb.RaisePropertiesChanged(null);
             bb.RaisePropertiesChanged(string.Empty);
         }
-
+#endif
         [Test]
         public void SetPropertyTest() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -180,25 +191,25 @@ namespace DevExpress.Mvvm.Tests {
             viewModel.PropertyChanged += (o, e) => { propertyChangedCount++; propName = e.PropertyName; };
 
             Assert.AreEqual(0, viewModel.IntProperty);
-            Assert.IsFalse(viewModel.PropertyBag.ContainsKey("IntProperty"));
+            Assert.IsFalse(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
 
             viewModel.IntProperty = 0;
             Assert.AreEqual(0, viewModel.IntProperty);
-            Assert.IsFalse(viewModel.PropertyBag.ContainsKey("IntProperty"));
+            Assert.IsFalse(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
             Assert.AreEqual(false, viewModel.IntPropertySetValueResult.Value);
             Assert.AreEqual(0, propertyChangedCount);
             Assert.AreEqual(null, propName);
 
             viewModel.IntProperty = 9;
             Assert.AreEqual(9, viewModel.IntProperty);
-            Assert.IsTrue(viewModel.PropertyBag.ContainsKey("IntProperty"));
+            Assert.IsTrue(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
             Assert.AreEqual(true, viewModel.IntPropertySetValueResult.Value);
             Assert.AreEqual(1, propertyChangedCount);
             Assert.AreEqual("IntProperty", propName);
 
             viewModel.IntProperty = 0;
             Assert.AreEqual(0, viewModel.IntProperty);
-            Assert.IsTrue(viewModel.PropertyBag.ContainsKey("IntProperty"));
+            Assert.IsTrue(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
             Assert.AreEqual(true, viewModel.IntPropertySetValueResult.Value);
             Assert.AreEqual(2, propertyChangedCount);
             Assert.AreEqual("IntProperty", propName);
@@ -308,9 +319,11 @@ namespace DevExpress.Mvvm.Tests {
         public new void RaisePropertyChanged(string propertyName) {
             base.RaisePropertyChanged(propertyName);
         }
+#if !NETFX_CORE
         public new void RaisePropertyChanged() {
             base.RaisePropertyChanged();
         }
+#endif
         public new void RaisePropertiesChanged(params string[] propertyNames) {
             base.RaisePropertiesChanged(propertyNames);
         }

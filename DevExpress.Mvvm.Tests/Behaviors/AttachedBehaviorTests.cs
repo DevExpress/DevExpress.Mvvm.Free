@@ -152,6 +152,24 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(1, behavior.attachedFireCount);
             Assert.AreEqual(1, behavior.detachingFireCount);
         }
+#if !SILVERLIGHT && !NETFX_CORE
+        [Test]
+        public void BehaviorShouldNotBeFrozen_Test00_T196013() {
+            var behavior = new FakeBehavior();
+            Assert.IsFalse(behavior.IsFrozen);
+            Assert.IsFalse(behavior.CanFreeze);
+        }
+        [Test]
+        public void BehaviorShouldNotBeFrozen_Test01_T196013() {
+            var content = new FrameworkElementFactory(typeof(ContentControl));
+            content.SetValue(ContentControl.ContentProperty, new FakeBehavior());
+            var template = new DataTemplate() { VisualTree = content };
+            template.Seal();
+            var behavior = ((ContentControl)template.LoadContent()).Content as Behavior;
+            Assert.IsFalse(behavior.IsFrozen);
+            Assert.IsFalse(behavior.CanFreeze);
+        }
+#endif
     }
 
     [TestFixture]
@@ -224,10 +242,34 @@ namespace DevExpress.Mvvm.UI.Tests {
             InteractionHelper.SetBehaviorInDesignMode(element, InteractionBehaviorInDesignMode.AsWellAsNotInDesignMode);
             CheckAttach(new TestBehaviorNotAllowAttachInDesignMode(), element);
         }
-        #endregion
+        [Test]
+        public void TestAssociatedObjectImplementsINotifyPropertyChanged() {
+            Grid element = new Grid();
+            var testBehavior = new FakeBehavior();
+            element.SetBinding(Grid.TagProperty, new Binding() { Path = new PropertyPath("AssociatedObject"), Source = testBehavior, Mode = BindingMode.OneWay });
+            Interaction.GetBehaviors(element).Add(testBehavior);
+            Assert.AreSame(element, element.Tag);
+        }
+        [Test]
+        public void TestAssociatedObjectImplementsINotifyPropertyChanged2() {
+            Grid element = new Grid();
+            var testBehavior = new EventToCommand();
+            BindingOperations.SetBinding(testBehavior, EventToCommand.CommandParameterProperty, new Binding() { Path = new PropertyPath("AssociatedObject"),
+#if !NETFX_CORE && !SILVERLIGHT
+                RelativeSource = RelativeSource.Self
+#else
+                RelativeSource = new RelativeSource() { Mode = RelativeSourceMode.Self }
+#endif
+            });
+            Interaction.GetBehaviors(element).Add(testBehavior);
+            Assert.AreSame(element, testBehavior.CommandParameter);
+            Interaction.GetBehaviors(element).Remove(testBehavior);
+            Assert.IsNull(testBehavior.CommandParameter);
+        }
+#endregion
 
 
-        #region DesignTime
+#region DesignTime
         [Test]
         public void TestBehaviorRegular_NotAttachInDesignTime() {
             ViewModelDesignHelper.IsInDesignModeOverride = true;
@@ -287,7 +329,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             InteractionHelper.SetBehaviorInDesignMode(element, InteractionBehaviorInDesignMode.AsWellAsNotInDesignMode);
             CheckAttach(new TestBehaviorAllowAttachInDesignMode(), element);
         }
-        #endregion
+#endregion
 
         void CheckAttach(Behavior behavior, FrameworkElement container = null) {
             FrameworkElement element = container ?? new Grid();

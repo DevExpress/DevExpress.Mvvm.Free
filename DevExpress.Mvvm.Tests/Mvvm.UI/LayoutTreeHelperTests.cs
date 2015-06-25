@@ -67,6 +67,9 @@ xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
 
                 Assert.AreSame(contentControl, LayoutTreeHelper.GetVisualParents(textBox, contentControl).Where(x => x is ContentControl).First());
                 Assert.IsNull(LayoutTreeHelper.GetVisualParents(textBox, contentControl).Where(x => x is Grid).FirstOrDefault());
+
+                var presenter = LayoutTreeHelper.GetVisualChildren(contentControl).First();
+                Assert.IsTrue(new[] { presenter }.SequenceEqual(LayoutTreeHelper.GetVisualParents(textBox, presenter)));
             });
             EnqueueTestComplete();
         }

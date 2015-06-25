@@ -732,6 +732,13 @@ namespace DevExpress.Mvvm.Tests {
             CheckNotBindableProperty(viewModel, x => x.PseudoAutoImplementedProperty_WrongFieldType, (vm, x) => vm.PseudoAutoImplementedProperty_WrongFieldType = x, 1, 2);
             CheckBindableProperty(viewModel, x => x.PseudoAutoImplementedProperty, (vm, x) => vm.PseudoAutoImplementedProperty = x, 1, 2);
         }
+        [Test]
+        public void PropertyNameInSetterAndGetterShouldMatchTest_VB() {
+            var obj = new PropertyNameInSetterAndGetterShouldMatch();
+            obj.Test(BindableBase.GetPropertyName);
+            Assert.IsNotNull(obj.nameInGetter);
+            Assert.AreEqual(obj.nameInGetter, obj.nameInSetter);
+        }
         #endregion
 
         #region property changing
@@ -899,6 +906,38 @@ namespace DevExpress.Mvvm.Tests {
         #endregion
 
         #region commands
+        public class ProtecteCanExecuteMethod {
+            public bool IsMethod1Enabled;
+            public void Method1() {
+                MessageBox.Show("Hello");
+            }
+            protected bool CanMethod1() {
+                return IsMethod1Enabled;
+            }
+
+            public bool IsMethod2Enabled;
+            public void Method2() {
+                MessageBox.Show("Hello");
+            }
+            protected internal bool CanMethod2() {
+                return IsMethod2Enabled;
+            }
+        }
+        [Test]
+        public void ProtectedCanExecuteMethod() {
+            var viewModel = ViewModelSource.Create<ProtecteCanExecuteMethod>();
+            viewModel
+                .IsFalse(x => x.GetCommand(y => y.Method1()).CanExecute(null))
+                .Do(x => x.IsMethod1Enabled = true)
+                .IsTrue(x => x.GetCommand(y => y.Method1()).CanExecute(null))
+
+                .IsFalse(x => x.GetCommand(y => y.Method2()).CanExecute(null))
+                .Do(x => x.IsMethod2Enabled = true)
+                .IsTrue(x => x.GetCommand(y => y.Method2()).CanExecute(null))
+
+                ;
+        }
+
         [CLSCompliant(false)]
         public class POCOCommandsViewModel {
             public virtual string Property1 { get; set; }

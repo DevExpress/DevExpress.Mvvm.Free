@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Threading.Tasks;
+using DevExpress.Mvvm.Xpf;
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]

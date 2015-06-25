@@ -14,7 +14,7 @@ namespace DevExpress {
     [TestFixture]
     public class BaseWpfFixture : WpfTestWindow {
 #if !SILVERLIGHT
-        class BindingErrorsTraceListener : TraceListener {
+        protected class BindingErrorsTraceListener : TraceListener {
             public static readonly BindingErrorsTraceListener Intance = new BindingErrorsTraceListener();
             StringBuilder builder = new StringBuilder();
             bool isEnabled;
@@ -31,14 +31,14 @@ namespace DevExpress {
             public override void WriteLine(string message) {
                 Write(message);
             }
-            public void Reset(BaseWpfFixture fixture) {
+            public void Reset(BaseWpfFixture fixture, bool? enable = null) {
                 builder.Clear();
                 Assembly currentAssembly = fixture.GetType().Assembly;
                 if(lastAssembly != currentAssembly) {
                     failedCount = 0;
                     lastAssembly = currentAssembly;
                 }
-                SetEnabled(GetIsEnabled(fixture));
+                SetEnabled(enable ?? GetIsEnabled(fixture));
                 if(isEnabled) {
                     oldLevel = PresentationTraceSources.DataBindingSource.Switch.Level;
                     PresentationTraceSources.Refresh();

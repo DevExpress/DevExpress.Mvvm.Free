@@ -794,6 +794,106 @@ namespace DevExpress.Mvvm.Tests {
             EnqueueConditional(() => isExecutingChanged);
             EnqueueTestComplete();
         }
+#if !SILVERLIGHT
+        [Test, Asynchronous]
+        public void WaitTest() {
+            asyncTestCommand = new AsyncCommand<int>((a) => AsyncExecuteMethod(a));
+            int isExecutingChangedCount = 0;
+            ((INotifyPropertyChanged)asyncTestCommand).PropertyChanged += (s, e) =>
+                e.If(x => x.PropertyName == "IsExecuting").Do(x => isExecutingChangedCount++);
+            asyncTestCommand.Execute(100);
+            Assert.AreEqual(1, isExecutingChangedCount);
+            Assert.AreEqual(true, asyncTestCommand.IsExecuting);
+            asyncTestCommand.Wait();
+            Assert.AreEqual(2, isExecutingChangedCount);
+            Assert.AreEqual(false, asyncTestCommand.IsExecuting);
+            asyncTestCommand.Wait();
+            Assert.AreEqual(2, isExecutingChangedCount);
+            Assert.AreEqual(false, asyncTestCommand.IsExecuting);
+        }
+        [Test, Asynchronous]
+        public void CancelAndWaitTest() {
+            asyncTestCommand = new AsyncCommand<int>(CancelInsideCommandAndWaitMethod);
+            int isExecutingChangedCount = 0;
+            ((INotifyPropertyChanged)asyncTestCommand).PropertyChanged += (s, e) =>
+                e.If(x => x.PropertyName == "IsExecuting").Do(x => isExecutingChangedCount++);
+            asyncTestCommand.Execute(100);
+            Assert.AreEqual(1, isExecutingChangedCount);
+            Assert.AreEqual(true, asyncTestCommand.IsExecuting);
+            asyncTestCommand.CancellationTokenSource.Cancel();
+            Assert.AreEqual(true, asyncTestCommand.IsExecuting);
+            asyncTestCommand.Wait();
+            Assert.AreEqual(2, isExecutingChangedCount);
+            Assert.AreEqual(false, asyncTestCommand.IsExecuting);
+        }
+        [Test, Asynchronous]
+        public void CancelAndWaitTest2() {
+            asyncTestCommand = new AsyncCommand<int>(CancelInsideCommandAndWaitMethod);
+            int isExecutingChangedCount = 0;
+            ((INotifyPropertyChanged)asyncTestCommand).PropertyChanged += (s, e) =>
+                e.If(x => x.PropertyName == "IsExecuting").Do(x => isExecutingChangedCount++);
+            asyncTestCommand.Execute(100);
+            Assert.AreEqual(1, isExecutingChangedCount);
+            Assert.AreEqual(true, asyncTestCommand.IsExecuting);
+            asyncTestCommand.Wait();
+            Assert.AreEqual(2, isExecutingChangedCount);
+            Assert.AreEqual(false, asyncTestCommand.IsExecuting);
+        }
+        Task CancelInsideCommandAndWaitMethod(int timeout) {
+            return Task.Factory.StartNew(() => {
+                for(int i = 0; i < 10; i++) {
+                    if(asyncTestCommand.IsCancellationRequested) break;
+                    Thread.Sleep(timeout == 0 ? 100 : timeout);
+                    if(i == 5)
+                        asyncTestCommand.CancellationTokenSource.Cancel();
+                }
+                executingAsyncMethod = false;
+            });
+        }
+#else
+        [Test, Asynchronous]
+        public void WaitTest() {
+            asyncTestCommand = new AsyncCommand<int>((a) => AsyncExecuteMethod(a));
+            executingAsyncMethod = true;
+            asyncTestCommand.Execute(100);
+            asyncTestCommand.Wait();
+            Assert.AreEqual(false, executingAsyncMethod);
+            asyncTestCommand.Wait();
+            Assert.AreEqual(false, executingAsyncMethod);
+            EnqueueTestComplete();
+        }
+        [Test, Asynchronous]
+        public void CancelAndWaitTest() {
+            asyncTestCommand = new AsyncCommand<int>(CancelInsideCommandAndWaitMethod);
+            executingAsyncMethod = true;
+            asyncTestCommand.Execute(100);
+            asyncTestCommand.CancellationTokenSource.Cancel();
+            Assert.AreEqual(true, executingAsyncMethod);
+            asyncTestCommand.Wait();
+            Assert.AreEqual(false, executingAsyncMethod);
+            EnqueueTestComplete();
+        }
+        [Test, Asynchronous]
+        public void CancelAndWaitTest2() {
+            asyncTestCommand = new AsyncCommand<int>(CancelInsideCommandAndWaitMethod);
+            executingAsyncMethod = true;
+            asyncTestCommand.Execute(100);
+            asyncTestCommand.Wait();
+            Assert.AreEqual(false, executingAsyncMethod);
+            EnqueueTestComplete();
+        }
+        Task CancelInsideCommandAndWaitMethod(int timeout) {
+            return Task.Factory.StartNew(() => {
+                for(int i = 0; i < 10; i++) {
+                    if(asyncTestCommand.IsCancellationRequested) break;
+                    Thread.Sleep(timeout == 0 ? 100 : timeout);
+                    if(i == 5)
+                        asyncTestCommand.CancellationTokenSource.Cancel();
+                }
+                executingAsyncMethod = false;
+            });
+        }
+#endif
 #endif
     }
 }

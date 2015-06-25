@@ -44,7 +44,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 #if !SILVERLIGHT
             Assert.IsNull(iService.File);
 #endif
-            Assert.AreEqual(string.Empty, iService.SafeFileName);
+            Assert.AreEqual(string.Empty, iService.SafeFileName());
         }
 
     }
