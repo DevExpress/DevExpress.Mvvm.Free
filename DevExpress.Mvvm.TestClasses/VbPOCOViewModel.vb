@@ -1,4 +1,6 @@
-﻿Public Class VbPOCOViewModel
+﻿Imports System.Linq.Expressions
+
+Public Class VbPOCOViewModel
     Public Overridable Property AutoImlementedProperty As Integer
     Public AutoImlementedPropertyOldValue As Integer
     Protected Sub OnAutoImlementedPropertyChanged(ByVal oldValue As Integer)
@@ -66,4 +68,26 @@ End Class
 
 Public Class TestEntity
     Public Overridable Property ID As Integer
+End Class
+
+Public Class PropertyNameInSetterAndGetterShouldMatch
+    Public nameInSetter As String
+    Public nameInGetter As String
+    Private getnameField As Func(Of Expression(Of Func(Of String)), String)
+    Public Sub Test(getname As Func(Of Expression(Of Func(Of String)), String))
+        getnameField = getname
+        Prop = "abc"
+        Dim a = Prop
+    End Sub
+    Private field As String
+    Private Property Prop() As String
+        Get
+            nameInGetter = getnameField(Function() Prop)
+            Return field
+        End Get
+        Set(value As String)
+            nameInSetter = getnameField(Function() Prop)
+            field = value
+        End Set
+    End Property
 End Class
