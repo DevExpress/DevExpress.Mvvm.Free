@@ -6,7 +6,7 @@ namespace Example.ViewModel {
     [POCOViewModel(ImplementIDataErrorInfo = true)]
     public class MainViewModel : ViewModelBase {
         static PropertyMetadataBuilder<MainViewModel, string> AddPasswordCheck(PropertyMetadataBuilder<MainViewModel, string> builder) {
-            return builder.MatchesInstanceRule(vm => vm.Password == vm.ConfirmPassword, () => "The passwords don't match.")
+            return builder.MatchesInstanceRule((value, vm) => vm.Password == vm.ConfirmPassword, () => "The passwords don't match.")
                     .MinLength(8, () => "The password must be at least 8 characters long.")
                     .MaxLength(20, () => "The password must not exceed the length of 20.");
         }
