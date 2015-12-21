@@ -1,6 +1,4 @@
-#if SILVERLIGHT
-using Microsoft.Silverlight.Testing;
-#elif NETFX_CORE
+#if NETFX_CORE
 using DevExpress.TestFramework.NUnit;
 #else
 using NUnit.Framework;
@@ -22,7 +20,7 @@ namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
     public class LayoutTreeHelperTests : BaseWpfFixture {
         public LayoutTreeHelperTests() {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             textBoxTemplate = (DataTemplate)XamlReader.Parse(
 #else
             textBoxTemplate = (DataTemplate)XamlReader.Load(
@@ -33,7 +31,7 @@ xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
 <TextBox/>
 </DataTemplate>");
 
-#if !NETFX_CORE && !SILVERLIGHT
+#if !NETFX_CORE
             textBlockTemplate = (DataTemplate)XamlReader.Parse(
 @"<DataTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" 
 xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
@@ -99,7 +97,7 @@ xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
             EnqueueTestComplete();
         }
 
-#if !NETFX_CORE && !SILVERLIGHT
+#if !NETFX_CORE
         DataTemplate textBlockTemplate;
         [Test, Asynchronous]
         public void GetVisualParents2() {

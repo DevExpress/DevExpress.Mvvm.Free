@@ -5,7 +5,6 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 
 namespace DevExpress {
-#if !SILVERLIGHT
     public class TestWindowBase : Window {
         public delegate TestWindow TestWindowCreate();
         public static T GetContainer<T>(TestWindowCreate create) where T : TestWindow {
@@ -134,29 +133,4 @@ namespace DevExpress {
         public void Activate() {
         }
     }
-#else
-    public static class DispatcherHelper {
-        public static void UpdateLayoutAndDoEvents(UIElement element) {
-            element.UpdateLayout();
-            DoEvents();
-        }
-        public static void DoEvents() {
-        }
-    }
-
-    public class TestWindow : Window {
-        public static TestWindow Instance = new TestWindow();
-        public static TestWindow GetContainer() {
-            if(Instance == null)
-                Instance = new TestWindow();
-            return Instance;
-        }
-    }
-    public class Window : DXWindowBase {
-        public override void Show() {
-            base.Show();
-            DispatcherHelper.UpdateLayoutAndDoEvents(this);
-        }
-    }
-#endif
 }

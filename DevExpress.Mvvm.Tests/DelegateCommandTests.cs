@@ -1,9 +1,5 @@
 #pragma warning disable 612,618
-#if SILVERLIGHT
-using Microsoft.Silverlight.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#elif NETFX_CORE
-#else
+#if !NETFX_CORE
 using NUnit.Framework;
 #endif
 using System;
@@ -20,6 +16,7 @@ using System.Windows.Controls;
 using DevExpress.TestFramework.NUnit;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using System.Reflection;
 using DevExpress.TestRunner.Utils;
 #endif
 
@@ -332,7 +329,7 @@ namespace DevExpress.Mvvm.Tests {
             command.RaiseCanExecuteChanged();
             Assert.IsTrue(button.IsEnabled);
         }
-#if !SILVERLIGHT && !NETFX_CORE &&!NETFX_CORE
+#if !NETFX_CORE
         [Test]
         public void CanExecuteIsEnabledWithCommandManager() {
             Button button = new Button();
@@ -357,7 +354,7 @@ namespace DevExpress.Mvvm.Tests {
             command.RaiseCanExecuteChanged();
             Assert.AreEqual(1, counter.FireCount);
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         void RaiseCanExecuteChangedWithCommandManagerTest<T>(CommandBase<T> command) {
             var counter = new CanExecuteChangedCounter(command);
             command.RaiseCanExecuteChanged();
@@ -381,7 +378,7 @@ namespace DevExpress.Mvvm.Tests {
             RaiseCanExecuteChangedTest(command3);
             RaiseCanExecuteChangedTest(command4);
         }
-#if !SILVERLIGHT && !NETFX_CORE &&!NETFX_CORE
+#if !NETFX_CORE
         [Test]
         public void RaiseCanExecuteChangedWithCommandManager() {
             CommandBase<object> command1 = CreateCommand(() => { }, () => true);
@@ -479,7 +476,7 @@ namespace DevExpress.Mvvm.Tests {
             MemoryLeaksHelper.EnsureCollected(wrButton);
         }
 
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         [Test]
         public void CommandMultithreading() {
             Window mainWindow = new Window();
@@ -513,14 +510,14 @@ namespace DevExpress.Mvvm.Tests {
             return new DelegateCommand(execute);
         }
         protected override CommandBase<object> CreateCommand(Action execute, bool useCommandManager) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             return new DelegateCommand(execute, useCommandManager);
 #else
             return new DelegateCommand(execute);
 #endif
         }
         protected override CommandBase<object> CreateCommand(Action execute, Func<bool> canExecute, bool? useCommandManager = null) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             return new DelegateCommand(execute, canExecute, useCommandManager);
 #else
             return new DelegateCommand(execute, canExecute);
@@ -530,14 +527,14 @@ namespace DevExpress.Mvvm.Tests {
             return new DelegateCommand<T>(execute);
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute, bool useCommandManager) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             return new DelegateCommand<T>(execute, useCommandManager);
 #else
             return new DelegateCommand<T>(execute);
 #endif
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute, Func<T, bool> canExecute, bool? useCommandManager = null) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             return new DelegateCommand<T>(execute, canExecute, useCommandManager);
 #else
             return new DelegateCommand<T>(execute, canExecute);
@@ -555,7 +552,7 @@ namespace DevExpress.Mvvm.Tests {
             return new AsyncCommand(() => Task.Factory.StartNew(() => execute())) { AllowMultipleExecution = true };
         }
         protected override CommandBase<object> CreateCommand(Action execute, bool useCommandManager) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             if(execute == null)
                 return new AsyncCommand(null, useCommandManager) { AllowMultipleExecution = true };
             return new AsyncCommand(() => Task.Factory.StartNew(() => execute()), useCommandManager) { AllowMultipleExecution = true };
@@ -566,7 +563,7 @@ namespace DevExpress.Mvvm.Tests {
 #endif
         }
         protected override CommandBase<object> CreateCommand(Action execute, Func<bool> canExecute, bool? useCommandManager = null) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             if(execute == null)
                 return new AsyncCommand(null, canExecute, useCommandManager) { AllowMultipleExecution = true };
             return new AsyncCommand(() => Task.Factory.StartNew(() => execute()), canExecute, useCommandManager) { AllowMultipleExecution = true };
@@ -582,7 +579,7 @@ namespace DevExpress.Mvvm.Tests {
             return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x))) { AllowMultipleExecution = true };
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute, bool useCommandManager) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             if(execute == null)
                 return new AsyncCommand<T>(null, useCommandManager) { AllowMultipleExecution = true };
             return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x)), useCommandManager) { AllowMultipleExecution = true };
@@ -593,7 +590,7 @@ namespace DevExpress.Mvvm.Tests {
 #endif
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute, Func<T, bool> canExecute, bool? useCommandManager = null) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             if(execute == null)
                 return new AsyncCommand<T>(null, canExecute, useCommandManager) { AllowMultipleExecution = true };
             return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x)), canExecute, useCommandManager) { AllowMultipleExecution = true };
@@ -617,11 +614,7 @@ namespace DevExpress.Mvvm.Tests {
             if(t.IsGenericType()) {
 #endif
                 Type genericType = t.GetGenericArguments()[0];
-#if !NETFX_CORE
                 GetType().GetMethod("Wait2", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).
-#else
-                GetType().GetMethod("Wait2").
-#endif
                     MakeGenericMethod(genericType).Invoke(this, new object[] { command });
             } else {
                 Wait1(command);
@@ -794,7 +787,6 @@ namespace DevExpress.Mvvm.Tests {
             EnqueueConditional(() => isExecutingChanged);
             EnqueueTestComplete();
         }
-#if !SILVERLIGHT
         [Test, Asynchronous]
         public void WaitTest() {
             asyncTestCommand = new AsyncCommand<int>((a) => AsyncExecuteMethod(a));
@@ -850,50 +842,6 @@ namespace DevExpress.Mvvm.Tests {
                 executingAsyncMethod = false;
             });
         }
-#else
-        [Test, Asynchronous]
-        public void WaitTest() {
-            asyncTestCommand = new AsyncCommand<int>((a) => AsyncExecuteMethod(a));
-            executingAsyncMethod = true;
-            asyncTestCommand.Execute(100);
-            asyncTestCommand.Wait();
-            Assert.AreEqual(false, executingAsyncMethod);
-            asyncTestCommand.Wait();
-            Assert.AreEqual(false, executingAsyncMethod);
-            EnqueueTestComplete();
-        }
-        [Test, Asynchronous]
-        public void CancelAndWaitTest() {
-            asyncTestCommand = new AsyncCommand<int>(CancelInsideCommandAndWaitMethod);
-            executingAsyncMethod = true;
-            asyncTestCommand.Execute(100);
-            asyncTestCommand.CancellationTokenSource.Cancel();
-            Assert.AreEqual(true, executingAsyncMethod);
-            asyncTestCommand.Wait();
-            Assert.AreEqual(false, executingAsyncMethod);
-            EnqueueTestComplete();
-        }
-        [Test, Asynchronous]
-        public void CancelAndWaitTest2() {
-            asyncTestCommand = new AsyncCommand<int>(CancelInsideCommandAndWaitMethod);
-            executingAsyncMethod = true;
-            asyncTestCommand.Execute(100);
-            asyncTestCommand.Wait();
-            Assert.AreEqual(false, executingAsyncMethod);
-            EnqueueTestComplete();
-        }
-        Task CancelInsideCommandAndWaitMethod(int timeout) {
-            return Task.Factory.StartNew(() => {
-                for(int i = 0; i < 10; i++) {
-                    if(asyncTestCommand.IsCancellationRequested) break;
-                    Thread.Sleep(timeout == 0 ? 100 : timeout);
-                    if(i == 5)
-                        asyncTestCommand.CancellationTokenSource.Cancel();
-                }
-                executingAsyncMethod = false;
-            });
-        }
-#endif
 #endif
     }
 }

@@ -1,8 +1,4 @@
-#if SILVERLIGHT
-using Microsoft.Silverlight.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Windows.Controls;
-#elif NETFX_CORE
+#if NETFX_CORE
 using DevExpress.TestFramework.NUnit;
 using Windows.UI.Xaml.Controls;
 #else
@@ -51,7 +47,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(typeof(TestView1), view.GetType());
         }
 #endif
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         [Test]
         public void NullService() {
             IViewLocator vl = null;

@@ -2,12 +2,7 @@
 using DevExpress.TestFramework.NUnit;
 using Windows.UI.Xaml.Controls;
 #else
-#if !SILVERLIGHT
 using NUnit.Framework;
-#else
-using Microsoft.Silverlight.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#endif
 using System.Windows.Controls;
 #endif
 using System;

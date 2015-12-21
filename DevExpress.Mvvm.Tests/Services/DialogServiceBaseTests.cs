@@ -1,9 +1,4 @@
-#if SILVERLIGHT
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MessageBoxButton = DevExpress.Mvvm.DXMessageBoxButton;
-#else
 using NUnit.Framework;
-#endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,11 +10,7 @@ namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class DialogServiceTests {
         public class TestDialogService : IDialogService {
-#if !SILVERLIGHT
             public UICommand ShowDialog(IEnumerable<UICommand> dialogCommands, string title, string documentType, object viewModel, object parameter, object parentViewModel) {
-#else
-            public Task<UICommand> ShowDialog(IEnumerable<UICommand> dialogCommands, string title, string documentType, object viewModel, object parameter, object parentViewModel) {
-#endif
                 ViewModel = viewModel;
                 ParentViewModel = parentViewModel;
                 Parameter = parameter;

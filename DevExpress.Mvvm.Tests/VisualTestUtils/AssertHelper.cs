@@ -1,17 +1,18 @@
-#if SILVERLIGHT
-#elif NETFX_CORE
+#if NETFX_CORE
 using DevExpress.TestFramework;
 #else
 using NUnit.Framework;
 #endif
+#if !NETFX_CORE
 using DevExpress.Mvvm.Native;
+#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 namespace DevExpress {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
     public class SetNotEqualsException : AssertionException {
         public SetNotEqualsException(string message) : base(message) { }
     }
@@ -95,7 +96,7 @@ namespace DevExpress {
                 MethodInfo setter = expectedProperty.GetSetMethod();
                 if(setter == null || !setter.IsPublic) continue;
                 PropertyInfo actualProperty = actual.GetType().GetProperty(expectedProperty.Name);
-                Assert.AreEqual(expectedProperty.Name, actualProperty.With(a => a.Name));
+                Assert.AreEqual(expectedProperty.Name, actualProperty != null ? actualProperty.Name : null);
                 Assert.AreEqual(expectedProperty.GetValue(expected, null), actualProperty.GetValue(actual, null));
             }
         }
@@ -147,7 +148,7 @@ namespace DevExpress {
                 }
                 message += "\n";
             }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             throw new SetNotEqualsException(message);
 #else
       throw new Exception(message);
@@ -166,6 +167,16 @@ namespace DevExpress {
             }
             Assert.Fail(string.Format("No exception was thrown ({0} was expected)", typeof(T).Name));
         }
+
+        public static void AssertDoesNotThrow(Action action) {
+            try {
+                action();
+                return;
+            } catch(Exception e) {
+                Assert.Fail(string.Format("Expected: No Exception to be thrown\nBut was: {0}", e));
+            }
+        }
+
         static bool AreEqual(object a, object b, bool compareByProperties, bool compareTypes) {
             if(!compareByProperties) return object.Equals(a, b);
             if(a == null && b == null) return true;

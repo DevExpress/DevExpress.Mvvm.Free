@@ -1,6 +1,4 @@
-#if !SILVERLIGHT
 using NUnit.Framework;
-#endif
 using System;
 using System.ComponentModel;
 using System.Collections.Generic;
@@ -13,7 +11,6 @@ using DevExpress.Mvvm.UI.Native;
 namespace DevExpress {
     [TestFixture]
     public class BaseWpfFixture : WpfTestWindow {
-#if !SILVERLIGHT
         protected class BindingErrorsTraceListener : TraceListener {
             public static readonly BindingErrorsTraceListener Intance = new BindingErrorsTraceListener();
             StringBuilder builder = new StringBuilder();
@@ -86,7 +83,6 @@ namespace DevExpress {
             BindingErrorsTraceListener.Intance.Report(this);
             base.TearDownCore();
         }
-#endif
     }
 
     public class BaseWpfFixtureEx : BaseWpfFixture {

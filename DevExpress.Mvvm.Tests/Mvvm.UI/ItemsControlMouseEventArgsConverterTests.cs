@@ -7,12 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Native;
-#if SILVERLIGHT
-using Microsoft.Silverlight.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#else
 using NUnit.Framework;
-#endif
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
@@ -52,7 +47,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             var result = converter.TestConvert(itemsControl, originalSource);
             Assert.IsNull(result);
         }
-#if !SILVERLIGHT
         [Test]
         public void ListViewTest() {
             var containter = new ListViewItem() { DataContext = itemViewModel1 };
@@ -62,7 +56,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             var result = converter.TestConvert(itemsControl, originalSource);
             Assert.AreEqual(itemViewModel1, result);
         }
-#endif
         public class CustomListBox : ListBox { }
         public class CustomListBoxItem : ListBoxItem { }
         [Test]

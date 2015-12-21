@@ -1,7 +1,4 @@
-#if SILVERLIGHT
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#elif NETFX_CORE
-#else
+#if !NETFX_CORE
 using NUnit.Framework;
 #endif
 #if !FREE && !NETFX_CORE
@@ -112,11 +109,7 @@ namespace DevExpress.Mvvm.Tests {
             public void MethodWithParameter(int parameter) { MethodWithParameterCallCount++; MethodWithParameterLastParameter = parameter; }
             public bool CanMethodWithParameter(int parameter) { return parameter != 13; }
 
-            [Command(CanExecuteMethodName = "CanMethodWithCustomCanExecute_"
-#if !SILVERLIGHT
-                , UseCommandManager = false
-#endif
-                )]
+            [Command(CanExecuteMethodName = "CanMethodWithCustomCanExecute_", UseCommandManager = false)]
             public void MethodWithCustomCanExecute() { }
             public bool CanMethodWithCustomCanExecute_() { return MethodWithCustomCanExecuteCanExcute; }
         }
@@ -147,14 +140,9 @@ namespace DevExpress.Mvvm.Tests {
                 builder.CommandFromMethod(x => x.MethodWithReturnType());
                 builder.CommandFromMethod(x => x.MethodWithParameter(default(int)));
                 builder.CommandFromMethod(x => x.MethodWithCustomCanExecute())
-#if !SILVERLIGHT
                     .DoNotUseCommandManager()
-#endif
                     .CanExecuteMethod(x => x.CanMethodWithCustomCanExecute_())
-#if !SILVERLIGHT
-                    .DoNotUseCommandManager()
-#endif
-                    ;
+                    .DoNotUseCommandManager();
             }
         }
         [Test]
@@ -164,14 +152,12 @@ namespace DevExpress.Mvvm.Tests {
             viewModel = new CommandAttributeViewModel();
             CommandAttribute_ViewModelTestCore(viewModel, () => viewModel.MethodWithCanExecute(), () => viewModel.MethodWithCustomCanExecute());
         }
-#if !SILVERLIGHT
         [Test]
         public void CommandAttribute_ViewModelTest_FluentAPI() {
             var viewModel = new CommandAttributeViewModel_FluentAPI();
             CommandAttribute_ViewModelTestCore(viewModel, () => viewModel.MethodWithCanExecute(), () => viewModel.MethodWithCustomCanExecute());
             Assert.AreSame(((ICustomTypeDescriptor)viewModel).GetProperties(), ((ICustomTypeDescriptor)viewModel).GetProperties());
         }
-#endif
         void CommandAttribute_ViewModelTestCore(CommandAttributeViewModelBaseCounters viewModel, Expression<Action> methodWithCanExecuteExpression, Expression<Action> methodWithCustomCanExecuteExpression) {
             var button = new Button() { DataContext = viewModel };
 
@@ -198,15 +184,12 @@ namespace DevExpress.Mvvm.Tests {
             button.SetBinding(Button.CommandProperty, new Binding("MethodWithCanExecuteCommand"));
             Assert.IsFalse(button.IsEnabled);
             viewModel.MethodWithCanExecuteCanExcute = true;
-#if !SILVERLIGHT
             DispatcherHelper.DoEvents();
-#endif
             Assert.IsFalse(button.IsEnabled);
             viewModel.RaiseCanExecuteChanged(methodWithCanExecuteExpression);
-#if !SILVERLIGHT
+
             Assert.IsFalse(button.IsEnabled);
             DispatcherHelper.DoEvents();
-#endif
             Assert.IsTrue(button.IsEnabled);
 
             button.SetBinding(Button.CommandProperty, new Binding("MethodWithReturnTypeCommand"));

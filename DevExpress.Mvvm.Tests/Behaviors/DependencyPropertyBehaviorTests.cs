@@ -1,9 +1,4 @@
-#if !SILVERLIGHT
 using NUnit.Framework;
-#else
-using Microsoft.Silverlight.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#endif
 using DevExpress.Mvvm.UI.Interactivity;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -130,7 +125,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
-#if !SILVERLIGHT
         [Test, Asynchronous]
         public void OneWayBinding() {
             var vm = new PropertyChangedViewModel();
@@ -145,7 +139,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(2, control.propertyChangedCounter);
             Assert.AreEqual("2", control.Property);
         }
-#endif
     }
     public class PropertyChangedViewModel : BindableBase {
         public PropertyChangedViewModel NestedPropertyChangedViewModel { get; set; }

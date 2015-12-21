@@ -1,9 +1,4 @@
-#if SILVERLIGHT
-using Window = DevExpress.Xpf.Core.DXWindow;
-using Microsoft.Silverlight.Testing;
-#else
 using NUnit.Framework;
-#endif
 using DevExpress.Mvvm.Tests;
 using System;
 using System.Collections.Generic;
@@ -35,12 +30,10 @@ namespace DevExpress.Mvvm.UI.Tests {
         public class View1 : FrameworkElement { }
         public class View2 : FrameworkElement { }
         public class EmptyView : FrameworkElement { }
-#if !SILVERLIGHT
         protected class TestStyleSelector : StyleSelector {
             public Style Style { get; set; }
             public override Style SelectStyle(object item, DependencyObject container) { return Style; }
         }
-#endif
         protected class ViewModelWithNullTitle : IDocumentContent {
             public IDocumentOwner DocumentOwner { get; set; }
             void IDocumentContent.OnClose(CancelEventArgs e) { }
@@ -102,6 +95,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 Assert.AreEqual(iService.ActiveDocument, document);
                 Assert.IsNotNull(document.Content);
                 Assert.AreEqual(document.Content, ViewHelper.GetViewModelFromView(service.ActiveView));
+                Assert.AreEqual(document.Content, ((WindowedDocumentUIService.WindowDocument)document).Window.RealWindow.DataContext);
                 document.Close();
             });
             EnqueueTestComplete();
@@ -140,11 +134,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 Assert.AreEqual(iService.ActiveDocument, document2);
                 Assert.IsNotNull(document2.Content);
                 Assert.AreEqual(document2.Content, ViewHelper.GetViewModelFromView(service.ActiveView));
-#if !SILVERLIGHT
                 Assert.AreEqual(3, counter);
-#else
-                Assert.AreEqual(2, counter);
-#endif
                 document2.Close();
             });
             EnqueueTestComplete();
@@ -170,27 +160,19 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
-#if !SILVERLIGHT
                 Assert.AreEqual(3, counter);
-#else
-                Assert.AreEqual(2, counter);
-#endif
                 iService.ActiveDocument = document1;
             });
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
                 Assert.AreEqual(iService.ActiveDocument, document1);
-#if !SILVERLIGHT
                 Assert.AreEqual(4, counter);
-#else
-                Assert.AreEqual(3, counter);
-#endif
                 document1.Close();
                 document2.Close();
             });
             EnqueueTestComplete();
         }
-#if !SILVERLIGHT
+
         [Test, Asynchronous]
         public void ActivateDocumentsWhenClosed() {
             EnqueueShowWindow();
@@ -337,8 +319,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             BindingOperations.SetBinding(service, WindowedDocumentUIService.ActiveDocumentProperty,
                 new Binding() { Path = new PropertyPath(BindingTestClass.ReadonlyActiveDocumentProperty), Source = testClass, Mode = BindingMode.Default });
         }
-#endif
-#if !SILVERLIGHT
+
         [Test]
         public void WindowStyleSelector() {
             WindowedDocumentUIService service = CreateService();
@@ -351,36 +332,11 @@ namespace DevExpress.Mvvm.UI.Tests {
             var windowDocument = (WindowedDocumentUIService.WindowDocument)document;
             Assert.AreEqual("Style Selector Tag", windowDocument.Window.RealWindow.Tag);
         }
-#endif
 
         protected virtual WindowedDocumentUIService CreateService() {
             return new WindowedDocumentUIService();
         }
     }
-#if !FREE && !SILVERLIGHT
-    [TestFixture]
-    public class WindowedDocumentUIServiceTests_DXWindow : WindowedDocumentUIServiceTests {
-        protected override WindowedDocumentUIService CreateService() {
-            return new WindowedDocumentUIService() { WindowType = typeof(DXWindow) };
-        }
-
-#if !FREE && !SILVERLIGHT
-        [Test]
-        public void UseDXWindowWithNullTitle() {
-            WindowedDocumentUIService service = CreateService();
-            Interaction.GetBehaviors(Window).Add(service);
-            IDocument document = service.CreateDocument("EmptyView", new ViewModelWithNullTitle());
-            Assert.AreEqual(string.Empty, document.Title);
-        }
-#endif
-    }
-    [TestFixture]
-    public class WindowedDocumentUIServiceTests_DXDialogWindow : WindowedDocumentUIServiceTests_DXWindow {
-        protected override WindowedDocumentUIService CreateService() {
-            return new WindowedDocumentUIService() { WindowType = typeof(DXDialogWindow) };
-        }
-    }
-#endif
 
 
     [TestFixture]

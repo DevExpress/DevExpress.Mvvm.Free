@@ -23,11 +23,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public static ImageSource GetImageSource(Uri uri) {
             if(uri == null) return null;
             try {
-#if SILVERLIGHT
-                return new BitmapImage(uri);
-#else
                 return BitmapFrame.Create(uri);
-#endif
             } catch {
                 return null;
             }
@@ -35,13 +31,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public static ImageSource GetImageSource(Stream stream) {
             if(stream == null) return null;
             try {
-#if SILVERLIGHT
-                BitmapImage bi = new BitmapImage();
-                bi.SetSource(stream);
-                return bi;
-#else
                 return BitmapFrame.Create(stream);
-#endif
             } catch {
                 return null;
             }

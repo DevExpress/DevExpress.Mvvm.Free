@@ -1,9 +1,4 @@
-#if !SILVERLIGHT
 using NUnit.Framework;
-#else
-using Microsoft.Silverlight.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#endif
 using System;
 using System.Linq;
 using System.Windows;
@@ -24,11 +19,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         [Test]
         public void DefalutValues() {
             FocusBehavior behavior = new FocusBehavior();
-#if !SILVERLIGHT
             Assert.AreEqual(TimeSpan.FromMilliseconds(0), FocusBehavior.DefaultFocusDelay);
-#else
-            Assert.AreEqual(TimeSpan.FromMilliseconds(500), FocusBehavior.DefaultFocusDelay);
-#endif
             Assert.AreEqual(null, behavior.FocusDelay);
             Assert.AreEqual("Loaded", behavior.EventName);
         }
@@ -36,11 +27,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void GetFocusDelay() {
             FocusBehavior behavior = new FocusBehavior();
             Action<double, double> checkFocusDelay = (double expectedInWpf, double expectedInSilverlight) => {
-#if !SILVERLIGHT
                 Assert.AreEqual(TimeSpan.FromMilliseconds(expectedInWpf), behavior.GetFocusDelay());
-#else
-                Assert.AreEqual(TimeSpan.FromMilliseconds(expectedInSilverlight), behavior.GetFocusDelay());
-#endif
             };
 
             Assert.AreEqual(null, behavior.FocusDelay);
@@ -95,18 +82,10 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueTestComplete();
         }
         void CheckFocusedElement(Control expectedFocusedElement) {
-#if !SILVERLIGHT
             Assert.IsTrue(expectedFocusedElement.IsFocused);
-#else
-            Assert.AreSame(expectedFocusedElement, FocusManager.GetFocusedElement());
-#endif
         }
         void CheckUnfocusedElement(Control expectedFocusedElement) {
-#if !SILVERLIGHT
             Assert.IsFalse(expectedFocusedElement.IsFocused);
-#else
-            Assert.AreNotSame(expectedFocusedElement, FocusManager.GetFocusedElement());
-#endif
         }
 
         [Test, Asynchronous]

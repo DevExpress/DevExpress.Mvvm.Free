@@ -1,8 +1,4 @@
-#if !SILVERLIGHT
 using NUnit.Framework;
-#else
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#endif
 using DevExpress.Mvvm.POCO;
 
 namespace DevExpress.Mvvm.UI.Tests {

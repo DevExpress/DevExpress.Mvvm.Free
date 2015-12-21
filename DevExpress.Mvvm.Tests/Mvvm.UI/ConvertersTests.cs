@@ -1,4 +1,5 @@
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
+using System.Windows.Media;
 using NUnit.Framework;
 #endif
 using System;
@@ -9,6 +10,8 @@ using DevExpress.TestFramework.NUnit;
 using Windows.UI.Xaml;
 using System.Globalization;
 using Windows.UI.Xaml.Data;
+using Windows.UI;
+using Windows.UI.Xaml.Media;
 #else
 using System.Globalization;
 using System.Windows.Data;
@@ -24,7 +27,7 @@ using DevExpress.Mvvm.Native;
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class ConvertersTest {
-#if !NETFX_CORE && !SILVERLIGHT
+#if !NETFX_CORE
         [Test]
         public void ReflectionConverterShouldNotPassNullIntoContructorIfTargetTypeIsNotValueType() {
             var converter1 = new ReflectionConverter();
@@ -184,7 +187,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(false, converter.ConvertBack("test", typeof(bool), null, null));
             Assert.AreEqual(new bool?(true), converter.ConvertBack(Visibility.Visible, typeof(bool?), null, null));
             Assert.AreEqual(new bool?(false), converter.ConvertBack(Visibility.Collapsed, typeof(bool?), null, null));
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Hidden, typeof(bool), null, null));
             Assert.AreEqual(new bool?(false), converter.ConvertBack(Visibility.Hidden, typeof(bool?), null, null));
 #endif
@@ -194,7 +197,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(Visibility.Visible, converter.Convert(false, typeof(Visibility), null, null));
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Visible, typeof(bool), null, null));
             Assert.AreEqual(true, converter.ConvertBack(Visibility.Collapsed, typeof(bool), null, null));
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             Assert.AreEqual(true, converter.ConvertBack(Visibility.Hidden, typeof(bool), null, null));
 #endif
 
@@ -203,7 +206,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(Visibility.Visible, converter.Convert(true, typeof(Visibility), null, null));
             Assert.AreEqual(true, converter.ConvertBack(Visibility.Visible, typeof(bool), null, null));
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Collapsed, typeof(bool), null, null));
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             Assert.AreEqual(Visibility.Hidden, converter.Convert(false, typeof(Visibility), null, null));
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Hidden, typeof(bool), null, null));
 #endif
@@ -378,6 +381,37 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(Visibility.Collapsed, converter.Convert(0, typeof(Visibility), null, null));
         }
         [Test]
+        public void ObjectToObjectColorBrushConvertion() {
+            var converter = new ObjectToObjectConverter();
+            converter.Map.Add(new MapItem { Source = "123", Target = "#ff0000" });
+            Assert.AreEqual("#ff0000", converter.Convert("123", typeof(string), null, null));
+
+            var color = (Color)converter.Convert("123", typeof(Color), null, null);
+            Assert.AreEqual(0xff, color.R);
+            Assert.AreEqual(0x00, color.G);
+            Assert.AreEqual(0x00, color.B);
+
+            color = ((SolidColorBrush)converter.Convert("123", typeof(SolidColorBrush), null, null)).Color;
+            Assert.AreEqual(0xff, color.R);
+            Assert.AreEqual(0x00, color.G);
+            Assert.AreEqual(0x00, color.B);
+
+            color = ((SolidColorBrush)converter.Convert("123", typeof(Brush), null, null)).Color;
+            Assert.AreEqual(0xff, color.R);
+            Assert.AreEqual(0x00, color.G);
+            Assert.AreEqual(0x00, color.B);
+
+            converter.Map.Add(new MapItem { Source = "abc", Target = "ff0000" });
+            Assert.AreEqual("ff0000", (string)converter.Convert("abc", typeof(Brush), null, null));
+
+            converter.Map.Add(new MapItem { Source = "xyz", Target = "#ff0000ff" });
+            color = ((SolidColorBrush)converter.Convert("xyz", typeof(Brush), null, null)).Color;
+            Assert.AreEqual(0xff, color.A);
+            Assert.AreEqual(0x00, color.R);
+            Assert.AreEqual(0x00, color.G);
+            Assert.AreEqual(0xff, color.B);
+        }
+        [Test]
         public void ObjectToObjectCoercions() {
             var converter = new ObjectToObjectConverter();
             converter.Map.Add(new MapItem { Source = "Red", Target = "1" });
@@ -392,6 +426,27 @@ namespace DevExpress.Mvvm.Tests {
 
             converter.Map.Add(new MapItem { Source = null, Target = "nullvalue" });
             Assert.AreEqual("nullvalue", converter.Convert(null, typeof(string), null, null));
+        }
+        [Test]
+        public void BooleanSupport() {
+            var converter = new ObjectToObjectConverter();
+            converter.Map.Add(new MapItem { Source = 1, Target = "True" });
+            converter.Map.Add(new MapItem { Source = 2, Target = "False" });
+            Assert.AreEqual(true, converter.Convert(1, typeof(bool), null, null));
+            Assert.AreEqual(false, converter.Convert(2, typeof(bool), null, null));
+        }
+        [Test]
+        public void NullableSupport() {
+            var converter = new ObjectToObjectConverter();
+            converter.Map.Add(new MapItem { Source = 1, Target = "True" });
+            converter.Map.Add(new MapItem { Source = 2, Target = "False" });
+            converter.Map.Add(new MapItem { Source = 3, Target = null });
+            converter.Map.Add(new MapItem { Source = 4, Target = 10 });
+            Assert.AreEqual((bool?)true, converter.Convert(1, typeof(bool?), null, null));
+            Assert.AreEqual((bool?)false, converter.Convert(2, typeof(bool?), null, null));
+            Assert.AreEqual(null, converter.Convert(3, typeof(bool?), null, null));
+            Assert.AreEqual((int?)10, converter.Convert(4, typeof(int?), null, null));
+            Assert.AreEqual(null, converter.Convert(3, typeof(int?), null, null));
         }
 #if NETFX_CORE
         [Test]
@@ -424,6 +479,21 @@ namespace DevExpress.Mvvm.Tests {
             }
         }
 #endif
+        [Test]
+        public void FormatStringConverterOutStringCase() {
+            FormatStringConverter converter = new FormatStringConverter() { FormatString = "MMMM" };
+            string s1 = (string)converter.Convert(DateTime.MinValue, typeof(string), null, null);
+            converter.OutStringCaseFormat = UI.FormatStringConverter.TextCaseFormat.Lower;
+            string s2 = (string)converter.Convert(DateTime.MinValue, typeof(string), null, null);
+            converter.OutStringCaseFormat = UI.FormatStringConverter.TextCaseFormat.Upper;
+            string s3 = (string)converter.Convert(DateTime.MinValue, typeof(string), null, null);
+
+            Assert.AreNotEqual(s1, s2);
+            Assert.AreNotEqual(s1, s3);
+            Assert.AreEqual(s1.ToLower(), s2);
+            Assert.AreEqual(s1.ToUpper(), s3);
+        }
+
         class MyClass {
             string id;
             public MyClass(string id) {

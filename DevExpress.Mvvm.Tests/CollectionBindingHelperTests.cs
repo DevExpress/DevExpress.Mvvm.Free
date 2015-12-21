@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using DevExpress.Mvvm.Native;
 using NUnit.Framework;
 
 namespace DevExpress.Mvvm.Tests {

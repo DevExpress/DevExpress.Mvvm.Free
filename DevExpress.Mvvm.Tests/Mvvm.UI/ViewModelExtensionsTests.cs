@@ -1,5 +1,4 @@
-#if SILVERLIGHT
-#elif NETFX_CORE
+#if NETFX_CORE
 using DevExpress.TestFramework.NUnit;
 #else
 using NUnit.Framework;
@@ -121,7 +120,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(parentViewModel, viewModel.With(x => x as ISupportParentViewModel).ParentViewModel);
             DocumentUIServiceBase.SetTitleBinding(button, TextBlock.TextProperty, textBlock);
             Assert.AreEqual("title", textBlock.Text);
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             viewModel.Title = "title2";
             Assert.AreEqual("title2", textBlock.Text);
 #endif
@@ -182,12 +181,10 @@ namespace DevExpress.Mvvm.Tests {
             var parentViewModel = new ViewModel();
             DependencyObject fallbackView;
             TextBlock fallbackElement;
-#if !SILVERLIGHT
             fallbackView = (DependencyObject)ViewHelper.CreateAndInitializeView(null, "TestView", null, "param", parentViewModel);
             fallbackElement = LayoutTreeHelper.GetVisualChildren(fallbackView).OfType<TextBlock>().First();
             Assert.AreEqual("\"TestView\" type not found.", fallbackElement.Text);
             ViewLocator.Default = new ViewLocator(new[] { this.GetType().Assembly });
-#endif
             try {
                 var testView = ViewHelper.CreateAndInitializeView(null, "TestView", null, "param", parentViewModel);
                 Assert.IsInstanceOf(typeof(TestView), testView);
@@ -261,9 +258,7 @@ namespace DevExpress.Mvvm.Tests {
             Action<InvalidOperationException> checkExceptionAction = x => {
                 Assert.IsTrue(x.Message.Contains(ViewHelper.Error_CreateViewMissArguments));
                 Assert.IsTrue(x.Message.Contains(ViewHelper.HelpLink_CreateViewMissArguments));
-#if !SILVERLIGHT
                 Assert.AreEqual(ViewHelper.HelpLink_CreateViewMissArguments, x.HelpLink);
-#endif
             };
             AssertHelper.AssertThrows<InvalidOperationException>(() => ViewHelper.CreateView(ViewLocator.Default, null), checkExceptionAction);
             AssertHelper.AssertThrows<InvalidOperationException>(() => ViewHelper.CreateAndInitializeView(viewLocator: ViewLocator.Default, documentType: null, viewModel: null, parameter: null, parentViewModel: null, viewTemplate: null, viewTemplateSelector: null), checkExceptionAction);

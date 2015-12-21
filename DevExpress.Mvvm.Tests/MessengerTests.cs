@@ -1,9 +1,7 @@
 #if !FREE && !NETFX_CORE
 using DevExpress.Xpf.Core.Tests;
 #endif
-#if SILVERLIGHT
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#elif NETFX_CORE
+#if NETFX_CORE
 using DevExpress.TestFramework.NUnit;
 #else
 using NUnit.Framework;
@@ -155,6 +153,9 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("test", recipient.Message);
         }
         [Test]
+#if NETFX_CORE
+        [TestRunner.Repeat]
+#endif
         public void BroadcastToOneType() {
             Messenger.Default = null; ;
             var recipient1 = new TestRecipient();
@@ -623,7 +624,6 @@ namespace DevExpress.Mvvm.Tests {
 
         [Test]
         public void CollectRecipient1() {
-#if !SILVERLIGHT
             CollectRecipientCore(x => x.RegisterPublic());
             CollectRecipientCore(x => x.RegisterPrivate());
             CollectRecipientCore(x => x.RegisterInternal());
@@ -632,20 +632,9 @@ namespace DevExpress.Mvvm.Tests {
             CollectRecipientCore(x => x.RegisterAnonymousPrivate());
             CollectRecipientCore(x => x.RegisterAnonymousInternal());
             CollectRecipientCore(x => x.RegisterAnonymousStatic());
-#else
-            CollectRecipientCore(x => x.RegisterPublic(), false);
-            CollectRecipientCore(x => x.RegisterPrivate(), true);
-            CollectRecipientCore(x => x.RegisterInternal(), true);
-            CollectRecipientCore(x => x.RegisterStatic(), false);
-            CollectRecipientCore(x => x.RegisterAnonymousPublic(), true);
-            CollectRecipientCore(x => x.RegisterAnonymousPrivate(), true);
-            CollectRecipientCore(x => x.RegisterAnonymousInternal(), true);
-            CollectRecipientCore(x => x.RegisterAnonymousStatic(), false);
-#endif
         }
         [Test]
         public void CollectRecipient2() {
-#if !SILVERLIGHT
             CollectRecipientCore(x => x.RegisterPublic(), x => x.CheckPublic("test"));
             CollectRecipientCore(x => x.RegisterPrivate(), x => x.CheckPrivate("test"));
             CollectRecipientCore(x => x.RegisterInternal(), x => x.CheckInternal("test"));
@@ -654,16 +643,6 @@ namespace DevExpress.Mvvm.Tests {
             CollectRecipientCore(x => x.RegisterAnonymousPrivate(), x => x.CheckPrivate("test"));
             CollectRecipientCore(x => x.RegisterAnonymousInternal(), x => x.CheckInternal("test"));
             CollectRecipientCore(x => x.RegisterAnonymousStatic(), x => x.CheckStatic("test"));
-#else
-            CollectRecipientCore(x => x.RegisterPublic(), false, x => x.CheckPublic("test"));
-            CollectRecipientCore(x => x.RegisterPrivate(), true, x => x.CheckPrivate("test"));
-            CollectRecipientCore(x => x.RegisterInternal(), true, x => x.CheckInternal("test"));
-            CollectRecipientCore(x => x.RegisterStatic(), false, x => x.CheckStatic("test"));
-            CollectRecipientCore(x => x.RegisterAnonymousPublic(), true, x => x.CheckPublic("test"));
-            CollectRecipientCore(x => x.RegisterAnonymousPrivate(), true, x => x.CheckPrivate("test"));
-            CollectRecipientCore(x => x.RegisterAnonymousInternal(), true, x => x.CheckInternal("test"));
-            CollectRecipientCore(x => x.RegisterAnonymousStatic(), false, x => x.CheckStatic("test"));
-#endif
         }
         void CollectRecipientCore(Action<TestRecipient3> registerMethod) {
             CollectRecipientCore(registerMethod, false, null);

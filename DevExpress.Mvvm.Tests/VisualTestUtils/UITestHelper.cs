@@ -10,11 +10,7 @@ namespace DevExpress {
             return element.Visibility == Visibility.Visible;
         }
         public static bool IsElementFocused(UIElement element) {
-#if SILVERLIGHT
-            return element != null && element == FocusManager.GetFocusedElement();
-#else
             return element.IsFocused;
-#endif
         }
         public static void ClickButton(ButtonBase button) {
             ButtonBaseAutomationPeer peer = FrameworkElementAutomationPeer.CreatePeerForElement(button) as ButtonBaseAutomationPeer;

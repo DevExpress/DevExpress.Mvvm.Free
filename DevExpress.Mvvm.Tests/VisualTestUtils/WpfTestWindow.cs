@@ -1,8 +1,4 @@
-#if !SILVERLIGHT
 using NUnit.Framework;
-#else
-using Microsoft.Silverlight.Testing;
-#endif
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,16 +23,11 @@ namespace DevExpress {
         }
 
 
-#if SILVERLIGHT
-        WorkItemTest workItemTest;
-#endif
         TestWindow window;
         Window realWindow;
 
         static WpfTestWindow() {
-#if !SILVERLIGHT
             DispatcherHelper.ForceIncreasePriorityContextIdleMessages();
-#endif
         }
         public WpfTestWindow() {
             MethodsToSkip = Enumerable.Empty<string>();
@@ -47,17 +38,11 @@ namespace DevExpress {
         protected virtual Window CreateRealWindow() { return new Window(); }
 
         protected virtual void SetUpCore() {
-#if SILVERLIGHT
-            System.Windows.Browser.HtmlPage.Plugin.Focus();
-            workItemTest = new WorkItemTest() { UnitTestHarness = DevExpress.TestHelper.TestHarness };
-#endif
         }
 
         protected virtual void TearDownCore() {
             if(realWindow != null) {
-#if !SILVERLIGHT
                 realWindow.SourceInitialized -= OnRealWindowSourceInitialized;
-#endif
                 realWindow.Close();
                 realWindow.Content = null;
             }
@@ -102,9 +87,6 @@ namespace DevExpress {
 
         [TestFixtureTearDown]
         public void FixtureTearDown() {
-#if SILVERLIGHT
-            System.Windows.Media.CompositionTarget.Rendering -= CompositionTarget_Rendering;
-#endif
             FixtureTearDownCore();
         }
 
@@ -122,9 +104,7 @@ namespace DevExpress {
             get {
                 if(realWindow == null) {
                     realWindow = CreateRealWindow();
-#if !SILVERLIGHT
                     realWindow.SourceInitialized += OnRealWindowSourceInitialized;
-#endif
                     SetThemeForWindow(realWindow);
                 }
                 return realWindow;
@@ -137,11 +117,7 @@ namespace DevExpress {
         protected virtual void SetThemeForWindow(System.Windows.Controls.ContentControl window) {
         }
         public virtual void EnqueueCallback(Action testCallbackDelegate) {
-#if SILVERLIGHT
-            workItemTest.EnqueueCallback(testCallbackDelegate);
-#else
             testCallbackDelegate();
-#endif
         }
         protected sealed class TimeoutGuard : IDisposable {
             DispatcherTimer timer = new DispatcherTimer();
@@ -159,7 +135,6 @@ namespace DevExpress {
                     timer.Stop();
             }
         }
-#if !SILVERLIGHT
         public virtual void EnqueueDialog(Action testCallbackDelegate, string message = null) {
             using(new TimeoutGuard(TimeoutInSeconds, GetActionTimeOutMessage(message, testCallbackDelegate))) {
                 testCallbackDelegate();
@@ -172,23 +147,6 @@ namespace DevExpress {
             }
             result(resultValue);
         }
-#else
-        public virtual void EnqueueDialog(Func<Task> testCallbackDelegate, string message = null) {
-            bool done = false;
-            EnqueueCallback(() => testCallbackDelegate().ContinueWith(t => done = true));
-            EnqueueConditional(() => done, GetActionTimeOutMessage(message, testCallbackDelegate));
-        }
-        public virtual void EnqueueDialog<T>(Func<Task<T>> testCallbackDelegate, Action<T> result, string message = null) {
-            T resultValue = default(T);
-            bool done = false;
-            EnqueueCallback(() => testCallbackDelegate().ContinueWith(t => {
-                resultValue = t.Result;
-                done = true;
-            }));
-            EnqueueConditional(() => done, GetActionTimeOutMessage(message, testCallbackDelegate));
-            EnqueueCallback(() => result(resultValue));
-        }
-#endif
         public void EnqueueTestWindowMainCallback(Action testCallbackDelegate) {
             EnqueueShowWindow();
             EnqueueLastCallback(testCallbackDelegate);
@@ -205,69 +163,18 @@ namespace DevExpress {
             EnqueueDelay(TimeSpan.FromMilliseconds(delayInMillisceconds));
         }
         public void EnqueueDelay(TimeSpan delay) {
-#if SILVERLIGHT
-            DateTime? start = null;
-            workItemTest.EnqueueConditional(() => {
-                if(start == null) {
-                    start = DateTime.Now;
-                }
-                return delay < DateTime.Now - start;
-            });
-#else
             DateTime start = DateTime.Now;
             while(delay > DateTime.Now - start) {
                 DispatcherHelper.DoEvents();
             }
-
-#endif
         }
         public virtual void EnqueueConditional(Func<bool> conditionalDelegate, string message) {
-#if SILVERLIGHT
-            DateTime? start = null;
-            workItemTest.EnqueueConditional(() => {
-                if(start == null) {
-                    start = DateTime.Now;
-                }
-                if (TimeSpan.FromSeconds(TimeoutInSeconds) < DateTime.Now - start) {
-                    throw new Exception(GetTimeOutMessage(message, conditionalDelegate));
-                }
-                return conditionalDelegate();
-            });
-#else
             Assert.AreEqual(true, conditionalDelegate(), GetTimeOutMessage(message, conditionalDelegate));
-#endif
         }
         public virtual void EnqueueWait(Func<bool> conditionalDelegate) {
             EnqueWaitForObject(() => conditionalDelegate() ? conditionalDelegate : null, o => { });
         }
-#if SILVERLIGHT
-        public virtual void EnqueWaitForAsync(Task task) {
-            if(task == null) return;
-            EnqueWaitForObject(() => task.Wait(1) ? task : null, o => { });
-        }
-        public virtual void EnqueWaitForObject(Func<object> getObject, Action<object> setObject) {
-            EnqueueConditional(() => {
-                object obj = getObject();
-                if(obj != null) {
-                    setObject(obj);
-                    return true;
-                }
-                return false;
-            });
-        }
-        public virtual void EnqueDelayOrWaitForObject(Func<object> getObject, Action<object> setObject, int delayInMillisceconds = 5000) {
-            DateTime? start= null;
-            workItemTest.EnqueueConditional(() => {
-                if(start == null) start = DateTime.Now;
-                object obj = getObject();
-                if(obj != null) {
-                    setObject(obj);
-                    return true;
-                }
-                return TimeSpan.FromMilliseconds(delayInMillisceconds) < DateTime.Now - start;
-            });
-        }
-#else
+
         public virtual void EnqueueWaitRealWindow(Func<bool> conditionalDelegate) {
             EnqueWaitForObjectRealWindow(() => conditionalDelegate() ? conditionalDelegate : null, o => { });
         }
@@ -339,7 +246,7 @@ namespace DevExpress {
                 }
             });
         }
-#endif
+
         string GetActionTimeOutMessage(string message, Delegate testDelegate) {
             return string.IsNullOrEmpty(message) ? string.Format("Action aborted with timeout {0} seconds: {1}", TimeoutInSeconds, testDelegate.Method) : message;
         }
@@ -350,23 +257,12 @@ namespace DevExpress {
             EnqueueConditional(conditionalDelegate, null);
         }
         public virtual void EnqueueTestComplete() {
-#if SILVERLIGHT
-            workItemTest.EnqueueTestComplete();
-#endif
         }
         public virtual void EnqueueShowRealWindow() {
             EnqueueLoadedEventAction(RealWindow, () => RealWindow.Show());
-#if SILVERLIGHT
-            EnqueueDelay(100);
-            EnqueueWindowUpdateLayout();
-#endif
         }
         public virtual void EnqueueShowWindow() {
             EnqueueShowWindow(Window);
-#if SILVERLIGHT
-            EnqueueDelay(100);
-            EnqueueWindowUpdateLayout();
-#endif
         }
         public virtual void EnqueueShowWindow(TestWindow window) {
             EnqueueLoadedEventAction(window, () => window.Show());
@@ -377,13 +273,11 @@ namespace DevExpress {
                 DispatcherHelper.UpdateLayoutAndDoEvents(Window);
             });
         }
-#if !SILVERLIGHT
         public virtual void EnqueueWindowUpdateLayout(DispatcherPriority priority) {
             EnqueueCallback(delegate {
                 DispatcherHelper.UpdateLayoutAndDoEvents(Window, priority);
             });
         }
-        #endif
         public void EnqueueLoadedEventAction(FrameworkElement element, Action action) {
             EnqueueLoadedEventAction(() => element, action);
         }
@@ -398,39 +292,9 @@ namespace DevExpress {
         }
         protected delegate void SubscribeDelegate(Func<FrameworkElement> getElementDelegate, RoutedEventHandler handler);
         protected void EnqueueWaitEventEventAction(Func<FrameworkElement> getElementDelegate, Action action, SubscribeDelegate subscribeDelegate) {
-#if SILVERLIGHT
-            bool eventFired = false;
-            EnqueueCallback(() => subscribeDelegate(getElementDelegate, delegate { eventFired = true; }));
-            EnqueueCallback(action);
-            EnqueueConditional(() => eventFired);
-#else
             action();
-#endif
         }
-#if SILVERLIGHT
-        bool rendered;
-        protected void EnqueueWaitRenderAction() {
-            EnqueueCallback(() => {
-                System.Windows.Media.CompositionTarget.Rendering -= CompositionTarget_Rendering;
-                System.Windows.Media.CompositionTarget.Rendering += CompositionTarget_Rendering;
-                rendered = false;
-            });
-            EnqueueConditional(() => {
-                if(rendered) {
-                    rendered = false;
-                    return true;
-                }
-                return false;
-            });
-        }
-
-        void CompositionTarget_Rendering(object sender, EventArgs e) {
-            System.Windows.Media.CompositionTarget.Rendering -= CompositionTarget_Rendering;
-            rendered = true;
-        }
-#else
         protected void EnqueueWaitRenderAction() { }
-#endif
         public static void CheckToSkip(IEnumerable<string> methodsToSkip) {
             if (methodsToSkip.Count() == 0)
                 return;

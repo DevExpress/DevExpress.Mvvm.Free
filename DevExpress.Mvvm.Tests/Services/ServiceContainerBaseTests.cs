@@ -1,6 +1,4 @@
-#if SILVERLIGHT
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#elif NETFX_CORE
+#if NETFX_CORE
 using DevExpress.TestFramework.NUnit;
 using Windows.UI.Xaml;
 #else
@@ -478,7 +476,7 @@ namespace DevExpress.Mvvm.Tests {
         }
     }
 
-#if !FREE && !NETFX_CORE && !SILVERLIGHT
+#if !FREE && !NETFX_CORE
     [TestFixture]
     public class ServiceBaseTests : BaseWpfFixture {
         [Test]

@@ -15,6 +15,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Markup;
 using System.Windows.Media;
+using System.Linq;
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
@@ -72,18 +73,29 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsNull(behavior.NameConverter);
             Assert.AreEqual(EnumMembersSortMode.Default, behavior.SortMode);
         }
-        [Test, ExpectedException(ExpectedMessage = "EnumType required")]
-        public void EnumRequiredExceptionForCreate() {
+        [Test]
+        public void EmptyItemsSorceForCreate() {
             EnumItemsSourceBehavior listBoxBehavior = new EnumItemsSourceBehavior();
             ListBox listBoxControl = new ListBox();
             Interaction.GetBehaviors(listBoxControl).Add(listBoxBehavior);
+            Assert.AreEqual(Enumerable.Empty<EnumMemberInfo>(), listBoxControl.ItemsSource);
         }
-        [Test, ExpectedException(ExpectedMessage = "EnumType required")]
-        public void EnumRequiredExceptionForSet() {
+        [Test]
+        public void EmptyItemsSorceForSet() {
             EnumItemsSourceBehavior listBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum1) };
             ListBox listBoxControl = new ListBox();
             Interaction.GetBehaviors(listBoxControl).Add(listBoxBehavior);
             listBoxBehavior.EnumType = null;
+            Assert.AreEqual(Enumerable.Empty<EnumMemberInfo>(), listBoxControl.ItemsSource);
+        }
+        [Test]
+        public void IsEnumTypeTest() {
+            EnumItemsSourceBehavior listBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(string) };
+            ListBox listBoxControl = new ListBox();
+            Interaction.GetBehaviors(listBoxControl).Add(listBoxBehavior);
+            Assert.AreEqual(Enumerable.Empty<EnumMemberInfo>(), listBoxControl.ItemsSource);
+            listBoxBehavior.EnumType = typeof(TestEnum2);
+            Assert.AreEqual(3, listBoxControl.Items.Count);
         }
         [Test]
         public void BehaviorOnLoaded() {
@@ -116,13 +128,13 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsTrue(EnumMemberInfoComparer((EnumMemberInfo)comboBox.Items.GetItemAt(0), "CopyDescription", "CopyItem",
                UriPrefix + "Copy.png", "Copy Item"));
             Assert.IsTrue(EnumMemberInfoComparer((EnumMemberInfo)comboBox.Items.GetItemAt(1), "DeleteDescription", "DeleteItem",
-               UriPrefix + "Delete.png", "Custom Delete Item"));
+               UriPrefix + "Delete.png", "CustomDeleteItem"));
             Assert.IsTrue(EnumMemberInfoComparer((EnumMemberInfo)comboBox.Items.GetItemAt(2), null, "CutItem",
                null, "Cut Item"));
             Assert.IsTrue(EnumMemberInfoComparer((EnumMemberInfo)itemsControl.Items.GetItemAt(0), "CopyDescription", "CopyItem",
                UriPrefix + "Copy.png", "Copy Item"));
             Assert.IsTrue(EnumMemberInfoComparer((EnumMemberInfo)itemsControl.Items.GetItemAt(1), "DeleteDescription", "DeleteItem",
-               UriPrefix + "Delete.png", "Custom Delete Item"));
+               UriPrefix + "Delete.png", "CustomDeleteItem"));
             Assert.IsTrue(EnumMemberInfoComparer((EnumMemberInfo)itemsControl.Items.GetItemAt(2), null, "CutItem",
                null, "Cut Item"));
         }
@@ -165,23 +177,23 @@ namespace DevExpress.Mvvm.UI.Tests {
             listBoxBehavior.SortMode = EnumMembersSortMode.DisplayNameDescending;
             comboBoxBehavior.SortMode = EnumMembersSortMode.DisplayNameDescending;
             itemsControlBehavior.SortMode = EnumMembersSortMode.DisplayNameDescending;
-            Assert.IsTrue(ItemsControlNameComparer(listBox, "Cut Item", "Custom Delete Item", "Copy Item"));
-            Assert.IsTrue(ItemsControlNameComparer(comboBox, "Cut Item", "Custom Delete Item", "Copy Item"));
-            Assert.IsTrue(ItemsControlNameComparer(itemsControl, "Cut Item", "Custom Delete Item", "Copy Item"));
+            Assert.IsTrue(ItemsControlNameComparer(listBox, "Cut Item", "CustomDeleteItem", "Copy Item"));
+            Assert.IsTrue(ItemsControlNameComparer(comboBox, "Cut Item", "CustomDeleteItem", "Copy Item"));
+            Assert.IsTrue(ItemsControlNameComparer(itemsControl, "Cut Item", "CustomDeleteItem", "Copy Item"));
 
             listBoxBehavior.SortMode = EnumMembersSortMode.DisplayNameLength;
             comboBoxBehavior.SortMode = EnumMembersSortMode.DisplayNameLength;
             itemsControlBehavior.SortMode = EnumMembersSortMode.DisplayNameLength;
-            Assert.IsTrue(ItemsControlNameComparer(listBox, "Cut Item", "Copy Item", "Custom Delete Item"));
-            Assert.IsTrue(ItemsControlNameComparer(comboBox, "Cut Item", "Copy Item", "Custom Delete Item"));
-            Assert.IsTrue(ItemsControlNameComparer(itemsControl, "Cut Item", "Copy Item", "Custom Delete Item"));
+            Assert.IsTrue(ItemsControlNameComparer(listBox, "Cut Item", "Copy Item", "CustomDeleteItem"));
+            Assert.IsTrue(ItemsControlNameComparer(comboBox, "Cut Item", "Copy Item", "CustomDeleteItem"));
+            Assert.IsTrue(ItemsControlNameComparer(itemsControl, "Cut Item", "Copy Item", "CustomDeleteItem"));
 
             listBoxBehavior.SortMode = EnumMembersSortMode.DisplayNameLengthDescending;
             comboBoxBehavior.SortMode = EnumMembersSortMode.DisplayNameLengthDescending;
             itemsControlBehavior.SortMode = EnumMembersSortMode.DisplayNameLengthDescending;
-            Assert.IsTrue(ItemsControlNameComparer(listBox, "Custom Delete Item", "Copy Item", "Cut Item"));
-            Assert.IsTrue(ItemsControlNameComparer(comboBox, "Custom Delete Item", "Copy Item", "Cut Item"));
-            Assert.IsTrue(ItemsControlNameComparer(itemsControl, "Custom Delete Item", "Copy Item", "Cut Item"));
+            Assert.IsTrue(ItemsControlNameComparer(listBox, "CustomDeleteItem", "Copy Item", "Cut Item"));
+            Assert.IsTrue(ItemsControlNameComparer(comboBox, "CustomDeleteItem", "Copy Item", "Cut Item"));
+            Assert.IsTrue(ItemsControlNameComparer(itemsControl, "CustomDeleteItem", "Copy Item", "Cut Item"));
         }
         [Test]
         public void BehaviorNameConverterSet() {
@@ -205,9 +217,9 @@ namespace DevExpress.Mvvm.UI.Tests {
             listBoxBehavior.NameConverter = null;
             comboBoxBehavior.NameConverter = null;
             itemsControlBehavior.NameConverter = null;
-            Assert.IsTrue(ItemsControlNameComparer(listBox, "Copy Item", "Custom Delete Item", "Cut Item"));
-            Assert.IsTrue(ItemsControlNameComparer(comboBox, "Copy Item", "Custom Delete Item", "Cut Item"));
-            Assert.IsTrue(ItemsControlNameComparer(itemsControl, "Copy Item", "Custom Delete Item", "Cut Item"));
+            Assert.IsTrue(ItemsControlNameComparer(listBox, "Copy Item", "CustomDeleteItem", "Cut Item"));
+            Assert.IsTrue(ItemsControlNameComparer(comboBox, "Copy Item", "CustomDeleteItem", "Cut Item"));
+            Assert.IsTrue(ItemsControlNameComparer(itemsControl, "Copy Item", "CustomDeleteItem", "Cut Item"));
         }
         [Test]
         public void BehaviorSplitNames() {

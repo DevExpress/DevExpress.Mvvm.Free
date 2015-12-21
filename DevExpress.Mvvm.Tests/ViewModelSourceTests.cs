@@ -1,10 +1,5 @@
-#if SILVERLIGHT
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Silverlight.Testing;
-#else
 using NUnit.Framework;
 using System.Windows.Threading;
-#endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +19,7 @@ using DevExpress.Mvvm.TestClasses.VB;
 using System.Threading.Tasks;
 using System.Threading;
 using Expression = System.Linq.Expressions.Expression;
+using System.Reflection.Emit;
 
 namespace DevExpress.Mvvm.Tests.Internal {
     public class POCOViewModel {
@@ -260,6 +256,10 @@ namespace DevExpress.Mvvm.Tests {
         }
 
         public class InvalidIPOCOViewModelImplementation : IPOCOViewModel {
+            public void RaisePropertyChanging(string propertyName) {
+                throw new NotImplementedException();
+            }
+
             void IPOCOViewModel.RaisePropertyChanged(string propertyName) {
                 throw new NotImplementedException();
             }
@@ -661,6 +661,111 @@ namespace DevExpress.Mvvm.Tests {
             CheckNotBindableProperty(viewModel, x => x.NotAutoImplementedProperty, (vm, x) => vm.NotAutoImplementedProperty = x, "x", "y");
         }
 
+        #region INPChanging
+        public class POCOWithoutINPChanging {
+            public virtual int Property { get; set; }
+        }
+        public class POCOImplementingINPChanging1 : INotifyPropertyChanging {
+            public event PropertyChangingEventHandler PropertyChanging;
+            public void Raise() {
+                PropertyChanging.Do(x => x(null, null));
+            }
+        }
+        [POCOViewModel(ImplementINotifyPropertyChanging = true)]
+        public class POCOImplementingINPChanging2 : INotifyPropertyChanging {
+            public event PropertyChangingEventHandler PropertyChanging;
+            public void Raise() {
+                PropertyChanging.Do(x => x(null, null));
+            }
+        }
+        [POCOViewModel(ImplementINotifyPropertyChanging = true)]
+        public class POCOImplementingINPChanging3 : INotifyPropertyChanging {
+            public event PropertyChangingEventHandler PropertyChanging;
+            public void RaisePropertyChanging(string propertyName) {
+                PropertyChanging.Do(x => x(null, null));
+            }
+        }
+        [Test]
+        public void NPChangingExceptions() {
+            AssertHelper.AssertThrows<ViewModelSourceException>(() => {
+                IPOCOViewModel iPOCOViewModel = (IPOCOViewModel)ViewModelSource.Create<POCOWithoutINPChanging>();
+                iPOCOViewModel.RaisePropertyChanging(null);
+            }, x => x.Message.AreEqual(string.Format(
+                ViewModelSourceException.Error_INotifyPropertyChangingIsNotImplemented,
+                typeof(POCOWithoutINPChanging).Name)));
+
+            AssertHelper.AssertThrows<ViewModelSourceException>(() => {
+                IPOCOViewModel iPOCOViewModel = (IPOCOViewModel)ViewModelSource.Create<POCOImplementingINPChanging1>();
+                iPOCOViewModel.RaisePropertyChanging(null);
+            }, x => x.Message.AreEqual(string.Format(
+                ViewModelSourceException.Error_INotifyPropertyChangingIsNotImplemented,
+                typeof(POCOImplementingINPChanging1).Name)));
+
+            AssertHelper.AssertThrows<ViewModelSourceException>(() => {
+                ViewModelSource.Create<POCOImplementingINPChanging2>();
+            }, x => x.Message.AreEqual(string.Format(
+                ViewModelSourceException.Error_RaisePropertyChangingMethodNotFound,
+                typeof(POCOImplementingINPChanging2).Name)));
+
+            AssertHelper.AssertDoesNotThrow(() => {
+                ViewModelSource.Create<POCOImplementingINPChanging3>();
+            });
+        }
+
+
+        [POCOViewModel(ImplementINotifyPropertyChanging = true)]
+        public class POCOWithINPChanging1 {
+            public virtual int Property { get; set; }
+        }
+        public class POCOWithINPChanging2 : INotifyPropertyChanging {
+            public virtual int Property { get; set; }
+            public event PropertyChangingEventHandler PropertyChanging;
+            protected void RaisePropertyChanging(string propName) {
+                PropertyChanging.Do(x => x(this, new PropertyChangingEventArgs(propName)));
+            }
+        }
+        [POCOViewModel(ImplementINotifyPropertyChanging = true)]
+        public class POCOWithINPChanging3 : POCOWithINPChanging2 { }
+        [Test]
+        public void NPChangingTest1() {
+            NPChangingTestCore(typeof(POCOWithINPChanging1), x => ((POCOWithINPChanging1)x).Property, (x, v) => ((POCOWithINPChanging1)x).Property = v);
+        }
+        [Test]
+        public void NPChangingTest3() {
+            NPChangingTestCore(typeof(POCOWithINPChanging3), x => ((POCOWithINPChanging3)x).Property, (x, v) => ((POCOWithINPChanging3)x).Property = v);
+        }
+        void NPChangingTestCore(Type type, Func<object, int> getProperty, Action<object, int> setProperty) {
+            var vm = ViewModelSource.Create(type);
+            INotifyPropertyChanging inpc = (INotifyPropertyChanging)vm;
+            int propertyChangingCounter = 0;
+            int oldValue = 0;
+            inpc.PropertyChanging += (d, e) => {
+                Assert.AreSame(vm, d);
+                e.PropertyName.AreEqual("Property");
+                propertyChangingCounter++;
+                oldValue = getProperty(vm);
+            };
+            setProperty(vm, 1);
+            oldValue.AreEqual(0);
+            propertyChangingCounter.AreEqual(1);
+            setProperty(vm, 2);
+            oldValue.AreEqual(1);
+            propertyChangingCounter.AreEqual(2);
+        }
+        [Test]
+        public void NPChangingTest2() {
+            var vm = ViewModelSource.Create<POCOWithINPChanging2>();
+            INotifyPropertyChanging inpc = (INotifyPropertyChanging)vm;
+            int propertyChangingCounter = 0;
+            inpc.PropertyChanging += (d, e) => {
+                propertyChangingCounter++;
+            };
+            vm.Property = 1;
+            vm.Property = 2;
+            propertyChangingCounter.AreEqual(0);
+        }
+        #endregion
+
         #region property changed
         public class POCOViewModel_PropertyChangedBase {
             protected virtual void OnProtectedChangedMethodWithParamChanged(string oldValue) { }
@@ -878,6 +983,38 @@ namespace DevExpress.Mvvm.Tests {
             viewModel.PropertyChanging = "x";
             Assert.AreEqual("x", viewModel.PropertyChangingNewValue);
         }
+
+        public class INPCDefaultPriorityViewModel {
+            public int onChangedCalledCount = 0;
+            public virtual string Property { get; set; }
+            public void OnPropertyChanged() {
+                onChangedCalledCount++;
+            }
+        }
+
+        [POCOViewModel(InvokeOnPropertyChangedMethodBeforeRaisingINPC = true)]
+        public class INPCOnChangedFirstPriorityViewModel : INPCDefaultPriorityViewModel { }
+
+        [Test]
+        public void INPCPriorityTest() {
+            var vm = ViewModelSource.Create<INPCDefaultPriorityViewModel>();
+            var inpc = (INotifyPropertyChanged)vm;
+            inpc.PropertyChanged += (s, a) => {
+                Assert.AreEqual("Property", a.PropertyName);
+                Assert.AreEqual(vm.onChangedCalledCount, 0);
+            };
+            vm.Property = "value";
+            Assert.AreEqual(vm.onChangedCalledCount, 1);
+
+            vm = ViewModelSource.Create<INPCOnChangedFirstPriorityViewModel>();
+            inpc = (INotifyPropertyChanged)vm;
+            inpc.PropertyChanged += (s, a) => {
+                Assert.AreEqual("Property", a.PropertyName);
+                Assert.AreEqual(vm.onChangedCalledCount, 1);
+            };
+            vm.Property = "value";
+            Assert.AreEqual(vm.onChangedCalledCount, 1);
+        }
         #endregion
 
         #region IPOCOViewModelImplementation
@@ -906,6 +1043,22 @@ namespace DevExpress.Mvvm.Tests {
         #endregion
 
         #region commands
+        public class NotBrowsableCommand {
+            [Browsable(false)]
+            public void Method1() { }
+            [Browsable(true)]
+            public void Method2() { }
+        }
+        [Test]
+        public void NotBrowsableCommandTest() {
+            TypeDescriptor.GetProperties(ViewModelSource.GetPOCOType(typeof(NotBrowsableCommand)))["Method1Command"]
+                .Attributes.OfType<BrowsableAttribute>()
+                .First().IsFalse(x => x.Browsable);
+            TypeDescriptor.GetProperties(ViewModelSource.GetPOCOType(typeof(NotBrowsableCommand)))["Method2Command"]
+                .Attributes.OfType<BrowsableAttribute>()
+                .First().IsTrue(x => x.Browsable);
+        }
+
         public class ProtecteCanExecuteMethod {
             public bool IsMethod1Enabled;
             public void Method1() {
@@ -1126,11 +1279,7 @@ namespace DevExpress.Mvvm.Tests {
             public void MethodWithParameter(int parameter) { MethodWithParameterCallCount++; MethodWithParameterLastParameter = parameter; }
             public bool CanMethodWithParameter(int parameter) { return parameter != 13; }
 
-            [Command(CanExecuteMethodName = "CanMethodWithCustomCanExecute_"
-#if !SILVERLIGHT
-, UseCommandManager = false
-#endif
-)]
+            [Command(CanExecuteMethodName = "CanMethodWithCustomCanExecute_", UseCommandManager = false)]
             public void MethodWithCustomCanExecute() { }
             public bool CanMethodWithCustomCanExecute_() { return MethodWithCustomCanExecuteCanExcute; }
         }
@@ -1162,11 +1311,7 @@ namespace DevExpress.Mvvm.Tests {
             }
             public bool CanMethodWithParameter(int parameter) { return parameter != 13; }
 
-            [Command(CanExecuteMethodName = "CanMethodWithCustomCanExecute_"
-#if !SILVERLIGHT
-, UseCommandManager = false
-#endif
-)]
+            [Command(CanExecuteMethodName = "CanMethodWithCustomCanExecute_", UseCommandManager = false)]
             public Task MethodWithCustomCanExecute() { return null; }
             public bool CanMethodWithCustomCanExecute_() { return MethodWithCustomCanExecuteCanExcute; }
         }
@@ -1179,14 +1324,9 @@ namespace DevExpress.Mvvm.Tests {
                     builder.CommandFromMethod(x => x.MethodWithReturnType());
                     builder.CommandFromMethod(x => x.MethodWithReturnTypeAndParameter(null));
                     builder.CommandFromMethod(x => x.MethodWithCustomCanExecute())
-#if !SILVERLIGHT
-.DoNotUseCommandManager()
-#endif
-.CanExecuteMethod(x => x.CanMethodWithCustomCanExecute_())
-#if !SILVERLIGHT
-.DoNotUseCommandManager()
-#endif
-;
+                        .DoNotUseCommandManager()
+                        .CanExecuteMethod(x => x.CanMethodWithCustomCanExecute_())
+                        .DoNotUseCommandManager();
                 }
             }
 
@@ -1217,11 +1357,7 @@ namespace DevExpress.Mvvm.Tests {
                 public void MethodWithReturnType() { }
                 [Command]
                 public void MethodWithReturnTypeAndParameter() { }
-                [Command(CanExecuteMethodName = "CanMethodWithCustomCanExecute_"
-#if !SILVERLIGHT
-, UseCommandManager = false
-#endif
-)]
+                [Command(CanExecuteMethodName = "CanMethodWithCustomCanExecute_", UseCommandManager = false)]
                 public void MethodWithCustomCanExecute() { }
             }
 
@@ -1292,16 +1428,12 @@ namespace DevExpress.Mvvm.Tests {
                 Assert.IsFalse(button.IsEnabled, "0");
                 viewModel.MethodWithCanExecuteCanExcute = true;
             });
-#if !SILVERLIGHT
             EnqueueWindowUpdateLayout(DispatcherPriority.Normal);
-#endif
             EnqueueCallback(() => {
                 Assert.IsFalse(button.IsEnabled, "1");
                 viewModel.RaiseCanExecuteChanged(methodWithCanExecuteExpression);
                 Assert.AreEqual(button.Command, viewModel.GetCommand(methodWithCanExecuteExpression));
-#if !SILVERLIGHT
                 Assert.IsFalse(button.IsEnabled, "2");
-#endif
             });
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
@@ -1358,9 +1490,7 @@ namespace DevExpress.Mvvm.Tests {
             int canExecuteChangedCount = 0;
             command.CanExecuteChanged += (x, e) => canExecuteChangedCount++;
             viewModel.RaiseCanExecuteChanged(() => viewModel.Save());
-#if !SILVERLIGHT
             DispatcherHelper.DoEvents();
-#endif
             Assert.AreEqual(1, canExecuteChangedCount);
         }
         public class POCOViewModel_AsyncCommandsInViewModelBaseDescendant : ViewModelBase {
@@ -1377,9 +1507,7 @@ namespace DevExpress.Mvvm.Tests {
             int canExecuteChangedCount = 0;
             command.CanExecuteChanged += (x, e) => canExecuteChangedCount++;
             viewModel.RaiseCanExecuteChanged(() => viewModel.Save());
-#if !SILVERLIGHT
             DispatcherHelper.DoEvents();
-#endif
             Assert.AreEqual(1, canExecuteChangedCount);
         }
         #endregion
@@ -2229,6 +2357,128 @@ namespace DevExpress.Mvvm.Tests {
             ViewModelSource.Create<HandwrittenDataErrorInfoClass3>();
         }
 
+        #endregion
+
+        #region Custom ViewModelBuilder
+        class ViewModelSourceBuilder : ViewModelSourceBuilderBase {
+            protected override void BuildBindablePropertyAttributes(PropertyInfo property, PropertyBuilder builder) {
+                CustomAttributeBuilder ab = new CustomAttributeBuilder(typeof(BrowsableAttribute).GetConstructor(new Type[] { typeof(bool) }), new object[] { false });
+                builder.SetCustomAttribute(ab);
+            }
+        }
+        [Test]
+        public void CustomViewModelBuilderTest() {
+            var t = ViewModelSource.GetPOCOType(typeof(POCOViewModel2), new ViewModelSourceBuilder());
+            TypeDescriptor.GetProperties(t)["Property1"].Attributes[typeof(BrowsableAttribute)].AreEqual(x => ((BrowsableAttribute)x).Browsable, false);
+        }
+        #endregion
+
+        #region ConstructorAttributes
+        public class POCOConstructorAttribute {
+            public POCOConstructorAttribute(object param) { }
+        }
+        [Test]
+        public void TestPOCOConstructorAttribute() {
+            var t = ViewModelSource.GetPOCOType(typeof(POCOConstructorAttribute));
+            var ctor = t.GetConstructor(new Type[] { typeof(object) });
+            ctor.GetParameters().First().GetCustomAttributes(false).IsNotNull();
+        }
+        #endregion
+
+        #region DependsOn
+        public class DependsOnError1 {
+            [DependsOnProperties("Y")]
+            public virtual int X { get; set; }
+            public int Y { get; set; }
+        }
+        public class DependsOnError2 {
+            [DependsOnProperties("Z")]
+            public virtual int X { get; set; }
+            public int Y { get; set; }
+        }
+        public class DependsOnPOCO {
+            [BindableProperty(false), DependsOnProperties("X1", "X2", "X2")]
+            public virtual int Y { get { return X1 + X2; } }
+            public virtual int X1 { get; set; }
+            public virtual int X2 { get; set; }
+        }
+        public class DependsOnPOCO2 : DependsOnPOCO {
+            [DependsOnProperties("Z", "X1")]
+            public override int Y { get { return base.Y; } }
+            public virtual int Z { get; set; }
+        }
+        [Test]
+        public void DependsOnErrors() {
+            AssertHelper.AssertThrows<ViewModelSourceException>(() => {
+                ViewModelSource.Create<DependsOnError1>();
+            }, x => x.Message.AreEqual("The X property cannot depend on the Y property, because the latter is not bindable."));
+            AssertHelper.AssertThrows<ViewModelSourceException>(() => {
+                ViewModelSource.Create<DependsOnError2>();
+            }, x => x.Message.AreEqual("The X property cannot depend on the Z property, because the latter does not exist."));
+        }
+        [Test]
+        public void DependsOnTest1() {
+            var vm = ViewModelSource.Create<DependsOnPOCO>();
+            int propChangedCounter = 0;
+            ((INotifyPropertyChanged)vm).PropertyChanged += (d, e) => propChangedCounter++;
+            vm.X1 = 2;
+            propChangedCounter.AreEqual(2);
+            vm.X2 = 2;
+            propChangedCounter.AreEqual(4);
+        }
+        [Test]
+        public void DependsOnTest2() {
+            var vm = ViewModelSource.Create<DependsOnPOCO2>();
+            int propChangedCounter = 0;
+            ((INotifyPropertyChanged)vm).PropertyChanged += (d, e) => propChangedCounter++;
+            vm.X1 = 2;
+            propChangedCounter.AreEqual(2);
+            vm.X2 = 2;
+            propChangedCounter.AreEqual(4);
+            vm.Z = 2;
+            propChangedCounter.AreEqual(6);
+        }
+
+        [MetadataType(typeof(DependsOnMetadataClass))]
+        public class DependsOnMetadata {
+            public int X { get; set; }
+            public virtual int Y { get; set; }
+        }
+        public class DependsOnMetadataClass {
+            [DependsOnProperties("Y")]
+            public int X { get; set; }
+        }
+        public class DependsOnFluentAPI {
+            public static void BuildMetadata(MetadataBuilder<DependsOnFluentAPI> builder) {
+                builder.Property(x => x.X)
+                    .DependsOn(x => x.Y1, x => x.Y2);
+            }
+            public int X { get; set; }
+            public virtual int Y1 { get; set; }
+            public virtual int Y2 { get; set; }
+        }
+        [Test]
+        public void DependsOnMetadataTest() {
+            var vm = ViewModelSource.Create<DependsOnMetadata>();
+            int propChangedCounter = 0;
+            ((INotifyPropertyChanged)vm).PropertyChanged += (d, e) => propChangedCounter++;
+            vm.X = 2;
+            propChangedCounter.AreEqual(0);
+            vm.Y = 2;
+            propChangedCounter.AreEqual(2);
+        }
+        [Test]
+        public void DependsOnFluentAPITest() {
+            var vm = ViewModelSource.Create<DependsOnFluentAPI>();
+            int propChangedCounter = 0;
+            ((INotifyPropertyChanged)vm).PropertyChanged += (d, e) => propChangedCounter++;
+            vm.X = 2;
+            propChangedCounter.AreEqual(0);
+            vm.Y1 = 2;
+            propChangedCounter.AreEqual(2);
+            vm.Y2 = 2;
+            propChangedCounter.AreEqual(4);
+        }
         #endregion
 
         void CheckBindableProperty<T, TProperty>(T viewModel, Expression<Func<T, TProperty>> propertyExpression, Action<T, TProperty> setValueAction, TProperty value1, TProperty value2, Action<T, TProperty> checkOnPropertyChangedResult = null) {

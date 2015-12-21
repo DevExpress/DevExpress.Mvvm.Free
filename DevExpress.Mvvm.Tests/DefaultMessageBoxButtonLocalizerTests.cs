@@ -1,7 +1,4 @@
-#if SILVERLIGHT
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MessageBoxButton = DevExpress.Mvvm.DXMessageBoxButton;
-#elif NETFX_CORE
+#if NETFX_CORE
 using DevExpress.TestFramework.NUnit;
 #else
 using NUnit.Framework;

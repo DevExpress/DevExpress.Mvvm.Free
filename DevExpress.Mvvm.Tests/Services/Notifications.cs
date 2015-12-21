@@ -278,8 +278,11 @@ namespace DevExpress.Mvvm.UI.Tests {
 
         class TestScreen : IScreen {
             public Rect bounds;
-            public Rect GetWorkingArea() {
-                return bounds;
+            public Rect GetWorkingArea(Point point) {
+                return new Rect(
+                    bounds.X - point.X,
+                    bounds.Y - point.Y,
+                    bounds.Width, bounds.Height);
             }
             public void Changed() {
                 if(WorkingAreaChanged != null)
@@ -498,5 +501,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             toast = (NotificationService.MvvmCustomNotification)service.CreateCustomNotification(null);
             Assert.AreEqual(1, toast.duration);
         }
+
     }
 }

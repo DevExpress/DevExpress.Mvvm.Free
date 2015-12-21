@@ -1,7 +1,4 @@
-#if SILVERLIGHT
-using Microsoft.Silverlight.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#elif NETFX_CORE
+#if NETFX_CORE
 using DevExpress.TestFramework.NUnit;
 using DevExpress.Mvvm.Tests.TestUtils;
 using System.Threading.Tasks;
@@ -439,7 +436,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         [Test]
         public void SetEvent_CheckEventNameIsReset_SetEventName_CheckEventIsReset() {
             EventToCommand eventToCommand = new EventToCommand();
@@ -718,7 +715,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             var eventToCommand = new EventToCommand() {
                 EventName = "DataContextChanged",
                 Command = new DelegateCommand(() => dataContextChangedCount++),
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
                 DispatcherPriority = DispatcherPriority.Render,
 #endif
             };
@@ -745,7 +742,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         [Test]
         public void DispatcherDefaultValues() {
             EventToCommand eventToCommand = new EventToCommand();
@@ -787,7 +784,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             }, false);
         }
 
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         [Test, Asynchronous]
         public void MarkRoutedEventsAsHandled() {
             var button = new Button() { Name = "View" };

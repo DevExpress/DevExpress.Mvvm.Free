@@ -11,22 +11,15 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 
-#if !SILVERLIGHT
 using NUnit.Framework;
-#else
-using Microsoft.Silverlight.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#endif
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class EnumHelperTests {
-#if !SILVERLIGHT
         [SetUp]
         public void SetUp() {
             UI.Tests.ApplicationJumpListServiceTestsImageSourceHelper.RegisterPackScheme();
         }
-#endif
 
         #region simple
         public enum EnumSimple {
@@ -40,6 +33,13 @@ namespace DevExpress.Mvvm.Tests {
             object IValueConverter.ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
                 throw new NotImplementedException();
             }
+        }
+        [Test]
+        public void IsEnumTypeTest() {
+            var source = EnumSourceHelper.GetEnumSource(typeof(string));
+            var source2 = EnumSourceHelper.GetEnumSource(null);
+            source.AreEqual<IEnumerable<EnumMemberInfo>>(Enumerable.Empty<EnumMemberInfo>());
+            source2.AreEqual<IEnumerable<EnumMemberInfo>>(Enumerable.Empty<EnumMemberInfo>());
         }
         [Test]
         public void SimpleEnumMetadataTest() {
@@ -77,7 +77,6 @@ namespace DevExpress.Mvvm.Tests {
                 .IsNull(x => x.Image);
         }
         #endregion
-#if !SILVERLIGHT
         #region type converter
         [TypeConverter(typeof(EnumWithTypeConverterConverter))]
         public enum EnumWithTypeConverter{
@@ -130,13 +129,8 @@ namespace DevExpress.Mvvm.Tests {
                 .IsNull(x => x.Image);
         }
         #endregion
-#endif
         #region display name description and image
-#if !SILVERLIGHT
         const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests;component/Icons/";
-#else
-        const string UriPrefix = "/DevExpress.Mvvm.Tests;component/Icons/";
-#endif
         public enum EnumWithDisplayName {
             [Display(ShortName = "OneMember")]
             [Image(UriPrefix + "icon1.ico")]
@@ -253,9 +247,9 @@ namespace DevExpress.Mvvm.Tests {
 
             source = EnumSourceHelper.GetEnumSource(enumType, false, null, true);
             source.ElementAt(0)
-                .AreEqual(x => x.Name, "One Member");
+                .AreEqual(x => x.Name, "OneMember");
             source.ElementAt(1)
-                .AreEqual(x => x.Name, "Two Member");
+                .AreEqual(x => x.Name, "TwoMember");
 
             source = EnumSourceHelper.GetEnumSource(enumType, false, new TestEnumValueConverter(), true);
             source.ElementAt(0)
@@ -271,6 +265,21 @@ namespace DevExpress.Mvvm.Tests {
             CCC,
             AA,
         }
+        public enum OrderedEnumWithSortMode {
+            B,
+            CCC,
+            [Display(Order = 1)]
+            DDDD,
+            [Display(Order = -3)]
+            VV,
+            [Display(Order = 9999)]
+            EEE,
+            [Display(Order = 10015)]
+            GGGGGGG,
+            [Display(Order = 10001)]
+            XXX,
+            AA,
+        }
         [Test]
         public void EnumWithSortModeTest() {
             EnumSourceHelperCore.GetEnumSource(typeof(EnumWithSortMode), true, null, false, EnumMembersSortMode.Default, (x, y) => { throw new InvalidOperationException(); })
@@ -284,12 +293,21 @@ namespace DevExpress.Mvvm.Tests {
             EnumSourceHelper.GetEnumSource(typeof(EnumWithSortMode), true, null, false, EnumMembersSortMode.DisplayNameLengthDescending)
                 .Select(x => x.Name).SequenceEqual(new[] { "CCC", "AA", "B" }).IsTrue();
         }
+        [Test]
+        public void OrderedEnumWithSortModeTest() {
+            EnumSourceHelperCore.GetEnumSource(typeof(OrderedEnumWithSortMode), true, null, false, EnumMembersSortMode.Default, (x, y) => { throw new InvalidOperationException(); })
+                .Select(x => x.Name).SequenceEqual(new[] { "VV", "DDDD", "EEE", "B", "CCC", "AA", "XXX", "GGGGGGG" }).IsTrue();
+            EnumSourceHelper.GetEnumSource(typeof(OrderedEnumWithSortMode), true, null, false, EnumMembersSortMode.DisplayName)
+                .Select(x => x.Name).SequenceEqual(new[] { "VV", "DDDD", "EEE", "AA", "B", "CCC", "XXX", "GGGGGGG" }).IsTrue();
+            EnumSourceHelper.GetEnumSource(typeof(OrderedEnumWithSortMode), true, null, false, EnumMembersSortMode.DisplayNameDescending)
+                .Select(x => x.Name).SequenceEqual(new[] { "VV", "DDDD", "EEE", "CCC", "B", "AA", "XXX", "GGGGGGG" }).IsTrue();
+            EnumSourceHelper.GetEnumSource(typeof(OrderedEnumWithSortMode), true, null, false, EnumMembersSortMode.DisplayNameLength)
+                .Select(x => x.Name).SequenceEqual(new[] { "VV", "DDDD", "EEE", "B", "AA", "CCC", "XXX", "GGGGGGG" }).IsTrue();
+            EnumSourceHelper.GetEnumSource(typeof(OrderedEnumWithSortMode), true, null, false, EnumMembersSortMode.DisplayNameLengthDescending)
+                .Select(x => x.Name).SequenceEqual(new[] { "VV", "DDDD", "EEE", "CCC", "AA", "B", "XXX", "GGGGGGG" }).IsTrue();
+        }
         static string GetImageUri(ImageSource image) {
-#if !SILVERLIGHT
             return image.ToString();
-#else
-            return ((BitmapImage)image).UriSource.ToString();
-#endif
         }
         #endregion
     }

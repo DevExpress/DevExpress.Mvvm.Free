@@ -1,7 +1,4 @@
-#if SILVERLIGHT
-using Microsoft.Silverlight.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#elif NETFX_CORE
+#if NETFX_CORE
 using DevExpress.TestFramework.NUnit;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -152,7 +149,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(1, behavior.attachedFireCount);
             Assert.AreEqual(1, behavior.detachingFireCount);
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         [Test]
         public void BehaviorShouldNotBeFrozen_Test00_T196013() {
             var behavior = new FakeBehavior();
@@ -255,7 +252,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Grid element = new Grid();
             var testBehavior = new EventToCommand();
             BindingOperations.SetBinding(testBehavior, EventToCommand.CommandParameterProperty, new Binding() { Path = new PropertyPath("AssociatedObject"),
-#if !NETFX_CORE && !SILVERLIGHT
+#if !NETFX_CORE
                 RelativeSource = RelativeSource.Self
 #else
                 RelativeSource = new RelativeSource() { Mode = RelativeSourceMode.Self }

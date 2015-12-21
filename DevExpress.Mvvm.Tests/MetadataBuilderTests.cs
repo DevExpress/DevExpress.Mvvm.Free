@@ -1,9 +1,5 @@
-#if SILVERLIGHT
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#else
 using NUnit.Framework;
 using System.Text.RegularExpressions;
-#endif
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -19,8 +15,24 @@ using System.Collections;
 
 
 namespace DevExpress.Mvvm.Tests {
+    public class MetadataBuilderTestsBase {
+        #region MetadataHelper
+        protected virtual bool UseFilteringAttributes { get { return false; } }
+        public IEnumerable<Attribute> GetExternalAndFluentAPIAttrbutes(Type componentType, string propertyName) {
+            if(!UseFilteringAttributes)
+                return MetadataHelper.GetExternalAndFluentAPIAttrbutes(componentType, propertyName);
+            else return MetadataHelper.GetExternalAndFluentAPIFilteringAttrbutes(componentType, propertyName);
+        }
+        public IAttributesProvider GetAttrbutesProvider(Type componentType, IMetadataLocator locator) {
+            if(!UseFilteringAttributes)
+                return MetadataHelper.GetAttrbutesProvider(componentType, locator);
+            else return MetadataHelper.GetFilteringAttrbutesProvider(componentType, locator);
+        }
+        #endregion
+    }
     [TestFixture]
-    public class MetadataBuilderTests {
+    public class MetadataBuilderTests : MetadataBuilderTestsBase {
+
         #region validation
         [MetadataType(typeof(ValidationEntityMetadata))]
         public class ValidationEntity {
@@ -156,7 +168,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("StringProperty1_CustomError property required", property1Validator_CustomError.GetErrorText(null, entity));
             ValidationEntity.StringProperty1_CustomErrorText_MinLength = "{0} min";
             Assert.AreEqual("StringProperty1_CustomError min", property1Validator_CustomError.GetErrorText("1", entity));
-            ValidationEntity.StringProperty1_CustomErrorText_MaxLength= "{0} max";
+            ValidationEntity.StringProperty1_CustomErrorText_MaxLength = "{0} max";
             Assert.AreEqual("StringProperty1_CustomError max", property1Validator_CustomError.GetErrorText("123456", entity));
 
 
@@ -182,7 +194,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(string.Empty, creditCardValidator.GetErrorText("4012888888881881", entity));
             Assert.AreEqual(string.Empty, creditCardValidator.GetErrorText("4012 8888 8888 1881", entity));
             creditCardValidator = CreateValidator<ValidationEntity, string>(x => x.CreditCardProperty_CustomError);
-            ValidationEntity.CreditCardProperty_CustomErrorText= "{0} card";
+            ValidationEntity.CreditCardProperty_CustomErrorText = "{0} card";
             Assert.AreEqual("CreditCardProperty_CustomError card", creditCardValidator.GetErrorText("1234 5678 1234 5678", entity));
 
             var emailAddressPropertyValidator = CreateValidator<ValidationEntity, string>(x => x.EmailAddressProperty);
@@ -260,16 +272,12 @@ namespace DevExpress.Mvvm.Tests {
             return PropertyValidator.FromAttributes(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(T), propertyName), propertyName);
         }
         public class ValidationEntityWithDisplayNameAttributes {
-#if !SILVERLIGHT
             [DisplayName("_PropertyWithDisplayNameAttribute_")]
-#endif
             [StringLength(2)]
             public string PropertyWithDisplayNameAttribute { get; set; }
 
             [Display(Name = "_PropertyWithDisplayAttribute_", ShortName = "_______")]
-#if !SILVERLIGHT
             [DisplayName("________")]
-#endif
             [StringLength(2)]
             public string PropertyWithDisplayAttribute { get; set; }
 
@@ -282,12 +290,9 @@ namespace DevExpress.Mvvm.Tests {
                 PropertyWithDisplayAttribute = "asdf",
                 PropertyWithDisplayAttribute_Fluent = "asdf",
             };
-#if !SILVERLIGHT
             Assert.AreEqual("The field _PropertyWithDisplayNameAttribute_ must be a string with a maximum length of 2.", IDataErrorInfoHelper.GetErrorText(entity, "PropertyWithDisplayNameAttribute"));
-#endif
             Assert.AreEqual("The field _PropertyWithDisplayAttribute_ must be a string with a maximum length of 2.", IDataErrorInfoHelper.GetErrorText(entity, "PropertyWithDisplayAttribute"));
         }
-#if !SILVERLIGHT
         [Test]
         public void ResourceStringsTest() {
             foreach(var property in typeof(DataAnnotationsResources).GetProperties(BindingFlags.Static | BindingFlags.NonPublic).Where(x => x.PropertyType == typeof(string))) {
@@ -308,7 +313,6 @@ namespace DevExpress.Mvvm.Tests {
         static string GetPatternFromRegex(Regex regex) {
             return (string)typeof(Regex).GetField("pattern", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(regex);
         }
-#endif
         #endregion
 
         #region MetadataHelper tests
@@ -332,8 +336,8 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void SeveralExternalMetadata() {
-            Assert.IsNotNull(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(Class), "Property").OfType<ReadOnlyAttribute>().Single());
-            Assert.IsNotNull(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(Class), "BaseProperty").OfType<ReadOnlyAttribute>().Single());
+            Assert.IsNotNull(GetExternalAndFluentAPIAttrbutes(typeof(Class), "Property").OfType<ReadOnlyAttribute>().Single());
+            Assert.IsNotNull(GetExternalAndFluentAPIAttrbutes(typeof(Class), "BaseProperty").OfType<ReadOnlyAttribute>().Single());
         }
         #endregion
 
@@ -361,9 +365,9 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void MetadataWithFluentApiTest() {
-            Assert.IsNotNull(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(MetadataWithFluentApiClient), "Property").OfType<DXRequiredAttribute>().Single());
-            Assert.IsNotNull(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(MetadataWithFluentApiClient), "Property2").OfType<DisplayAttribute>().Single());
-            Assert.IsNotNull(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(MetadataWithFluentApiClient), "Property3").OfType<DXMaxLengthAttribute>().Single());
+            Assert.IsNotNull(GetExternalAndFluentAPIAttrbutes(typeof(MetadataWithFluentApiClient), "Property").OfType<DXRequiredAttribute>().Single());
+            Assert.IsNotNull(GetExternalAndFluentAPIAttrbutes(typeof(MetadataWithFluentApiClient), "Property2").OfType<DisplayAttribute>().Single());
+            Assert.IsNotNull(GetExternalAndFluentAPIAttrbutes(typeof(MetadataWithFluentApiClient), "Property3").OfType<DXMaxLengthAttribute>().Single());
         }
         #endregion
 
@@ -408,5 +412,84 @@ namespace DevExpress.Mvvm.Tests {
             TestHelper.AssertThrows<ArgumentException>(() => builder.CommandFromMethod(x => x.Method()).CanExecuteMethod(x => SomeMethod2()));
         }
         #endregion
+    }
+    [TestFixture]
+    public class InternalMetadataLocatorTests : MetadataBuilderTestsBase {
+        [Test]
+        public void InternalLocatorTest() {
+            MetadataHelper.AddMetadata<TestDataMetadata>();
+            try {
+                Assert.IsFalse(GetExternalAndFluentAPIAttrbutes(typeof(TestData), "Prop1").OfType<DisplayAttribute>().Single().AutoGenerateField);
+            } finally {
+                MetadataHelper.ClearMetadata();
+            }
+        }
+        [Test]
+        public void MetadataShouldBePublic() {
+            AssertHelper.AssertThrows<InvalidOperationException>(() => {
+                MetadataHelper.AddMetadata(typeof(PrivateMetadata));
+            }, x => x.Message.AreEqual("The PrivateMetadata type should be public"));
+            AssertHelper.AssertThrows<InvalidOperationException>(() => {
+                MetadataLocator.Create().AddMetadata(typeof(PrivateMetadata));
+            }, x => x.Message.AreEqual("The PrivateMetadata type should be public"));
+        }
+        [Test]
+        public void InternalAndDefaultLocatorsPriorityTest() {
+            var defaultLocator = MetadataLocator.Create()
+                .AddMetadata<TestDataMetadataDefault>()
+            ;
+            MetadataLocator.Default = defaultLocator;
+            MetadataHelper.AddMetadata<TestDataMetadata>();
+            try {
+                Assert.IsTrue(GetExternalAndFluentAPIAttrbutes(typeof(TestData), "Prop1").OfType<DisplayAttribute>().Single().AutoGenerateField);
+            } finally {
+                MetadataHelper.ClearMetadata();
+                MetadataLocator.Default = null;
+            }
+        }
+        [Test]
+        public void CombinedTest() {
+            var defaultLocator = MetadataLocator.Create()
+                .AddMetadata<TestDataMetadataDefault>()
+            ;
+            MetadataLocator.Default = defaultLocator;
+            MetadataHelper.AddMetadata<TestDataMetadata>();
+            try {
+                Assert.IsTrue(GetExternalAndFluentAPIAttrbutes(typeof(TestData), "Prop1").OfType<DisplayAttribute>().Single().AutoGenerateField);
+            } finally {
+                MetadataHelper.ClearMetadata();
+                MetadataLocator.Default = null;
+            }
+            MetadataHelper.AddMetadata<TestDataMetadata>();
+            try {
+                Assert.IsFalse(GetExternalAndFluentAPIAttrbutes(typeof(TestData), "Prop1").OfType<DisplayAttribute>().Single().AutoGenerateField);
+            } finally {
+                MetadataHelper.ClearMetadata();
+            }
+        }
+
+        public class TestData {
+            public string Prop1 { get; set; }
+            public string Prop2 { get; set; }
+        }
+        public class TestDataMetadata : IMetadataProvider<TestData> {
+            public void BuildMetadata(MetadataBuilder<TestData> builder) {
+                builder.Property(x => x.Prop1).AddOrModifyAttribute<DisplayAttribute>(x => x.AutoGenerateField = false);
+            }
+        }
+        public class TestDataMetadataDefault : IMetadataProvider<TestData> {
+            public void BuildMetadata(MetadataBuilder<TestData> builder) {
+                builder.Property(x => x.Prop1).AddOrModifyAttribute<DisplayAttribute>(x => x.AutoGenerateField = true);
+            }
+        }
+        class PrivateMetadata : TestDataMetadata { }
+    }
+    [TestFixture]
+    public class FilteringMetadataBuilderTests : MetadataBuilderTests {
+        protected override bool UseFilteringAttributes { get { return true; } }
+    }
+    [TestFixture]
+    public class InternalFilteringMetadataLocatorTests : InternalMetadataLocatorTests {
+        protected override bool UseFilteringAttributes { get { return true; } }
     }
 }

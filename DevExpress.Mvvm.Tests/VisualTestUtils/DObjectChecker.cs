@@ -1,6 +1,4 @@
-#if !SILVERLIGHT
 using NUnit.Framework;
-#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -138,11 +136,7 @@ namespace DevExpress {
             return Value != null ? object.Equals(Value, value) : Type.IsAssignableFrom(value.GetType());
         }
         public override string ToString() {
-#if SILVERLIGHT
-            return string.Format("Property: {0}, Value: {2}, Type: {1}", Property.ToString(), Type != null ? Type.Name : Value.GetType().Name, Value);
-#else
             return string.Format("Property: {0}, Value: {2}, Type: {1}", Property.Name, Type != null ? Type.Name : Value.GetType().Name, Value);
-#endif
         }
     }
     public class DObjectCheckerCollection : List<DObjectChecker> {

@@ -4,12 +4,7 @@ using System.Windows.Markup;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
-#if SILVERLIGHT
-using Microsoft.Silverlight.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#else
 using NUnit.Framework;
-#endif
 #else
 using DevExpress.TestFramework.NUnit;
 using Windows.UI.Xaml.Controls;
@@ -120,16 +115,11 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
         }
 
         string GetAssemblyName(Assembly assembly) {
-#if !SILVERLIGHT
             return assembly.GetName().Name;
-#else
-            string assemblyFullName = assembly.FullName;
-            return assemblyFullName.Substring(0, assemblyFullName.IndexOf(", Version="));
-#endif
         }
 
         T ParseXaml<T>(string xaml) where T : class {
-#if !NETFX_CORE && !SILVERLIGHT
+#if !NETFX_CORE
             return XamlReader.Parse(xaml) as T;
 #else
             return XamlReader.Load(xaml) as T;
@@ -337,11 +327,7 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
             AssertHelper.AssertThrows<InvalidOperationException>(() => LoadControlTemplate("<local:TestBehavior/>", null),
                 x => Assert.IsTrue(x.Message.IndexOf("Use ContentControl or ItemsControl") > -1));
         }
-#if SILVERLIGHT
-        [Test,Ignore]
-#else
         [Test]
-#endif
         public void BehaviorsRetainBindings_Test00() {
             var model = new TestViewModel();
             TestControl.DataContext = model;
@@ -349,11 +335,7 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
             Assert.IsNotNull(GetBindingExpression(TestBehaviors[0], TestService.CommandProperty));
             Assert.AreEqual(model.EmptyCommand, TestBehaviors.OfType<TestService>().First().Command);
         }
-#if SILVERLIGHT
-        [Test, Ignore]
-#else
         [Test]
-#endif
         public void BehaviorsRetainBindings_Test01() {
             var model = new TestViewModel();
             LoadControlTemplate("<local:TestService Command='{Binding EmptyCommand}'/>");
@@ -368,22 +350,14 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
             WaitEvents();
             Assert.AreEqual("TestName", TestBehaviors.OfType<TestBehavior>().First().Data);
         }
-#if SILVERLIGHT
-        [Test, Ignore]
-#else
         [Test]
-#endif
         public void BehaviorsRetainBindings_Test03() {
             var model = new TestViewModel();
             TestControl.DataContext = model;
             LoadControlTemplate("<local:TestService Command='{Binding EmptyCommand}'/>", false);
             Assert.AreEqual(model.EmptyCommand, TestBehaviors.OfType<TestService>().First().Command);
         }
-#if SILVERLIGHT
-        [Test, Ignore]
-#else
         [Test]
-#endif
         public void BehaviorsRetainBindings_Test04() {
             var model = new TestViewModel();
             LoadControlTemplate("<local:TestService Command='{Binding EmptyCommand}'/>", false);
@@ -399,11 +373,7 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
             Assert.AreEqual("TestName", TestBehaviors.OfType<TestBehavior>().First().Data);
         }
 #if !NETFX_CORE
-#if SILVERLIGHT
-        [Test, Ignore]
-#else
         [Test]
-#endif
         public void BehaviorsRetainBindings_Test06() {
             var container = new Border();
             container.Name = "container";
@@ -412,11 +382,7 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
             WaitEvents();
             Assert.AreEqual(container.Name, TestBehaviors.OfType<TestBehavior>().First().TestName);
         }
-#if SILVERLIGHT
-        [Test, Ignore]
-#else
         [Test]
-#endif
         public void BehaviorsRetainBindings_Test07() {
             var container = new Border();
             container.Name = "container";
@@ -436,8 +402,6 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
         BindingExpression GetBindingExpression(DependencyObject ob, DependencyProperty prop) {
 #if NETFX_CORE
             return ((FrameworkElement)ob).GetBindingExpression(prop);
-#elif SILVERLIGHT
-            return ob.ReadLocalValue(prop) as BindingExpression;
 #else
             return BindingOperations.GetBindingExpression(ob, prop);
 #endif

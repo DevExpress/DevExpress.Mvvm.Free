@@ -1,9 +1,4 @@
-#if !SILVERLIGHT
 using NUnit.Framework;
-#else
-using Microsoft.Silverlight.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#endif
 using System;
 using System.Linq;
 using System.Windows;
@@ -817,13 +812,18 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
             EnqueueTestComplete();
         }
         void ContentPresenter_TestMemoryReleased() {
-            EnqueueLastCallback(() => {
+            WeakReference controlReference = null;
+            WeakReference serviceReference = null;
+            EnqueueCallback(() => {
                 ViewInjectionService service = Interaction.GetBehaviors((DependencyObject)Window.Content).OfType<ViewInjectionService>().First();
                 Interaction.GetBehaviors((DependencyObject)Window.Content).Remove(service);
-                WeakReference controlReference = new WeakReference(Window.Content);
-                WeakReference serviceReference = new WeakReference(service);
+                controlReference = new WeakReference(Window.Content);
+                serviceReference = new WeakReference(service);
                 service = null;
                 Window.Content = null;
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueLastCallback(() => {
                 MemoryLeaksHelper.CollectOptional(controlReference, serviceReference);
                 MemoryLeaksHelper.EnsureCollected(controlReference, serviceReference);
             });
@@ -1369,6 +1369,16 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
         #endregion
 
     }
+
+
+    public class TabView : Grid {
+        public TabView() {
+            ViewInjectionService service = new ViewInjectionService();
+            BindingOperations.SetBinding(service, ViewInjectionService.RegionNameProperty, new Binding("RegionName"));
+            Interaction.GetBehaviors(this).Add(service);
+        }
+    }
+    public class TabContentView : Grid { }
     [TestFixture]
     public class ViewInjectionServiceComplexTests : BaseWpfFixture {
         class VMBase : ViewModelBase {
@@ -1395,15 +1405,7 @@ namespace DevExpress.Mvvm.UI.ViewInjection.Tests {
                 set { SetProperty(() => RegionName, value); }
             }
         }
-        class TabView : Grid {
-            public TabView() {
-                ViewInjectionService service = new ViewInjectionService();
-                BindingOperations.SetBinding(service, ViewInjectionService.RegionNameProperty, new Binding("RegionName"));
-                Interaction.GetBehaviors(this).Add(service);
-            }
-        }
         class TabContentViewModel : VMBase { }
-        class TabContentView : Grid { }
 
         [Test, Asynchronous]
         public void ComplexTest1() {

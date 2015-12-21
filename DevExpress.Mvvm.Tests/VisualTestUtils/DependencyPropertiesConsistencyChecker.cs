@@ -42,6 +42,7 @@ namespace DevExpress {
             }
             if(errors.Count > 0) {
                 StringBuilder messageBuilder = new StringBuilder();
+                messageBuilder.AppendLine();
                 for(int i = 0; i < errors.Count; i++) {
                     messageBuilder.AppendLine(errors[i]);
                 }

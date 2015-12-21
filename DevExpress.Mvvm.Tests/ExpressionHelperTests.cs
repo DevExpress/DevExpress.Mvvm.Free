@@ -1,5 +1,5 @@
-#if SILVERLIGHT
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+#if NETFX_CORE
+using DevExpress.TestFramework.NUnit;
 #else
 using NUnit.Framework;
 #endif
@@ -124,7 +124,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("StringProperty", ExpressionHelper.GetPropertyName<TestViewModel, object>(x => x.StringProperty));
             Assert.AreEqual("IntProperty", ExpressionHelper.GetPropertyName<TestViewModel, object>(x => x.IntProperty));
 
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             Assert.AreEqual(System.ComponentModel.TypeDescriptor.GetProperties(this)["MyProperty"], ExpressionHelper.GetProperty((ExpressionHelperTests x) => x.MyProperty));
 #endif
         }
@@ -184,13 +184,8 @@ namespace DevExpress.Mvvm.Tests {
         public void PropertyHasImplicitImplementationTest() {
             Assert.IsTrue(ExpressionHelper.PropertyHasImplicitImplementation((ISomeInterface)new PublicClass(), i => i.Title));
             Assert.IsFalse(ExpressionHelper.PropertyHasImplicitImplementation((ISomeInterface)new PublicClassWithExplicitImplementation(), i => i.Title));
-#if SILVERLIGHT
-            Assert.IsFalse(ExpressionHelper.PropertyHasImplicitImplementation((ISomeInterface)new PrivateClass(), i => i.Title));
-#else
             Assert.IsTrue(ExpressionHelper.PropertyHasImplicitImplementation((ISomeInterface)new PrivateClass(), i => i.Title));
-#endif
         }
-#if !SILVERLIGHT
         [Test]
         public void PropertyHasImplicitImplementationTest2() {
             ISomeInterface obj;
@@ -198,14 +193,9 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(0, ((PublicClass)obj).TitleCalledTimes);
             Assert.IsFalse(ExpressionHelper.PropertyHasImplicitImplementation(obj = (ISomeInterface)new PublicClassWithExplicitImplementation(), i => i.Title, false));
             Assert.AreEqual(0, ((PublicClassWithExplicitImplementation)obj).TitleCalledTimes);
-#if SILVERLIGHT
-            Assert.IsFalse(ExpressionHelper.PropertyHasImplicitImplementation(obj = (ISomeInterface)new PrivateClass(), i => i.Title, false));
-#else
             Assert.IsTrue(ExpressionHelper.PropertyHasImplicitImplementation(obj = (ISomeInterface)new PrivateClass(), i => i.Title, false));
             Assert.AreEqual(0, ((PrivateClass)obj).TitleCalledTimes);
-#endif
         }
-#endif
     }
     public static class TestHelper {
         public static void AssertThrows<TException>(Action action) where TException : Exception {

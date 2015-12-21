@@ -37,7 +37,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 
     public static class IsolatedDomainTestHelper {
         class IsolatedDomainTester : MarshalByRefObject {
-            public void Test(MethodInfo actionInfo) {
+            public void Test(MethodInfo actionInfo, params object[] args) {
                 object target = Activator.CreateInstance(actionInfo.DeclaringType);
                 MethodInfo setupFixture = target.GetType().GetMethods().FirstOrDefault((mi) => mi.GetCustomAttributes(typeof(TestFixtureSetUpAttribute), true).FirstOrDefault() != null);
                 MethodInfo setup = target.GetType().GetMethods().FirstOrDefault((mi) => mi.GetCustomAttributes(typeof(SetUpAttribute), true).FirstOrDefault() != null);
@@ -48,17 +48,23 @@ namespace DevExpress.Mvvm.UI.Tests {
                     setupFixture.Invoke(target, null);
                 if(setup != null)
                     setup.Invoke(target, null);
-                actionInfo.Invoke(target, null);
+                actionInfo.Invoke(target, args);
                 if(tearDown != null)
                     tearDown.Invoke(target, null);
                 if(tearDownFixture != null)
                     tearDownFixture.Invoke(target, null);
             }
         }
-        public static void RunTest(Action test) {
+        static void RunTestCore(MethodInfo actionInfo, params object[] args) {
             using(var helper = new NewDomainTestHelper<IsolatedDomainTester>()) {
-                helper.TestObject.Test(test.Method);
+                helper.TestObject.Test(actionInfo, args);
             }
+        }
+        public static void RunTest(Action test) {
+            RunTestCore(test.Method, new object[0]);
+        }
+        public static void RunTest(Action<object> test, object arg) {
+            RunTestCore(test.Method, arg);
         }
     }
 }
