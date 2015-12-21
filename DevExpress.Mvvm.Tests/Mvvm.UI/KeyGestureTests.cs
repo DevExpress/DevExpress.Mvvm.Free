@@ -1,6 +1,4 @@
-#if SILVERLIGHT
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#elif NETFX_CORE
+#if NETFX_CORE
 using DevExpress.Mvvm.UI.Native;
 using TestFixture = DevExpress.TestFramework.TestClassAttribute;
 using Test = DevExpress.TestFramework.TestMethodAttribute;

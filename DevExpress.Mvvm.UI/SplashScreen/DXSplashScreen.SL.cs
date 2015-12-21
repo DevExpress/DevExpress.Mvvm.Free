@@ -8,9 +8,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-#if FREE && SILVERLIGHT
-using DevExpress.Xpf.Core;
-#endif
 
 namespace DevExpress.Mvvm.UI {
     public static class DXSplashScreen {

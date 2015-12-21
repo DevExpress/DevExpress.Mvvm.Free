@@ -25,7 +25,7 @@ namespace DevExpress.Mvvm.Tests {
             this.Suspending += OnSuspending;
         }
         protected override void OnLaunched(LaunchActivatedEventArgs args) {
-            DevExpress.TestFramework.TestRunner.RunTests(this.GetType());
+            DevExpress.TestFramework.TestRunner.RunTests(this.GetType(), args:args);
         }
         private void OnSuspending(object sender, SuspendingEventArgs e) {
             var deferral = e.SuspendingOperation.GetDeferral();
