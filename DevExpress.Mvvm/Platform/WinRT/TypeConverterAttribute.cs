@@ -1,4 +1,5 @@
 using System;
+
 namespace DevExpress.Mvvm.Native {
     [AttributeUsage(AttributeTargets.All, Inherited = true)]
     public sealed class TypeConverterAttribute : Attribute {

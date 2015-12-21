@@ -4,44 +4,13 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices.WindowsRuntime;
-using System.Threading.Tasks;
-using Windows.UI.Core;
-using Windows.UI.Xaml;
 
 namespace DevExpress.Mvvm.Native {
     public static class TypeExtensions {
-        public static bool IsAssignableFrom(this Type sourceType, Type objType) {
-            if(sourceType == null)
-                throw new ArgumentException("sourceType");
-            if(objType == null)
-                return false;
-            return sourceType.GetTypeInfo().IsAssignableFrom(objType.GetTypeInfo());
-        }
         public static Type GetBaseType(this Type sourceType) {
             if(sourceType == null)
                 throw new ArgumentException("sourceType");
             return sourceType.GetTypeInfo().BaseType;
-        }
-        public static MethodInfo GetMethod(this Type type, string methodName) {
-            return type.GetRuntimeMethods().First(mi => mi.Name == methodName);
-        }
-        public static MethodInfo GetMethod(this Type type, string methodName, Type[] types) {
-            return type.GetRuntimeMethod(methodName, types);
-        }
-        public static EventInfo GetEvent(this Type type, string eventName) {
-            return type.GetRuntimeEvent(eventName);
-        }
-        public static ConstructorInfo[] GetConstructors(this Type sourceType) {
-            if(sourceType == null)
-                throw new ArgumentException("sourceType");
-            return sourceType.GetTypeInfo().DeclaredConstructors.ToArray();
-        }
-        public static ConstructorInfo GetConstructor(this Type sourceType, Type[] types) {
-            if(sourceType == null)
-                throw new ArgumentException("sourceType");
-            if (types == null || types.Any(t => t == null))
-                throw new ArgumentNullException("types");
-            return sourceType.GetTypeInfo().DeclaredConstructors.Where(ci => CheckParametersTypes(ci.GetParameters(), types)).FirstOrDefault();
         }
         static bool CheckParametersTypes(ParameterInfo[] parameters, Type[] types) {
             if(parameters.Length != types.Length)
@@ -55,16 +24,6 @@ namespace DevExpress.Mvvm.Native {
             if(propertyInfo == null)
                 throw new ArgumentException("propertyInfo");
             return propertyInfo.GetMethod;
-        }
-        public static FieldInfo[] GetFields(this Type sourceType) {
-            if(sourceType == null)
-                throw new ArgumentException("sourceType");
-            return sourceType.GetRuntimeFields().ToArray();
-        }
-        public static FieldInfo GetField(this Type sourceType, string name) {
-            if(sourceType == null)
-                throw new ArgumentException("sourceType");
-            return sourceType.GetRuntimeField(name);
         }
         public static bool GetIsEnum(this Type sourceType) {
             if(sourceType == null)
@@ -94,9 +53,6 @@ namespace DevExpress.Mvvm.Native {
         public static bool IsClass(this Type type) {
             return type.GetTypeInfo().IsClass;
         }
-        public static MethodInfo[] GetMethods(this Type type) {
-            return type.GetRuntimeMethods().ToArray();
-        }
         public static Assembly GetAssembly(this Type type) {
             return type.GetTypeInfo().Assembly;
         }
@@ -109,27 +65,8 @@ namespace DevExpress.Mvvm.Native {
         public static MethodInfo GetSetMethod(this PropertyInfo pi) {
             return pi.SetMethod;
         }
-        public static PropertyInfo GetProperty(this Type type, string propertyName) {
-            while(type != typeof(object) && type != null) {
-                PropertyInfo pi = type.GetTypeInfo().GetDeclaredProperty(propertyName);
-                if(IsInstanceProperty(pi)) return pi;
-                type = type.GetTypeInfo().BaseType;
-            }
-            return null;
-        }
-        public static PropertyInfo[] GetProperties(this Type sourceType) {
-            if(sourceType == null)
-                throw new ArgumentException("sourceType");
-            return sourceType.GetRuntimeProperties().Where(pi => IsInstanceProperty(pi)).ToArray();
-        }
         static bool IsInstanceProperty(PropertyInfo pi) {
             return pi != null && pi.GetMethod != null && !pi.GetMethod.IsStatic;
-        }
-        public static Type[] GetGenericArguments(this Type type) {
-            return type.GetTypeInfo().GenericTypeArguments;
-        }
-        public static Type[] GetInterfaces(this Type type) {
-            return type.GetTypeInfo().ImplementedInterfaces.ToArray();
         }
         public static bool IsGenericType(this Type type) {
             return type.GetTypeInfo().IsGenericType;
@@ -205,9 +142,6 @@ namespace DevExpress.Mvvm.Native {
             if (types.TryGetValue(typeCode, out type))
                 return type;
             return typeof(object);
-        }
-        public static bool IsInstanceOfType(this Type type, object obj) {
-            return obj != null && IsAssignableFrom(type, obj.GetType());
         }
         internal static bool ImplementInterface(this Type type, Type t) {
             while (type != null) {

@@ -1,7 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
+    <ProjectLockFile>UWP\project.lock.json</ProjectLockFile>
+    <ResolveNuGetPackages>True</ResolveNuGetPackages>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
@@ -12,10 +14,14 @@
     <RootNamespace>DevExpress.Mvvm</RootNamespace>
     <AssemblyName>DevExpress.Mvvm</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <TargetPlatformVersion>8.1</TargetPlatformVersion>
-    <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
+    <TargetPlatformVersion>10.0.10240.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.10240.0</TargetPlatformMinVersion>
+    <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
-    <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
@@ -24,14 +30,14 @@
     </SccAuxPath>
     <SccProvider>
     </SccProvider>
-    <BaseIntermediateOutputPath>obj.WinRT.Free</BaseIntermediateOutputPath>
+    <BaseIntermediateOutputPath>obj.UWP.Free</BaseIntermediateOutputPath>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\Bin\WinRT\</OutputPath>
+    <OutputPath>..\Bin\UWP\</OutputPath>
     <DefineConstants>DEBUG;TRACE;MVVM;FREE;NETFX_CORE;WINDOWS_APP</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -39,7 +45,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\Bin\WinRT\</OutputPath>
+    <OutputPath>..\Bin\UWP\</OutputPath>
     <DefineConstants>TRACE;MVVM;FREE;NETFX_CORE;WINDOWS_APP</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -72,13 +78,16 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Native\ActionInvoker\WeakActionInvoker.cs" />
+    <Compile Include="Native\DotNetNativeAssistant.cs" />
     <Compile Include="Native\EventFireCounter.cs" />
+    <Compile Include="Native\ExpressionHelper.cs" />
     <Compile Include="Native\Guard.cs" />
     <Compile Include="Native\IClickable.cs" />
     <Compile Include="Native\ICommand.cs" />
     <Compile Include="Native\MayBe.cs" />
     <Compile Include="Native\NativeConstants.cs" />
     <Compile Include="Native\PropertyChangedHelper.cs" />
+    <Compile Include="Native\SplitStringHelper.cs" />
     <Compile Include="Native\TypeCastHelper.cs" />
     <Compile Include="Native\ViewModelDesignHelper.cs" />
     <Compile Include="NavigationViewModelBase.cs" />
@@ -89,36 +98,54 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\DialogService\DialogServiceExtensions.WinRT.cs" />
     <Compile Include="Services\DialogService\IDialogService.cs" />
+    <Compile Include="Services\DispatcherService\IDispatcherService.cs" />
     <Compile Include="Services\DocumentManagerService\DocumentManagerServiceExtensions.cs" />
     <Compile Include="Services\DocumentManagerService\IDocument.cs" />
     <Compile Include="Services\DocumentManagerService\IDocumentManagerService.cs" />
     <Compile Include="Services\DocumentManagerService\IDocumentViewModel.cs" />
     <Compile Include="Services\IServiceContainer.cs" />
+    <Compile Include="Services\ISupportBackNavigation.cs" />
     <Compile Include="Services\ISupportNavigation.cs" />
     <Compile Include="Services\ISupportParameter.cs" />
     <Compile Include="Services\ISupportParentViewModel.cs" />
     <Compile Include="Services\ISupportServices.cs" />
     <Compile Include="Services\MessageBoxService\IMessageBoxService.cs" />
     <Compile Include="Services\MessageBoxService\MessageBoxEnums.cs" />
-    <Compile Include="Services\MessageBoxService\MessageBoxServiceExtensions.WinRT.cs" />
     <Compile Include="Services\MessengerService\FuzzyDictionary.cs" />
     <Compile Include="Services\MessengerService\IMessenger.cs" />
     <Compile Include="Services\MessengerService\Messenger.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Services\MessengerService\MessengerExtensions.cs" />
+    <Compile Include="Services\NavigationService\INavigationService.cs" />
     <Compile Include="Services\ServiceContainer.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="UICommand.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Native\IUICommand.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="ViewModelBase.cs" />
+    <None Include="UWP\project.json" />
+    <Compile Include="Services\MessageBoxService\MessageBoxServiceExtensions.WinRT.cs" />
+    <None Include="UWP\project.lock.json" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DataAnnotations\MetadataBuilders\" />
     <Folder Include="DataAnnotations\Native\" />
-    <Folder Include="Services\DispatcherService\" />
   </ItemGroup>
+  <Target Name="GetProjectsReferencingProjectJson" DependsOnTargets="_SplitProjectReferencesByFileExistence" Returns="@(_ProjectReferencingProjectJsonFile)">
+    <ItemGroup Condition="'$(ResolveNuGetPackages)' == 'true'">
+      <_ProjectReferencingProjectJsonFile Include="$(MSBuildProjectFullPath)">
+        <ProjectReferences>@(ProjectReference)</ProjectReferences>
+        <ProjectJson>$(MSBuildProjectDirectory)\UWP\project.json</ProjectJson>
+      </_ProjectReferencingProjectJsonFile>
+    </ItemGroup>
+    <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetProjectsReferencingProjectJson" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration); %(_MSBuildProjectReferenceExistent.SetPlatform)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)">
+      <Output TaskParameter="TargetOutputs" ItemName="_ProjectReferencingProjectJsonFile" />
+    </MSBuild>
+  </Target>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
 </Project>

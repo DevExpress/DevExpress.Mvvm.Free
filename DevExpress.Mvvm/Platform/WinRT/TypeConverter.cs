@@ -1,11 +1,8 @@
 using System;
 using System.Globalization;
-using System.ComponentModel;
-using System.Collections;
 
 namespace DevExpress.Mvvm.Native {
-
-        public class TypeConverter {
+    public class TypeConverter {
         public bool CanConvertFrom(Type sourceType) {
             return this.CanConvertFrom(null, sourceType);
         }
@@ -43,6 +40,40 @@ namespace DevExpress.Mvvm.Native {
             public StandardValuesCollection(TypeConverter typeConverter) {
                 throw new NotImplementedException();
             }
+        }
+
+        public string ConvertToInvariantString(ITypeDescriptorContext context, object value) {
+            return (string)this.ConvertTo(context, CultureInfo.InvariantCulture, value, typeof(string));
+        }
+        public bool GetCreateInstanceSupported() {
+            return this.GetCreateInstanceSupported(null);
+        }
+        public virtual bool GetCreateInstanceSupported(ITypeDescriptorContext context) {
+            return false;
+        }
+        public virtual bool GetStandardValuesSupported(ITypeDescriptorContext context) {
+            return false;
+        }
+        public virtual bool GetStandardValuesExclusive(ITypeDescriptorContext context) {
+            return false;
+        }
+        public bool GetPropertiesSupported() {
+            return this.GetPropertiesSupported(null);
+        }
+        public virtual bool GetPropertiesSupported(ITypeDescriptorContext context) {
+            return false;
+        }
+        public object ConvertFromInvariantString(string text) {
+            return this.ConvertFromString(null, CultureInfo.InvariantCulture, text);
+        }
+        public object ConvertFromString(ITypeDescriptorContext context, CultureInfo culture, string text) {
+            return this.ConvertFrom(context, culture, text);
+        }
+        public string ConvertToInvariantString(object value) {
+            return this.ConvertToString(null, CultureInfo.InvariantCulture, value);
+        }
+        public string ConvertToString(ITypeDescriptorContext context, CultureInfo culture, object value) {
+            return (string)this.ConvertTo(context, culture, value, typeof(string));
         }
     }
     public interface ITypeDescriptorContext {

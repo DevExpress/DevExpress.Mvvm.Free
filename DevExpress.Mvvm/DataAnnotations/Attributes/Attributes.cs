@@ -60,7 +60,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
         public virtual object CreateInstance() {
             return createInstanceCallback != null ? createInstanceCallback() : Activator.CreateInstance(Type);
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public override object TypeId {
             get {
                 return this;
