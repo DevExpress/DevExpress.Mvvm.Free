@@ -16,14 +16,29 @@ using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Input;
 
 namespace DevExpress.Mvvm.UI {
-    public class DialogButtonViewModel {
-        public object Content { get; private set; }
+    public class DialogButtonViewModel : BindableBase{
+        public object Content { get;  set; }
         public ICommand Command { get; private set; }
         public UICommand UICommand { get; private set; }
+        public object AppBarButtonContent { get; set; }
+        public object AppBarButtonLabel { get; set; }
+        public IconElement AppBarButtonIcon { get; set; }
+        public bool CanExecute {
+            get { return GetProperty(() => CanExecute); }
+            set { SetProperty(() => CanExecute, value); }
+        }
         public DialogButtonViewModel(UICommand customUICommand, ICommand command) {
             this.UICommand = customUICommand;
             this.Content = customUICommand.Caption;
             this.Command = command;
+            CanExecute = true;
+            if(UICommand.Command != null) {
+                CanExecute = UICommand.Command.CanExecute(null);
+                UICommand.Command.CanExecuteChanged += CanExecuteChanged;
+            }
+        }
+        void CanExecuteChanged(object sender, EventArgs e) {
+            this.CanExecute = UICommand.Command.CanExecute(sender);
         }
     }
     public class DialogButton : Button {
@@ -56,13 +71,61 @@ namespace DevExpress.Mvvm.UI {
         public DialogContentControl() {
             DefaultStyleKey = typeof(DialogContentControl);
             CommandsSource = new List<UICommand>();
+            ButtonsContents = new List<ButtonContent>();
+            defaultButtonContent = new Dictionary<string, List<ButtonContent>> {
+                { "OK",         new List<ButtonContent>() {
+                                        new ButtonContent() { Id = "OK", Icon = new SymbolIcon(Symbol.Accept)}}
+                                },
+                { "OKCancel",   new List<ButtonContent>() {
+                                        new ButtonContent() { Id = "OK", Icon = new SymbolIcon(Symbol.Accept) },
+                                        new ButtonContent() { Id = "Cancel", Icon = new SymbolIcon(Symbol.Cancel)}}
+                                },
+                { "YesNo",      new List<ButtonContent>() {
+                                        new ButtonContent() { Id = "Yes", Icon = new SymbolIcon(Symbol.Accept) },
+                                        new ButtonContent() { Id = "No", Icon = new SymbolIcon(Symbol.Cancel) }}
+                                },
+                { "RetryCancel",      new List<ButtonContent>() {
+                                        new ButtonContent() { Id = "Retry", Icon = new SymbolIcon(Symbol.RepeatAll) },
+                                        new ButtonContent() { Id = "Cancel", Icon = new SymbolIcon(Symbol.Cancel) }}
+                                },
+                { "Close",         new List<ButtonContent>() {
+                                        new ButtonContent() { Id = "Close", Icon = new SymbolIcon(Symbol.Cancel)}}
+                                },
+            };
         }
         protected ICommand DialogResultCommand { get; set; }
         protected Popup Popup { get; set; }
+        protected UICommand Result { get; set; }
         protected CancellationToken CancellationToken { get; set; }
         protected IAsyncAction AsyncAction { get; set; }
-        protected UICommand Result { get; set; }
-
+        public List<ButtonContent> ButtonsContents { get; set; }
+        Dictionary<string, List<ButtonContent>> defaultButtonContent;
+        public void GoBack() {
+            if(!CanGoBack) return;
+            Close();
+        }
+        public bool CanGoBack{ get { return Popup == null ? false : Popup.IsOpen; } }
+            List<DialogButtonViewModel> CreateButtons(List<ButtonContent> appBarButtonsContents, IEnumerable<UICommand> commandsSource) {
+            List<DialogButtonViewModel> newButtons = new List<DialogButtonViewModel>();
+            appBarButtonsContents = appBarButtonsContents.Where(x => x.Id != null).ToList();
+            string messageButtonsType = "";
+            foreach(UICommand command in commandsSource) {
+                messageButtonsType += command.Caption;
+            }
+            foreach(UICommand command in commandsSource) {
+                var buttonContent = appBarButtonsContents.FirstOrDefault(x => x.Id.Equals(command.Id.ToString()));
+                if(buttonContent?.Icon == null && buttonContent?.Content == null) {
+                    if(defaultButtonContent.ContainsKey(messageButtonsType)){
+                        newButtons.Add(new DialogButtonViewModel(command, DialogResultCommand) { AppBarButtonLabel = command.Caption, AppBarButtonIcon = defaultButtonContent[messageButtonsType].FirstOrDefault(x => x.Id.Equals(command.Id.ToString())).Icon });
+                    } else {
+                        newButtons.Add(new DialogButtonViewModel(command, DialogResultCommand) { AppBarButtonContent = command.Caption});
+                    }
+                } else {
+                    newButtons.Add(new DialogButtonViewModel(command, DialogResultCommand) { AppBarButtonLabel = command.Caption, AppBarButtonContent = buttonContent?.Content, AppBarButtonIcon = buttonContent?.Icon });
+                }
+            }
+            return newButtons;
+        }
         public async Task<UICommand> ShowAsync() {
             Popup = new Popup();
             Popup.Width = Window.Current.CoreWindow.Bounds.Width;
@@ -70,11 +133,7 @@ namespace DevExpress.Mvvm.UI {
             Window.Current.CoreWindow.SizeChanged += CoreWindow_SizeChanged;
             Result = null;
             DialogResultCommand = new DevExpress.Mvvm.DelegateCommand<object>(OnDialogResult);
-            List<DialogButtonViewModel> buttons = new List<DialogButtonViewModel>();
-            foreach(UICommand command in CommandsSource) {
-                buttons.Add(new DialogButtonViewModel(command, DialogResultCommand));
-            }
-            Buttons = buttons;
+            Buttons = CreateButtons(ButtonsContents, CommandsSource);
             Popup.Child = this;
             Width = Popup.Width;
             Height = Popup.Height;

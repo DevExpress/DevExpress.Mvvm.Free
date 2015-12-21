@@ -1,8 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <GenerateLibraryLayout>true</GenerateLibraryLayout>
+    <ProjectLockFile>UWP\project.lock.json</ProjectLockFile>
+    <ResolveNuGetPackages>True</ResolveNuGetPackages>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
@@ -13,10 +15,12 @@
     <RootNamespace>DevExpress.Mvvm.UI</RootNamespace>
     <AssemblyName>DevExpress.Mvvm.UI</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <TargetPlatformVersion>8.1</TargetPlatformVersion>
-    <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>
+    <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
+    <TargetPlatformVersion>10.0.10240.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.10240.0</TargetPlatformMinVersion>
+    <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
-    <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <SccProjectName>
     </SccProjectName>
@@ -26,6 +30,7 @@
     </SccAuxPath>
     <SccProvider>
     </SccProvider>
+    <BaseIntermediateOutputPath>obj.UWP.Free</BaseIntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -35,27 +40,19 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\Bin\WinRT\</OutputPath>
+    <OutputPath>..\Bin\UWP\</OutputPath>
     <DefineConstants>DEBUG;TRACE;MVVM;FREE;NETFX_CORE;WINDOWS_APP</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>
-    </DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\Bin\WinRT\</OutputPath>
+    <OutputPath>..\Bin\UWP\</OutputPath>
     <DefineConstants>TRACE;MVVM;FREE;NETFX_CORE;WINDOWS_APP</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="DevExpress.Mvvm">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Bin\WinRT\DevExpress.Mvvm.dll</HintPath>
-    </Reference>
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="Behaviors\DependencyPropertyBehavior.cs" />
     <Compile Include="Behaviors\EventToCommand\EventToCommand.cs">
@@ -108,6 +105,7 @@
     <Compile Include="Services\Core\ViewServiceBase.cs" />
     <Compile Include="Native\DialogContentControl.cs" />
     <Compile Include="Services\DialogService.cs" />
+    <Compile Include="Services\DispatcherService.cs" />
     <Compile Include="Services\MessageBoxService.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -128,8 +126,29 @@
       <Link>Themes\generic.xaml</Link>
     </Content>
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="DevExpress.Mvvm">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Bin\UWP\DevExpress.Mvvm.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="UWP\project.json" />
+    <None Include="UWP\project.lock.json" />
+  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
-    <VisualStudioVersion>12.0</VisualStudioVersion>
+    <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
+  <Target Name="GetProjectsReferencingProjectJson" DependsOnTargets="_SplitProjectReferencesByFileExistence" Returns="@(_ProjectReferencingProjectJsonFile)">
+    <ItemGroup Condition="'$(ResolveNuGetPackages)' == 'true'">
+      <_ProjectReferencingProjectJsonFile Include="$(MSBuildProjectFullPath)">
+        <ProjectReferences>@(ProjectReference)</ProjectReferences>
+        <ProjectJson>$(MSBuildProjectDirectory)\UWP\project.json</ProjectJson>
+      </_ProjectReferencingProjectJsonFile>
+    </ItemGroup>
+    <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetProjectsReferencingProjectJson" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration); %(_MSBuildProjectReferenceExistent.SetPlatform)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)">
+      <Output TaskParameter="TargetOutputs" ItemName="_ProjectReferencingProjectJsonFile" />
+    </MSBuild>
+  </Target>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
 </Project>
