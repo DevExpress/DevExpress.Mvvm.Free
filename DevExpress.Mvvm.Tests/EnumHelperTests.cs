@@ -130,7 +130,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
         #region display name description and image
-        const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests;component/Icons/";
+        const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Icons/";
         public enum EnumWithDisplayName {
             [Display(ShortName = "OneMember")]
             [Image(UriPrefix + "icon1.ico")]
