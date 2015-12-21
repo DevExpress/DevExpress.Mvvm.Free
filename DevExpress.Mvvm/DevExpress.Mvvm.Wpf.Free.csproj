@@ -76,11 +76,16 @@
     <Compile Include="DataAnnotations\Attributes\AttributesPOCO.cs" />
     <Compile Include="DataAnnotations\Attributes\DXValidationAttribute.cs" />
     <Compile Include="DataAnnotations\Attributes\MetadataTypeAttribute.cs" />
-    <Compile Include="DataAnnotations\MetadataBuilders\Command.cs" />
-    <Compile Include="DataAnnotations\MetadataBuilders\Enum.cs" />
     <Compile Include="DataAnnotations\MetadataBuilders\Extensions.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MemberBuilderBase.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MemberBuilderCommand.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MemberBuilderCommandBase.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MemberBuilderEnum.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MemberBuilderProperty.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MemberBuilderPropertyBase.cs" />
     <Compile Include="DataAnnotations\MetadataBuilders\MetadataBuilder.cs" />
-    <Compile Include="DataAnnotations\MetadataBuilders\Property.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MetadataBuilderBase.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MetadataBuilderEnum.cs" />
     <Compile Include="DataAnnotations\MetadataLocator.cs" />
     <Compile Include="DataAnnotations\Native\AttributeBuilderProviderBase.cs" />
     <Compile Include="DataAnnotations\Native\AttributeHelper.cs" />
@@ -108,6 +113,7 @@
     <Compile Include="Native\Guard.cs" />
     <Compile Include="Native\IClickable.cs" />
     <Compile Include="Native\ICommand.cs" />
+    <Compile Include="Native\IUICommand.cs" />
     <Compile Include="Native\ListAdapter.cs" />
     <Compile Include="Native\MayBe.cs" />
     <Compile Include="Native\NativeConstants.cs" />

@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace DevExpress.Mvvm.Native {
     static class SplitStringHelper {
-#if SILVERLIGHT || NETFX_CORE
+#if NETFX_CORE || DOTNET
             static Regex reg1 = new Regex("(\\p{Ll})(\\p{Lu})");
             static Regex reg2 = new Regex("(\\p{Lu}{2})(\\p{Lu}\\p{Ll}{2})");
 #else

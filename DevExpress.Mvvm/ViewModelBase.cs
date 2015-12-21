@@ -17,14 +17,10 @@ using Windows.UI.Xaml;
 #endif
 
 namespace DevExpress.Mvvm {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
     public abstract class ViewModelBase : BindableBase, ISupportParentViewModel, ISupportServices, ISupportParameter, ICustomTypeDescriptor {
 #else
-    public abstract class ViewModelBase : BindableBase, ISupportParentViewModel, ISupportServices, ISupportParameter
-#if !NETFX_CORE
-        ,ICustomTypeProvider
-#endif
-    {
+    public abstract class ViewModelBase : BindableBase, ISupportParentViewModel, ISupportServices, ISupportParameter {
 #endif
         static readonly object NotSetParameter = new object();
         private object parameter = NotSetParameter;
@@ -35,9 +31,7 @@ namespace DevExpress.Mvvm {
                 if(ViewModelDesignHelper.IsInDesignModeOverride.HasValue)
                     return ViewModelDesignHelper.IsInDesignModeOverride.Value;
                 if(!isInDesignMode.HasValue) {
-#if SILVERLIGHT
-                    isInDesignMode = DesignerProperties.IsInDesignTool;
-#elif NETFX_CORE
+#if NETFX_CORE
                     isInDesignMode = Windows.ApplicationModel.DesignMode.DesignModeEnabled;
 #else
                     DependencyPropertyDescriptor property = DependencyPropertyDescriptor.FromProperty(DesignerProperties.IsInDesignModeProperty, typeof(FrameworkElement));
@@ -73,9 +67,7 @@ namespace DevExpress.Mvvm {
             BuildCommandProperties();
 #endif
             if(IsInDesignMode) {
-#if SILVERLIGHT
-                Deployment.Current.Dispatcher.BeginInvoke(new Action(OnInitializeInDesignMode));
-#elif NETFX_CORE
+#if NETFX_CORE
                 OnInitializeInDesignMode();
 #else
                 Dispatcher.CurrentDispatcher.BeginInvoke(new Action(OnInitializeInDesignMode));
@@ -128,11 +120,7 @@ namespace DevExpress.Mvvm {
                 POCOViewModelExtensions.RaiseCanExecuteChangedCore(this, commandMethodExpression);
             } else {
                 ((IDelegateCommand)commandProperties[ExpressionHelper.GetMethod(commandMethodExpression)]
-#if !SILVERLIGHT
                 .GetValue(this)
-#else
-                .GetValue(this, null)
-#endif
                 ).RaiseCanExecuteChanged();
             }
         }
@@ -189,8 +177,12 @@ namespace DevExpress.Mvvm {
             ParameterInfo[] parameters = method.GetParameters();
             if(CheckCommandMethodConditionValue(parameters.Length <= 1, method, Error_MethodCannotHaveMoreThanOneParameter, createException))
                 return false;
-            bool isValidSingleParameter = parameters.Length == 1 && (parameters[0].IsOut || parameters[0].ParameterType.IsByRef);
+            bool isValidSingleParameter = (parameters.Length == 1) && (parameters[0].IsOut || parameters[0].ParameterType.IsByRef);
             if(CheckCommandMethodConditionValue(!isValidSingleParameter, method, Error_MethodCannotHaveOutORRefParameters, createException)) {
+                return false;
+            }
+            bool isSingleGenericParameter = (parameters.Length == 1) && parameters[0].ParameterType.IsGenericParameter;
+            if(isSingleGenericParameter) {
                 return false;
             }
             return true;
@@ -231,11 +223,7 @@ namespace DevExpress.Mvvm {
             public static IDelegateCommand CreateCommand(object owner, MethodInfo method, MethodInfo canExecuteMethod, bool? useCommandManager, bool hasParameter) {
                 return new DelegateCommand<T>(
                     x => method.Invoke(owner, GetInvokeParameters(x, hasParameter)),
-                    x => canExecuteMethod != null ? (bool)canExecuteMethod.Invoke(owner, GetInvokeParameters(x, hasParameter)) : true
-#if !SILVERLIGHT
-, useCommandManager
-#endif
-);
+                    x => canExecuteMethod != null ? (bool)canExecuteMethod.Invoke(owner, GetInvokeParameters(x, hasParameter)) : true, useCommandManager);
             }
             static object[] GetInvokeParameters(object parameter, bool hasParameter) {
                 return hasParameter ? new[] { parameter } : new object[0];
@@ -252,10 +240,10 @@ namespace DevExpress.Mvvm {
         }
         #region CommandProperty
         class CommandProperty :
-#if !SILVERLIGHT  && !NETFX_CORE
+#if !NETFX_CORE
             PropertyDescriptor
 #else
- PropertyInfo
+            PropertyInfo
 #endif
         {
             readonly MethodInfo method;
@@ -268,10 +256,7 @@ namespace DevExpress.Mvvm {
             public MethodInfo Method { get { return method; } }
             public MethodInfo CanExecuteMethod { get { return canExecuteMethod; } }
             public CommandProperty(MethodInfo method, MethodInfo canExecuteMethod, string name, bool? useCommandManager, Attribute[] attributes, Type reflectedType)
-#if !SILVERLIGHT
-                : base(name, attributes)
-#endif
-            {
+                : base(name, attributes) {
                 this.method = method;
                 this.hasParameter = method.GetParameters().Length == 1;
                 this.canExecuteMethod = canExecuteMethod;
@@ -283,7 +268,6 @@ namespace DevExpress.Mvvm {
             IDelegateCommand GetCommand(object component) {
                 return ((ViewModelBase)component).GetCommand(method, canExecuteMethod, useCommandManager, hasParameter);
             }
-#if !SILVERLIGHT
             public override bool CanResetValue(object component) { return false; }
             public override Type ComponentType { get { return method.DeclaringType; } }
             public override object GetValue(object component) { return GetCommand(component); }
@@ -292,37 +276,9 @@ namespace DevExpress.Mvvm {
             public override void ResetValue(object component) { throw new NotSupportedException(); }
             public override void SetValue(object component, object value) { throw new NotSupportedException(); }
             public override bool ShouldSerializeValue(object component) { return false; }
-#else
-            public override PropertyAttributes Attributes { get { return PropertyAttributes.None; } }
-            public override bool CanRead { get { return true; } }
-            public override bool CanWrite { get { return false; } }
-            public override MethodInfo[] GetAccessors(bool nonPublic) { throw new NotSupportedException(); }
-            public override MethodInfo GetGetMethod(bool nonPublic) { return null; }
-            public override MethodInfo GetSetMethod(bool nonPublic) { return null; }
-            public override void SetValue(object obj, object value, BindingFlags invokeAttr, Binder binder, object[] index, CultureInfo culture) { throw new NotSupportedException(); }
-            public override ParameterInfo[] GetIndexParameters() { return new ParameterInfo[0]; }
-            public override object GetValue(object obj, BindingFlags invokeAttr, Binder binder, object[] index, CultureInfo culture) { return GetCommand(obj); }
-            public override Type PropertyType { get { return typeof(ICommand); } }
-            public override Type DeclaringType { get { return method.DeclaringType; } }
-            public override object[] GetCustomAttributes(Type attributeType, bool inherit) { return new object[0]; }
-            public override object[] GetCustomAttributes(bool inherit) { return attributes; }
-            public override bool IsDefined(Type attributeType, bool inherit) { return false; }
-            public override string Name { get { return name; } }
-            public override Type ReflectedType { get { return reflectedType.GetType(); } }
-#endif
         }
         #endregion
 
-#if SILVERLIGHT
-        static readonly Dictionary<Type, CustomType> customTypes = new Dictionary<Type, CustomType>();
-        CustomType customType;
-        static CustomType GetCustomType(Type type, IEnumerable<CommandProperty> properties) {
-            return customTypes.GetOrAdd(type, () => new CustomType(type, properties));
-        }
-        Type ICustomTypeProvider.GetCustomType() {
-            return customType ?? (customType = GetCustomType(GetType(), commandProperties.Values));
-        }
-#else
 #if !NETFX_CORE
         #region ICustomTypeDescriptor
         AttributeCollection ICustomTypeDescriptor.GetAttributes() {
@@ -365,11 +321,10 @@ namespace DevExpress.Mvvm {
         }
         #endregion
 #endif
-#endif
 #endregion CommandAttributeSupport
 #endif
     }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
     [Serializable]
 #endif
     public class CommandAttributeException : Exception {

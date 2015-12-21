@@ -7,11 +7,9 @@ using System.Linq;
 
 namespace DevExpress.Mvvm.Native {
     public static class SyncCollectionHelper {
-#if !SILVERLIGHT
         public static IDisposable TwoWayBind<TSource, TTarget>(IList<TTarget> target, IList<TSource> source, Func<TSource, TTarget> itemConverter, Func<TTarget, TSource> itemBackConverter) {
             return CollectionBindingHelper.Bind(target, itemConverter, source, itemBackConverter);
         }
-#endif
         public static void SyncCollection(
             NotifyCollectionChangedEventArgs e,
             IList target,
@@ -31,7 +29,6 @@ namespace DevExpress.Mvvm.Native {
                 case NotifyCollectionChangedAction.Reset:
                     PopulateCore(target, source, convertItemAction, insertItemAction, supportInitialize);
                     break;
-#if!SILVERLIGHT
                 case NotifyCollectionChangedAction.Move:
                     object insertItem = target[e.OldStartingIndex];
                     object insertItemAt = target[e.NewStartingIndex];
@@ -41,7 +38,6 @@ namespace DevExpress.Mvvm.Native {
                     target.Remove(insertItem);
                     target.Insert(target.IndexOf(insertItemAt) + deltaItem, insertItem);
                     break;
-#endif
                 case NotifyCollectionChangedAction.Replace:
                     RemoveItem(e.NewStartingIndex, target, clearItemAction);
                     InsertItem(e.NewItems[0], target, source, convertItemAction, insertItemAction);

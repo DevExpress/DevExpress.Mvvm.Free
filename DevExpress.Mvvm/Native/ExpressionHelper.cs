@@ -5,7 +5,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 
 namespace DevExpress.Mvvm.Native {
-    public static class ExpressionHelper {
+    public
+    static class ExpressionHelper {
         internal static MethodInfo GetArgumentMethodStrict<T>(Expression<Action<T>> expression) {
             return GetArgumentMethodStrictCore(expression);
         }
@@ -18,7 +19,16 @@ namespace DevExpress.Mvvm.Native {
             return memberExpression.Method;
         }
         internal static PropertyInfo GetArgumentPropertyStrict<T, TResult>(Expression<Func<T, TResult>> expression) {
-            MemberExpression memberExpression = (MemberExpression)expression.Body;
+            MemberExpression memberExpression = null;
+            if(expression.Body is MemberExpression) {
+                memberExpression = (MemberExpression)expression.Body;
+            } else if(expression.Body is UnaryExpression) {
+                UnaryExpression uExp = (UnaryExpression)expression.Body;
+                if(uExp.NodeType == ExpressionType.Convert)
+                    memberExpression = (MemberExpression)uExp.Operand;
+            }
+            if(memberExpression == null)
+                throw new ArgumentException("expression");
             CheckParameterExpression(memberExpression.Expression);
             return (PropertyInfo)memberExpression.Member;
         }
@@ -60,7 +70,7 @@ namespace DevExpress.Mvvm.Native {
         public static string GetPropertyName<T, TProperty>(Expression<Func<T, TProperty>> expression) {
             return GetPropertyNameCore(expression);
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public static PropertyDescriptor GetProperty<T, TProperty>(Expression<Func<T, TProperty>> expression) {
             return TypeDescriptor.GetProperties(typeof(T))[GetPropertyName(expression)];
         }
@@ -75,7 +85,12 @@ namespace DevExpress.Mvvm.Native {
         }
 
         static bool IsPropertyExpression(MemberExpression expression) {
-            return expression != null && expression.Member.MemberType == MemberTypes.Property;
+            return expression != null &&
+#if !NETFX_CORE
+                expression.Member.MemberType == MemberTypes.Property;
+#else
+                expression.Member is PropertyInfo;
+#endif
         }
         static MemberExpression GetMemberExpression(LambdaExpression expression) {
             if(expression == null)
@@ -96,19 +111,20 @@ namespace DevExpress.Mvvm.Native {
                 throw new ArgumentNullException("iface");
             string propertyName = GetArgumentPropertyStrict(property).Name;
             string getMethodName = "get_" + propertyName;
-            InterfaceMapping map = iface.GetType().GetInterfaceMap(typeof(TInterface));
-            MethodInfo getMethod = map.TargetMethods[map.InterfaceMethods
-                .Select((m, i) => new { name = m.Name, index = i })
-                .Where(m => string.Equals(m.name, getMethodName, StringComparison.Ordinal))
-                .Select(m => m.index)
-                .First()];
+            MethodInfo getMethod = GetGetMethod(iface, getMethodName);
             if(!getMethod.IsPublic || !string.Equals(getMethod.Name, getMethodName)) return false;
-            try {
-                if(tryInvoke) {
+            try
+            {
+                if (tryInvoke)
+                {
                     getMethod.Invoke(iface, null);
                 }
-            } catch(Exception e) {
+            }
+            catch (Exception e)
+            {
+#if !NETFX_CORE
                 if(e is TargetException) return false;
+#endif
                 if(e is ArgumentException) return false;
                 if(e is TargetParameterCountException) return false;
                 if(e is MethodAccessException) return false;
@@ -116,6 +132,22 @@ namespace DevExpress.Mvvm.Native {
                 throw;
             }
             return true;
+        }
+        static MethodInfo GetGetMethod<TInterface>(TInterface iface, string getMethodName) {
+#if !NETFX_CORE
+            InterfaceMapping map = iface.GetType().GetInterfaceMap(typeof(TInterface));
+            MethodInfo getMethod = map.TargetMethods[map.InterfaceMethods
+                .Select((m, i) => new { name = m.Name, index = i })
+                .Where(m => string.Equals(m.name, getMethodName, StringComparison.Ordinal))
+                .Select(m => m.index)
+                .First()];
+#else
+            var expliciteGetMethodName = typeof(TInterface).FullName.Replace("+", ".") + "." + getMethodName;
+            var expliciteMethod = iface.GetType().GetRuntimeMethods().FirstOrDefault(x => string.Equals(x.Name, expliciteGetMethodName, StringComparison.Ordinal));
+            var method = iface.GetType().GetRuntimeMethods().FirstOrDefault(x => string.Equals(x.Name, getMethodName, StringComparison.Ordinal));
+            MethodInfo getMethod = expliciteMethod != null ? expliciteMethod : method;
+#endif
+            return getMethod;
         }
     }
 }

@@ -20,12 +20,10 @@ namespace DevExpress.Mvvm {
 #endif
     }
 #if !NETFX_CORE
-#if !SILVERLIGHT
     public enum MessageIcon {
         None, Error, Question, Warning, Information,
         Hand = Error, Stop = Error, Exclamation = Warning, Asterisk = Information
     }
-#endif
     [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
     public static class MessageBoxEnumsConverter {
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
@@ -68,10 +66,8 @@ namespace DevExpress.Mvvm {
         public static MessageBoxButton ToMessageBoxButton(this MessageButton button) {
             switch(button) {
                 case MessageButton.OKCancel: return MessageBoxButton.OKCancel;
-#if !SILVERLIGHT
                 case MessageButton.YesNo: return MessageBoxButton.YesNo;
                 case MessageButton.YesNoCancel: return MessageBoxButton.YesNoCancel;
-#endif
                 default: return MessageBoxButton.OK;
             }
         }
@@ -79,24 +75,11 @@ namespace DevExpress.Mvvm {
         public static MessageButton ToMessageButton(this MessageBoxButton button) {
             switch(button) {
                 case MessageBoxButton.OKCancel: return MessageButton.OKCancel;
-#if !SILVERLIGHT
                 case MessageBoxButton.YesNo: return MessageButton.YesNo;
                 case MessageBoxButton.YesNoCancel: return MessageButton.YesNoCancel;
-#endif
                 default: return MessageButton.OK;
             }
         }
-#if SILVERLIGHT
-        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
-        public static MessageButton ToMessageButton(this DXMessageBoxButton button) {
-            switch(button) {
-                case DXMessageBoxButton.OKCancel: return MessageButton.OKCancel;
-                case DXMessageBoxButton.YesNo: return MessageButton.YesNo;
-                case DXMessageBoxButton.YesNoCancel: return MessageButton.YesNoCancel;
-                default: return MessageButton.OK;
-            }
-        }
-#else
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static MessageBoxImage ToMessageBoxImage(this MessageIcon icon) {
             switch(icon) {
@@ -117,7 +100,6 @@ namespace DevExpress.Mvvm {
                 default: return MessageIcon.None;
             }
         }
-#endif
     }
 #endif
 }

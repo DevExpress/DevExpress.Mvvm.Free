@@ -33,19 +33,19 @@ namespace DevExpress.Mvvm {
             CollectionLocker doNotProcessSourceCollectionChanged;
             CollectionLocker doNotProcessTargetCollectionChanged;
             Func<TSource, TTarget> itemConverter;
-            Func<TTarget, TSource> itemBackConverter;
             bool reverse;
 
-            public CollectionOneWayBinding(object target, Func<TSource, TTarget> itemConverter, object source, Func<TTarget, TSource> itemBackConverter,
+            public CollectionOneWayBinding(IEnumerable target, Func<TSource, TTarget> itemConverter, IEnumerable source,
                     CollectionLocker doNotProcessSourceCollectionChanged,
                     CollectionLocker doNotProcessTargetCollectionChanged, bool reverse) {
+                source = GetListObject(source);
                 this.reverse = reverse;
                 this.doNotProcessSourceCollectionChanged = doNotProcessSourceCollectionChanged;
                 this.doNotProcessTargetCollectionChanged = doNotProcessTargetCollectionChanged;
+
                 sourceRef = new WeakReference(source);
                 targetRef = new WeakReference(target);
                 this.itemConverter = itemConverter;
-                this.itemBackConverter = itemBackConverter;
                 var sourceNotify = source as INotifyCollectionChanged;
                 if(sourceNotify != null)
                     sourceNotify.CollectionChanged += OnSourceCollectionChanged;
@@ -142,17 +142,24 @@ namespace DevExpress.Mvvm {
                 var list = listObject as IList<T>;
                 return list != null ? list : ListAdapter<T>.FromObjectList((IList)listObject);
             }
+            IEnumerable GetListObject(IEnumerable source) {
+                var list = source as IList<TSource>;
+                if(list != null) return list;
+                var objectList = source as IList;
+                if(objectList != null) return objectList;
+                return source.Cast<TSource>().ToList();
+            }
         }
 
         sealed class CollectionTwoWayBinding<TTarget, TSource> : IDisposable {
             CollectionOneWayBinding<TTarget, TSource> sourceToTarget;
             CollectionOneWayBinding<TSource, TTarget> targetToSource;
 
-            public CollectionTwoWayBinding(object target, Func<TSource, TTarget> itemConverter, object source, Func<TTarget, TSource> itemBackConverter, bool reverse) {
+            public CollectionTwoWayBinding(IEnumerable target, Func<TSource, TTarget> itemConverter, IEnumerable source, Func<TTarget, TSource> itemBackConverter, bool reverse) {
                 CollectionLocker sourceLocker = new CollectionLocker();
                 CollectionLocker targetLocker = new CollectionLocker();
-                targetToSource = new CollectionOneWayBinding<TSource, TTarget>(source, itemBackConverter, target, itemConverter, targetLocker, sourceLocker, reverse);
-                sourceToTarget = new CollectionOneWayBinding<TTarget, TSource>(target, itemConverter, source, itemBackConverter, sourceLocker, targetLocker, reverse);
+                targetToSource = new CollectionOneWayBinding<TSource, TTarget>(source, itemBackConverter, target, targetLocker, sourceLocker, reverse);
+                sourceToTarget = new CollectionOneWayBinding<TTarget, TSource>(target, itemConverter, source, sourceLocker, targetLocker, reverse);
             }
             public void Reset() {
                 sourceToTarget.Reset();
@@ -166,6 +173,14 @@ namespace DevExpress.Mvvm {
         }
         #endregion
 
+        public static IDisposable BindOneWay<TTarget, TSource>(Func<TSource, TTarget> itemConverter, IList target, IList<TSource> source, bool reverse = false) {
+            AssertCollections(target, source);
+            return BindOneWayCore<TTarget, TSource>(target, itemConverter, source, reverse);
+        }
+        public static IDisposable BindOneWay<TTarget, TSource>(IList<TTarget> target, Func<TSource, TTarget> itemConverter, IEnumerable source, bool reverse = false) {
+            AssertCollections(target, source);
+            return BindOneWayCore<TTarget, TSource>(target, itemConverter, source, reverse);
+        }
         public static IDisposable Bind<TTarget, TSource>(Func<TSource, TTarget> itemConverter, IList target, IList<TSource> source, Func<TTarget, TSource> itemBackConverter, bool reverse = false) {
             AssertCollections(target, source);
             return BindCore<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse);
@@ -182,8 +197,13 @@ namespace DevExpress.Mvvm {
             AssertCollections(target, source);
             return BindCore<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse);
         }
-        static IDisposable BindCore<TTarget, TSource>(object target, Func<TSource, TTarget> itemConverter, object source, Func<TTarget, TSource> itemBackConverter, bool reverse) {
+        static IDisposable BindCore<TTarget, TSource>(IEnumerable target, Func<TSource, TTarget> itemConverter, IEnumerable source, Func<TTarget, TSource> itemBackConverter, bool reverse) {
             var binding = new CollectionTwoWayBinding<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse);
+            binding.Reset();
+            return binding;
+        }
+        static IDisposable BindOneWayCore<TTarget, TSource>(IEnumerable target, Func<TSource, TTarget> itemConverter, IEnumerable source, bool reverse) {
+            var binding = new CollectionOneWayBinding<TTarget, TSource>(target, itemConverter, source, new CollectionLocker(), new CollectionLocker(), reverse);
             binding.Reset();
             return binding;
         }

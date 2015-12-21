@@ -55,6 +55,15 @@ namespace DevExpress.Mvvm.Native {
         internal abstract Expression<Func<T>> GetConstructorExpression();
     }
 
+    class BrowsableAttributeBuilderProvider : CustomAttributeBuilderProviderBase<BrowsableAttribute> {
+        internal override Expression<Func<BrowsableAttribute>> GetConstructorExpression() {
+            Expression<Func<BrowsableAttribute>> expression = () => new BrowsableAttribute(true);
+            return expression;
+        }
+        internal override IEnumerable<object> GetConstructorParameters(BrowsableAttribute attribute) {
+            return new List<object>() { attribute.Browsable };
+        }
+    }
     class DisplayAttributeBuilderProvider : CustomAttributeBuilderProviderBase {
         protected override Type AttributeType {
             get { return DataAnnotationsAttributeHelper.GetDisplayAttributeType(); }
@@ -66,7 +75,6 @@ namespace DevExpress.Mvvm.Native {
             return DataAnnotationsAttributeHelper.GetDisplayAttributePropertyValuePairs(attribute);
         }
     }
-#if !SILVERLIGHT
     public class DisplayNameAttributeBuilderProvider : CustomAttributeBuilderProviderBase<DisplayNameAttribute> {
         internal override Expression<Func<DisplayNameAttribute>> GetConstructorExpression() {
             return () => new DisplayNameAttribute(default(string));
@@ -84,5 +92,4 @@ namespace DevExpress.Mvvm.Native {
             return DataAnnotationsAttributeHelper.GetScaffoldColumnAttributeConstructorParameters(attribute);
         }
     }
-#endif
 }

@@ -33,58 +33,23 @@ namespace DevExpress.Mvvm.Native {
 namespace DevExpress.Mvvm.POCO {
     public interface IPOCOViewModel {
         void RaisePropertyChanged(string propertyName);
+        void RaisePropertyChanging(string propertyName);
     }
+
     public class ViewModelSource {
-        #region error messages
-        internal const string Error_ObjectDoesntImplementIPOCOViewModel = "Object doesn't implement IPOCOViewModel.";
-        internal const string Error_CommandNotFound = "Command not found: {0}.";
-        internal const string Error_CommandNotAsync = "Command is not async";
-        const string Error_ConstructorNotFound = "Constructor not found.";
-        const string Error_TypeHasNoCtors = "Type has no accessible constructors: {0}.";
-
-        const string Error_SealedClass = "Cannot create dynamic class for the sealed class: {0}.";
-        const string Error_InternalClass = "Cannot create dynamic class for the internal class: {0}.";
-        const string Error_TypeImplementsIPOCOViewModel = "Type cannot implement IPOCOViewModel: {0}.";
-
-        const string Error_RaisePropertyChangedMethodNotFound = "Class already supports INotifyPropertyChanged, but RaisePropertyChanged(string) method not found: {0}.";
-        const string Error_PropertyIsNotVirual = "Cannot make non-virtual property bindable: {0}.";
-        const string Error_PropertyHasInternalSetter = "Cannot make property with internal setter bindable: {0}.";
-        const string Error_PropertyHasNoSetter = "Cannot make property without setter bindable: {0}.";
-        const string Error_PropertyHasNoGetter = "Cannot make property without public getter bindable: {0}.";
-        const string Error_PropertyIsFinal = "Cannot override final property: {0}.";
-        const string Error_MoreThanOnePropertyChangedMethod = "More than one property changed method: {0}.";
-        const string Error_PropertyChangedMethodShouldBePublicOrProtected = "Property changed method should be public or protected: {0}.";
-        const string Error_PropertyChangedCantHaveMoreThanOneParameter = "Property changed method cannot have more than one parameter: {0}.";
-        const string Error_PropertyChangedCantHaveReturnType = "Property changed method cannot have return type: {0}.";
-        const string Error_PropertyChangedMethodArgumentTypeShouldMatchPropertyType = "Property changed method argument type should match property type: {0}.";
-        const string Error_PropertyChangedMethodNotFound = "Property changed method not found: {0}.";
-
-        const string Error_MemberWithSameCommandNameAlreadyExists = "Member with the same command name already exists: {0}.";
-
-        const string Error_PropertyTypeShouldBeServiceType = "Service properties should have an interface type: {0}.";
-        const string Error_CantAccessProperty = "Cannot access property: {0}.";
-        const string Error_PropertyIsNotVirtual = "Property is not virtual: {0}.";
-        const string Error_PropertyHasSetter = "Property with setter cannot be Service Property: {0}.";
-
-        const string Error_ConstructorExpressionCanReferOnlyToItsArguments = "Constructor expression can refer only to its arguments.";
-        const string Error_ConstructorExpressionCanOnlyBeOfNewExpressionType = "Constructor expression can only be of NewExpression type.";
-        const string Error_IDataErrorInfoAlreadyImplemented = "The IDataErrorInfo interface is already implemented.";
-        #endregion
-
         static readonly Dictionary<Type, ICustomAttributeBuilderProvider> attributeBuilderProviders = new Dictionary<Type, ICustomAttributeBuilderProvider>();
         static ViewModelSource() {
             RegisterAttributeBuilderProvider(new DisplayAttributeBuilderProvider());
-#if !SILVERLIGHT
             RegisterAttributeBuilderProvider(new DisplayNameAttributeBuilderProvider());
             RegisterAttributeBuilderProvider(new ScaffoldColumnAttributeBuilderProvider());
-#endif
+            RegisterAttributeBuilderProvider(new BrowsableAttributeBuilderProvider());
         }
         static void RegisterAttributeBuilderProvider(ICustomAttributeBuilderProvider provider) {
             attributeBuilderProviders[provider.AttributeType] = provider;
         }
 
         static readonly Dictionary<Type, Type> types = new Dictionary<Type, Type>();
-        static readonly Dictionary<Assembly, ModuleBuilder> builders = new Dictionary<Assembly, ModuleBuilder>();
+
         static readonly Dictionary<Type, object> Factories = new Dictionary<Type, object>();
 
         public static T Create<T>() where T : class, new() {
@@ -150,7 +115,7 @@ namespace DevExpress.Mvvm.POCO {
                 if(useOnlyParameters) {
                     foreach(var item in newExpression.Arguments) {
                         if(!(item is ParameterExpression))
-                            throw new ViewModelSourceException(Error_ConstructorExpressionCanReferOnlyToItsArguments);
+                            throw new ViewModelSourceException(ViewModelSourceException.Error_ConstructorExpressionCanReferOnlyToItsArguments);
                     }
                 }
                 return;
@@ -161,7 +126,7 @@ namespace DevExpress.Mvvm.POCO {
                     return;
                 }
             }
-            throw new ViewModelSourceException(Error_ConstructorExpressionCanOnlyBeOfNewExpressionType);
+            throw new ViewModelSourceException(ViewModelSourceException.Error_ConstructorExpressionCanOnlyBeOfNewExpressionType);
         }
         static Expression GetCtorExpression(LambdaExpression constructorExpression, Type resultType, bool useOnlyParameters) {
             Type type = GetPOCOType(resultType);
@@ -196,18 +161,16 @@ namespace DevExpress.Mvvm.POCO {
                             .FirstOrDefault(x => (x.Attributes.HasFlag(MethodAttributes.Public) || x.Attributes.HasFlag(MethodAttributes.Family)) && x.GetParameters().All(y => y.IsOptional));
         }
 
-        public static Type GetPOCOType(Type type) {
-            return types.GetOrAdd(type, () => CreateType(type));
+        public static Type GetPOCOType(Type type, ViewModelSourceBuilderBase builder = null) {
+            Func<Type> createType = () => CreateType(type, builder);
+            if(builder == null) builder = ViewModelSourceBuilderBase.Default;
+            return builder == ViewModelSourceBuilderBase.Default ? types.GetOrAdd(type, createType) : createType();
         }
         internal static ConstructorInfo GetConstructor(Type proxyType, Type[] argsTypes) {
             var ctor = proxyType.GetConstructor(argsTypes ?? Type.EmptyTypes);
             if(ctor == null)
-                throw new ViewModelSourceException(Error_ConstructorNotFound);
+                throw new ViewModelSourceException(ViewModelSourceException.Error_ConstructorNotFound);
             return ctor;
-        }
-
-        static bool CanAccessFromDescendant(MethodBase method) {
-            return method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly;
         }
 
         internal static bool IsPOCOViewModelType(Type type) {
@@ -218,7 +181,7 @@ namespace DevExpress.Mvvm.POCO {
                     return true;
                 if(GetCommandMethods(type).Any() && !type.GetProperties().Where(x => typeof(ICommand).IsAssignableFrom(x.PropertyType)).Any())
                     return true;
-                if(GetBindableProperties(type).Any() && !typeof(INotifyPropertyChanged).IsAssignableFrom(type))
+                if(ViewModelSourceBuilderBase.Default.GetBindableProperties(type).Any() && !typeof(INotifyPropertyChanged).IsAssignableFrom(type))
                     return true;
                 return false;
             } catch {
@@ -226,15 +189,14 @@ namespace DevExpress.Mvvm.POCO {
             }
         }
         #endregion
-        static Type CreateType(Type type) {
+        static Type CreateType(Type type, ViewModelSourceBuilderBase builder) {
             CheckType(type, true);
-            ModuleBuilder moduleBuilder = GetModuleBuilder(type.Assembly);
-            TypeBuilder typeBuilder = CreateTypeBuilder(moduleBuilder, type);
-
-            BuildConstructors(type, typeBuilder);
-            var raisePropertyChangedMethod = ImplementINotifyPropertyChanged(type, typeBuilder);
-            ImplementIPOCOViewModel(typeBuilder, raisePropertyChangedMethod);
-            BuildBindableProperties(type, typeBuilder, raisePropertyChangedMethod);
+            TypeBuilder typeBuilder = BuilderType.CreateTypeBuilder(type);
+            BuilderType.BuildConstructors(type, typeBuilder);
+            MethodInfo raisePropertyChanged, raisePropertyChanging;
+            BuilderINPC.ImplementINPC(type, typeBuilder, out raisePropertyChanged, out raisePropertyChanging);
+            BuilderIPOCOViewModel.ImplementIPOCOViewModel(type, typeBuilder, raisePropertyChanged, raisePropertyChanging);
+            builder.BuildBindableProperties(type, typeBuilder, raisePropertyChanged, raisePropertyChanging);
             BuildCommands(type, typeBuilder);
             ImplementISupportServices(type, typeBuilder);
             ImplementISupportParentViewModel(type, typeBuilder);
@@ -268,16 +230,8 @@ namespace DevExpress.Mvvm.POCO {
             return method;
         }
 
-        static bool ShouldImplementIDataErrorInfo(Type type) {
-            var pocoViewModelAttr = (POCOViewModelAttribute)type.GetCustomAttributes(typeof(POCOViewModelAttribute), false).FirstOrDefault();
-            bool implement = pocoViewModelAttr == null ? false : pocoViewModelAttr.ImplementIDataErrorInfo;
-            if(type.GetInterfaces().Contains(typeof(IDataErrorInfo)) && implement)
-                throw new ViewModelSourceException(Error_IDataErrorInfoAlreadyImplemented);
-            return implement;
-        }
-
         static void ImplementIDataErrorInfo(Type type, TypeBuilder typeBuilder) {
-            if(!ShouldImplementIDataErrorInfo(type))
+            if(!BuilderCommon.ShouldImplementIDataErrorInfo(type))
                 return;
             var errorGetter = BuildExplicitStringGetterOverride(typeBuilder, "Error", null, typeof(IDataErrorInfo));
             var errorProperty = typeBuilder.DefineProperty("Error", PropertyAttributes.None, typeof(string), new Type[0]);
@@ -295,376 +249,12 @@ namespace DevExpress.Mvvm.POCO {
 
         private static bool CheckType(Type type, bool @throw) {
             if(!type.IsPublic && !type.IsNestedPublic)
-                return ReturnFalseOrThrow(@throw, Error_InternalClass, type);
+                return ViewModelSourceException.ReturnFalseOrThrow(@throw, ViewModelSourceException.Error_InternalClass, type);
             if(type.IsSealed)
-                return ReturnFalseOrThrow(@throw, Error_SealedClass, type);
+                return ViewModelSourceException.ReturnFalseOrThrow(@throw, ViewModelSourceException.Error_SealedClass, type);
             if(typeof(IPOCOViewModel).IsAssignableFrom(type))
-                return ReturnFalseOrThrow(@throw, Error_TypeImplementsIPOCOViewModel, type);
+                return ViewModelSourceException.ReturnFalseOrThrow(@throw, ViewModelSourceException.Error_TypeImplementsIPOCOViewModel, type);
             return true;
-        }
-        static ModuleBuilder GetModuleBuilder(Assembly assembly) {
-            return builders.GetOrAdd(assembly, () => CreateBuilder());
-        }
-        static ModuleBuilder CreateBuilder() {
-            var assemblyName = new AssemblyName();
-            assemblyName.Name = AssemblyInfo.SRAssemblyXpfMvvm + ".DynamicTypes." + Guid.NewGuid().ToString();
-            var assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
-            return assemblyBuilder.DefineDynamicModule(assemblyName.Name, false);
-
-        }
-
-        #region constructors
-        static void BuildConstructors(Type type, TypeBuilder typeBuilder) {
-            var ctors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => CanAccessFromDescendant(x)).ToArray();
-            if(!ctors.Any()) {
-                throw new ViewModelSourceException(string.Format(Error_TypeHasNoCtors, type.Name));
-            }
-            foreach(ConstructorInfo constructor in ctors) {
-                BuildConstructor(typeBuilder, constructor);
-            }
-        }
-        static ConstructorBuilder BuildConstructor(TypeBuilder type, ConstructorInfo baseConstructor) {
-            MethodAttributes methodAttributes =
-                  MethodAttributes.Public;
-            var parameters = baseConstructor.GetParameters();
-            ConstructorBuilder method = type.DefineConstructor(methodAttributes, CallingConventions.Standard, parameters.Select(x => x.ParameterType).ToArray());
-
-            ILGenerator gen = method.GetILGenerator();
-
-            gen.Emit(OpCodes.Ldarg_0);
-            for(int i = 0; i < parameters.Length; i++) {
-                gen.Emit(OpCodes.Ldarg_S, i + 1);
-            }
-            gen.Emit(OpCodes.Call, baseConstructor);
-            gen.Emit(OpCodes.Ret);
-
-            return method;
-        }
-        #endregion
-
-        #region bindable properties
-        static void BuildBindableProperties(Type type, TypeBuilder typeBuilder, MethodInfo raisePropertyChangedMethod) {
-            foreach(var propertyInfo in GetBindableProperties(type)) {
-                var getter = BuildBindablePropertyGetter(typeBuilder, propertyInfo.GetGetMethod());
-                typeBuilder.DefineMethodOverride(getter, propertyInfo.GetGetMethod());
-                MethodInfo propertyChangedMethod = GetPropertyChangedMethod(type, propertyInfo, "Changed", x => x.OnPropertyChangedMethodName, x => x.OnPropertyChangedMethod);
-                MethodInfo propertyChangingMethod = GetPropertyChangedMethod(type, propertyInfo, "Changing", x => x.OnPropertyChangingMethodName, x => x.OnPropertyChangingMethod);
-
-                var setter = BuildBindablePropertySetter(typeBuilder, raisePropertyChangedMethod, propertyInfo, propertyChangedMethod, propertyChangingMethod);
-                typeBuilder.DefineMethodOverride(setter, propertyInfo.GetSetMethod(true));
-
-                var newProperty = typeBuilder.DefineProperty(propertyInfo.Name, PropertyAttributes.None, propertyInfo.PropertyType, new Type[0]);
-                newProperty.SetGetMethod(getter);
-                newProperty.SetSetMethod(setter);
-            }
-        }
-        static IEnumerable<PropertyInfo> GetBindableProperties(Type type) {
-            return type.GetProperties().Where(x => IsBindableProperty(x));
-        }
-        static bool IsBindableProperty(PropertyInfo propertyInfo) {
-            var bindable = GetBindablePropertyAttribute(propertyInfo);
-            if(bindable != null && !bindable.IsBindable)
-                return false;
-
-            var getMethod = propertyInfo.GetGetMethod();
-            var setMethod = propertyInfo.GetSetMethod(true);
-            if(getMethod == null)
-                return ReturnFalseOrThrow(bindable, Error_PropertyHasNoGetter, propertyInfo);
-            if(!getMethod.IsVirtual)
-                return ReturnFalseOrThrow(bindable, Error_PropertyIsNotVirual, propertyInfo);
-            if(getMethod.IsFinal)
-                return ReturnFalseOrThrow(bindable, Error_PropertyIsFinal, propertyInfo);
-            if(setMethod == null)
-                return ReturnFalseOrThrow(bindable, Error_PropertyHasNoSetter, propertyInfo);
-            if(setMethod.IsAssembly)
-                return ReturnFalseOrThrow(bindable, Error_PropertyHasInternalSetter, propertyInfo);
-            if(!(IsAutoImplemented(propertyInfo)))
-                return bindable != null && bindable.IsBindable;
-            return true;
-        }
-        static BindablePropertyAttribute GetBindablePropertyAttribute(PropertyInfo propertyInfo) {
-            return GetAttribute<BindablePropertyAttribute>(propertyInfo);
-        }
-        static MethodInfo GetPropertyChangedMethod(Type type, PropertyInfo propertyInfo, string methodNameSuffix, Func<BindablePropertyAttribute, string> getMethodName, Func<BindablePropertyAttribute, MethodInfo> getMethod) {
-            var bindable = GetBindablePropertyAttribute(propertyInfo);
-            if(bindable != null && getMethod(bindable) != null) {
-                CheckOnChangedMethod(getMethod(bindable), propertyInfo.PropertyType);
-                return getMethod(bindable);
-            }
-            bool hasCustomPropertyChangedMethodName = bindable != null && !string.IsNullOrEmpty(getMethodName(bindable));
-            if(!hasCustomPropertyChangedMethodName && !(IsAutoImplemented(propertyInfo)))
-                return null;
-            string onChangedMethodName = hasCustomPropertyChangedMethodName ? getMethodName(bindable) : "On" + propertyInfo.Name + methodNameSuffix;
-            MethodInfo[] changedMethods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
-                .Where(x => x.Name == onChangedMethodName).ToArray();
-            if(changedMethods.Length > 1)
-                throw new ViewModelSourceException(string.Format(Error_MoreThanOnePropertyChangedMethod, propertyInfo.Name));
-            if(hasCustomPropertyChangedMethodName && !changedMethods.Any())
-                throw new ViewModelSourceException(string.Format(Error_PropertyChangedMethodNotFound, onChangedMethodName));
-            changedMethods.FirstOrDefault().Do(x => CheckOnChangedMethod(x, propertyInfo.PropertyType));
-            return changedMethods.FirstOrDefault();
-        }
-        static void CheckOnChangedMethod(MethodInfo method, Type propertyType) {
-            if(!CanAccessFromDescendant(method)) {
-                throw new ViewModelSourceException(string.Format(Error_PropertyChangedMethodShouldBePublicOrProtected, method.Name));
-            }
-            if(method.GetParameters().Length >= 2) {
-                throw new ViewModelSourceException(string.Format(Error_PropertyChangedCantHaveMoreThanOneParameter, method.Name));
-            }
-            if(method.GetParameters().Length == 1 && method.GetParameters()[0].ParameterType != propertyType) {
-                throw new ViewModelSourceException(string.Format(Error_PropertyChangedMethodArgumentTypeShouldMatchPropertyType, method.Name));
-            }
-            if(method.ReturnType != typeof(void)) {
-                throw new ViewModelSourceException(string.Format(Error_PropertyChangedCantHaveReturnType, method.Name));
-            }
-        }
-        static bool IsAutoImplemented(PropertyInfo property) {
-            if(property.GetGetMethod().GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Any())
-                return true;
-            if(property.GetSetMethod(true).GetParameters().Single().Name != "AutoPropertyValue")
-                return false;
-            FieldInfo field = property.DeclaringType.GetField("_" + property.Name, BindingFlags.Instance | BindingFlags.NonPublic);
-            return field != null && field.FieldType == property.PropertyType && field.GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Any();
-        }
-        static MethodBuilder BuildBindablePropertyGetter(TypeBuilder type, MethodInfo originalGetter) {
-            MethodAttributes methodAttributes =
-                  MethodAttributes.Public
-                | MethodAttributes.Virtual
-                | MethodAttributes.HideBySig;
-            MethodBuilder method = type.DefineMethod(originalGetter.Name, methodAttributes);
-            method.SetReturnType(originalGetter.ReturnType);
-
-            ILGenerator gen = method.GetILGenerator();
-
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Call, originalGetter);
-            gen.Emit(OpCodes.Ret);
-
-            return method;
-        }
-        static MethodBuilder BuildBindablePropertySetter(TypeBuilder type, MethodInfo raisePropertyChangedMethod, PropertyInfo property, MethodInfo propertyChangedMethod, MethodInfo propertyChangingMethod) {
-            var setMethod = property.GetSetMethod(true);
-            MethodAttributes methodAttributes =
-                (setMethod.IsPublic ? MethodAttributes.Public : MethodAttributes.Family)
-                | MethodAttributes.Virtual
-                | MethodAttributes.HideBySig;
-            MethodBuilder method = type.DefineMethod(setMethod.Name, methodAttributes);
-
-            Expression<Action> equalsExpression = () => object.Equals(null, null);
-            method.SetReturnType(typeof(void));
-            method.SetParameters(property.PropertyType);
-            bool shouldBoxValues = property.PropertyType.IsValueType;
-
-            ParameterBuilder value = method.DefineParameter(1, ParameterAttributes.None, "value");
-            ILGenerator gen = method.GetILGenerator();
-
-            gen.DeclareLocal(property.PropertyType);
-            Label returnLabel = gen.DefineLabel();
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Call, property.GetGetMethod());
-
-            gen.Emit(OpCodes.Stloc_0);
-            gen.Emit(OpCodes.Ldloc_0);
-
-            if(shouldBoxValues)
-                gen.Emit(OpCodes.Box, property.PropertyType);
-            gen.Emit(OpCodes.Ldarg_1);
-            if(shouldBoxValues)
-                gen.Emit(OpCodes.Box, property.PropertyType);
-            gen.Emit(OpCodes.Call, ExpressionHelper.GetMethod(equalsExpression));
-            gen.Emit(OpCodes.Brtrue_S, returnLabel);
-
-            if(propertyChangingMethod != null) {
-                gen.Emit(OpCodes.Ldarg_0);
-                if(propertyChangingMethod.GetParameters().Length == 1)
-                    gen.Emit(OpCodes.Ldarg_1);
-                gen.Emit(OpCodes.Call, propertyChangingMethod);
-            }
-
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Ldarg_1);
-            gen.Emit(OpCodes.Call, setMethod);
-
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Ldstr, property.Name);
-            gen.Emit(OpCodes.Call, raisePropertyChangedMethod);
-
-            if(propertyChangedMethod != null) {
-                gen.Emit(OpCodes.Ldarg_0);
-                if(propertyChangedMethod.GetParameters().Length == 1)
-                    gen.Emit(OpCodes.Ldloc_0);
-                gen.Emit(OpCodes.Call, propertyChangedMethod);
-            }
-
-            gen.MarkLabel(returnLabel);
-            gen.Emit(OpCodes.Ret);
-
-            return method;
-        }
-        #endregion
-
-        #region INotifyPropertyChanged implementation
-        static MethodBuilder BuildGetPropertyChangedHelperMethod(TypeBuilder type) {
-            FieldBuilder propertyChangedHelperField = type.DefineField("propertyChangedHelper", typeof(PropertyChangedHelper), FieldAttributes.Private);
-
-            MethodAttributes methodAttributes =
-                  MethodAttributes.Private
-                | MethodAttributes.HideBySig;
-            MethodBuilder method = type.DefineMethod("GetHelper", methodAttributes);
-
-            Expression<Func<PropertyChangedHelper>> createHelperExpression = () => new PropertyChangedHelper();
-            ConstructorInfo helperCtor = ExpressionHelper.GetConstructor(createHelperExpression);
-
-            method.SetReturnType(typeof(PropertyChangedHelper));
-
-            ILGenerator gen = method.GetILGenerator();
-
-            gen.DeclareLocal(typeof(PropertyChangedHelper));
-
-            Label returnLabel = gen.DefineLabel();
-
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Ldfld, propertyChangedHelperField);
-            gen.Emit(OpCodes.Dup);
-            gen.Emit(OpCodes.Brtrue_S, returnLabel);
-            gen.Emit(OpCodes.Pop);
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Newobj, helperCtor);
-            gen.Emit(OpCodes.Dup);
-            gen.Emit(OpCodes.Stloc_0);
-            gen.Emit(OpCodes.Stfld, propertyChangedHelperField);
-            gen.Emit(OpCodes.Ldloc_0);
-            gen.MarkLabel(returnLabel);
-            gen.Emit(OpCodes.Ret);
-
-            return method;
-        }
-        static MethodBuilder BuildRaisePropertyChangedMethod(TypeBuilder type, MethodInfo getHelperMethod) {
-            MethodAttributes methodAttributes =
-                  MethodAttributes.Family
-                | MethodAttributes.HideBySig;
-            MethodBuilder method = type.DefineMethod("RaisePropertyChanged", methodAttributes);
-
-            Expression<Action> onPropertyChangedExpression = () => new PropertyChangedHelper().OnPropertyChanged(null, null);
-
-            method.SetReturnType(typeof(void));
-            method.SetParameters(typeof(String));
-
-            ParameterBuilder propertyName = method.DefineParameter(1, ParameterAttributes.None, "propertyName");
-            ILGenerator gen = method.GetILGenerator();
-
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Call, getHelperMethod);
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Ldarg_1);
-            gen.Emit(OpCodes.Callvirt, ExpressionHelper.GetMethod(onPropertyChangedExpression));
-            gen.Emit(OpCodes.Ret);
-
-            return method;
-        }
-
-        static MethodInfo ImplementINotifyPropertyChanged(Type baseType, TypeBuilder typeBuilder) {
-            MethodInfo raisePropertyChangedMethod;
-            if(typeof(INotifyPropertyChanged).IsAssignableFrom(baseType)) {
-                raisePropertyChangedMethod = baseType.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public)
-                    .FirstOrDefault(x => {
-                        var parameters = x.GetParameters();
-                        return x.Name == "RaisePropertyChanged" && CanAccessFromDescendant(x) && parameters.Length == 1 && parameters[0].ParameterType == typeof(string) && !parameters[0].IsOut && !parameters[0].ParameterType.IsByRef;
-                    });
-                if(raisePropertyChangedMethod == null)
-                    throw new ViewModelSourceException(string.Format(Error_RaisePropertyChangedMethodNotFound, baseType.Name));
-            } else {
-                var getHelperMethod = BuildGetPropertyChangedHelperMethod(typeBuilder);
-                raisePropertyChangedMethod = BuildRaisePropertyChangedMethod(typeBuilder, getHelperMethod);
-
-                var addHandler = BuildAddRemovePropertyChangedHandler(typeBuilder, getHelperMethod, "add", () => new PropertyChangedHelper().AddHandler(null));
-                typeBuilder.DefineMethodOverride(addHandler, typeof(INotifyPropertyChanged).GetMethod("add_PropertyChanged"));
-                var removeHandler = BuildAddRemovePropertyChangedHandler(typeBuilder, getHelperMethod, "remove", () => new PropertyChangedHelper().RemoveHandler(null));
-                typeBuilder.DefineMethodOverride(removeHandler, typeof(INotifyPropertyChanged).GetMethod("remove_PropertyChanged"));
-            }
-            return raisePropertyChangedMethod;
-        }
-        static MethodBuilder BuildAddRemovePropertyChangedHandler(TypeBuilder type, MethodInfo getHelperMethod, string methodName, Expression<Action> addRemoveHandlerExpression) {
-            MethodAttributes methodAttributes =
-                  MethodAttributes.Private
-                | MethodAttributes.Virtual
-                | MethodAttributes.Final
-                | MethodAttributes.HideBySig
-                | MethodAttributes.NewSlot;
-            MethodBuilder method = type.DefineMethod(typeof(INotifyPropertyChanged).FullName + "." + methodName + "_PropertyChanged", methodAttributes);
-            method.SetReturnType(typeof(void));
-            method.SetParameters(typeof(PropertyChangedEventHandler));
-
-            ParameterBuilder value = method.DefineParameter(1, ParameterAttributes.None, "value");
-            ILGenerator gen = method.GetILGenerator();
-
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Call, getHelperMethod);
-            gen.Emit(OpCodes.Ldarg_1);
-            gen.Emit(OpCodes.Callvirt, ExpressionHelper.GetMethod(addRemoveHandlerExpression));
-            gen.Emit(OpCodes.Ret);
-
-            return method;
-        }
-        #endregion
-
-        #region IPOCOViewModel implementation
-        static void ImplementIPOCOViewModel(TypeBuilder typeBuilder, MethodInfo raisePropertyChangedMethod) {
-            var raisePropertyChangedMethodImplementation = BuildIPOCOViewModel_RaisePropertyChangedMethod(typeBuilder, raisePropertyChangedMethod);
-            IPOCOViewModel pocoViewModel = null;
-            Expression<Action> raisePropertyChangedExpression = () => pocoViewModel.RaisePropertyChanged(null);
-            typeBuilder.DefineMethodOverride(raisePropertyChangedMethodImplementation, ExpressionHelper.GetMethod(raisePropertyChangedExpression));
-        }
-        static MethodBuilder BuildIPOCOViewModel_RaisePropertyChangedMethod(TypeBuilder type, MethodInfo raisePropertyChangedMethod) {
-            MethodAttributes methodAttributes =
-                  MethodAttributes.Private
-                | MethodAttributes.Virtual
-                | MethodAttributes.Final
-                | MethodAttributes.HideBySig
-                | MethodAttributes.NewSlot;
-            MethodBuilder method = type.DefineMethod("DevExpress.Mvvm.Native.IPOCOViewModel.RaisePropertyChanged", methodAttributes);
-
-            method.SetReturnType(typeof(void));
-            method.SetParameters(typeof(String));
-
-            ParameterBuilder propertyName = method.DefineParameter(1, ParameterAttributes.None, "propertyName");
-            ILGenerator gen = method.GetILGenerator();
-
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Ldarg_1);
-            gen.Emit(OpCodes.Call, raisePropertyChangedMethod);
-            gen.Emit(OpCodes.Ret);
-
-            return method;
-        }
-
-        #endregion
-        static TypeBuilder CreateTypeBuilder(ModuleBuilder module, Type baseType) {
-            List<Type> interfaces = new List<Type>(new[] {
-                typeof(INotifyPropertyChanged),
-                typeof(IPOCOViewModel),
-                typeof(ISupportServices),
-                typeof(ISupportParentViewModel) });
-            if(ShouldImplementIDataErrorInfo(baseType)) {
-                interfaces.Add(typeof(IDataErrorInfo));
-            }
-            string typeName = baseType.Name + "_" + Guid.NewGuid().ToString().Replace('-', '_');
-            return module.DefineType(typeName, TypeAttributes.Public, baseType, interfaces.ToArray());
-        }
-
-        static T GetAttribute<T>(MemberInfo member) where T : Attribute {
-            return MetadataHelper.GetAttribute<T>(member);
-        }
-
-        static bool ReturnFalseOrThrow(Attribute attribute, string text, PropertyInfo property) {
-            if(attribute != null)
-                throw new ViewModelSourceException(string.Format(text, property.Name));
-            return false;
-        }
-        static bool ReturnFalseOrThrow(bool @throw, string text, Type type) {
-            if(@throw)
-                throw new ViewModelSourceException(string.Format(text, type.Name));
-            return false;
         }
 
         #region commands
@@ -675,7 +265,7 @@ namespace DevExpress.Mvvm.POCO {
                 bool isAsyncCommand = commandMethod.ReturnType == typeof(Task);
                 string commandName = GetCommandName(commandMethod);
                 if(type.GetMember(commandName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public).Any() || methods.Any(x => GetCommandName(x) == commandName && x != commandMethod))
-                    throw new ViewModelSourceException(string.Format(Error_MemberWithSameCommandNameAlreadyExists, commandName));
+                    throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_MemberWithSameCommandNameAlreadyExists, commandName));
 
                 MethodInfo canExecuteMethod = GetCanExecuteMethod(type, commandMethod);
 
@@ -704,7 +294,7 @@ namespace DevExpress.Mvvm.POCO {
                 if(!method.IsPublic)
                     return false;
             } else {
-                if(!CanAccessFromDescendant(method))
+                if(!BuilderCommon.CanAccessFromDescendant(method))
                     throw new ViewModelSourceException(string.Format(ViewModelBase.Error_MethodShouldBePublic, method.Name));
             }
             string commandName = GetCommandName(method);
@@ -722,7 +312,7 @@ namespace DevExpress.Mvvm.POCO {
             return (commandAttribute != null && !string.IsNullOrEmpty(commandAttribute.Name)) ? commandAttribute.Name : ViewModelBase.GetCommandName(method);
         }
         static MethodInfo GetCanExecuteMethod(Type type, MethodInfo method) {
-            return ViewModelBase.GetCanExecuteMethod(type, method, ViewModelBase.GetAttribute<CommandAttribute>(method), x => new ViewModelSourceException(x), CanAccessFromDescendant);
+            return ViewModelBase.GetCanExecuteMethod(type, method, ViewModelBase.GetAttribute<CommandAttribute>(method), x => new ViewModelSourceException(x), BuilderCommon.CanAccessFromDescendant);
         }
         static MethodBuilder BuildGetCommandMethod(TypeBuilder type, MethodInfo commandMethod, MethodInfo canExecuteMethod, string commandName, bool? useCommandManager, bool isAsyncCommand) {
             bool hasParameter = commandMethod.GetParameters().Length == 1;
@@ -784,8 +374,8 @@ namespace DevExpress.Mvvm.POCO {
             }
             if(isAsyncCommand) {
                 AsyncCommandAttribute attribute = ViewModelBase.GetAttribute<AsyncCommandAttribute>(commandMethod);
-               bool allowMultipleExecution=attribute != null ? attribute.AllowMultipleExecution : false;
-               gen.Emit(allowMultipleExecution ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                bool allowMultipleExecution = attribute != null ? attribute.AllowMultipleExecution : false;
+                gen.Emit(allowMultipleExecution ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
             }
             if(useCommandManager != null)
                 gen.Emit(useCommandManager.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
@@ -860,7 +450,7 @@ namespace DevExpress.Mvvm.POCO {
         static void BuildServiceProperties(Type type, TypeBuilder typeBuilder) {
             var serviceProperties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(x => IsServiceProperty(x)).ToArray();
             foreach(var propertyInfo in serviceProperties) {
-                ServicePropertyAttribute attribute = GetAttribute<ServicePropertyAttribute>(propertyInfo);
+                ServicePropertyAttribute attribute = BuilderCommon.GetAttribute<ServicePropertyAttribute>(propertyInfo);
                 bool required = DataAnnotationsAttributeHelper.HasRequiredAttribute(propertyInfo);
                 var getter = BuildGetServicePropertyMethod(typeBuilder, propertyInfo, attribute.With(x => x.Key), attribute.Return(x => x.SearchMode, () => default(ServiceSearchMode)), required);
                 typeBuilder.DefineMethodOverride(getter, propertyInfo.GetGetMethod(true));
@@ -869,7 +459,7 @@ namespace DevExpress.Mvvm.POCO {
             }
         }
         static bool IsServiceProperty(PropertyInfo property) {
-            ServicePropertyAttribute attribute = GetAttribute<ServicePropertyAttribute>(property);
+            ServicePropertyAttribute attribute = BuilderCommon.GetAttribute<ServicePropertyAttribute>(property);
             if(attribute != null && !attribute.IsServiceProperty)
                 return false;
 
@@ -877,16 +467,16 @@ namespace DevExpress.Mvvm.POCO {
                 return false;
 
             if(!property.PropertyType.IsInterface)
-                return ReturnFalseOrThrow(attribute, Error_PropertyTypeShouldBeServiceType, property);
+                return ViewModelSourceException.ReturnFalseOrThrow(attribute, ViewModelSourceException.Error_PropertyTypeShouldBeServiceType, property);
             var getter = property.GetGetMethod(true);
-            if(!CanAccessFromDescendant(getter))
-                return ReturnFalseOrThrow(attribute, Error_CantAccessProperty, property);
+            if(!BuilderCommon.CanAccessFromDescendant(getter))
+                return ViewModelSourceException.ReturnFalseOrThrow(attribute, ViewModelSourceException.Error_CantAccessProperty, property);
             if(!getter.IsVirtual)
-                return ReturnFalseOrThrow(attribute, Error_PropertyIsNotVirtual, property);
+                return ViewModelSourceException.ReturnFalseOrThrow(attribute, ViewModelSourceException.Error_PropertyIsNotVirtual, property);
             if(getter.IsFinal)
-                return ReturnFalseOrThrow(attribute, Error_PropertyIsFinal, property);
+                return ViewModelSourceException.ReturnFalseOrThrow(attribute, ViewModelSourceException.Error_PropertyIsFinal, property);
             if(property.GetSetMethod(true) != null)
-                return ReturnFalseOrThrow(attribute, Error_PropertyHasSetter, property);
+                return ViewModelSourceException.ReturnFalseOrThrow(attribute, ViewModelSourceException.Error_PropertyHasSetter, property);
             return true;
         }
         static MethodBuilder BuildGetServicePropertyMethod(TypeBuilder type, PropertyInfo property, string serviceName, ServiceSearchMode searchMode, bool required) {
@@ -990,14 +580,539 @@ namespace DevExpress.Mvvm.POCO {
 
         #endregion
     }
-#if !SILVERLIGHT
+    public class ViewModelSourceBuilderBase {
+        static ViewModelSourceBuilderBase _default;
+        internal static ViewModelSourceBuilderBase Default { get { return _default ?? (_default = new ViewModelSourceBuilderBase()); } }
+
+        public void BuildBindableProperties(Type type, TypeBuilder typeBuilder, MethodInfo raisePropertyChangedMethod, MethodInfo raisePropertyChangingMethod) {
+            var bindableProps = GetBindableProperties(type);
+            var propertyRelations = GetPropertyRelations(type, bindableProps);
+            foreach(var propertyInfo in bindableProps) {
+                var newProperty = BuilderBindableProperty.BuildBindableProperty(type, typeBuilder,
+                    propertyInfo, raisePropertyChangedMethod, raisePropertyChangingMethod,
+                    propertyRelations.GetValueOrDefault(propertyInfo.Name, null));
+                BuildBindablePropertyAttributes(propertyInfo, newProperty);
+            }
+        }
+        public IEnumerable<PropertyInfo> GetBindableProperties(Type type) {
+            return type.GetProperties().Where(x => BuilderCommon.IsBindableProperty(x) || ForceOverrideProperty(x));
+        }
+        protected virtual bool ForceOverrideProperty(PropertyInfo property) {
+            return false;
+        }
+        protected virtual void BuildBindablePropertyAttributes(PropertyInfo property, PropertyBuilder builder) { }
+
+        static Dictionary<string, IEnumerable<string>> GetPropertyRelations(Type type, IEnumerable<PropertyInfo> bindableProperties) {
+            Dictionary<string, IEnumerable<string>> res = new Dictionary<string, IEnumerable<string>>();
+            var allProps = type.GetProperties();
+            var allPropNames = allProps.Select(x => x.Name);
+            var bindablePropertyNames = bindableProperties.Select(x => x.Name);
+            foreach(var prop in allProps) {
+                var attrs = BuilderCommon.GetAttributes<DependsOnPropertiesAttribute>(prop, true);
+                var dependsOn = attrs.Any() ?
+                    attrs.Select(x => x.Properties).Aggregate((x, y) => x.Concat(y).ToArray()).Distinct() : null;
+                if(dependsOn == null) continue;
+                foreach(var dependedProp in dependsOn) {
+                    if(!allPropNames.Contains(dependedProp))
+                        throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_DependsOnNotExist, prop.Name, dependedProp));
+                    if(!bindablePropertyNames.Contains(dependedProp))
+                        throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_DependsOnNotBindable, prop.Name, dependedProp));
+                    if(!res.ContainsKey(dependedProp)) res.Add(dependedProp, new string[] { });
+                    res[dependedProp] = res[dependedProp].Concat(prop.Name.Yield());
+                }
+            }
+            return res;
+        }
+    }
+    static class BuilderCommon {
+        public static POCOViewModelAttribute GetPOCOViewModelAttribute(Type type) {
+            return (POCOViewModelAttribute)type.GetCustomAttributes(typeof(POCOViewModelAttribute), false).FirstOrDefault();
+        }
+        public static bool CanAccessFromDescendant(MethodBase method) {
+            return method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly;
+        }
+        public static T GetAttribute<T>(MemberInfo member) where T : Attribute {
+            return MetadataHelper.GetAttribute<T>(member);
+        }
+        public static IEnumerable<T> GetAttributes<T>(MemberInfo member, bool inherit) where T : Attribute {
+            return MetadataHelper.GetAttributes<T>(member, inherit);
+        }
+        public static bool ShouldImplementIDataErrorInfo(Type type) {
+            var pocoViewModelAttr = GetPOCOViewModelAttribute(type);
+            bool implement = pocoViewModelAttr == null ? false : pocoViewModelAttr.ImplementIDataErrorInfo;
+            if(type.GetInterfaces().Contains(typeof(IDataErrorInfo)) && implement)
+                throw new ViewModelSourceException(ViewModelSourceException.Error_IDataErrorInfoAlreadyImplemented);
+            return implement;
+        }
+
+        public static bool IsBindableProperty(PropertyInfo propertyInfo) {
+            var bindable = GetBindablePropertyAttribute(propertyInfo);
+            if(bindable != null && !bindable.IsBindable)
+                return false;
+
+            var getMethod = propertyInfo.GetGetMethod();
+            var setMethod = propertyInfo.GetSetMethod(true);
+            if(getMethod == null)
+                return ViewModelSourceException.ReturnFalseOrThrow(bindable, ViewModelSourceException.Error_PropertyHasNoGetter, propertyInfo);
+            if(!getMethod.IsVirtual)
+                return ViewModelSourceException.ReturnFalseOrThrow(bindable, ViewModelSourceException.Error_PropertyIsNotVirual, propertyInfo);
+            if(getMethod.IsFinal)
+                return ViewModelSourceException.ReturnFalseOrThrow(bindable, ViewModelSourceException.Error_PropertyIsFinal, propertyInfo);
+            if(setMethod == null)
+                return ViewModelSourceException.ReturnFalseOrThrow(bindable, ViewModelSourceException.Error_PropertyHasNoSetter, propertyInfo);
+            if(setMethod.IsAssembly)
+                return ViewModelSourceException.ReturnFalseOrThrow(bindable, ViewModelSourceException.Error_PropertyHasInternalSetter, propertyInfo);
+            if(!(IsAutoImplemented(propertyInfo)))
+                return bindable != null && bindable.IsBindable;
+            return true;
+        }
+        public static BindablePropertyAttribute GetBindablePropertyAttribute(PropertyInfo propertyInfo) {
+            return GetAttribute<BindablePropertyAttribute>(propertyInfo);
+        }
+        public static bool IsAutoImplemented(PropertyInfo property) {
+            if(property.GetGetMethod().GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Any())
+                return true;
+            if(property.GetSetMethod(true).GetParameters().Single().Name != "AutoPropertyValue")
+                return false;
+            FieldInfo field = property.DeclaringType.GetField("_" + property.Name, BindingFlags.Instance | BindingFlags.NonPublic);
+            return field != null && field.FieldType == property.PropertyType && field.GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Any();
+        }
+    }
+    static class BuilderType {
+        public static TypeBuilder CreateTypeBuilder(Type baseType) {
+            ModuleBuilder module = GetModuleBuilder(baseType.Assembly);
+            List<Type> interfaces = new List<Type>(new[] {
+                typeof(INotifyPropertyChanged),
+                typeof(IPOCOViewModel),
+                typeof(ISupportServices),
+                typeof(ISupportParentViewModel) });
+            if(BuilderCommon.ShouldImplementIDataErrorInfo(baseType))
+                interfaces.Add(typeof(IDataErrorInfo));
+            if(ShouldImplementINotifyPropertyChanging(baseType))
+                interfaces.Add(typeof(INotifyPropertyChanging));
+            string typeName = baseType.Name + "_" + Guid.NewGuid().ToString().Replace('-', '_');
+            return module.DefineType(typeName, TypeAttributes.Public, baseType, interfaces.ToArray());
+        }
+
+        public static void BuildConstructors(Type type, TypeBuilder typeBuilder) {
+            var ctors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => BuilderCommon.CanAccessFromDescendant(x)).ToArray();
+            if(!ctors.Any()) {
+                throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_TypeHasNoCtors, type.Name));
+            }
+            foreach(ConstructorInfo constructor in ctors) {
+                BuildConstructor(typeBuilder, constructor);
+            }
+        }
+        static ConstructorBuilder BuildConstructor(TypeBuilder type, ConstructorInfo baseConstructor) {
+            var parameters = baseConstructor.GetParameters();
+            ConstructorBuilder method = type.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, parameters.Select(x => x.ParameterType).ToArray());
+            for(int i = 0; i < parameters.Length; i++)
+                method.DefineParameter(i + 1, parameters[i].Attributes, parameters[i].Name);
+            ILGenerator gen = method.GetILGenerator();
+            gen.Emit(OpCodes.Ldarg_0);
+            for(int i = 0; i < parameters.Length; i++)
+                gen.Emit(OpCodes.Ldarg_S, i + 1);
+            gen.Emit(OpCodes.Call, baseConstructor);
+            gen.Emit(OpCodes.Ret);
+            return method;
+        }
+
+        static readonly Dictionary<Assembly, ModuleBuilder> builders = new Dictionary<Assembly, ModuleBuilder>();
+        static ModuleBuilder GetModuleBuilder(Assembly assembly) {
+            return builders.GetOrAdd(assembly, () => CreateBuilder());
+        }
+        static ModuleBuilder CreateBuilder() {
+            var assemblyName = new AssemblyName();
+            assemblyName.Name = AssemblyInfo.SRAssemblyXpfMvvm + ".DynamicTypes." + Guid.NewGuid().ToString();
+            var assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+            return assemblyBuilder.DefineDynamicModule(assemblyName.Name, false);
+        }
+        static bool ShouldImplementINotifyPropertyChanging(Type type) {
+            if(type.GetInterfaces().Contains(typeof(INotifyPropertyChanging)))
+                return false;
+            var pocoViewModelAttr = BuilderCommon.GetPOCOViewModelAttribute(type);
+            return pocoViewModelAttr == null ? false : pocoViewModelAttr.ImplementINotifyPropertyChanging;
+        }
+    }
+    static class BuilderINPC {
+        public static void ImplementINPC(Type baseType, TypeBuilder typeBuilder, out MethodInfo raisePropertyChanged, out MethodInfo raisePropertyChanging) {
+            raisePropertyChanged = null;
+            raisePropertyChanging = null;
+            MethodBuilder _getHelper = null;
+            Func<MethodBuilder> getHelper = () => _getHelper ?? (_getHelper = BuildMethod_GetEventHelper(typeBuilder));
+            Func<INPCInfo, MethodInfo> buildINPC = (inpcInfo) => {
+                MethodInfo raiseEventMethod = CheckExistingMethod_RaiseEvent(inpcInfo, baseType);
+                if(raiseEventMethod == null) {
+                    raiseEventMethod = BuildRaiseEventHandlerMethod(typeBuilder, getHelper(), inpcInfo);
+                    BuildAddRemoveEventHandlers(typeBuilder, getHelper(), inpcInfo);
+                }
+                return raiseEventMethod;
+            };
+            raisePropertyChanged = buildINPC(INPCInfo.INPChangedInfo);
+            if(ImplementINPChanging(baseType))
+                raisePropertyChanging = buildINPC(INPCInfo.INPChangingInfo);
+        }
+        static MethodInfo CheckExistingMethod_RaiseEvent(INPCInfo inpcInfo, Type baseType) {
+            if(!inpcInfo.InterfaceType.IsAssignableFrom(baseType)) return null;
+            var res = baseType.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public)
+                .FirstOrDefault(x => {
+                    var parameters = x.GetParameters();
+                    return x.Name == inpcInfo.RaiseEventMethodName
+                        && BuilderCommon.CanAccessFromDescendant(x)
+                        && parameters.Length == 1 && parameters[0].ParameterType == typeof(string)
+                        && !parameters[0].IsOut && !parameters[0].ParameterType.IsByRef;
+                });
+            if(res == null)
+                throw new ViewModelSourceException(string.Format(inpcInfo.RaiseEventMethodNotFoundException, baseType.Name));
+            return res;
+        }
+
+        static MethodBuilder BuildMethod_GetEventHelper(TypeBuilder type) {
+            FieldBuilder helperField = type.DefineField("_inpcEventHelper_", typeof(INPCEventHelper), FieldAttributes.Private);
+            MethodBuilder method = type.DefineMethod("_GetINPCEventHelper_", MethodAttributes.Private | MethodAttributes.HideBySig);
+            Expression<Func<INPCEventHelper>> createHelperExpression = () => new INPCEventHelper();
+            ConstructorInfo helperCtor = ExpressionHelper.GetConstructor(createHelperExpression);
+
+            method.SetReturnType(typeof(INPCEventHelper));
+            ILGenerator gen = method.GetILGenerator();
+            gen.DeclareLocal(typeof(INPCEventHelper));
+            Label returnLabel = gen.DefineLabel();
+
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Ldfld, helperField);
+            gen.Emit(OpCodes.Dup);
+            gen.Emit(OpCodes.Brtrue_S, returnLabel);
+            gen.Emit(OpCodes.Pop);
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Newobj, helperCtor);
+            gen.Emit(OpCodes.Dup);
+            gen.Emit(OpCodes.Stloc_0);
+            gen.Emit(OpCodes.Stfld, helperField);
+            gen.Emit(OpCodes.Ldloc_0);
+            gen.MarkLabel(returnLabel);
+            gen.Emit(OpCodes.Ret);
+
+            return method;
+        }
+        static void BuildAddRemoveEventHandlers(TypeBuilder type, MethodInfo getHelperMethod, INPCInfo inpcInfo) {
+            Func<string, Expression<Action>, MethodBuilder> emitAddRemoveEventHandler = (methodName, handlerExpression) => {
+                MethodBuilder method = type.DefineMethod(inpcInfo.InterfaceType.FullName + "." + methodName + "_" + inpcInfo.EventName,
+                    MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot);
+                method.SetReturnType(typeof(void));
+                method.SetParameters(inpcInfo.EventHandlerType);
+                ParameterBuilder value = method.DefineParameter(1, ParameterAttributes.None, "value");
+                ILGenerator gen = method.GetILGenerator();
+
+                gen.Emit(OpCodes.Ldarg_0);
+                gen.Emit(OpCodes.Call, getHelperMethod);
+                gen.Emit(OpCodes.Ldarg_1);
+                gen.Emit(OpCodes.Callvirt, ExpressionHelper.GetMethod(handlerExpression));
+                gen.Emit(OpCodes.Ret);
+                return method;
+            };
+            var addHandler = emitAddRemoveEventHandler("add", inpcInfo.AddEventHandlerHelperMethod);
+            type.DefineMethodOverride(addHandler, inpcInfo.GetAddEventMethod());
+            var removeHandler = emitAddRemoveEventHandler("remove", inpcInfo.RemoveEventHandlerHelperMethod);
+            type.DefineMethodOverride(removeHandler, inpcInfo.GetRemoveEventMethod());
+        }
+        static MethodBuilder BuildRaiseEventHandlerMethod(TypeBuilder type, MethodInfo getHelperMethod, INPCInfo inpcInfo) {
+            MethodBuilder method = type.DefineMethod(inpcInfo.RaiseEventMethodName, MethodAttributes.Family | MethodAttributes.HideBySig);
+            method.SetReturnType(typeof(void));
+            method.SetParameters(typeof(String));
+            ParameterBuilder propertyName = method.DefineParameter(1, ParameterAttributes.None, "propertyName");
+            ILGenerator gen = method.GetILGenerator();
+
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Call, getHelperMethod);
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Ldarg_1);
+            gen.Emit(OpCodes.Callvirt, ExpressionHelper.GetMethod(inpcInfo.RaiseEventHandlerHelperMethod));
+            gen.Emit(OpCodes.Ret);
+            return method;
+        }
+        static bool ImplementINPChanging(Type type) {
+            var attr = BuilderCommon.GetPOCOViewModelAttribute(type);
+            return attr == null ? false : attr.ImplementINotifyPropertyChanging;
+        }
+
+        class INPCInfo {
+            public readonly static INPCInfo INPChangedInfo =
+                new INPCInfo() {
+                    InterfaceType = typeof(INotifyPropertyChanged),
+                    EventHandlerType = typeof(PropertyChangedEventHandler),
+                    EventName = "PropertyChanged",
+                    RaiseEventMethodName = "RaisePropertyChanged",
+                    RaiseEventMethodNotFoundException = ViewModelSourceException.Error_RaisePropertyChangedMethodNotFound,
+                    AddEventHandlerHelperMethod = () => new INPCEventHelper().AddPropertyChangedHandler(null),
+                    RemoveEventHandlerHelperMethod = () => new INPCEventHelper().RemovePropertyChangedHandler(null),
+                    RaiseEventHandlerHelperMethod = () => new INPCEventHelper().OnPropertyChanged(null, null),
+                };
+            public readonly static INPCInfo INPChangingInfo =
+                new INPCInfo() {
+                    InterfaceType = typeof(INotifyPropertyChanging),
+                    EventHandlerType = typeof(PropertyChangingEventHandler),
+                    EventName = "PropertyChanging",
+                    RaiseEventMethodName = "RaisePropertyChanging",
+                    RaiseEventMethodNotFoundException = ViewModelSourceException.Error_RaisePropertyChangingMethodNotFound,
+                    AddEventHandlerHelperMethod = () => new INPCEventHelper().AddPropertyChangingHandler(null),
+                    RemoveEventHandlerHelperMethod = () => new INPCEventHelper().RemovePropertyChangingHandler(null),
+                    RaiseEventHandlerHelperMethod = () => new INPCEventHelper().OnPropertyChanging(null, null),
+                };
+
+            public Type InterfaceType { get; private set; }
+            public Type EventHandlerType { get; private set; }
+            public string EventName { get; private set; }
+            public string RaiseEventMethodName { get; private set; }
+            public string RaiseEventMethodNotFoundException { get; private set; }
+            public Expression<Action> AddEventHandlerHelperMethod { get; private set; }
+            public Expression<Action> RemoveEventHandlerHelperMethod { get; private set; }
+            public Expression<Action> RaiseEventHandlerHelperMethod { get; private set; }
+            public MethodInfo GetAddEventMethod() { return InterfaceType.GetMethod("add_" + EventName); }
+            public MethodInfo GetRemoveEventMethod() { return InterfaceType.GetMethod("remove_" + EventName); }
+            INPCInfo() { }
+        }
+    }
+    static class BuilderIPOCOViewModel {
+        public static void ImplementIPOCOViewModel(Type baseType, TypeBuilder typeBuilder, MethodInfo raisePropertyChangedMethod, MethodInfo raisePropertyChangingMethod) {
+            Expression<Action> raisePropertyChangedExpression =
+                () => ((IPOCOViewModel)null).RaisePropertyChanged(null);
+            typeBuilder.DefineMethodOverride(
+                RaiseEventMethod(baseType, typeBuilder, raisePropertyChangedMethod, "RaisePropertyChanged"),
+                ExpressionHelper.GetMethod(raisePropertyChangedExpression));
+
+            Expression<Action> raisePropertyChangingExpression =
+                () => ((IPOCOViewModel)null).RaisePropertyChanging(null);
+            typeBuilder.DefineMethodOverride(
+                RaiseEventMethod(baseType, typeBuilder, raisePropertyChangingMethod, "RaisePropertyChanging"),
+                ExpressionHelper.GetMethod(raisePropertyChangingExpression));
+        }
+        static MethodBuilder RaiseEventMethod(Type baseType, TypeBuilder type, MethodInfo raiseMethod, string methodName) {
+            MethodBuilder method = type.DefineMethod("DevExpress.Mvvm.Native.IPOCOViewModel" + methodName,
+                MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot);
+            method.SetReturnType(typeof(void));
+            method.SetParameters(typeof(String));
+            ParameterBuilder propertyName = method.DefineParameter(1, ParameterAttributes.None, "propertyName");
+            ILGenerator gen = method.GetILGenerator();
+
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Ldarg_1);
+            if(raiseMethod != null)
+                gen.Emit(OpCodes.Call, raiseMethod);
+            else {
+                Expression<Func<ViewModelSourceException>> exceptionExpression = () => new ViewModelSourceException((string)null);
+                ConstructorInfo exceptionCtor = ExpressionHelper.GetConstructor(exceptionExpression);
+                gen.Emit(OpCodes.Ldstr, string.Format(ViewModelSourceException.Error_INotifyPropertyChangingIsNotImplemented, baseType.Name));
+                gen.Emit(OpCodes.Newobj, exceptionCtor);
+                gen.Emit(OpCodes.Throw);
+            }
+            gen.Emit(OpCodes.Ret);
+            return method;
+        }
+    }
+    static class BuilderBindableProperty {
+        public static PropertyBuilder BuildBindableProperty(Type type, TypeBuilder typeBuilder, PropertyInfo propertyInfo,
+            MethodInfo raisePropertyChangedMethod, MethodInfo raisePropertyChangingMethod, IEnumerable<string> relatedProperties) {
+
+            var getter = BuildBindablePropertyGetter(typeBuilder, propertyInfo.GetGetMethod());
+            typeBuilder.DefineMethodOverride(getter, propertyInfo.GetGetMethod());
+            MethodInfo propertyChangedMethod = GetPropertyChangedMethod(type, propertyInfo, "Changed", x => x.OnPropertyChangedMethodName, x => x.OnPropertyChangedMethod);
+            MethodInfo propertyChangingMethod = GetPropertyChangedMethod(type, propertyInfo, "Changing", x => x.OnPropertyChangingMethodName, x => x.OnPropertyChangingMethod);
+            var onChangedFirst = ShouldInvokeOnPropertyChangedMethodsFirst(type);
+            var setter = BuildBindablePropertySetter(typeBuilder, propertyInfo,
+                raisePropertyChangedMethod,
+                raisePropertyChangingMethod,
+                propertyChangedMethod,
+                propertyChangingMethod,
+                relatedProperties,
+                onChangedFirst);
+            typeBuilder.DefineMethodOverride(setter, propertyInfo.GetSetMethod(true));
+            var newProperty = typeBuilder.DefineProperty(propertyInfo.Name, PropertyAttributes.None, propertyInfo.PropertyType, new Type[0]);
+            newProperty.SetGetMethod(getter);
+            newProperty.SetSetMethod(setter);
+            return newProperty;
+        }
+
+        static MethodBuilder BuildBindablePropertyGetter(TypeBuilder type, MethodInfo originalGetter) {
+            MethodBuilder method = type.DefineMethod(originalGetter.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig);
+            method.SetReturnType(originalGetter.ReturnType);
+
+            ILGenerator gen = method.GetILGenerator();
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Call, originalGetter);
+            gen.Emit(OpCodes.Ret);
+            return method;
+        }
+        static MethodBuilder BuildBindablePropertySetter(TypeBuilder type, PropertyInfo property, MethodInfo raisePropertyChangedMethod, MethodInfo raisePropertyChangingMethod, MethodInfo propertyChangedMethod, MethodInfo propertyChangingMethod, IEnumerable<string> relatedProperties, bool onChangedFirst) {
+            var setMethod = property.GetSetMethod(true);
+            MethodAttributes methodAttributes = (setMethod.IsPublic ? MethodAttributes.Public : MethodAttributes.Family) | MethodAttributes.Virtual | MethodAttributes.HideBySig;
+            MethodBuilder method = type.DefineMethod(setMethod.Name, methodAttributes);
+
+            Expression<Action> equalsExpression = () => object.Equals(null, null);
+            method.SetReturnType(typeof(void));
+            method.SetParameters(property.PropertyType);
+            bool shouldBoxValues = property.PropertyType.IsValueType;
+
+            ParameterBuilder value = method.DefineParameter(1, ParameterAttributes.None, "value");
+            ILGenerator gen = method.GetILGenerator();
+            gen.DeclareLocal(property.PropertyType);
+            Label returnLabel = gen.DefineLabel();
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Call, property.GetGetMethod());
+            gen.Emit(OpCodes.Stloc_0);
+            gen.Emit(OpCodes.Ldloc_0);
+
+            if(shouldBoxValues)
+                gen.Emit(OpCodes.Box, property.PropertyType);
+            gen.Emit(OpCodes.Ldarg_1);
+            if(shouldBoxValues)
+                gen.Emit(OpCodes.Box, property.PropertyType);
+            gen.Emit(OpCodes.Call, ExpressionHelper.GetMethod(equalsExpression));
+            gen.Emit(OpCodes.Brtrue_S, returnLabel);
+
+            if(onChangedFirst) {
+                EmitPropertyChanging(gen, propertyChangingMethod);
+                EmitRaisePropertyChangedOrChanging(gen, raisePropertyChangingMethod, property.Name);
+            } else {
+                EmitRaisePropertyChangedOrChanging(gen, raisePropertyChangingMethod, property.Name);
+                EmitPropertyChanging(gen, propertyChangingMethod);
+            }
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Ldarg_1);
+            gen.Emit(OpCodes.Call, setMethod);
+            if(onChangedFirst) {
+                EmitPropertyChanged(gen, propertyChangedMethod);
+                EmitRaisePropertyChangedOrChanging(gen, raisePropertyChangedMethod, property.Name);
+            } else {
+                EmitRaisePropertyChangedOrChanging(gen, raisePropertyChangedMethod, property.Name);
+                EmitPropertyChanged(gen, propertyChangedMethod);
+            }
+            EmitRaiseRelatedPropertyChanged(gen, raisePropertyChangedMethod, relatedProperties);
+            gen.MarkLabel(returnLabel);
+            gen.Emit(OpCodes.Ret);
+            return method;
+        }
+        static void EmitRaiseRelatedPropertyChanged(ILGenerator gen, MethodInfo m, IEnumerable<string> relatedProperties) {
+            if(relatedProperties == null) return;
+            foreach(string prop in relatedProperties)
+                EmitRaisePropertyChangedOrChanging(gen, m, prop);
+        }
+        static void EmitRaisePropertyChangedOrChanging(ILGenerator gen, MethodInfo m, string pName) {
+            if(m == null) return;
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Ldstr, pName);
+            gen.Emit(OpCodes.Call, m);
+        }
+        static void EmitPropertyChanging(ILGenerator gen, MethodInfo m) {
+            if(m == null) return;
+            gen.Emit(OpCodes.Ldarg_0);
+            if(m.GetParameters().Length == 1) gen.Emit(OpCodes.Ldarg_1);
+            gen.Emit(OpCodes.Call, m);
+        }
+        static void EmitPropertyChanged(ILGenerator gen, MethodInfo m) {
+            if(m == null) return;
+            gen.Emit(OpCodes.Ldarg_0);
+            if(m.GetParameters().Length == 1) gen.Emit(OpCodes.Ldloc_0);
+            gen.Emit(OpCodes.Call, m);
+        }
+
+        static MethodInfo GetPropertyChangedMethod(Type type, PropertyInfo propertyInfo, string methodNameSuffix, Func<BindablePropertyAttribute, string> getMethodName, Func<BindablePropertyAttribute, MethodInfo> getMethod) {
+            var bindable = BuilderCommon.GetBindablePropertyAttribute(propertyInfo);
+            if(bindable != null && getMethod(bindable) != null) {
+                CheckOnChangedMethod(getMethod(bindable), propertyInfo.PropertyType);
+                return getMethod(bindable);
+            }
+            bool hasCustomPropertyChangedMethodName = bindable != null && !string.IsNullOrEmpty(getMethodName(bindable));
+            if(!hasCustomPropertyChangedMethodName && !(BuilderCommon.IsAutoImplemented(propertyInfo)))
+                return null;
+            string onChangedMethodName = hasCustomPropertyChangedMethodName ? getMethodName(bindable) : "On" + propertyInfo.Name + methodNameSuffix;
+            MethodInfo[] changedMethods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+                .Where(x => x.Name == onChangedMethodName).ToArray();
+            if(changedMethods.Length > 1)
+                throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_MoreThanOnePropertyChangedMethod, propertyInfo.Name));
+            if(hasCustomPropertyChangedMethodName && !changedMethods.Any())
+                throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_PropertyChangedMethodNotFound, onChangedMethodName));
+            changedMethods.FirstOrDefault().Do(x => CheckOnChangedMethod(x, propertyInfo.PropertyType));
+            return changedMethods.FirstOrDefault();
+        }
+        static void CheckOnChangedMethod(MethodInfo method, Type propertyType) {
+            if(!BuilderCommon.CanAccessFromDescendant(method)) {
+                throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_PropertyChangedMethodShouldBePublicOrProtected, method.Name));
+            }
+            if(method.GetParameters().Length >= 2) {
+                throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_PropertyChangedCantHaveMoreThanOneParameter, method.Name));
+            }
+            if(method.GetParameters().Length == 1 && method.GetParameters()[0].ParameterType != propertyType) {
+                throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_PropertyChangedMethodArgumentTypeShouldMatchPropertyType, method.Name));
+            }
+            if(method.ReturnType != typeof(void)) {
+                throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_PropertyChangedCantHaveReturnType, method.Name));
+            }
+        }
+        static bool ShouldInvokeOnPropertyChangedMethodsFirst(Type type) {
+            var pocoViewModelAttr = BuilderCommon.GetPOCOViewModelAttribute(type);
+            return pocoViewModelAttr == null ? false : pocoViewModelAttr.InvokeOnPropertyChangedMethodBeforeRaisingINPC;
+        }
+    }
+
+
     [Serializable]
-#endif
     public class ViewModelSourceException : Exception {
+        #region error messages
+        internal const string Error_ObjectDoesntImplementIPOCOViewModel = "Object doesn't implement IPOCOViewModel.";
+        internal const string Error_CommandNotFound = "Command not found: {0}.";
+        internal const string Error_CommandNotAsync = "Command is not async";
+        internal const string Error_ConstructorNotFound = "Constructor not found.";
+        internal const string Error_TypeHasNoCtors = "Type has no accessible constructors: {0}.";
+
+        internal const string Error_SealedClass = "Cannot create dynamic class for the sealed class: {0}.";
+        internal const string Error_InternalClass = "Cannot create dynamic class for the internal class: {0}.";
+        internal const string Error_TypeImplementsIPOCOViewModel = "Type cannot implement IPOCOViewModel: {0}.";
+
+        internal const string Error_RaisePropertyChangedMethodNotFound = "Class already supports INotifyPropertyChanged, but RaisePropertyChanged(string) method not found: {0}.";
+        internal const string Error_RaisePropertyChangingMethodNotFound = "Class already supports INotifyPropertyChanging, but RaisePropertyChanging(string) method not found: {0}.";
+        internal const string Error_PropertyIsNotVirual = "Cannot make non-virtual property bindable: {0}.";
+        internal const string Error_PropertyHasInternalSetter = "Cannot make property with internal setter bindable: {0}.";
+        internal const string Error_PropertyHasNoSetter = "Cannot make property without setter bindable: {0}.";
+        internal const string Error_PropertyHasNoGetter = "Cannot make property without public getter bindable: {0}.";
+        internal const string Error_PropertyIsFinal = "Cannot override final property: {0}.";
+        internal const string Error_MoreThanOnePropertyChangedMethod = "More than one property changed method: {0}.";
+        internal const string Error_PropertyChangedMethodShouldBePublicOrProtected = "Property changed method should be public or protected: {0}.";
+        internal const string Error_PropertyChangedCantHaveMoreThanOneParameter = "Property changed method cannot have more than one parameter: {0}.";
+        internal const string Error_PropertyChangedCantHaveReturnType = "Property changed method cannot have return type: {0}.";
+        internal const string Error_PropertyChangedMethodArgumentTypeShouldMatchPropertyType = "Property changed method argument type should match property type: {0}.";
+        internal const string Error_PropertyChangedMethodNotFound = "Property changed method not found: {0}.";
+
+        internal const string Error_MemberWithSameCommandNameAlreadyExists = "Member with the same command name already exists: {0}.";
+
+        internal const string Error_PropertyTypeShouldBeServiceType = "Service properties should have an interface type: {0}.";
+        internal const string Error_CantAccessProperty = "Cannot access property: {0}.";
+        internal const string Error_PropertyIsNotVirtual = "Property is not virtual: {0}.";
+        internal const string Error_PropertyHasSetter = "Property with setter cannot be Service Property: {0}.";
+
+        internal const string Error_ConstructorExpressionCanReferOnlyToItsArguments = "Constructor expression can refer only to its arguments.";
+        internal const string Error_ConstructorExpressionCanOnlyBeOfNewExpressionType = "Constructor expression can only be of NewExpression type.";
+        internal const string Error_IDataErrorInfoAlreadyImplemented = "The IDataErrorInfo interface is already implemented.";
+        internal const string Error_INotifyPropertyChangingIsNotImplemented = "The INotifyPropertyChanging interface is not implemented or implemented explicitly: {0}";
+
+        internal const string Error_DependsOnNotBindable = "The {0} property cannot depend on the {1} property, because the latter is not bindable.";
+        internal const string Error_DependsOnNotExist = "The {0} property cannot depend on the {1} property, because the latter does not exist.";
+        #endregion
+
         public ViewModelSourceException() { }
         public ViewModelSourceException(string message)
             : base(message) {
 
+        }
+
+        internal static bool ReturnFalseOrThrow(Attribute attribute, string text, PropertyInfo property) {
+            if(attribute != null)
+                throw new ViewModelSourceException(string.Format(text, property.Name));
+            return false;
+        }
+        internal static bool ReturnFalseOrThrow(bool @throw, string text, Type type) {
+            if(@throw)
+                throw new ViewModelSourceException(string.Format(text, type.Name));
+            return false;
         }
     }
 #pragma warning disable 612,618
@@ -1029,7 +1144,10 @@ namespace DevExpress.Mvvm.POCO {
         public static void RaiseCanExecuteChanged<T>(this T viewModel, Expression<Action<T>> methodExpression) {
             RaiseCanExecuteChangedCore(viewModel, methodExpression);
         }
-#if !SILVERLIGHT
+        public static bool HasError<T, TProperty>(this T viewModel, Expression<Func<T, TProperty>> propertyExpression) {
+            IDataErrorInfo dataErrorInfoViewModel = viewModel as IDataErrorInfo;
+            return (dataErrorInfoViewModel != null) && !string.IsNullOrEmpty(dataErrorInfoViewModel[BindableBase.GetPropertyNameFast(propertyExpression)]);
+        }
         public static void UpdateFunctionBinding<T>(this T viewModel, Expression<Action<T>> methodExpression) {
             UpdateFunctionBehaviorCore(viewModel, methodExpression);
         }
@@ -1040,7 +1158,6 @@ namespace DevExpress.Mvvm.POCO {
             string methodName = ExpressionHelper.GetMethod(methodExpression).Name;
             GetPOCOViewModel(viewModel).RaisePropertyChanged(methodName);
         }
-#endif
 
         #region GetService methods
         public static TService GetService<TService>(this object viewModel) where TService : class {
@@ -1079,7 +1196,7 @@ namespace DevExpress.Mvvm.POCO {
             GetPOCOViewModel(viewModel);
             ICommand command = GetCommandCore(viewModel, methodExpression);
             if(!(command is IAsyncCommand))
-                throw new ViewModelSourceException(ViewModelSource.Error_CommandNotAsync);
+                throw new ViewModelSourceException(ViewModelSourceException.Error_CommandNotAsync);
             return (IAsyncCommand)command;
         }
         static IDelegateCommand GetCommandCore(object viewModel, LambdaExpression methodExpression) {
@@ -1088,13 +1205,13 @@ namespace DevExpress.Mvvm.POCO {
             string commandName = ViewModelSource.GetCommandName(method);
             PropertyInfo property = viewModel.GetType().GetProperty(commandName);
             if(property == null)
-                throw new ViewModelSourceException(string.Format(ViewModelSource.Error_CommandNotFound, commandName));
+                throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_CommandNotFound, commandName));
             return property.GetValue(viewModel, null) as IDelegateCommand;
         }
         static IPOCOViewModel GetPOCOViewModel<T>(T viewModel) {
             IPOCOViewModel pocoViewModel = viewModel as IPOCOViewModel;
             if(pocoViewModel == null)
-                throw new ViewModelSourceException(ViewModelSource.Error_ObjectDoesntImplementIPOCOViewModel);
+                throw new ViewModelSourceException(ViewModelSourceException.Error_ObjectDoesntImplementIPOCOViewModel);
             return pocoViewModel;
         }
     }
@@ -1156,4 +1273,32 @@ namespace DevExpress.Mvvm.POCO {
     }
 
     #endregion
+}
+
+namespace DevExpress.Mvvm.Native {
+    using DevExpress.Mvvm.POCO;
+    public class INPCEventHelper {
+        event PropertyChangedEventHandler PropertyChanged;
+        event PropertyChangingEventHandler PropertyChanging;
+        public void AddPropertyChangedHandler(PropertyChangedEventHandler handler) {
+            PropertyChanged += handler;
+        }
+        public void AddPropertyChangingHandler(PropertyChangingEventHandler handler) {
+            PropertyChanging += handler;
+        }
+        public void RemovePropertyChangedHandler(PropertyChangedEventHandler handler) {
+            PropertyChanged -= handler;
+        }
+        public void RemovePropertyChangingHandler(PropertyChangingEventHandler handler) {
+            PropertyChanging -= handler;
+        }
+        public void OnPropertyChanged(INotifyPropertyChanged obj, string propertyName) {
+            var handler = PropertyChanged;
+            handler.Do(x => x(obj, new PropertyChangedEventArgs(propertyName)));
+        }
+        public void OnPropertyChanging(INotifyPropertyChanging obj, string propertyName) {
+            var handler = PropertyChanging;
+            handler.Do(x => x(obj, new PropertyChangingEventArgs(propertyName)));
+        }
+    }
 }

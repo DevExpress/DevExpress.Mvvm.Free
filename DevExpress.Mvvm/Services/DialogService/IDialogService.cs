@@ -8,10 +8,7 @@ using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm {
     public interface IDialogService {
-#if SILVERLIGHT
-        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
-        Task<UICommand> ShowDialog(IEnumerable<UICommand> dialogCommands, string title, string documentType, object viewModel, object parameter, object parentViewModel);
-#elif NETFX_CORE
+#if NETFX_CORE
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         Task<UICommand> ShowDialogAsync(IEnumerable<UICommand> dialogCommands, string title, string documentType, object viewModel, object parameter, object parentViewModel);
 #else

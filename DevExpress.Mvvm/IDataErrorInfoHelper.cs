@@ -7,7 +7,6 @@ using System.ComponentModel;
 
 namespace DevExpress.Mvvm {
     public static class IDataErrorInfoHelper {
-#if !SILVERLIGHT
         public static bool HasErrors(IDataErrorInfo owner, int deep = 2) {
             return HasErrors(owner, false, deep);
         }
@@ -32,17 +31,13 @@ namespace DevExpress.Mvvm {
             IDataErrorInfo nestedDataErrorInfo = propertyValue as IDataErrorInfo;
             return nestedDataErrorInfo != null && HasErrors(nestedDataErrorInfo, deep);
         }
-#endif
         public static string GetErrorText(object owner, string propertyName) {
             if(owner == null)
                 throw new ArgumentNullException("owner");
             int pathDelimiterIndex = propertyName.IndexOf('.');
             if(pathDelimiterIndex >= 0)
                 return GetNestedPropertyErrorText(owner, propertyName, pathDelimiterIndex);
-            object propertyValue;
-            if(!TryGetPropertyValue(owner, propertyName, out propertyValue))
-                return string.Empty;
-            return GetErrorText(owner, propertyName, propertyValue) ?? string.Empty;
+            return GetNonNestedErrorText(owner, propertyName) ?? string.Empty;
         }
         static string GetNestedPropertyErrorText(object owner, string path, int pathDelimiterIndex) {
             string propertyName = path.Remove(pathDelimiterIndex);
@@ -54,7 +49,7 @@ namespace DevExpress.Mvvm {
                 return string.Empty;
             return nestedDataErrorInfo[path.Substring(pathDelimiterIndex + 1, path.Length - pathDelimiterIndex - 1)];
         }
-        static string GetErrorText(object obj, string propertyName, object value) {
+        static string GetNonNestedErrorText(object obj, string propertyName) {
             Type objType = obj.GetType();
             if(obj is IPOCOViewModel) {
                 objType = objType.BaseType;
@@ -62,7 +57,10 @@ namespace DevExpress.Mvvm {
             PropertyValidator validator = GetPropertyValidator(objType, propertyName);
             if(validator == null)
                 return null;
-            return validator.GetErrorText(value, obj);
+            object propertyValue;
+            if(!TryGetPropertyValue(obj, propertyName, out propertyValue))
+                return null;
+            return validator.GetErrorText(propertyValue, obj);
         }
         static bool TryGetPropertyValue(object owner, string propertyName, out object propertyValue) {
             propertyValue = null;

@@ -14,16 +14,7 @@ namespace DevExpress.Mvvm.Native {
         internal static bool HasRequiredAttribute(MemberInfo member) {
             return MetadataHelper.GetAttribute<RequiredAttribute>(member) != null;
         }
-        internal static Type GetMetadataClassType(Type componentType) {
-            Type metadataTypeAttributeType = componentType.IsEnum ? typeof(EnumMetadataTypeAttribute) : typeof(MetadataTypeAttribute);
-            object[] metadataTypeAttributes = componentType.GetCustomAttributes(metadataTypeAttributeType, false);
-            if(metadataTypeAttributes != null && metadataTypeAttributes.Any()) {
-                return (Type)metadataTypeAttributes[0].GetType().GetProperty("MetadataClassType", BindingFlags.Instance | BindingFlags.Public).GetValue(metadataTypeAttributes[0], null);
-            }
-            return null;
-        }
         #region scaffolding
-#if !SILVERLIGHT
         internal static Type GetScaffoldColumnAttributeType() {
             return typeof(ScaffoldColumnAttribute);
         }
@@ -38,7 +29,6 @@ namespace DevExpress.Mvvm.Native {
         internal static TBuilder DoNotScaffoldCore<TBuilder>(TBuilder builder) where TBuilder : IAttributeBuilderInternal<TBuilder> {
             return builder.AddOrReplaceAttribute(new ScaffoldColumnAttribute(false));
         }
-#endif
         #endregion
 
         internal static Type GetDisplayAttributeType() {
@@ -65,11 +55,7 @@ namespace DevExpress.Mvvm.Native {
             return display.Return(x => x.GetName() ?? x.GetShortName(), () => GetDisplayNameFromDisplayNameAttribute(attributes));
         }
         static string GetDisplayNameFromDisplayNameAttribute(IEnumerable<Attribute> attributes) {
-#if !SILVERLIGHT
             return attributes.OfType<DisplayNameAttribute>().FirstOrDefault().With(y => y.DisplayName);
-#else
-            return null;
-#endif
         }
 
         internal static Tuple<PropertyInfo, object> GetPropertyValuePair<TAttribute, TProperty>(TAttribute attribute, Expression<Func<TAttribute, TProperty>> propertyExpression) {
@@ -105,6 +91,9 @@ namespace DevExpress.Mvvm.Native {
         }
         internal static TBuilder SetDataTypeCore<TBuilder>(TBuilder builder, PropertyDataType dataType) where TBuilder : IAttributeBuilderInternal<TBuilder> {
             return builder.AddOrReplaceAttribute(new DataTypeAttribute(ToDataType(dataType)));
+        }
+        internal static TBuilder SetEnumDataTypeCore<TBuilder>(TBuilder builder, Type enumDataType) where TBuilder : IAttributeBuilderInternal<TBuilder> {
+            return builder.AddOrReplaceAttribute(new EnumDataTypeAttribute(enumDataType));
         }
         #region data type conversion
         static DataType ToDataType(PropertyDataType dataType) {

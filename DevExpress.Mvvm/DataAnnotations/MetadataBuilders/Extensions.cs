@@ -60,6 +60,21 @@ namespace DevExpress.Mvvm.DataAnnotations {
         }
         #endregion
 
+        #region enum
+        public static PropertyMetadataBuilder<T, int> EnumDataType<T>(this PropertyMetadataBuilder<T, int> builder, Type enumType) { return EnumDataTypeCore(builder, enumType); }
+        public static PropertyMetadataBuilder<T, int?> EnumDataType<T>(this PropertyMetadataBuilder<T, int?> builder, Type enumType) { return EnumDataTypeCore(builder, enumType); }
+        public static PropertyMetadataBuilder<T, short> EnumDataType<T>(this PropertyMetadataBuilder<T, short> builder, Type enumType) { return EnumDataTypeCore(builder, enumType); }
+        public static PropertyMetadataBuilder<T, short?> EnumDataType<T>(this PropertyMetadataBuilder<T, short?> builder, Type enumType) { return EnumDataTypeCore(builder, enumType); }
+        public static PropertyMetadataBuilder<T, byte> EnumDataType<T>(this PropertyMetadataBuilder<T, byte> builder, Type enumType) { return EnumDataTypeCore(builder, enumType); }
+        public static PropertyMetadataBuilder<T, byte?> EnumDataType<T>(this PropertyMetadataBuilder<T, byte?> builder, Type enumType) { return EnumDataTypeCore(builder, enumType); }
+        public static PropertyMetadataBuilder<T, long> EnumDataType<T>(this PropertyMetadataBuilder<T, long> builder, Type enumType) { return EnumDataTypeCore(builder, enumType); }
+        public static PropertyMetadataBuilder<T, long?> EnumDataType<T>(this PropertyMetadataBuilder<T, long?> builder, Type enumType) { return EnumDataTypeCore(builder, enumType); }
+
+        internal static PropertyMetadataBuilder<T, TProperty> EnumDataTypeCore<T, TProperty>(this PropertyMetadataBuilder<T, TProperty> builder, Type enumType) {
+            return DataAnnotationsAttributeHelper.SetEnumDataTypeCore(builder, enumType);
+        }
+        #endregion
+
         static PropertyMetadataBuilder<T, TProperty> SetDataTypeCore<T, TProperty>(this PropertyMetadataBuilder<T, TProperty> builder, PropertyDataType dataType) {
             return DataAnnotationsAttributeHelper.SetDataTypeCore(builder, dataType);
         }
@@ -71,7 +86,6 @@ namespace DevExpress.Mvvm.DataAnnotations {
             return builder.AddOrReplaceAttribute(new RangeAttribute(minimum, maximum, errorMessageAccessor));
         }
     }
-
     [CLSCompliant(false)]
     public static class NumericUnsignedPropertyMetadataBuilderExtensions {
         public static PropertyMetadataBuilder<T, uint> CurrencyDataType<T>(this PropertyMetadataBuilder<T, uint> builder) { return PropertyMetadataBuilderExtensions.CurrencyDataTypeCore(builder); }
@@ -80,5 +94,12 @@ namespace DevExpress.Mvvm.DataAnnotations {
         public static PropertyMetadataBuilder<T, ushort?> CurrencyDataType<T>(this PropertyMetadataBuilder<T, ushort?> builder) { return PropertyMetadataBuilderExtensions.CurrencyDataTypeCore(builder); }
         public static PropertyMetadataBuilder<T, ulong> CurrencyDataType<T>(this PropertyMetadataBuilder<T, ulong> builder) { return PropertyMetadataBuilderExtensions.CurrencyDataTypeCore(builder); }
         public static PropertyMetadataBuilder<T, ulong?> CurrencyDataType<T>(this PropertyMetadataBuilder<T, ulong?> builder) { return PropertyMetadataBuilderExtensions.CurrencyDataTypeCore(builder); }
+
+        public static PropertyMetadataBuilder<T, uint> EnumDataType<T>(this PropertyMetadataBuilder<T, uint> builder, Type enumType) { return PropertyMetadataBuilderExtensions.EnumDataTypeCore(builder, enumType); }
+        public static PropertyMetadataBuilder<T, uint?> EnumDataType<T>(this PropertyMetadataBuilder<T, uint?> builder, Type enumType) { return PropertyMetadataBuilderExtensions.EnumDataTypeCore(builder, enumType); }
+        public static PropertyMetadataBuilder<T, ushort> EnumDataType<T>(this PropertyMetadataBuilder<T, ushort> builder, Type enumType) { return PropertyMetadataBuilderExtensions.EnumDataTypeCore(builder, enumType); }
+        public static PropertyMetadataBuilder<T, ushort?> EnumDataType<T>(this PropertyMetadataBuilder<T, ushort?> builder, Type enumType) { return PropertyMetadataBuilderExtensions.EnumDataTypeCore(builder, enumType); }
+        public static PropertyMetadataBuilder<T, ulong> EnumDataType<T>(this PropertyMetadataBuilder<T, ulong> builder, Type enumType) { return PropertyMetadataBuilderExtensions.EnumDataTypeCore(builder, enumType); }
+        public static PropertyMetadataBuilder<T, ulong?> EnumDataType<T>(this PropertyMetadataBuilder<T, ulong?> builder, Type enumType) { return PropertyMetadataBuilderExtensions.EnumDataTypeCore(builder, enumType); }
     }
 }

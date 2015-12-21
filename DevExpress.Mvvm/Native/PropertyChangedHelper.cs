@@ -6,20 +6,6 @@ using System.Windows.Threading;
 #endif
 
 namespace DevExpress.Mvvm.Native {
-    public class PropertyChangedHelper {
-        event PropertyChangedEventHandler PropertyChanged;
-        public void AddHandler(PropertyChangedEventHandler handler) {
-            PropertyChanged += handler;
-        }
-        public void RemoveHandler(PropertyChangedEventHandler handler) {
-            PropertyChanged -= handler;
-        }
-        public void OnPropertyChanged(INotifyPropertyChanged obj, string propertyName) {
-            var handler = PropertyChanged;
-            if(handler != null)
-                handler(obj, new PropertyChangedEventArgs(propertyName));
-        }
-    }
 #if !FREE && !NETFX_CORE
     public static class PropertyChangedTracker {
         public static PropertyChangedTracker<T, TProperty> GetPropertyChangedTracker<T, TProperty>(this T obj, Expression<Func<T, TProperty>> propertyExpression, Action changedCallBack)

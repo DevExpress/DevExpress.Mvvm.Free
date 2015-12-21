@@ -1,7 +1,7 @@
 using System;
 
 namespace DevExpress.Mvvm.DataAnnotations {
-#if SILVERLIGHT || NETFX_CORE
+#if NETFX_CORE
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public sealed class MetadataTypeAttribute : Attribute {
         public MetadataTypeAttribute(Type metadataClassType) {

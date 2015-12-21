@@ -1,6 +1,3 @@
-#if SILVERLIGHT
-using MessageBoxButton = DevExpress.Mvvm.DXMessageBoxButton;
-#endif
 using DevExpress.Mvvm.Native;
 using System;
 using System.Collections.Generic;
@@ -9,7 +6,7 @@ using System.Windows;
 using System.Windows.Input;
 
 namespace DevExpress.Mvvm {
-    public class UICommand : BindableBase {
+    public class UICommand : BindableBase, IUICommand {
         object id = null;
         public object Id {
             get { return id; }
@@ -169,5 +166,16 @@ namespace DevExpress.Mvvm {
                 Tag = tag,
             };
         }
+        #region IUICommand
+        EventHandler executed;
+        event EventHandler IUICommand.Executed {
+            add { executed += value;  }
+            remove { executed -= value;            }
+        }
+        void IUICommand.RaiseExecuted() {
+            if(executed != null)
+                executed(this, EventArgs.Empty);
+        }
+        #endregion
     }
 }

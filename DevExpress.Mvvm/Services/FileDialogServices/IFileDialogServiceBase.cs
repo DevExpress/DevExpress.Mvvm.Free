@@ -3,7 +3,6 @@ using System.ComponentModel;
 namespace DevExpress.Mvvm {
     [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
     public interface IFileDialogServiceBase {
-#if !SILVERLIGHT
         bool CheckFileExists { get; set; }
         bool AddExtension { get; set; }
         bool AutoUpgradeEnabled { get; set; }
@@ -17,6 +16,5 @@ namespace DevExpress.Mvvm {
         bool ValidateNames { get; set; }
 
         void Reset();
-#endif
     }
 }

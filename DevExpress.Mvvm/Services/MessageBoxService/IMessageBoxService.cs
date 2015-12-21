@@ -11,10 +11,7 @@ using System.Threading.Tasks;
 
 namespace DevExpress.Mvvm {
     public interface IMessageBoxService {
-#if SILVERLIGHT
-        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
-        MessageResult Show(string messageBoxText, string caption, MessageButton button, MessageResult defaultResult);
-#elif NETFX_CORE
+#if NETFX_CORE
         Task<UICommand> ShowAsync(string messageBoxText, string caption, IList<UICommand> commands);
 #else
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]

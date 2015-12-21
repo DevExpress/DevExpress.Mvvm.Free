@@ -75,8 +75,8 @@ namespace DevExpress.Mvvm {
         }
         public T GetService<T>(string key, ServiceSearchMode searchMode = ServiceSearchMode.PreferLocal) where T : class {
             bool serviceHasKey;
-            IServiceContainer serviceCOntainer = this;
-            return serviceCOntainer.GetService<T>(key, searchMode, out serviceHasKey);
+            IServiceContainer serviceContainer = this;
+            return serviceContainer.GetService<T>(key, searchMode, out serviceHasKey);
         }
         public T GetService<T>(ServiceSearchMode searchMode = ServiceSearchMode.PreferLocal) where T : class {
             return this.GetService<T>(null, searchMode);
@@ -142,9 +142,7 @@ namespace DevExpress.Mvvm {
     class DefaultServiceContainer : ServiceContainer {
         public DefaultServiceContainer() : base(null) { }
         protected virtual ResourceDictionary GetApplicationResources() {
-#if SILVERLIGHT
-            bool hasAccess = Deployment.Current.Dispatcher.CheckAccess();
-#elif !NETFX_CORE
+#if !NETFX_CORE
             bool hasAccess = Application.Current.Return(x => x.Dispatcher.CheckAccess(), () => false);
 #else
             bool hasAccess = Application.Current != null && CoreApplication.MainView.CoreWindow.Return(x => x.Dispatcher.HasThreadAccess, () => false);

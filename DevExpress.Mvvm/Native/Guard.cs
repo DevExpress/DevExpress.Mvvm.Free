@@ -1,8 +1,12 @@
 using System;
 
+#if MVVM && !NETFX_CORE
+namespace DevExpress.Mvvm.Native {
+    public static class GuardHelper {
+#else
 namespace DevExpress.Utils {
-    #region Guard
     public static class Guard {
+#endif
         public static void ArgumentNotNull(object value, string name) {
             if (Object.ReferenceEquals(value, null))
                 ThrowArgumentNullException(name);
@@ -38,22 +42,21 @@ namespace DevExpress.Utils {
         public static TValue ArgumentMatchType<TValue>(object value, string name) {
             try {
                 return (TValue)value;
-            } catch(InvalidCastException) {
-                ThrowArgumentException(name, value);
+            } catch(InvalidCastException e) {
+                ThrowArgumentException(name, value, e);
                 throw new InvalidOperationException();
             }
         }
-        static void ThrowArgumentException(string propName, object val) {
+        static void ThrowArgumentException(string propName, object val, Exception innerException = null) {
             string valueStr =
                 Object.ReferenceEquals(val, string.Empty) ? "String.Empty" :
                 Object.ReferenceEquals(val, null) ? "null" :
                 val.ToString();
             string s = String.Format("'{0}' is not a valid value for '{1}'", valueStr, propName);
-            throw new ArgumentException(s);
+            throw new ArgumentException(s, innerException);
         }
         static void ThrowArgumentNullException(string propName) {
             throw new ArgumentNullException(propName);
         }
     }
-    #endregion
 }

@@ -33,6 +33,10 @@ namespace DevExpress.Mvvm {
             Verify(fileInfo);
             return fileInfo.CopyTo(destFileName, false);
         }
+        public static string GetFullName(this IFileInfo fileInfo) {
+            Verify(fileInfo);
+            return string.Format("{0}\\{1}", fileInfo.DirectoryName, fileInfo.Name);
+        }
 
         internal static void Verify(IFileInfo fileInfo) {
             if(fileInfo == null)

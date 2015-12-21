@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Reflection;
 #if !NETFX_CORE
 using System.Windows.Threading;
 #else

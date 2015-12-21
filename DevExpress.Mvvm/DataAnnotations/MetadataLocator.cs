@@ -1,6 +1,7 @@
 using DevExpress.Mvvm.Native;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 
 namespace DevExpress.Mvvm.DataAnnotations {
@@ -11,18 +12,23 @@ namespace DevExpress.Mvvm.DataAnnotations {
         public static IMetadataLocator Default;
 
         public static MetadataLocator Create() {
-            return new MetadataLocator(new Tuple<Type, Type>[0]);
+            return new MetadataLocator(Enumerable.Empty<Tuple<Type, Type>>());
         }
         readonly IEnumerable<Tuple<Type, Type>> infoList;
         IDictionary<Type, Type[]> dictionary;
         IDictionary<Type, Type[]> Dictionary {
             get {
-                return dictionary ?? (dictionary = infoList.GroupBy(x => x.Item1, x => x.Item2).ToDictionary(x => x.Key, x => x.ToArray()));
+                return dictionary ?? (dictionary = MetadataHelper.InternalMetadataProviders.Union(infoList).GroupBy(x => x.Item1, x => x.Item2).ToDictionary(x => x.Key, x => x.ToArray()));
             }
         }
         MetadataLocator(IEnumerable<Tuple<Type, Type>> infoList) {
             this.infoList = infoList;
+            MetadataHelper.RegisterLocator(this);
         }
+        internal void Update() {
+            dictionary = null;
+        }
+
 
         Type[] IMetadataLocator.GetMetadataTypes(Type type) {
             Type[] result;
@@ -34,12 +40,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
             return AddMetadata(new[] { tuple });
         }
         public MetadataLocator AddMetadata(Type metadataType) {
-            var newInfoList1 = metadataType.GetInterfaces()
-                .Where(x => x.GetGenericTypeDefinition() == typeof(IMetadataProvider<>))
-                .Select(x => new Tuple<Type, Type>(MetadataHelper.GetTypeOrGenericTypeDefinition(x.GetGenericArguments().Single()), metadataType));
-            var newInfoList2 = MetadataHelper.GetBuildMetadataMethods(metadataType)
-                .Select(x => new Tuple<Type, Type>(MetadataHelper.GetTypeOrGenericTypeDefinition(MetadataHelper.GetBuildMetadataMethodEntityType(x)), metadataType));
-            return AddMetadata(newInfoList1.Concat(newInfoList2));
+            return AddMetadata(MetadataHelper.GetMetadataInfoList(metadataType));
         }
         public MetadataLocator AddMetadata<T, TMetadata>() {
             return AddMetadata(typeof(T), typeof(TMetadata));
@@ -48,6 +49,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
             return AddMetadata(typeof(TMetadata));
         }
         MetadataLocator AddMetadata(IEnumerable<Tuple<Type, Type>> newInfoList) {
+            MetadataHelper.CheckMetadata(newInfoList);
             return new MetadataLocator(infoList.Union(newInfoList));
         }
     }

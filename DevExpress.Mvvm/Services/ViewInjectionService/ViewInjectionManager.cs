@@ -238,24 +238,8 @@ namespace DevExpress.Mvvm {
                     if(action.GetMethodInfo().IsStatic)
                 #endif
                         return new StrongReferenceActionInvoker(recipient, action);
-                #if SILVERLIGHT
-                    if(ShouldStoreActionItself(action))
-                        return new SLWeakReferenceActionInvoker(recipient, action);
-                #endif
                 return new WeakReferenceActionInvoker(recipient, action);
             }
-#if SILVERLIGHT
-            static bool ShouldStoreActionItself(Delegate action) {
-                if(!action.Method.IsPublic)
-                    return true;
-                if(action.Target != null && !action.Target.GetType().IsPublic && !action.Target.GetType().IsNestedPublic)
-                    return true;
-                var name = action.Method.Name;
-                if(name.Contains("<") && name.Contains(">"))
-                    return true;
-                return false;
-            }
-#endif
         }
         class NavigatedMessage { }
         class NavigatedAwayMessage { }

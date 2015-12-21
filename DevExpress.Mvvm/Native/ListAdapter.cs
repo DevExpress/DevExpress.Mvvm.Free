@@ -44,64 +44,141 @@ namespace DevExpress.Mvvm.Native {
             readonly IList<T1> list1;
             readonly IList<T2> list2;
             readonly Func<T, bool> addItemToFirstList;
+            List<int> publicIndexes;
+            List<int> innerIndexes;
 
             public CombinedList(IList<T1> list1, IList<T2> list2, Func<T, bool> addItemToFirstList) {
                 this.list1 = list1;
                 this.list2 = list2;
                 this.addItemToFirstList = addItemToFirstList;
+                int count = list1.Count + list2.Count;
             }
 
-            T IList<T>.this[int index] {
+            void UpdateIndexMap() {
+                int count = Count;
+                if(publicIndexes == null || publicIndexes.Count != count) {
+                    publicIndexes = Enumerable.Range(0, count).ToList();
+                    innerIndexes = Enumerable.Range(0, count).ToList();
+                }
+            }
+
+            int InnerIndex(int publicIndex) {
+                return innerIndexes[publicIndex];
+            }
+            int PublicIndex(int innerIndex) {
+                return publicIndexes[innerIndex];
+            }
+            void SwapItemsVirtual(int publicIndex1, int publicIndex2) {
+                int innerIndex1 = innerIndexes[publicIndex1];
+                int innerIndex2 = innerIndexes[publicIndex2];
+                publicIndexes[innerIndex1] = publicIndex2;
+                publicIndexes[innerIndex2] = publicIndex1;
+                innerIndexes[publicIndex1] = innerIndex2;
+                innerIndexes[publicIndex2] = innerIndex1;
+            }
+            void MoveItemVirtual(int oldPublicIndex, int newPublicIndex) {
+                if(oldPublicIndex < newPublicIndex) {
+                    for(int i = oldPublicIndex; i < newPublicIndex; ++i)
+                        SwapItemsVirtual(i, i + 1);
+                } else {
+                    for(int i = oldPublicIndex; i > newPublicIndex; --i)
+                        SwapItemsVirtual(i, i - 1);
+                }
+            }
+
+            public void Insert(int publicIndex, T item) {
+                UpdateIndexMap();
+                bool toFirstList = addItemToFirstList(item);
+                int innerIndex;
+                if(toFirstList) {
+                    int skip = publicIndexes.Take(list1.Count).Reverse().TakeWhile(p => p >= publicIndex).Count();
+                    innerIndex = list1.Count - skip;
+                    list1.Insert(innerIndex, (T1)item);
+                } else {
+                    int skip = publicIndexes.Skip(list1.Count).Reverse().TakeWhile(p => p >= publicIndex).Count();
+                    innerIndex = list1.Count + (list2.Count - skip);
+                    list2.Insert(innerIndex - list1.Count, (T2)item);
+                }
+                for(int i = innerIndex; i < publicIndexes.Count; ++i)
+                    ++innerIndexes[publicIndexes[i]];
+                innerIndexes.Add(innerIndex);
+                publicIndexes.Insert(innerIndex, innerIndexes.Count - 1);
+                MoveItemVirtual(innerIndexes.Count - 1, publicIndex);
+            }
+            public bool Remove(T item) {
+                int index = IndexOf(item);
+                if(index < 0) return false;
+                RemoveAt(index);
+                return true;
+            }
+            public void RemoveAt(int publicIndex) {
+                UpdateIndexMap();
+                int innerIndex = innerIndexes[publicIndex];
+                MoveItemVirtual(publicIndex, innerIndexes.Count - 1);
+                publicIndexes.RemoveAt(innerIndex);
+                innerIndexes.RemoveAt(innerIndexes.Count - 1);
+                for(int i = innerIndex; i < publicIndexes.Count; ++i)
+                    --innerIndexes[publicIndexes[i]];
+                if(innerIndex < list1.Count)
+                    list1.RemoveAt(innerIndex);
+                else
+                    list2.RemoveAt(innerIndex - list1.Count);
+            }
+
+            T GetItemCore(int index) {
+                int innerIndex = innerIndexes[index];
+                if(innerIndex < list1.Count)
+                    return list1[innerIndex];
+                else
+                    return list2[innerIndex - list1.Count];
+            }
+            public T this[int index] {
                 get {
-                    if(index < list1.Count)
-                        return list1[index];
-                    else
-                        return list2[index - list1.Count];
+                    UpdateIndexMap();
+                    return GetItemCore(index);
                 }
                 set {
-                    if(index < list1.Count)
-                        list1[index] = (T1)value;
+                    UpdateIndexMap();
+                    int innerIndex = innerIndexes[index];
+                    if(innerIndex < list1.Count)
+                        list1[innerIndex] = (T1)value;
                     else
-                        list2[index - list1.Count] = (T2)value;
+                        list2[innerIndex - list1.Count] = (T2)value;
                 }
             }
-            int ICollection<T>.Count { get { return list1.Count + list2.Count; } }
+            public int Count { get { return list1.Count + list2.Count; } }
             bool ICollection<T>.IsReadOnly { get { return list1.IsReadOnly || list2.IsReadOnly; } }
-            void ICollection<T>.Add(T item) {
-                list2.Add((T2)item);
+            public void Add(T item) {
+                Insert(Count, item);
             }
-            void ICollection<T>.Clear() {
+            public void Clear() {
                 list1.Clear();
                 list2.Clear();
+                publicIndexes.Clear();
+                innerIndexes.Clear();
             }
-            bool ICollection<T>.Contains(T item) {
+            public bool Contains(T item) {
                 if(item == null)
                     return list1.Contains(default(T1)) || list2.Contains(default(T2));
                 if(item is T1 && list1.Contains((T1)item)) return true;
                 if(item is T2 && list2.Contains((T2)item)) return true;
                 return false;
             }
-            bool ICollection<T>.Remove(T item) {
-                if(item == null)
-                    return list1.Remove(default(T1)) || list2.Remove(default(T2));
-                if(item is T1 && list1.Remove((T1)item)) return true;
-                if(item is T2 && list2.Remove((T2)item)) return true;
-                return false;
-            }
-            int IList<T>.IndexOf(T item) {
+            public int IndexOf(T item) {
+                UpdateIndexMap();
                 if(item == null) {
                     int index1 = list1.IndexOf(default(T1));
-                    if(index1 >= 0) return index1;
+                    if(index1 >= 0) return publicIndexes[index1];
                     int index2 = list2.IndexOf(default(T2));
-                    if(index2 >= 0) return index2 + list1.Count;
+                    if(index2 >= 0) return publicIndexes[index2 + list1.Count];
                 }
                 if(item is T1) {
-                    int index1 = list1.IndexOf(default(T1));
-                    if(index1 >= 0) return index1;
+                    int index1 = list1.IndexOf((T1)item);
+                    if(index1 >= 0) return publicIndexes[index1];
                 }
                 if(item is T2) {
-                    int index2 = list2.IndexOf(default(T2));
-                    if(index2 >= 0) return index2 + list1.Count;
+                    int index2 = list2.IndexOf((T2)item);
+                    if(index2 >= 0) return publicIndexes[index2 + list1.Count];
                 }
                 return -1;
             }
@@ -110,29 +187,12 @@ namespace DevExpress.Mvvm.Native {
                     array[arrayIndex++] = item;
             }
             public IEnumerator<T> GetEnumerator() {
-                foreach(var item1 in list1)
-                    yield return item1;
-                foreach(var item2 in list2)
-                    yield return item2;
+                UpdateIndexMap();
+                int count = publicIndexes.Count;
+                for(int i = 0; i < count; ++i)
+                    yield return GetItemCore(i);
             }
             IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
-            void IList<T>.Insert(int index, T item) {
-                bool toFirstList;
-                if(index == list1.Count)
-                    toFirstList = addItemToFirstList(item);
-                else
-                    toFirstList = index < list1.Count;
-                if(toFirstList)
-                    list1.Insert(index, (T1)item);
-                else
-                    list2.Insert(index - list1.Count, (T2)item);
-            }
-            void IList<T>.RemoveAt(int index) {
-                if(index < list1.Count)
-                    list1.RemoveAt(index);
-                else
-                    list2.RemoveAt(index - list1.Count);
-            }
         }
 
         sealed class SingletonList : IList<T> {
@@ -207,13 +267,14 @@ namespace DevExpress.Mvvm.Native {
         public static IList<T> FromObjectList(IList objectList) {
             return new ObjectList(objectList);
         }
-        public static IList<T> FromTwoLists<T1, T2>(IList<T1> list1, IList<T2> list2, Func<T, bool> addItemToFirstList)
+        public static IList<T> FromTwoLists<T1, T2>(IList<T1> list1, IList<T2> list2, Func<T, bool> addItemToFirstList = null)
             where T1 : T
             where T2 : T {
 
-            return new CombinedList<T1, T2>(list1, list2, addItemToFirstList);
+            return new CombinedList<T1, T2>(list1, list2, addItemToFirstList ?? (x => x is T1));
         }
-        public static IList<T> FromTwoObjectLists<T1, T2>(IList objectList1, IList objectlist2, Func<T, bool> addItemToFirstList)
+
+        public static IList<T> FromTwoObjectLists<T1, T2>(IList objectList1, IList objectlist2, Func<T, bool> addItemToFirstList = null)
             where T1 : T
             where T2 : T {
 

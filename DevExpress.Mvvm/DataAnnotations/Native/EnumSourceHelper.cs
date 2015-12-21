@@ -19,6 +19,8 @@ namespace DevExpress.Mvvm.Native {
             return Enum.GetValues(enumType).Length;
         }
         public static IEnumerable<EnumMemberInfo> GetEnumSource(Type enumType, bool useUnderlyingEnumValue = true, IValueConverter nameConverter = null, bool splitNames = false, EnumMembersSortMode sortMode = EnumMembersSortMode.Default, Func<string, bool, string> getKnownImageUriCallback = null, bool showImage = true, bool showName = true) {
+            if(enumType == null || !enumType.IsEnum)
+                return Enumerable.Empty<EnumMemberInfo>();
             var result = enumType.GetFields(BindingFlags.Static | BindingFlags.Public)
                 .Where(field => DataAnnotationsAttributeHelper.GetAutoGenerateField(field))
                 .Select(field => {
@@ -49,14 +51,9 @@ namespace DevExpress.Mvvm.Native {
         static string GetEnumName(FieldInfo field, Enum value, IValueConverter nameConverter, bool splitNames) {
             if(nameConverter != null)
                 return nameConverter.Convert(value, typeof(string), null, CultureInfo.CurrentCulture) as string;
-            string name = DataAnnotationsAttributeHelper.GetFieldDisplayName(field) ??
-#if !SILVERLIGHT
- TypeDescriptor.GetConverter(value.GetType()).ConvertTo(value, typeof(string)) as string
-#else
-                value.ToString()
-#endif
-;
-            if(splitNames)
+            string displayName = DataAnnotationsAttributeHelper.GetFieldDisplayName(field);
+            string name = displayName ?? TypeDescriptor.GetConverter(value.GetType()).ConvertTo(value, typeof(string)) as string;
+            if(splitNames && displayName == null)
                 return SplitStringHelper.SplitPascalCaseString(name);
             return name;
         }

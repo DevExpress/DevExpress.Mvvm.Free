@@ -5,13 +5,12 @@ namespace DevExpress.Mvvm.DataAnnotations {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class POCOViewModelAttribute : Attribute {
         public bool ImplementIDataErrorInfo;
+        public bool ImplementINotifyPropertyChanging;
+        public bool InvokeOnPropertyChangedMethodBeforeRaisingINPC;
     }
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class CommandAttribute : Attribute {
-#if !SILVERLIGHT
         bool? useCommandManager;
-#endif
-
         public CommandAttribute(bool isCommand) {
             this.IsCommand = isCommand;
         }
@@ -22,15 +21,11 @@ namespace DevExpress.Mvvm.DataAnnotations {
         public string CanExecuteMethodName { get; set; }
         public bool IsCommand { get; private set; }
         internal MethodInfo CanExecuteMethod { get; set; }
-#if !SILVERLIGHT
         public bool UseCommandManager {
             set { useCommandManager = value; }
             get { throw new NotSupportedException(); }
         }
         internal bool? GetUseCommandManager() { return useCommandManager; }
-#else
-        internal bool? GetUseCommandManager() { return false; }
-#endif
     }
     public class AsyncCommandAttribute : CommandAttribute {
         public AsyncCommandAttribute(bool isAsincCommand)
@@ -68,5 +63,40 @@ namespace DevExpress.Mvvm.DataAnnotations {
         public string OnPropertyChangingMethodName { get; set; }
         internal MethodInfo OnPropertyChangedMethod { get; set; }
         internal MethodInfo OnPropertyChangingMethod { get; set; }
+    }
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true, Inherited = true)]
+    public class DependsOnPropertiesAttribute : Attribute {
+        public string[] Properties { get; private set; }
+        public DependsOnPropertiesAttribute(string prop1) {
+            Init(prop1);
+        }
+        public DependsOnPropertiesAttribute(string prop1, string prop2) {
+            Init(prop1, prop2);
+        }
+        public DependsOnPropertiesAttribute(string prop1, string prop2, string prop3) {
+            Init(prop1, prop2, prop3);
+        }
+        public DependsOnPropertiesAttribute(string prop1, string prop2, string prop3, string prop4) {
+            Init(prop1, prop2, prop3, prop4);
+        }
+        public DependsOnPropertiesAttribute(string prop1, string prop2, string prop3, string prop4, string prop5) {
+            Init(prop1, prop2, prop3, prop4, prop5);
+        }
+        public DependsOnPropertiesAttribute(string prop1, string prop2, string prop3, string prop4, string prop5, string prop6) {
+            Init(prop1, prop2, prop3, prop4, prop5, prop6);
+        }
+        public DependsOnPropertiesAttribute(string prop1, string prop2, string prop3, string prop4, string prop5, string prop6, string prop7) {
+            Init(prop1, prop2, prop3, prop4, prop5, prop6, prop7);
+        }
+        public DependsOnPropertiesAttribute(string prop1, string prop2, string prop3, string prop4, string prop5, string prop6, string prop7, string prop8) {
+            Init(prop1, prop2, prop3, prop4, prop5, prop6, prop7, prop8);
+        }
+        public DependsOnPropertiesAttribute(string prop1, string prop2, string prop3, string prop4, string prop5, string prop6, string prop7, string prop8, string prop9) {
+            Init(prop1, prop2, prop3, prop4, prop5, prop6, prop7, prop8, prop9);
+        }
+        public DependsOnPropertiesAttribute(string prop1, string prop2, string prop3, string prop4, string prop5, string prop6, string prop7, string prop8, string prop9, string prop10) {
+            Init(prop1, prop2, prop3, prop4, prop5, prop6, prop7, prop8, prop9, prop10);
+        }
+        void Init(params string[] properties) { Properties = properties; }
     }
 }

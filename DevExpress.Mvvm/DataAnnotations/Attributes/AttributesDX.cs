@@ -60,11 +60,7 @@ namespace DevExpress.Mvvm.Native {
 
     #region regex
     internal abstract class RegexAttributeBase : DXDataTypeAttribute {
-        protected const RegexOptions DefaultRegexOptions =
-#if !SILVERLIGHT
- RegexOptions.Compiled |
-#endif
- RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase;
+        protected const RegexOptions DefaultRegexOptions = RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase;
 
         readonly Regex regex;
 

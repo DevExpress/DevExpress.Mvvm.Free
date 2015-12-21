@@ -22,20 +22,16 @@ namespace DevExpress.Utils {
         public static Assembly EntryAssembly {
             get {
                 if(entryAssembly == null)
-#if !SILVERLIGHT && !NETFX_CORE
-                    entryAssembly = Assembly.GetEntryAssembly();
-#else
-#if !NETFX_CORE
-                    entryAssembly = Application.Current == null ? null : Application.Current.GetType().Assembly;
-#else
+#if NETFX_CORE
                     entryAssembly = Windows.UI.Xaml.Application.Current == null ? null : Windows.UI.Xaml.Application.Current.GetType().GetTypeInfo().Assembly;
-#endif
+#else
+                    entryAssembly = Assembly.GetEntryAssembly();
 #endif
                 return entryAssembly;
             }
             set { entryAssembly = value; }
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         static Assembly GetReflectionOnlyLoadedAssembly(string asmName) {
             try {
                 return Assembly.ReflectionOnlyLoad(asmName);

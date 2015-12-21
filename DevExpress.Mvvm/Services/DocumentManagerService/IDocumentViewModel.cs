@@ -48,7 +48,6 @@ namespace DevExpress.Mvvm.Native {
         }
         public static bool TitlePropertyHasImplicitImplementation(object documentContentOrDocumentViewModel) {
             IDocumentContent documentContent = documentContentOrDocumentViewModel as IDocumentContent;
-#if !NETFX_CORE
             if(documentContent != null)
                 return ExpressionHelper.PropertyHasImplicitImplementation(documentContent, i => i.Title);
 #pragma warning disable 612, 618
@@ -56,12 +55,6 @@ namespace DevExpress.Mvvm.Native {
             if(documentViewModel != null)
                 return ExpressionHelper.PropertyHasImplicitImplementation(documentViewModel, i => i.Title);
 #pragma warning restore 612, 618
-#else
-            if(documentContent != null) {
-                InterfaceMapping mapping = documentContent.GetType().GetTypeInfo().GetRuntimeInterfaceMap(typeof(IDocumentContent));
-                return mapping.TargetMethods.FirstOrDefault(mi => mi.Name == "set_Title" && mi.IsPrivate) != null;
-            }
-#endif
             throw new ArgumentException("", "documentContentOrDocumentViewModel");
         }
         public static object GetTitle(object documentContentOrDocumentViewModel) {

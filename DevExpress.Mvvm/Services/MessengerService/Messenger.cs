@@ -73,8 +73,8 @@ namespace DevExpress.Mvvm {
                 }
             }
         }
-        #endregion
-#if !SILVERLIGHT && !NETFX_CORE
+#endregion
+#if !NETFX_CORE
         const DispatcherPriority CleanUpPriority = DispatcherPriority.ApplicationIdle;
 #endif
         static readonly object defaultMessengerLock = new object();
@@ -165,9 +165,7 @@ namespace DevExpress.Mvvm {
         public void RequestCleanup() {
             if(cleanupScheduled) return;
             cleanupScheduled = true;
-#if SILVERLIGHT
-            Deployment.Current.Dispatcher.BeginInvoke(new Action(Cleanup));
-#elif NETFX_CORE
+#if NETFX_CORE
 #pragma warning disable 4014
             if(!Windows.ApplicationModel.DesignMode.DesignModeEnabled)
                 Window.Current.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, new DispatchedHandler(Cleanup));

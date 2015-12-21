@@ -11,20 +11,14 @@ namespace DevExpress.Mvvm {
         string DefaultExt { get; set; }
         string DefaultFileName { get; set; }
         bool ShowDialog(Action<CancelEventArgs> fileOK, string directoryName, string fileName);
-#if !SILVERLIGHT
         IFileInfo File { get; }
         string Title { get; set; }
-#else
-        string SafeFileName();
-        Stream OpenFile();
-#endif
     }
     public static class SaveFileDialogServiceExtensions {
         public static bool ShowDialog(this ISaveFileDialogService service, Action<CancelEventArgs> fileOK = null, IFileInfo fileInfo = null) {
             VerifyService(service);
             return service.ShowDialog(fileOK, fileInfo.With(x => x.DirectoryName), fileInfo.With(x => x.Name));
         }
-#if !SILVERLIGHT
         public static string GetFullFileName(this ISaveFileDialogService service) {
             VerifyService(service);
             if(service.File == null) return string.Empty;
@@ -41,7 +35,6 @@ namespace DevExpress.Mvvm {
             VerifyService(service);
             return service.File.Return(x => x.Open(FileMode.Create, FileAccess.Write), () => null);
         }
-#endif
         static void VerifyService(ISaveFileDialogService service) {
             if(service == null)
                 throw new ArgumentNullException("service");

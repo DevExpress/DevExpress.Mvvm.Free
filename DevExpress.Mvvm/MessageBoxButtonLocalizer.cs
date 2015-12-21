@@ -2,11 +2,6 @@ using DevExpress.Mvvm.Native;
 using System.ComponentModel;
 using System.Windows;
 
-#if SILVERLIGHT
-namespace DevExpress.Mvvm {
-    public enum DXMessageBoxButton { OK, OKCancel, YesNo, YesNoCancel }
-}
-#endif
 namespace DevExpress.Mvvm {
     public interface IMessageButtonLocalizer {
         string Localize(MessageResult button);

@@ -17,9 +17,8 @@ using Windows.UI.Core;
 
 namespace DevExpress.Mvvm {
     public abstract class CommandBase {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         static bool defaultUseCommandManager = true;
-
         public static bool DefaultUseCommandManager { get { return defaultUseCommandManager; } set { defaultUseCommandManager = value; } }
 #endif
     }
@@ -35,7 +34,7 @@ namespace DevExpress.Mvvm {
         public event EventHandler CanExecuteChanged {
             add {
                 if(useCommandManager) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
                     CommandManager.RequerySuggested += value;
 #endif
                 } else {
@@ -44,7 +43,7 @@ namespace DevExpress.Mvvm {
             }
             remove {
                 if(useCommandManager) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
                     CommandManager.RequerySuggested -= value;
 #endif
                 } else {
@@ -53,7 +52,7 @@ namespace DevExpress.Mvvm {
             }
         }
 
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public CommandBase(bool? useCommandManager = null) {
             this.useCommandManager = useCommandManager ?? DefaultUseCommandManager;
         }
@@ -71,7 +70,7 @@ namespace DevExpress.Mvvm {
 
         public void RaiseCanExecuteChanged() {
             if(useCommandManager) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
                 CommandManager.InvalidateRequerySuggested();
 #endif
             } else {
@@ -104,7 +103,7 @@ namespace DevExpress.Mvvm {
             this.executeMethod = executeMethod;
             this.canExecuteMethod = canExecuteMethod;
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public DelegateCommandBase(Action<T> executeMethod)
             : this(executeMethod, null, null) {
         }
@@ -135,7 +134,7 @@ namespace DevExpress.Mvvm {
             this.canExecuteMethod = canExecuteMethod;
         }
 
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public AsyncCommandBase(Func<T, Task> executeMethod)
             : this(executeMethod, null, null) {
         }
@@ -167,7 +166,7 @@ namespace DevExpress.Mvvm {
         }
     }
     public class DelegateCommand<T> : DelegateCommandBase<T> {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public DelegateCommand(Action<T> executeMethod)
             : this(executeMethod, null, null) {
         }
@@ -194,7 +193,7 @@ namespace DevExpress.Mvvm {
     }
 
     public class DelegateCommand : DelegateCommand<object> {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public DelegateCommand(Action executeMethod)
             : this(executeMethod, null, null) {
         }
@@ -269,7 +268,7 @@ namespace DevExpress.Mvvm {
         public DelegateCommand CancelCommand { get; private set; }
         ICommand IAsyncCommand.CancelCommand { get { return CancelCommand; } }
 
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public AsyncCommand(Func<T, Task> executeMethod)
             : this(executeMethod, null, false, null) {
         }
@@ -307,9 +306,7 @@ namespace DevExpress.Mvvm {
                 return;
             if(executeMethod == null) return;
             IsExecuting = true;
-#if SILVERLIGHT
-            Dispatcher dispatcher = Deployment.Current.Dispatcher;
-#elif NETFX_CORE
+#if NETFX_CORE
             var dispatcher = Window.Current.Dispatcher;
 #else
             Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
@@ -335,7 +332,7 @@ namespace DevExpress.Mvvm {
         public void Wait(TimeSpan timeout) {
             if(executeTask == null || !IsExecuting) return;
             executeTask.Wait(timeout);
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             completeTaskOperation.Do(x => x.Wait(timeout));
 #endif
         }
@@ -355,7 +352,7 @@ namespace DevExpress.Mvvm {
     }
 
     public class AsyncCommand : AsyncCommand<object> {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public AsyncCommand(Func<Task> executeMethod)
             : this(executeMethod, null, false, null) {
         }
