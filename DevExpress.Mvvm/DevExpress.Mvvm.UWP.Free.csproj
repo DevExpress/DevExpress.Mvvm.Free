@@ -128,13 +128,15 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ViewModelBase.cs" />
-    <None Include="UWP\project.json" />
     <Compile Include="Services\MessageBoxService\MessageBoxServiceExtensions.WinRT.cs" />
-    <None Include="UWP\project.lock.json" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DataAnnotations\MetadataBuilders\" />
     <Folder Include="DataAnnotations\Native\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="UWP\project.json" />
+    <None Include="UWP\project.lock.json" />
   </ItemGroup>
   <Target Name="GetProjectsReferencingProjectJson" DependsOnTargets="_SplitProjectReferencesByFileExistence" Returns="@(_ProjectReferencingProjectJsonFile)">
     <ItemGroup Condition="'$(ResolveNuGetPackages)' == 'true'">
