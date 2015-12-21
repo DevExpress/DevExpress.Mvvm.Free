@@ -6,9 +6,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Resources;
 using System.Xml.Linq;
-#if !SILVERLIGHT
 using System.Windows.Interop;
-#endif
 
 namespace DevExpress.Mvvm.UI.Native {
     public static class StreamHelper {
@@ -19,7 +17,6 @@ namespace DevExpress.Mvvm.UI.Native {
                 }
             }
         }
-#if !SILVERLIGHT
         public static byte[] CopyAllBytes(this Stream stream) {
             if (!stream.CanRead)
                 return null;
@@ -34,6 +31,5 @@ namespace DevExpress.Mvvm.UI.Native {
             }
             return list.ToArray();
         }
-#endif
     }
 }

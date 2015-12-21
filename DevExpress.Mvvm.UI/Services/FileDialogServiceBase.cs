@@ -1,6 +1,4 @@
-#if !SILVERLIGHT
 using System.Windows.Forms;
-#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,7 +13,121 @@ using DevExpress.Mvvm.Native;
 namespace DevExpress.Mvvm.UI {
     [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
     public abstract class FileDialogServiceBase : ServiceBase, IFileDialogServiceBase {
-#if !SILVERLIGHT
+        protected interface IFileDialog {
+            event CancelEventHandler FileOk;
+            event EventHandler HelpRequest;
+
+            bool AutoUpgradeEnabled { get; set; }
+            bool CheckFileExists { get; set; }
+            bool CheckPathExists { get; set; }
+            bool AddExtension { get; set; }
+            bool DereferenceLinks { get; set; }
+            string InitialDirectory { get; set; }
+            bool RestoreDirectory { get; set; }
+            bool ShowHelp { get; set; }
+            bool SupportMultiDottedExtensions { get; set; }
+            string Title { get; set; }
+            bool ValidateNames { get; set; }
+            string FileName { get; set; }
+
+            string[] FileNames { get; }
+            string Filter { get; set; }
+            int FilterIndex { get; set; }
+            string DefaultExt { get; set; }
+            DialogResult ShowDialog();
+            void Reset();
+        }
+
+        protected abstract class FileDialogAdapter<TFileDialog> : IFileDialog where TFileDialog : FileDialog {
+            protected readonly TFileDialog fileDialog;
+            public event CancelEventHandler FileOk;
+            public event EventHandler HelpRequest;
+
+            public FileDialogAdapter(TFileDialog fileDialog) {
+                this.fileDialog = fileDialog;
+                this.fileDialog.FileOk += OnDialogFileOk;
+                this.fileDialog.HelpRequest += OnDialogHelpRequest;
+            }
+
+            bool IFileDialog.CheckPathExists {
+                get { return fileDialog.CheckPathExists; }
+                set { fileDialog.CheckPathExists = value; }
+            }
+            bool IFileDialog.CheckFileExists {
+                get { return fileDialog.CheckFileExists; }
+                set { fileDialog.CheckFileExists = value; }
+            }
+            bool IFileDialog.AddExtension {
+                get { return fileDialog.AddExtension; }
+                set { fileDialog.AddExtension = value; }
+            }
+            bool IFileDialog.AutoUpgradeEnabled {
+                get { return fileDialog.AutoUpgradeEnabled; }
+                set { fileDialog.AutoUpgradeEnabled = value; }
+            }
+            bool IFileDialog.DereferenceLinks {
+                get { return fileDialog.DereferenceLinks; }
+                set { fileDialog.DereferenceLinks = value; }
+            }
+            bool IFileDialog.RestoreDirectory {
+                get { return fileDialog.RestoreDirectory; }
+                set { fileDialog.RestoreDirectory = value; }
+            }
+            bool IFileDialog.ShowHelp {
+                get { return fileDialog.ShowHelp; }
+                set { fileDialog.ShowHelp = value; }
+            }
+            bool IFileDialog.SupportMultiDottedExtensions {
+                get { return fileDialog.SupportMultiDottedExtensions; }
+                set { fileDialog.SupportMultiDottedExtensions = value; }
+            }
+            bool IFileDialog.ValidateNames {
+                get { return fileDialog.ValidateNames; }
+                set { fileDialog.ValidateNames = value; }
+            }
+            string IFileDialog.InitialDirectory {
+                get { return fileDialog.InitialDirectory; }
+                set { fileDialog.InitialDirectory = value; }
+            }
+            string IFileDialog.Title {
+                get { return fileDialog.Title; }
+                set { fileDialog.Title = value; }
+            }
+            string[] IFileDialog.FileNames { get { return fileDialog.FileNames; } }
+
+            string IFileDialog.Filter {
+                get { return fileDialog.Filter; }
+                set { fileDialog.Filter = value; }
+            }
+            int IFileDialog.FilterIndex {
+                get { return fileDialog.FilterIndex; }
+                set { fileDialog.FilterIndex = value; }
+            }
+            string IFileDialog.FileName {
+                get { return fileDialog.FileName; }
+                set { fileDialog.FileName = value; }
+            }
+            string IFileDialog.DefaultExt {
+                get { return fileDialog.DefaultExt; }
+                set { fileDialog.DefaultExt = value; }
+            }
+            void IFileDialog.Reset() {
+                fileDialog.Reset();
+            }
+
+            public DialogResult ShowDialog() {
+                return fileDialog.ShowDialog();
+            }
+            void OnDialogFileOk(object sender, CancelEventArgs e) {
+                if(FileOk != null)
+                    FileOk(sender, e);
+            }
+            void OnDialogHelpRequest(object sender, EventArgs e) {
+                if(HelpRequest != null)
+                    HelpRequest(sender, e);
+            }
+        }
+
         public static readonly DependencyProperty CheckFileExistsProperty =
             DependencyProperty.Register("CheckFileExists", typeof(bool), typeof(FileDialogServiceBase), new PropertyMetadata(false));
         public static readonly DependencyProperty AddExtensionProperty =
@@ -97,26 +209,24 @@ namespace DevExpress.Mvvm.UI {
             set { SetValue(HelpRequestCommandProperty, value); }
         }
         public event EventHandler HelpRequest;
-#endif
+
         public static readonly DependencyProperty FileOkCommandProperty =
             DependencyProperty.Register("FileOkCommand", typeof(ICommand), typeof(FileDialogServiceBase), new PropertyMetadata(null));
         public ICommand FileOkCommand {
             get { return (ICommand)GetValue(FileOkCommandProperty); }
             set { SetValue(FileOkCommandProperty, value); }
         }
-        public event CancelEventHandler FileOk;
 
-        object FileDialog;
+        public event CancelEventHandler FileOk;
+        IFileDialog FileDialog;
         IEnumerable<FileInfoWrapper> FilesCore;
         Action<CancelEventArgs> fileOK;
+
         public FileDialogServiceBase() {
-            FileDialog = CreateFileDialog();
+            FileDialog = CreateFileDialogAdapter();
             FilesCore = new List<FileInfoWrapper>();
-#if !SILVERLIGHT
-            FileDialog dialog = (FileDialog)FileDialog;
-            dialog.FileOk += OnDialogFileOk;
-            dialog.HelpRequest += OnDialogHelpRequest;
-#endif
+            FileDialog.FileOk += OnDialogFileOk;
+            FileDialog.HelpRequest += OnDialogHelpRequest;
         }
         void OnDialogFileOk(object sender, CancelEventArgs e) {
             UpdateFiles();
@@ -124,49 +234,41 @@ namespace DevExpress.Mvvm.UI {
             FileOkCommand.If(x => x.CanExecute(e)).Do(x => x.Execute(e));
             fileOK.Do(x => x(e));
         }
-#if !SILVERLIGHT
         void OnDialogHelpRequest(object sender, EventArgs e) {
             HelpRequest.Do(x => x(sender, e));
             HelpRequestCommand.If(x => x.CanExecute(e)).Do(x => x.Execute(e));
         }
-#endif
-
 
         protected abstract object CreateFileDialog();
+        protected abstract IFileDialog CreateFileDialogAdapter();
+
         protected abstract void InitFileDialog();
         protected abstract List<FileInfoWrapper> GetFileInfos();
         void InitFileDialogCore() {
-#if !SILVERLIGHT
-            FileDialog dialog = (FileDialog)FileDialog;
-            dialog.CheckFileExists = CheckFileExists;
-            dialog.AddExtension = AddExtension;
-            dialog.AutoUpgradeEnabled = AutoUpgradeEnabled;
-            dialog.CheckPathExists = CheckPathExists;
-            dialog.DereferenceLinks = DereferenceLinks;
-            dialog.InitialDirectory = InitialDirectory;
-            dialog.RestoreDirectory = RestoreDirectory;
-            dialog.ShowHelp = ShowHelp;
-            dialog.SupportMultiDottedExtensions = SupportMultiDottedExtensions;
-            dialog.Title = Title;
-            dialog.ValidateNames = ValidateNames;
+            FileDialog.CheckFileExists = CheckFileExists;
+            FileDialog.AddExtension = AddExtension;
+            FileDialog.AutoUpgradeEnabled = AutoUpgradeEnabled;
+            FileDialog.CheckPathExists = CheckPathExists;
+            FileDialog.DereferenceLinks = DereferenceLinks;
+            FileDialog.InitialDirectory = InitialDirectory;
+            FileDialog.RestoreDirectory = RestoreDirectory;
+            FileDialog.ShowHelp = ShowHelp;
+            FileDialog.SupportMultiDottedExtensions = SupportMultiDottedExtensions;
+            FileDialog.Title = Title;
+            FileDialog.ValidateNames = ValidateNames;
 
             if(RestorePreviouslySelectedDirectory && FilesCore.Count() > 0)
-                dialog.InitialDirectory = FilesCore.First().FileInfo.DirectoryName;
+                FileDialog.InitialDirectory = FilesCore.First().FileInfo.DirectoryName;
             else
-                dialog.InitialDirectory = InitialDirectory;
-
-#endif
+                FileDialog.InitialDirectory = InitialDirectory;
         }
         void UpdateFiles() {
             var fileInfos = GetFileInfos();
+            IList filesCore = (IList)FilesCore;
+            filesCore.Clear();
             foreach(FileInfoWrapper fileInfo in fileInfos)
-                ((IList)FilesCore).Add(fileInfo);
+                filesCore.Add(fileInfo);
         }
-#if SILVERLIGHT
-        bool ConvertDialogResultToBoolean(bool? result) {
-            return result.Value;
-        }
-#else
         bool ConvertDialogResultToBoolean(DialogResult result) {
             if(result == DialogResult.OK)
                 return true;
@@ -174,7 +276,7 @@ namespace DevExpress.Mvvm.UI {
                 return false;
             throw new InvalidOperationException("The Dialog has returned a not supported value");
         }
-#endif
+
         protected object GetFileDialog() {
             return FileDialog;
         }
@@ -187,39 +289,19 @@ namespace DevExpress.Mvvm.UI {
             InitFileDialog();
             ((IList)FilesCore).Clear();
             bool res = ShowCore();
-#if SILVERLIGHT
-            if(res) {
-                CancelEventArgs fileOKArgs = new CancelEventArgs();
-                OnDialogFileOk(this, fileOKArgs);
-                if(fileOKArgs.Cancel)
-                    res = false;
-            }
-#endif
             return res;
         }
         bool ShowCore() {
-#if !SILVERLIGHT
-            DialogResult result = ((FileDialog)FileDialog).ShowDialog();
-             if(result == DialogResult.OK)
+            DialogResult result = FileDialog.ShowDialog();
+            if(result == DialogResult.OK)
                 return true;
             if(result == DialogResult.Cancel)
                 return false;
             throw new InvalidOperationException("The Dialog has returned a not supported value");
-#else
-            bool? result = null;
-            if(FileDialog is OpenFileDialog)
-                result = ((OpenFileDialog)FileDialog).ShowDialog();
-            if(FileDialog is SaveFileDialog)
-                result = ((SaveFileDialog)FileDialog).ShowDialog();
-            return result.Value;
-#endif
         }
-
-#if !SILVERLIGHT
         void IFileDialogServiceBase.Reset() {
-            ((FileDialog)FileDialog).Reset();
+            FileDialog.Reset();
         }
-#endif
     }
     [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
     public class FileInfoWrapper : IFileInfo {

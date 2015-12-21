@@ -97,7 +97,7 @@ namespace DevExpress.Mvvm.UI.Native {
             Reset();
         }
         protected virtual bool IsObjectVisual(DependencyObject d) {
-#if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
+#if !NETFX_CORE
             return d is Visual;
 #else
             return d is UIElement;
@@ -114,14 +114,17 @@ namespace DevExpress.Mvvm.UI.Native {
             return GetParents().Cast<DependencyObject>();
         }
     }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
     public class LogicalTreeEnumerator : VisualTreeEnumerator {
         Hashtable acceptedVisuals = new Hashtable();
         static IEnumerator GetVisualAndLogicalChildren(object obj, IEnumerator visualChildren, bool dependencyObjectsOnly, Hashtable acceptedVisuals) {
             while(visualChildren.MoveNext()) {
                 var visual = visualChildren.Current;
-                if(visual != null)
+                if(visual != null) {
+                    if(acceptedVisuals.ContainsKey(visual))
+                        continue;
                     acceptedVisuals.Add(visual, visual);
+                }
                 yield return visual;
             }
             foreach(object logicalChild in LogicalTreeHelper.GetChildren((DependencyObject)obj)) {

@@ -5,6 +5,8 @@ using System.Windows;
 #if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Data;
+using System.Globalization;
 #else
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -56,9 +58,7 @@ namespace DevExpress.Mvvm.UI {
         public static object CreateView(IViewLocator viewLocator, string documentType, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {
             if(documentType == null && viewTemplate == null & viewTemplateSelector == null) {
                 var ex = new InvalidOperationException(string.Format("{0}{1}To learn more, see: {2}", Error_CreateViewMissArguments, System.Environment.NewLine, HelpLink_CreateViewMissArguments));
-#if !SILVERLIGHT
                 ex.HelpLink = HelpLink_CreateViewMissArguments;
-#endif
                 throw ex;
             }
             if(viewTemplate != null || viewTemplateSelector != null) {
@@ -70,14 +70,27 @@ namespace DevExpress.Mvvm.UI {
         public static object GetViewModelFromView(object view) {
             return view.With(x => x as FrameworkElement).With(x => x.DataContext);
         }
+#if !NETFX_CORE
+        public static void SetBindingToViewModel(DependencyObject target, DependencyProperty targetProperty, PropertyPath viewPropertyPath) {
+            BindingOperations.SetBinding(target, ViewProperty, new Binding() { Path = viewPropertyPath, Source = target, Mode = BindingMode.OneWay, Converter = new AsFrameworkElementConverter() });
+            BindingOperations.SetBinding(target, targetProperty, new Binding() { Path = new PropertyPath("(0).(1)", ViewProperty, FrameworkElement.DataContextProperty), Source = target, Mode = BindingMode.OneWay });
+        }
+        static readonly DependencyProperty ViewProperty = DependencyProperty.RegisterAttached("View", typeof(FrameworkElement), typeof(ViewHelper), new PropertyMetadata(null));
 
+        class AsFrameworkElementConverter : IValueConverter {
+            object IValueConverter.Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+                return value as FrameworkElement;
+            }
+            object IValueConverter.ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+                throw new NotSupportedException();
+            }
+        }
+#endif
 
         class ViewPresenter : ContentPresenter {
             public ViewPresenter(DataTemplate viewTemplate, DataTemplateSelector viewTemplateSelector) {
                 ContentTemplate = viewTemplate;
-#if !SILVERLIGHT
                 ContentTemplateSelector = viewTemplateSelector;
-#endif
                 Loaded += ViewPresenter_Loaded;
             }
             void ViewPresenter_Loaded(object sender, RoutedEventArgs e) {

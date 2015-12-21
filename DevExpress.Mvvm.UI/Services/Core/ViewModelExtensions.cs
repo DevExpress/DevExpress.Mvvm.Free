@@ -18,7 +18,7 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty DocumentOwnerProperty =
             DependencyProperty.RegisterAttached("DocumentOwner", typeof(IDocumentOwner), typeof(ViewModelExtensions),
             new PropertyMetadata(null, (d, e) => OnDocumentOwnerChanged(d, e.NewValue as IDocumentOwner)));
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public static readonly DependencyProperty DocumentTitleProperty =
             DependencyProperty.RegisterAttached("DocumentTitle", typeof(object), typeof(ViewModelExtensions), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits));
 #endif
@@ -43,7 +43,7 @@ namespace DevExpress.Mvvm.UI {
             obj.SetValue(DocumentOwnerProperty, value);
         }
 
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public static object GetDocumentTitle(DependencyObject d) { return d.GetValue(DocumentTitleProperty); }
         public static void SetDocumentTitle(DependencyObject d, object value) { d.SetValue(DocumentTitleProperty, value); }
 #endif

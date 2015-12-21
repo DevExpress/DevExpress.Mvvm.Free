@@ -29,7 +29,7 @@ namespace DevExpress.Mvvm.UI.Native {
             get { return factory; }
             set {
                 lock(factoryLock) {
-                    Guard.ArgumentNotNull(value, "value");
+                    GuardHelper.ArgumentNotNull(value, "value");
                     factory = value;
                 }
             }
@@ -136,7 +136,7 @@ namespace DevExpress.Mvvm.UI.Native {
         }
         [SecuritySafeCritical]
         public void RegisterAction(IJumpAction jumpAction, string commandLineArgumentPrefix, Func<string> launcherPath) {
-            Guard.ArgumentNotNull(jumpAction, "jumpAction");
+            GuardHelper.ArgumentNotNull(jumpAction, "jumpAction");
             if(!updating)
                 throw new InvalidOperationException();
             RegisterInstance();
@@ -167,6 +167,9 @@ namespace DevExpress.Mvvm.UI.Native {
             return registeredJumpAction;
         }
         protected override string ApplicationId { get { return currentProcess.ApplicationId; } }
+#if DEBUG
+        protected override object CurrentProcessTag { get { return currentProcess; } }
+#endif
         bool ShouldExecute(string command, string commandLineArgumentPrefix) {
             string arg = commandLineArgumentPrefix + Uri.EscapeDataString(command);
             return currentProcess.CommandLineArgs.Skip(1).Where(a => string.Equals(a, arg)).Any();

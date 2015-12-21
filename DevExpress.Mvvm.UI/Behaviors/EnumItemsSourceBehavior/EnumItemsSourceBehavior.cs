@@ -86,14 +86,10 @@ namespace DevExpress.Mvvm.UI {
         void ChangeAssociatedObjectItemsSource() {
             if(this.AssociatedObject != null) {
                 PropertyDescriptor descriptor = TypeDescriptor.GetProperties(this.AssociatedObject).Find("ItemsSource", true);
-                if(EnumType == null)
-                    throw new Exception("EnumType required");
-                else {
-                    if(descriptor == null)
-                        throw new Exception("ItemsSource dependency property required");
-                    else
-                        descriptor.SetValue(this.AssociatedObject, EnumSourceHelper.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter, SplitNames, SortMode));
-                }
+                if (descriptor == null)
+                    throw new Exception("ItemsSource dependency property required");
+                else
+                    descriptor.SetValue(this.AssociatedObject, EnumSourceHelper.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter, SplitNames, SortMode));
             }
         }
         void ChangeItemTemplate() {
@@ -102,7 +98,10 @@ namespace DevExpress.Mvvm.UI {
                 itemsControl.ItemTemplate = ItemTemplate;
         }
 
- internal DataTemplate defaultDataTemplate;
+#if DEBUG
+        public
+#endif
+ DataTemplate defaultDataTemplate;
 
         void GetDefaultDataTemplate() {
             ResourceDictionary resourceDictionary = new ResourceDictionary() {

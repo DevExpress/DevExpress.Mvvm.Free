@@ -25,6 +25,7 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty IsSplashScreenShownProperty;
         public static readonly DependencyProperty OwnerLockProperty;
         public static readonly DependencyProperty SplashScreenLocationProperty;
+        public static readonly DependencyProperty SplashScreenWindowStyleProperty;
 
         static LoadingDecorator() {
             UseFadeEffectProperty = DependencyProperty.Register("UseFadeEffect", typeof(bool), typeof(LoadingDecorator),
@@ -45,6 +46,8 @@ namespace DevExpress.Mvvm.UI {
                 new PropertyMetadata(SplashScreenLock.Full));
             SplashScreenLocationProperty = DependencyProperty.Register("SplashScreenLocation", typeof(SplashScreenLocation), typeof(LoadingDecorator),
                 new PropertyMetadata(SplashScreenLocation.CenterContainer));
+            SplashScreenWindowStyleProperty = DependencyProperty.Register("SplashScreenWindowStyle", typeof(Style), typeof(LoadingDecorator),
+                new PropertyMetadata(null, (d, e) => ((LoadingDecorator)d).OnIsSplashScreenWindowStyleChanged()));
         }
         #endregion
 
@@ -77,6 +80,10 @@ namespace DevExpress.Mvvm.UI {
             get { return (bool?)GetValue(IsSplashScreenShownProperty); }
             set { SetValue(IsSplashScreenShownProperty, value); }
         }
+        public Style SplashScreenWindowStyle {
+            get { return (Style)GetValue(SplashScreenWindowStyleProperty); }
+            set { SetValue(SplashScreenWindowStyleProperty, value); }
+        }
         public SplashScreenLock OwnerLock {
             get { return (SplashScreenLock)GetValue(OwnerLockProperty); }
             set { SetValue(OwnerLockProperty, value); }
@@ -87,16 +94,6 @@ namespace DevExpress.Mvvm.UI {
         }
         #endregion
 
-        #region Props
-        DXSplashScreen.SplashScreenContainer splashContainer = null;
-        DXSplashScreen.SplashScreenContainer SplashContainer {
-            get {
-                if(splashContainer == null)
-                    splashContainer = new DXSplashScreen.SplashScreenContainer();
-                return splashContainer;
-            }
-        }
-        FrameworkElement loadingChild = null;
         public FrameworkElement LoadingChild {
             get { return loadingChild; }
             set {
@@ -110,7 +107,16 @@ namespace DevExpress.Mvvm.UI {
                 OnLoadingChildChanged();
             }
         }
-        #endregion
+        protected bool IsActive { get { return splashContainer != null && splashContainer.IsActive; } }
+        DXSplashScreen.SplashScreenContainer splashContainer = null;
+        DXSplashScreen.SplashScreenContainer SplashContainer {
+            get {
+                if(splashContainer == null)
+                    splashContainer = new DXSplashScreen.SplashScreenContainer();
+                return splashContainer;
+            }
+        }
+        FrameworkElement loadingChild = null;
 
         public LoadingDecorator() {
             Loaded += OnLoaded;
@@ -127,9 +133,11 @@ namespace DevExpress.Mvvm.UI {
             if(IsSplashScreenShown == false)
                 CloseSplashScreen();
         }
+        void OnIsSplashScreenWindowStyleChanged() {
+            SplashScreenWindowStyle.Do(x => x.Seal());
+        }
         void OnSplashScreenTemplateChanged() {
-            if(SplashScreenTemplate != null)
-                SplashScreenTemplate.Seal();
+            SplashScreenTemplate.Do(x => x.Seal());
         }
         void OnLoaded(object sender, RoutedEventArgs e) {
             Loaded -= OnLoaded;
@@ -160,25 +168,26 @@ namespace DevExpress.Mvvm.UI {
                 throw new InvalidOperationException(Exception1);
         }
 
-        void ShowSplashScreen() {
-            if(!UseSplashScreen || SplashContainer.IsActive)
+        protected virtual void ShowSplashScreen() {
+            if(!UseSplashScreen || IsActive)
                 return;
 
             SplashContainer.Show(CreateSplashScreenWindow, CreateSplashScreen, GetSplashScreenCreatorParams(), new object[] { SplashScreenTemplate, SplashScreenDataContext });
         }
-        void CloseSplashScreen() {
-            if(!SplashContainer.IsActive)
+        protected virtual void CloseSplashScreen() {
+            if(!IsActive)
                 return;
             SplashContainer.Close();
         }
         void CloseSplashScreenOnLoading() {
-            if(IsSplashScreenShown != null || !SplashContainer.IsActive)
+            if(IsSplashScreenShown != null || !IsActive)
                 return;
 
             SplashScreenHelper.InvokeAsync(this, CloseSplashScreen, DispatcherPriority.Render);
         }
         object[] GetSplashScreenCreatorParams() {
-            return new object[] { UseFadeEffect, new WindowArrangerContainer(this, SplashScreenLocation), OwnerLock, FadeInDuration, FadeOutDuration };
+            return new object[] { UseFadeEffect, new WindowArrangerContainer(this, SplashScreenLocation), OwnerLock,
+                FadeInDuration, FadeOutDuration, FlowDirection, SplashScreenWindowStyle };
         }
         static Window CreateSplashScreenWindow(object parameter) {
             object[] parameters = (object[])parameter;
@@ -186,7 +195,14 @@ namespace DevExpress.Mvvm.UI {
             WindowArrangerContainer owner = (WindowArrangerContainer)parameters[1];
             SplashScreenLock lockMode = (SplashScreenLock)parameters[2];
             IList<TimeSpan> durations = SplashScreenHelper.FindParameters<TimeSpan>(parameter);
-            var window = new LoadingDecoratorWindow(owner, lockMode);
+            FlowDirection flowDirection = SplashScreenHelper.FindParameter<FlowDirection>(parameter);
+            Style windowStyle = SplashScreenHelper.FindParameter<Style>(parameter);
+            var window = new LoadingDecoratorWindowFree(owner, lockMode);
+            if(windowStyle != null)
+                window.Style = windowStyle;
+            else
+                window.ApplyDefaultSettings();
+            window.SetCurrentValue(FlowDirectionProperty, flowDirection);
             if(useFadeEffect && durations.Any(x => x.TotalMilliseconds > 0))
                 Interaction.GetBehaviors(window).Add(new WindowFadeAnimationBehavior() { FadeInDuration = durations[0], FadeOutDuration = durations[1] });
 
@@ -212,32 +228,31 @@ namespace DevExpress.Mvvm.UI {
             }
         }
 
-        class LoadingDecoratorWindow : DXSplashScreen.SplashScreenWindow {
-            WindowLocker locker;
-            public LoadingDecoratorWindow(WindowArrangerContainer parentContainer, SplashScreenLock lockMode) {
-                WindowStyle = WindowStyle.None;
-                AllowsTransparency = true;
-                Topmost = false;
-                Focusable = false;
-                ShowInTaskbar = false;
-                Background = new SolidColorBrush(Colors.Transparent);
-                SizeToContent = SizeToContent.WidthAndHeight;
+        internal class LoadingDecoratorWindowFree : DXSplashScreen.SplashScreenWindow {
+            protected ContainerLocker ParentLocker { get; private set; }
+            public LoadingDecoratorWindowFree(WindowArrangerContainer parentContainer, SplashScreenLock lockMode) {
                 WindowStartupLocation = WindowStartupLocation.Manual;
                 SetWindowStartupPosition(parentContainer.ControlStartupPosition.IsEmpty ? parentContainer.WindowStartupPosition : parentContainer.ControlStartupPosition);
                 CreateLocker(parentContainer, lockMode);
+                ClearValue(ShowActivatedProperty);
             }
 
-            protected override void OnClosing(System.ComponentModel.CancelEventArgs e) {
-                if(!e.Cancel)
-                    ReleaseBorderDecorator();
-                base.OnClosing(e);
-            }
             protected override void OnClosed(EventArgs e) {
-                ReleaseBorderDecorator();
                 ReleaseLocker();
                 base.OnClosed(e);
             }
 
+            internal void ApplyDefaultSettings() {
+                WindowStyle = WindowStyle.None;
+                ResizeMode = ResizeMode.NoResize;
+                AllowsTransparency = true;
+                Topmost = false;
+                Focusable = false;
+                ShowInTaskbar = false;
+                ShowActivated = false;
+                Background = new SolidColorBrush(Colors.Transparent);
+                SizeToContent = SizeToContent.WidthAndHeight;
+            }
             void SetWindowStartupPosition(Rect bounds) {
                 if(bounds.IsEmpty)
                     return;
@@ -247,17 +262,13 @@ namespace DevExpress.Mvvm.UI {
                 Width = bounds.Width;
                 Height = bounds.Height;
             }
-            #region Helpers
             void ReleaseLocker() {
-                locker.Release(IsActiveOnClosing);
-                locker = null;
+                ParentLocker.Release(IsActiveOnClosing);
+                ParentLocker = null;
             }
             void CreateLocker(WindowContainer parentContainer, SplashScreenLock lockMode) {
-                locker = new WindowLocker(parentContainer, lockMode);
+                ParentLocker = new ContainerLocker(parentContainer, lockMode);
             }
-            void ReleaseBorderDecorator() {
-            }
-            #endregion
         }
     }
 }

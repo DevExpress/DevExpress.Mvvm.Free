@@ -99,11 +99,11 @@ namespace DevExpress.Mvvm.UI.ViewInjection {
         protected IViewLocator ViewLocator { get { return Owner.ViewLocator ?? (DevExpress.Mvvm.UI.ViewLocator.Default ?? DevExpress.Mvvm.UI.ViewLocator.Instance); } }
         protected DataTemplateSelector ViewSelector { get; private set; }
         protected ObservableCollection<object> ViewModels { get; private set; }
-        Dictionary<object, ViewInfo> ViewInfos;
+        ViewModelInfoManager ViewModelInfos { get; set; }
         IEnumerable<object> IStrategy.ViewModels { get { return ViewModels; } }
 
         public StrategyBase() {
-            ViewInfos = new Dictionary<object, ViewInfo>();
+            ViewModelInfos = new ViewModelInfoManager(this);
             ViewModels = new ObservableCollection<object>();
             ViewSelector = new ViewDataTemplateSelector(this);
         }
@@ -121,14 +121,14 @@ namespace DevExpress.Mvvm.UI.ViewInjection {
         public void Inject(object viewModel, string viewName, Type viewType) {
             if(viewModel == null || ViewModels.Contains(viewModel)) return;
             CheckInjectionProcedure(viewModel, viewName, viewType);
-            ViewInfos.Add(viewModel, new ViewInfo(ViewLocator, viewName, viewType));
+            ViewModelInfos.Add(viewModel, viewName, viewType);
             ViewModels.Add(viewModel);
             OnInjected(viewModel);
         }
         public bool Remove(object viewModel) {
             if(viewModel == null || !ViewModels.Contains(viewModel)) return false;
             if(!RaiseViewModelClosing(viewModel)) return false;
-            ViewInfos.Remove(viewModel);
+            ViewModelInfos.Remove(viewModel);
             ViewModels.Remove(viewModel);
             OnRemoved(viewModel);
             return true;
@@ -154,30 +154,57 @@ namespace DevExpress.Mvvm.UI.ViewInjection {
             return true;
         }
 
-        class ViewInfo {
+        class ViewModelInfoManager {
+            StrategyBase<T> Owner;
+            List<ViewModelInfo> Infos = new List<ViewModelInfo>();
+            public ViewModelInfoManager(StrategyBase<T> owner) {
+                Owner = owner;
+            }
+            public void UpdateInfos() {
+                List<ViewModelInfo> toRemove = new List<ViewModelInfo>();
+                foreach(var info in Infos)
+                    if(!info.ViewModel.IsAlive) toRemove.Add(info);
+                foreach(var info in toRemove)
+                    Infos.Remove(info);
+            }
+            public void Add(object viewModel, string viewName, Type viewType) {
+                UpdateInfos();
+                Infos.Add(new ViewModelInfo(viewModel, viewName, viewType));
+            }
+            public void Remove(object viewModel) {
+                UpdateInfos();
+            }
+            public DataTemplate GetViewTemplate(object viewModel) {
+                if(viewModel == null) return null;
+                UpdateInfos();
+                var info = Infos.FirstOrDefault(x => x.ViewModel.Target == viewModel);
+                if(info == null) return null;
+                info.UpdateViewTemplate(Owner.ViewLocator);
+                return info.ViewTemplate;
+            }
+        }
+        class ViewModelInfo {
+            public WeakReference ViewModel { get; private set; }
             public string ViewName { get; private set; }
             public Type ViewType { get; private set; }
-            public IViewLocator ViewLocator { get; private set; }
-            DataTemplate viewTemplate = null;
-            public DataTemplate ViewTemplate {
-                get {
-                    if(viewTemplate == null)
-                        viewTemplate = CreateViewTemplate();
-                    return viewTemplate;
-                }
-            }
-
-            public ViewInfo(IViewLocator viewLocator, string viewName, Type viewType) {
-                ViewLocator = viewLocator;
+            public DataTemplate ViewTemplate { get; private set; }
+            public ViewModelInfo(object viewModel, string viewName, Type viewType) {
+                ViewModel = new WeakReference(viewModel);
                 ViewName = viewName;
                 ViewType = viewType;
             }
-            DataTemplate CreateViewTemplate() {
-                if(ViewType != null)
-                    return ViewLocator.CreateViewTemplate(ViewType);
-                if(!string.IsNullOrEmpty(ViewName))
-                    return ViewLocator.CreateViewTemplate(ViewName);
-                return null;
+            public void UpdateViewTemplate(IViewLocator viewLocator) {
+                if(ViewTemplate != null) return;
+                if(ViewType != null) {
+                    ViewTemplate = viewLocator.CreateViewTemplate(ViewType);
+                    return;
+                }
+                if(!string.IsNullOrEmpty(ViewName)) {
+                    ViewTemplate = viewLocator.CreateViewTemplate(ViewName);
+                    return;
+                }
+                ViewTemplate = null;
+                return;
             }
         }
         class ViewDataTemplateSelector : DataTemplateSelector {
@@ -186,9 +213,7 @@ namespace DevExpress.Mvvm.UI.ViewInjection {
                 Owner = owner;
             }
             public override DataTemplate SelectTemplate(object item, DependencyObject container) {
-                if(item == null || Owner.ViewInfos == null || !Owner.ViewInfos.ContainsKey(item))
-                    return base.SelectTemplate(item, container);
-                return Owner.ViewInfos[item].ViewTemplate ?? base.SelectTemplate(item, container);
+                return Owner.ViewModelInfos.GetViewTemplate(item) ?? base.SelectTemplate(item, container);
             }
         }
     }

@@ -14,7 +14,7 @@ using DevExpress.Mvvm.UI.Native;
 #endif
 
 namespace DevExpress.Mvvm.UI {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
     [RuntimeNameProperty("Name")]
 #endif
     public abstract class ServiceBase : Behavior<FrameworkElement> {
@@ -36,7 +36,7 @@ namespace DevExpress.Mvvm.UI {
             SetInjectBinding();
         }
         protected override void OnDetaching() {
-#if SILVERLIGHT || NETFX_CORE
+#if NETFX_CORE
             ClearValue(ServicesClientInternalProperty);
 #else
             BindingOperations.ClearBinding(this, ServicesClientInternalProperty);
@@ -56,7 +56,7 @@ namespace DevExpress.Mvvm.UI {
         protected ISupportServices GetServicesClient() {
             return GetValue(ServicesClientInternalProperty) as ISupportServices;
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         protected Uri GetBaseUri() {
             Uri baseUri = BaseUriHelper.GetBaseUri(this);
             if(baseUri != null || AssociatedObject == null) return baseUri;
@@ -90,7 +90,7 @@ namespace DevExpress.Mvvm.UI.Native {
             if(service != null)
                 return service;
             service = LoadServiceFromTemplate(owner, templateKey);
-#if SILVERLIGHT  || NETFX_CORE
+#if NETFX_CORE
             owner.SetValue(property, service);
 #else
             owner.SetCurrentValue(property, service);

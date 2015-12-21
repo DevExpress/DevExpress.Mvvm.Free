@@ -18,7 +18,6 @@ namespace DevExpress.Mvvm.UI {
     public class ItemsControlMouseEventArgsConverter : EventArgsConverterBase<MouseEventArgs> {
         protected static Dictionary<Type, Type> itemsTypes = new Dictionary<Type, Type>() {
             { typeof(ListBox), typeof(ListBoxItem) },
-#if !SILVERLIGHT
             { typeof(ListView), typeof(ListViewItem) },
 #if !NETFX_CORE
             { typeof(TreeView), typeof(TreeViewItem) },
@@ -29,7 +28,6 @@ namespace DevExpress.Mvvm.UI {
 #else
             { typeof(GridView), typeof(GridViewItem) },
             { typeof(FlipView), typeof(FlipViewItem) },
-#endif
 #endif
         };
 #if !NETFX_CORE

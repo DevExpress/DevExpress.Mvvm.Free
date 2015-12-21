@@ -12,11 +12,7 @@ using System.Windows.Controls;
 using System.Collections.ObjectModel;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Native;
-#if SILVERLIGHT
-using WindowBase = DevExpress.Xpf.Core.DXWindowBase;
-#else
 using WindowBase = System.Windows.Window;
-#endif
 
 namespace DevExpress.Mvvm.UI {
     [TargetTypeAttribute(typeof(UserControl))]
@@ -125,12 +121,10 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("WindowStartupLocation", typeof(WindowStartupLocation), typeof(WindowedDocumentUIService), new PropertyMetadata(WindowStartupLocation.CenterScreen));
         public static readonly DependencyProperty WindowStyleProperty =
             DependencyProperty.Register("WindowStyle", typeof(Style), typeof(WindowedDocumentUIService), new PropertyMetadata(null));
-#if !SILVERLIGHT
         public static readonly DependencyProperty WindowStyleSelectorProperty =
             DependencyProperty.Register("WindowStyleSelector", typeof(StyleSelector), typeof(WindowedDocumentUIService), new PropertyMetadata(null));
         public static readonly DependencyProperty SetWindowOwnerProperty =
             DependencyProperty.Register("SetWindowOwner", typeof(bool), typeof(WindowedDocumentUIService), new PropertyMetadata(true));
-#endif
         public static readonly DependencyProperty WindowTypeProperty =
             DependencyProperty.Register("WindowType", typeof(Type), typeof(WindowedDocumentUIService), new PropertyMetadata(typeof(Window)));
         public static readonly DependencyProperty DocumentShowModeProperty =
@@ -159,7 +153,6 @@ namespace DevExpress.Mvvm.UI {
             get { return GetValue(ActiveViewProperty); }
             private set { SetValue(ActiveViewPropertyKey, value); }
         }
-#if !SILVERLIGHT
         public StyleSelector WindowStyleSelector {
             get { return (StyleSelector)GetValue(WindowStyleSelectorProperty); }
             set { SetValue(WindowStyleSelectorProperty, value); }
@@ -168,7 +161,6 @@ namespace DevExpress.Mvvm.UI {
             get { return (bool)GetValue(SetWindowOwnerProperty); }
             set { SetValue(SetWindowOwnerProperty, value); }
         }
-#endif
         public Type WindowType {
             get { return (Type)GetValue(WindowTypeProperty); }
             set { SetValue(WindowTypeProperty, value); }
@@ -182,13 +174,10 @@ namespace DevExpress.Mvvm.UI {
             IWindowSurrogate window = WindowProxy.GetWindowSurrogate(Activator.CreateInstance(WindowType));
             UpdateThemeName(window.RealWindow);
             window.RealWindow.Content = view;
-#if SILVERLIGHT
-            window.RealWindow.Style = WindowStyle;
-#else
             if(SetWindowOwner) window.RealWindow.Owner = Window.GetWindow(AssociatedObject);
-            window.RealWindow.Style = GetDocumentContainerStyle(window.RealWindow, view, WindowStyle, WindowStyleSelector);
+            Style windowStyle = GetDocumentContainerStyle(window.RealWindow, view, WindowStyle, WindowStyleSelector);
+            InitializeDocumentContainer(window.RealWindow, Window.ContentProperty, windowStyle);
             window.RealWindow.WindowStartupLocation = this.WindowStartupLocation;
-#endif
             return window;
         }
         IDocument IDocumentManagerService.CreateDocument(string documentType, object viewModel, object parameter, object parentViewModel) {
@@ -213,16 +202,12 @@ namespace DevExpress.Mvvm.UI {
 
         void SubscribeWindow(IWindowSurrogate window) {
             window.Activated += OnWindowActivated;
-#if !SILVERLIGHT
             window.Deactivated += OnWindowDeactivated;
-#endif
             window.Closed += OnWindowClosed;
         }
         void UnsubscribeWindow(IWindowSurrogate window) {
             window.Activated -= OnWindowActivated;
-#if !SILVERLIGHT
             window.Deactivated -= OnWindowDeactivated;
-#endif
             window.Closed -= OnWindowClosed;
         }
         void OnWindowClosed(object sender, EventArgs e) {
@@ -233,12 +218,10 @@ namespace DevExpress.Mvvm.UI {
         void OnWindowActivated(object sender, EventArgs e) {
             ActiveDocument = GetDocument((WindowBase)sender);
         }
-#if !SILVERLIGHT
         void OnWindowDeactivated(object sender, EventArgs e) {
             if(ActiveDocument == GetDocument((Window)sender))
                 ActiveDocument = null;
         }
-#endif
         void OnActiveDocumentChanged(IDocument oldValue, IDocument newValue) {
             WindowDocument newDocument = (WindowDocument)newValue;
             if(newDocument != null)

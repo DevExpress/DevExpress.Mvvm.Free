@@ -3,7 +3,6 @@ using System.Windows.Data;
 using System.Windows.Markup;
 
 namespace DevExpress.Mvvm.UI {
-#if !SILVERLIGHT
     public class ReflectionConverterExtension : MarkupExtension {
         class TypeUnsetValue { }
         Type convertBackMethodOwner = typeof(TypeUnsetValue);
@@ -30,7 +29,6 @@ namespace DevExpress.Mvvm.UI {
             return new EnumerableConverter() { ItemConverter = ItemConverter, TargetItemType = TargetItemType };
         }
     }
-#endif
     public class TypeCastConverterExtension : MarkupExtension {
         public override object ProvideValue(System.IServiceProvider serviceProvider) {
             return new TypeCastConverter();

@@ -9,11 +9,7 @@ using System.Windows.Input;
 namespace DevExpress.Mvvm.UI {
     public class ConfirmationBehavior : Behavior<DependencyObject> {
         #region Dependency Properties
-#if !SILVERLIGHT
         static MessageBoxButton DefaultMessageBoxButton = MessageBoxButton.YesNo;
-#else
-        static MessageBoxButton DefaultMessageBoxButton = MessageBoxButton.OKCancel;
-#endif
         public static readonly DependencyProperty EnableConfirmationMessageProperty =
             DependencyProperty.Register("EnableConfirmationMessage", typeof(bool), typeof(ConfirmationBehavior),
             new PropertyMetadata(true));
@@ -41,12 +37,9 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty MessageDefaultResultProperty =
             DependencyProperty.Register("MessageDefaultResult", typeof(MessageBoxResult), typeof(ConfirmationBehavior),
             new PropertyMetadata(null));
-
-#if !SILVERLIGHT
         public static readonly DependencyProperty MessageIconProperty =
             DependencyProperty.Register("MessageIcon", typeof(MessageBoxImage), typeof(ConfirmationBehavior),
             new PropertyMetadata(MessageBoxImage.None));
-#endif
 
         public bool EnableConfirmationMessage {
             get { return (bool)GetValue(EnableConfirmationMessageProperty); }
@@ -84,21 +77,15 @@ namespace DevExpress.Mvvm.UI {
             get { return (MessageBoxResult)GetValue(MessageDefaultResultProperty); }
             set { SetValue(MessageDefaultResultProperty, value); }
         }
-#if !SILVERLIGHT
         public MessageBoxImage MessageIcon {
             get { return (MessageBoxImage)GetValue(MessageIconProperty); }
             set { SetValue(MessageIconProperty, value); }
         }
-#endif
         #endregion
 
         internal DelegateCommand<object> ConfirmationCommand;
         public ConfirmationBehavior() {
-#if !SILVERLIGHT
             ConfirmationCommand = new DelegateCommand<object>(ConfirmationCommandExecute, ConfirmationCommandCanExecute, false);
-#else
-            ConfirmationCommand = new DelegateCommand<object>(ConfirmationCommandExecute, ConfirmationCommandCanExecute);
-#endif
         }
         protected override void OnAttached() {
             base.OnAttached();
@@ -115,10 +102,8 @@ namespace DevExpress.Mvvm.UI {
         }
 
         void ConfirmationCommandExecute(object parameter) {
-            if(Command == null) return;
-            if(ShowConfirmation()) {
-                Command.Execute(CommandParameter ?? parameter);
-            }
+            if(ShowConfirmation())
+                Command.Do(x => x.Execute(CommandParameter ?? parameter));
         }
         bool ConfirmationCommandCanExecute(object parameter) {
             if(Command == null) return true;
@@ -159,21 +144,13 @@ namespace DevExpress.Mvvm.UI {
             if(viewModel != null)
                 res = viewModel.ServiceContainer.GetService<IMessageBoxService>();
             if(res != null) return res;
-#if !SILVERLIGHT
             res = new MessageBoxService();
-#else
-            res = new MessageBoxService();
-#endif
             return res;
         }
         bool ShowConfirmation() {
             if (!EnableConfirmationMessage) return true;
             IMessageBoxService service = GetActualService();
-#if !SILVERLIGHT
             MessageBoxResult res = service.Show(MessageText, MessageTitle, MessageButton, MessageIcon, MessageDefaultResult);
-#else
-            MessageBoxResult res = service.Show(MessageText, MessageTitle, MessageButton, MessageDefaultResult);
-#endif
             return res == MessageBoxResult.OK || res == MessageBoxResult.Yes;
         }
     }

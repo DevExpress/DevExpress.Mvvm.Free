@@ -1,7 +1,12 @@
+using System;
 using System.Windows;
+using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm.UI {
     public abstract class WindowAwareServiceBase : ServiceBase {
+        public static readonly DependencyProperty WindowSourceProperty =
+            DependencyProperty.Register("WindowSource", typeof(FrameworkElement), typeof(WindowAwareServiceBase), new PropertyMetadata(null,
+                (d, e) => ((WindowAwareServiceBase)d).OnWindowSourceChanged(e)));
         public static readonly DependencyProperty WindowProperty =
             DependencyProperty.Register("Window", typeof(Window), typeof(WindowAwareServiceBase), new PropertyMetadata(null,
                 (d, e) => ((WindowAwareServiceBase)d).OnWindowChanged(e)));
@@ -10,6 +15,10 @@ namespace DevExpress.Mvvm.UI {
                 (d, e) => ((WindowAwareServiceBase)d).OnActualWindowChanged((Window)e.OldValue)));
         public static readonly DependencyProperty ActualWindowProperty = ActualWindowPropertyKey.DependencyProperty;
 
+        public FrameworkElement WindowSource {
+            get { return (FrameworkElement)GetValue(WindowSourceProperty); }
+            set { SetValue(WindowSourceProperty, value); }
+        }
         public Window Window {
             get { return (Window)GetValue(WindowProperty); }
             set { SetValue(WindowProperty, value); }
@@ -24,28 +33,39 @@ namespace DevExpress.Mvvm.UI {
         void OnWindowChanged(DependencyPropertyChangedEventArgs e) {
             UpdateActualWindow();
         }
-        void OnAssociatedObjectLoaded(object sender, RoutedEventArgs e) {
-            UpdateActualWindow();
-        }
-        void OnAssociatedObjectUnloaded(object sender, RoutedEventArgs e) {
+        void OnWindowSourceIsLoadedChanged(object sender, RoutedEventArgs e) {
             UpdateActualWindow();
         }
         void UpdateActualWindow() {
-            ActualWindow = Window ?? (AssociatedObject == null ? null : Window.GetWindow(AssociatedObject));
+            ActualWindow = Window ?? WindowSource.With(Window.GetWindow) ?? AssociatedObject.With(Window.GetWindow);
         }
+        void OnWindowSourceChanged(DependencyPropertyChangedEventArgs e) {
+            var oldValue = (FrameworkElement)e.OldValue;
+            var newValue = (FrameworkElement)e.NewValue;
+            if(oldValue != null)
+                Detach(oldValue);
+            if(newValue != null)
+                Attach(newValue);
+            UpdateActualWindow();
+        }
+        void Attach(FrameworkElement windowSource) {
+            windowSource.Loaded += OnWindowSourceIsLoadedChanged;
+            windowSource.Unloaded += OnWindowSourceIsLoadedChanged;
+        }
+        void Detach(FrameworkElement windowSource) {
+            windowSource.Loaded -= OnWindowSourceIsLoadedChanged;
+            windowSource.Unloaded -= OnWindowSourceIsLoadedChanged;
+        }
+
         protected override void OnAttached() {
             base.OnAttached();
-            AssociatedObject.Loaded += OnAssociatedObjectLoaded;
-            AssociatedObject.Unloaded += OnAssociatedObjectUnloaded;
-            if(AssociatedObject.IsLoaded)
-                OnAssociatedObjectLoaded(AssociatedObject, null);
+            Attach(AssociatedObject);
+            UpdateActualWindow();
         }
         protected override void OnDetaching() {
             base.OnDetaching();
-            AssociatedObject.Loaded -= OnAssociatedObjectLoaded;
-            AssociatedObject.Unloaded -= OnAssociatedObjectUnloaded;
-            if(AssociatedObject.IsLoaded)
-                OnAssociatedObjectUnloaded(AssociatedObject, null);
+            Detach(AssociatedObject);
+            UpdateActualWindow();
         }
     }
 }

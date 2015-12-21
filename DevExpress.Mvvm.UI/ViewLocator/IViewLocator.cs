@@ -19,18 +19,28 @@ namespace DevExpress.Mvvm.UI {
     }
 
     public static class ViewLocatorExtensions {
-#if !NETFX_CORE && !SILVERLIGHT
+#if !NETFX_CORE
         public static DataTemplate CreateViewTemplate(this IViewLocator viewLocator, Type viewType) {
             Verify(viewLocator);
             if(viewType == null) throw new ArgumentNullException("viewType");
             DataTemplate res = null;
-            try {
-                res = new DataTemplate() { VisualTree = new FrameworkElementFactory(viewType) };
-                res.Seal();
-            } catch {
+            if(!typeof(FrameworkElement).IsAssignableFrom(viewType) && !typeof(FrameworkContentElement).IsAssignableFrom(viewType))
                 res = CreateFallbackViewTemplate(GetErrorMessage_CannotCreateDataTemplateFromViewType(viewType.Name));
+            else {
+                res = CreateViewTemplateCore(viewType);
+                res.Seal();
             }
             return res;
+        }
+        static DataTemplate CreateViewTemplateCore(Type viewType) {
+            var xaml = String.Format("<DataTemplate><v:{0} /></DataTemplate>", viewType.Name);
+            var context = new System.Windows.Markup.ParserContext();
+            context.XamlTypeMapper = new System.Windows.Markup.XamlTypeMapper(new string[0]);
+            context.XamlTypeMapper.AddMappingProcessingInstruction("v", viewType.Namespace, viewType.Assembly.FullName);
+            context.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
+            context.XmlnsDictionary.Add("x", "http://schemas.microsoft.com/winfx/2006/xaml");
+            context.XmlnsDictionary.Add("v", "v");
+            return (DataTemplate)System.Windows.Markup.XamlReader.Parse(xaml, context);
         }
         public static DataTemplate CreateViewTemplate(this IViewLocator viewLocator, string viewName) {
             Verify(viewLocator);

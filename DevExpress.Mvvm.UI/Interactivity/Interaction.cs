@@ -14,7 +14,7 @@ using DevExpress.Mvvm.UI.Native;
 namespace DevExpress.Mvvm.UI.Interactivity {
     public static class Interaction {
         #region Dependency Properties
-#if SILVERLIGHT || NETFX_CORE
+#if NETFX_CORE
         const string BehaviorsPropertyName = "Behaviors";
         const string BehaviorsTemplatePropertyName = "BehaviorsTemplate";
         const string TriggersPropertyName = "Triggers";
@@ -93,7 +93,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
                 return;
             }
 
-#if !NETFX_CORE && !SILVERLIGHT
+#if !NETFX_CORE
             if(!newValue.IsSealed)
                 newValue.Seal();
 #endif

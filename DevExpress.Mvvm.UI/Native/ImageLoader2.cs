@@ -75,7 +75,7 @@ namespace DevExpress.Mvvm.UI.Native {
         static bool TryGetStreamOrUri(BitmapImage bitmapImage, out Uri uri, out Stream stream) {
             uri = null;
             stream = null;
-            if(bitmapImage.StreamSource != null) {
+            if(bitmapImage.StreamSource != null && bitmapImage.StreamSource.CanRead) {
                 stream = bitmapImage.StreamSource;
                 return true;
             }
@@ -93,9 +93,9 @@ namespace DevExpress.Mvvm.UI.Native {
             FieldInfo uriStreamField = GetDecoderField(decoder, "_uriStream");
             FieldInfo uriField = GetDecoderField(decoder, "_uri");
             stream = (Stream)streamField.GetValue(decoder);
-            if(stream != null) return true;
+            if(stream != null && stream.CanRead) return true;
             stream = (Stream)uriStreamField.GetValue(decoder);
-            if(stream != null) return true;
+            if(stream != null && stream.CanRead) return true;
             uri = (Uri)uriField.GetValue(decoder);
             if(bitmapFrame.BaseUri != null)
                 uri = new Uri(bitmapFrame.BaseUri, uri);

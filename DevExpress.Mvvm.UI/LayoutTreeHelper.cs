@@ -17,7 +17,7 @@ using System.Windows.Media.Media3D;
 namespace DevExpress.Mvvm.UI {
     public static class LayoutTreeHelper {
         static DependencyObject GetParent(DependencyObject element) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             if(element is Visual || element is Visual3D)
                 return VisualTreeHelper.GetParent(element);
             if(element is FrameworkContentElement)
@@ -41,7 +41,7 @@ namespace DevExpress.Mvvm.UI {
         internal static IEnumerable<DependencyObject> GetVisualChildrenCore(DependencyObject parent, bool includeStartNode) {
             var result = parent
                 .Yield()
-                .Flatten(x => Enumerable.Range(0, VisualTreeHelper.GetChildrenCount(x)).Select(index => VisualTreeHelper.GetChild(x, index)));
+                .Flatten(x => Enumerable.Range(0, x != null ? VisualTreeHelper.GetChildrenCount(x) : 0).Select(index => VisualTreeHelper.GetChild(x, index)));
             return includeStartNode ? result : result.Skip(1);
         }
     }

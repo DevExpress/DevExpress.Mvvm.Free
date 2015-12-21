@@ -10,7 +10,7 @@ namespace DevExpress.Mvvm.UI {
     public class TaskbarThumbButtonInfoCollection : IList<TaskbarThumbButtonInfo>, IList {
         public TaskbarThumbButtonInfoCollection() : this(new ThumbButtonInfoCollection()) { }
         public TaskbarThumbButtonInfoCollection(ThumbButtonInfoCollection collection) {
-            Guard.ArgumentNotNull(collection, "collection");
+            GuardHelper.ArgumentNotNull(collection, "collection");
             this.InternalCollection = collection;
         }
         internal ThumbButtonInfoCollection InternalCollection { get; private set; }

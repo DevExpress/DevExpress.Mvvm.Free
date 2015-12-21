@@ -66,6 +66,10 @@ namespace DevExpress.Mvvm.UI {
         BottomRight, TopRight
     }
 
+    public enum NotificationScreen {
+        Primary, ApplicationWindow
+    }
+
     [TargetTypeAttribute(typeof(UserControl))]
     [TargetTypeAttribute(typeof(Window))]
     public class NotificationService : ServiceBase, INotificationService {
@@ -81,9 +85,11 @@ namespace DevExpress.Mvvm.UI {
         internal class MvvmCustomNotification : INotification {
             CustomNotifier notifier;
             CustomNotification notification;
+            Window window;
             internal int duration;
-            public MvvmCustomNotification(object viewModel, CustomNotifier notifier, int duration) {
+            public MvvmCustomNotification(object viewModel, CustomNotifier notifier, Window window, int duration) {
                 this.notifier = notifier;
+                this.window = window;
                 this.duration = duration;
                 this.notification = new CustomNotification(viewModel, notifier);
             }
@@ -91,6 +97,14 @@ namespace DevExpress.Mvvm.UI {
                 notifier.Hide(notification);
             }
             public Task<NotificationResult> ShowAsync() {
+                Point position = new Point();
+                if(window != null) {
+                    var pointToScreen = window.PointToScreen(new Point());
+                    if(pointToScreen != null) {
+                        position = new Point(pointToScreen.X + window.Width / 2, pointToScreen.Y + window.Height / 2);
+                    }
+                }
+                notifier.ChangeScreen(position);
                 return notifier.ShowAsync(notification, duration);
             }
         }
@@ -134,19 +148,26 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty SoundProperty =
             DependencyProperty.Register("Sound", typeof(PredefinedSound), typeof(NotificationService), new PropertyMetadata(PredefinedSound.Notification_Default));
 
-        IPredefinedToastNotificationFactory factory;
-        IPredefinedToastNotificationFactory Factory {
+        public NotificationScreen CustomNotificationScreen {
+            get { return (NotificationScreen)GetValue(CustomNotificationScreenProperty); }
+            set { SetValue(CustomNotificationScreenProperty, value); }
+        }
+        public static readonly DependencyProperty CustomNotificationScreenProperty =
+            DependencyProperty.Register("CustomNotificationScreen", typeof(NotificationScreen), typeof(NotificationService), new PropertyMetadata(NotificationScreen.Primary));
+
+        IPredefinedToastNotificationFactory predefinedNotificationsFactory;
+        IPredefinedToastNotificationFactory PredefinedNotificationsFactory {
             get {
-                if(factory == null) {
+                if(predefinedNotificationsFactory == null) {
                     if(UseWin8NotificationsIfAvailable && AreWin8NotificationsAvailable) {
                         if(ApplicationId == null)
                             throw new ArgumentNullException("ApplicationId");
-                        factory = new WinRTToastNotificationFactory(ApplicationId);
+                        predefinedNotificationsFactory = new WinRTToastNotificationFactory(ApplicationId);
                     } else {
-                        factory = new WpfToastNotificationFactory();
+                        predefinedNotificationsFactory = new WpfToastNotificationFactory();
                     }
                 }
-                return factory;
+                return predefinedNotificationsFactory;
             }
         }
         CustomNotifier customNotifier;
@@ -199,7 +220,7 @@ namespace DevExpress.Mvvm.UI {
             CustomNotifier.Style = CustomNotificationStyle;
         }
         void OnUseWin8NotificationsIfAvailableChanged() {
-            factory = null;
+            predefinedNotificationsFactory = null;
         }
         public string ApplicationId {
             get { return (string)GetValue(ApplicationIdProperty); }
@@ -221,7 +242,9 @@ namespace DevExpress.Mvvm.UI {
             get { return DevExpress.Internal.WinApi.ToastNotificationManager.AreToastNotificationsSupported; }
         }
         public INotification CreateCustomNotification(object viewModel) {
-            return new MvvmCustomNotification(viewModel, CustomNotifier,
+            Window window = CustomNotificationScreen == UI.NotificationScreen.ApplicationWindow ?
+                Window.GetWindow(AssociatedObject) : null;
+            return new MvvmCustomNotification(viewModel, CustomNotifier, window,
                 (int)Math.Max(0, Math.Min(int.MaxValue, CustomNotificationDuration.TotalMilliseconds)));
         }
 
@@ -231,7 +254,7 @@ namespace DevExpress.Mvvm.UI {
             string text3,
             ImageSource image = null)
         {
-            IPredefinedToastNotificationContentFactory cf = Factory.CreateContentFactory();
+            IPredefinedToastNotificationContentFactory cf = PredefinedNotificationsFactory.CreateContentFactory();
             IPredefinedToastNotificationContent content = null;
             switch(PredefinedNotificationTemplate) {
                 case NotificationTemplate.LongText:
@@ -252,7 +275,7 @@ namespace DevExpress.Mvvm.UI {
             }
             content.SetDuration((DevExpress.Internal.NotificationDuration)PredefinedNotificationDuration);
             content.SetSound((DevExpress.Internal.PredefinedSound)Sound);
-            return new MvvmPredefinedNotification { Notification = Factory.CreateToastNotification(content) };
+            return new MvvmPredefinedNotification { Notification = PredefinedNotificationsFactory.CreateToastNotification(content) };
         }
     }
 }

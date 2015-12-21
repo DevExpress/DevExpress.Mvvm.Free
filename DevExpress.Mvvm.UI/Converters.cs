@@ -12,15 +12,20 @@ using System.Collections.Generic;
 using DevExpress.Mvvm.UI.Native;
 using System.Reflection;
 using System.Collections;
+using System.Windows.Media;
+using System.Text.RegularExpressions;
 #else
 using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Markup;
 using CultureInfo = System.String;
+using Windows.UI;
+using System.Text.RegularExpressions;
+using Windows.UI.Xaml.Media;
 #endif
 
 namespace DevExpress.Mvvm.UI {
-#if !NETFX_CORE && !SILVERLIGHT
+#if !NETFX_CORE
     public class ReflectionConverter : IValueConverter {
         class TypeUnsetValue { }
         Type convertBackMethodOwner = typeof(TypeUnsetValue);
@@ -303,9 +308,60 @@ namespace DevExpress.Mvvm.UI {
         public ObjectToObjectConverter() {
             Map = new ObservableCollection<MapItem>();
         }
+        static object ParseColor(string str) {
+            var rgb = new Regex("^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$");
+            var m = rgb.Match(str);
+            if(m.Success) {
+                return Color.FromArgb(255,
+                    System.Convert.ToByte(m.Groups[1].ToString(), 16),
+                    System.Convert.ToByte(m.Groups[2].ToString(), 16),
+                    System.Convert.ToByte(m.Groups[3].ToString(), 16));
+            }
+            var argb = new Regex("^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$");
+            m = argb.Match(str);
+            if(m.Success) {
+                return Color.FromArgb(
+                    System.Convert.ToByte(m.Groups[1].ToString(), 16),
+                    System.Convert.ToByte(m.Groups[2].ToString(), 16),
+                    System.Convert.ToByte(m.Groups[3].ToString(), 16),
+                    System.Convert.ToByte(m.Groups[4].ToString(), 16));
+            }
+            return null;
+        }
         object Coerce(object value, Type targetType) {
             if(value == null || targetType == value.GetType()) {
                 return value;
+            }
+            var nullableType = Nullable.GetUnderlyingType(targetType);
+            var coerced = CoerceNonNullable(value, nullableType ?? targetType);
+            if(nullableType != null) {
+                return Activator.CreateInstance(targetType, coerced);
+            }
+            return coerced;
+        }
+        bool IsImplicitXamlConvertion(Type valueType, Type targetType) {
+            if(targetType == typeof(Thickness))
+                return true;
+            if(targetType == typeof(ImageSource) && (valueType == typeof(string) || valueType == typeof(Uri)))
+                return true;
+            return false;
+        }
+        object CoerceNonNullable(object value, Type targetType) {
+            if (targetType == typeof(SolidColorBrush) ||
+                targetType == typeof(Brush) ||
+                targetType == typeof(Color)) {
+                object res = null;
+                if(value is Color) {
+                    res = (Color)value;
+                }
+                if (value is string) {
+                    res = ParseColor((string)value);
+                }
+                if(res != null) {
+                    if(targetType == typeof(Color))
+                        return res;
+                    return new SolidColorBrush { Color = (Color)res };
+                }
             }
             if(targetType == typeof(string)) {
                 return value.ToString();
@@ -317,6 +373,8 @@ namespace DevExpress.Mvvm.UI {
 #endif
                 return Enum.Parse(targetType, (string)value, false);
             }
+            if(IsImplicitXamlConvertion(value.GetType(), targetType))
+                return value;
             try {
                 return System.Convert.ChangeType(value, targetType, System.Globalization.CultureInfo.InvariantCulture);
             } catch {
@@ -339,11 +397,11 @@ namespace DevExpress.Mvvm.UI {
         }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             MapItem entry = Map.FirstOrDefault(MakeMapPredicate(item => item.Source, value));
-            return entry == null ? DefaultTarget : entry.Target;
+            return Coerce(entry == null ? DefaultTarget : entry.Target, targetType);
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             MapItem entry = Map.FirstOrDefault(MakeMapPredicate(item => item.Target, value));
-            return entry == null ? DefaultSource : entry.Source;
+            return Coerce(entry == null ? DefaultSource : entry.Source, targetType);
         }
     }
     public class BooleanToVisibilityConverter : IValueConverter {
@@ -374,7 +432,6 @@ namespace DevExpress.Mvvm.UI {
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) { return null; }
     }
 
-
     public class DefaultBooleanToBooleanConverter : IValueConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             bool? booleanValue = ConverterHelper.GetNullableBooleanValue(value);
@@ -401,9 +458,10 @@ namespace DevExpress.Mvvm.UI {
     }
     public class FormatStringConverter : IValueConverter {
         public string FormatString { get; set; }
+        public TextCaseFormat OutStringCaseFormat { get; set; }
 
         public virtual object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            return GetFormattedValue(FormatString, value, System.Globalization.CultureInfo.CurrentUICulture);
+            return GetFormattedValue(FormatString, value, System.Globalization.CultureInfo.CurrentUICulture, OutStringCaseFormat);
         }
         public virtual object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             throw new NotSupportedException();
@@ -413,7 +471,22 @@ namespace DevExpress.Mvvm.UI {
             string displayFormat = GetDisplayFormat(formatString);
             return string.IsNullOrEmpty(displayFormat) ? value : string.Format(culture, displayFormat, value);
         }
-        static string GetDisplayFormat(string displayFormat) {
+        public static object GetFormattedValue(string formatString, object value, System.Globalization.CultureInfo culture,
+            TextCaseFormat outStringCaseFormat) {
+            object o = GetFormattedValue(formatString, value, culture);
+            if(o == null)
+                return null;
+
+            switch(outStringCaseFormat) {
+                case TextCaseFormat.Lower:
+                    return o.ToString().ToLower();
+                case TextCaseFormat.Upper:
+                    return o.ToString().ToUpper();
+                default:
+                    return o.ToString();
+            }
+        }
+        public static string GetDisplayFormat(string displayFormat) {
             if(string.IsNullOrEmpty(displayFormat))
                 return string.Empty;
             string res = displayFormat;
@@ -421,6 +494,8 @@ namespace DevExpress.Mvvm.UI {
                 return res;
             return string.Format("{{0:{0}}}", res);
         }
+
+        public enum TextCaseFormat { Default, Lower, Upper }
     }
     public class BooleanToObjectConverter : IValueConverter {
         public object TrueValue { get; set; }
@@ -483,7 +558,7 @@ namespace DevExpress.Mvvm.UI {
         public static Visibility BooleanToVisibility(bool booleanValue, bool inverse, bool hiddenInsteadOfCollapsed) {
             return (booleanValue ^ inverse) ?
                 Visibility.Visible :
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
  (hiddenInsteadOfCollapsed ? Visibility.Hidden : Visibility.Collapsed);
 #else
                 Visibility.Collapsed;

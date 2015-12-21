@@ -9,6 +9,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
 #else
+using System.Reflection;
 using Windows.UI.Xaml;
 using Windows.Foundation;
 using Windows.UI.Xaml.Media;
@@ -23,7 +24,7 @@ namespace DevExpress.Xpf.Core.Native {
     public static class LayoutHelper {
 #endif
 
-#if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
+#if !NETFX_CORE
         public static UIElement GetTopContainerWithAdornerLayer(UIElement element) {
             FrameworkElement fElement = element as FrameworkElement;
             if(fElement != null && GetParent(element) == null) {
@@ -92,8 +93,6 @@ namespace DevExpress.Xpf.Core.Native {
             DependencyObject root = FindRoot(o);
 #if !NETFX_CORE
             return Application.Current.RootVisual != null && root == Application.Current.RootVisual || (root is Popup && ((Popup)root).IsOpen);
-#elif SILVERLIGHT
-            return Window.Current.Content != null && root == Window.Current.Content || (root is Popup && ((Popup)root).IsOpen);
 #else
             return true;
 #endif
@@ -128,7 +127,7 @@ namespace DevExpress.Xpf.Core.Native {
             return res;
         }
 #endif
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public static FrameworkElement GetTopLevelVisual(DependencyObject d) {
             FrameworkElement topElement = d as FrameworkElement;
             while(d != null) {
@@ -152,12 +151,8 @@ namespace DevExpress.Xpf.Core.Native {
         }
 #if !FREE && !NETFX_CORE
         public static Rect GetRelativeElementRect(UIElement element, UIElement parent) {
-#if !SILVERLIGHT || SLDESIGN
             GeneralTransform transform = element.TransformToVisual(parent);
             return transform.TransformBounds(new Rect(element.RenderSize));
-#else
-            return ((FrameworkElement)element).GetBounds((FrameworkElement)parent);
-#endif
         }
 #endif
 
@@ -180,7 +175,7 @@ namespace DevExpress.Xpf.Core.Native {
             return current;
         }
         public static DependencyObject GetParent(DependencyObject d, bool uselogicalTree = false) {
-#if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
+#if !NETFX_CORE
             if(DesignerProperties.GetIsInDesignMode(d)) {
                 if(CheckIsDesignTimeRoot(d)) return null;
             }
@@ -188,7 +183,7 @@ namespace DevExpress.Xpf.Core.Native {
             return GetParentCore(d, uselogicalTree);
         }
         static DependencyObject GetParentCore(DependencyObject d, bool uselogicalTree = false) {
-#if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
+#if !NETFX_CORE
             DependencyObject parent = LogicalTreeHelper.GetParent(d);
             if(!uselogicalTree || parent == null)
                 if(d is Visual) parent = VisualTreeHelper.GetParent(d);
@@ -202,7 +197,7 @@ namespace DevExpress.Xpf.Core.Native {
             while(child != null) {
                 if(child is T)
                     return child as T;
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
                 child = VisualTreeHelper.GetParent(child);
 #else
                 child = GetParent(child);
@@ -272,7 +267,6 @@ namespace DevExpress.Xpf.Core.Native {
 
 #if !FREE && !NETFX_CORE
         public static bool IsChildElementEx(DependencyObject root, DependencyObject element, bool useLogicalTree = false) {
-#if !SILVERLIGHT || SLDESIGN
             DependencyObject parent = element;
             while(parent != null) {
                 if(parent == root)
@@ -285,16 +279,6 @@ namespace DevExpress.Xpf.Core.Native {
                     parent = GetParentCore(parent, useLogicalTree);
             }
             return false;
-#else
-            if(useLogicalTree && root is ILogicalOwnerEx) {
-                IEnumerator enumerator = ((ILogicalOwnerEx)root).LogicalChildren;
-                while(enumerator.MoveNext()) {
-                    if(LayoutHelper.IsChildElement(enumerator.Current as DependencyObject, element))
-                        return true;
-                }
-            }
-            return IsChildElement(root, element);
-#endif
         }
 #endif
 
@@ -311,7 +295,7 @@ namespace DevExpress.Xpf.Core.Native {
             return rect.Contains(position);
         }
 
-#if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
+#if !NETFX_CORE
         public static bool IsVisibleInTree(UIElement element, bool visualTreeOnly = false) {
             return element.IsVisible;
         }
@@ -354,7 +338,7 @@ namespace DevExpress.Xpf.Core.Native {
 #endif
 
         public static bool IsElementLoaded(FrameworkElement element) {
-#if !SILVERLIGHT && !NETFX_CORE || SLDESIGN
+#if !NETFX_CORE
             return element.IsLoaded;
 #else
             if(element.Parent != null)
@@ -375,30 +359,25 @@ namespace DevExpress.Xpf.Core.Native {
 #endif
         }
 
-#if !SILVERLIGHT && !DESIGN && !NETFX_CORE
+#if !DESIGN && !NETFX_CORE
         public static Rect GetScreenRect(FrameworkElement element) {
             if(element is Window) {
                 Window elementWindow = (Window)element;
                 if(elementWindow.WindowStyle == WindowStyle.None)
-                    GetScreenRectCore(elementWindow, elementWindow);
+                    return GetScreenRectCore(elementWindow, elementWindow);
                 else {
                     if(elementWindow.WindowState == WindowState.Maximized) {
-                        var screen = System.Windows.Forms.Screen.FromRectangle(new System.Drawing.Rectangle(
-                            (int)elementWindow.Left, (int)elementWindow.Top, (int)elementWindow.ActualWidth, (int)elementWindow.ActualHeight));
+                        var screen = System.Windows.Forms.Screen.FromHandle(new System.Windows.Interop.WindowInteropHelper(elementWindow).Handle);
                         var workingArea = screen.WorkingArea;
                         var leftTop = new Point(workingArea.Location.X, workingArea.Location.Y);
                         var size = new Size(workingArea.Size.Width, workingArea.Size.Height);
-                        return new Rect(leftTop, size);
-                    } else {
-                        var leftTop = new Point(elementWindow.Left, elementWindow.Top);
                         var presentationSource = PresentationSource.FromVisual(elementWindow);
                         if(presentationSource != null) {
-                            double dpiX = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M11;
-                            double dpiY = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M22;
-                            leftTop = new Point(leftTop.X * 96.0 / dpiX, leftTop.Y * 96.0 / dpiY);
+                            leftTop = new Point(leftTop.X / presentationSource.CompositionTarget.TransformToDevice.M11, leftTop.Y / presentationSource.CompositionTarget.TransformToDevice.M22);
+                            size = new Size(size.Width / presentationSource.CompositionTarget.TransformToDevice.M11, size.Height / presentationSource.CompositionTarget.TransformToDevice.M22);
                         }
-                        return new Rect(leftTop, new Size(element.ActualWidth, element.ActualHeight));
-                    }
+                        return new Rect(leftTop, size);
+                    } else return new Rect(new Point(elementWindow.Left, elementWindow.Top), new Size(elementWindow.Width, elementWindow.Height));
                 }
             }
             if(element == null) {

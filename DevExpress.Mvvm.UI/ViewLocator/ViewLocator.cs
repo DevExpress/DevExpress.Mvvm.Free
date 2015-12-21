@@ -15,9 +15,7 @@ namespace DevExpress.Mvvm.UI {
         protected static Assembly EntryAssembly {
             get {
                 if(entryAssembly == null) {
-#if SILVERLIGHT
-                    entryAssembly = Application.Current == null ? null : Application.Current.GetType().Assembly;
-#elif NETFX_CORE
+#if NETFX_CORE
                     entryAssembly = Application.Current == null ? null : Application.Current.GetType().GetAssembly();
 #else
                     entryAssembly = Assembly.GetEntryAssembly();

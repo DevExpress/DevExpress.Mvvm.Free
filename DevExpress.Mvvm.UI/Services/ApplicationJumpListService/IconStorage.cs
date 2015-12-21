@@ -22,7 +22,7 @@ namespace DevExpress.Mvvm.UI {
             this.baseUri = baseUri;
         }
         public bool TryStoreIconToFile(ImageSource icon, string storageFolder, out string iconID, out string iconPath) {
-            Guard.ArgumentNotNull(icon, "icon");
+            GuardHelper.ArgumentNotNull(icon, "icon");
             byte[] iconBytes = null;
             try {
                 iconBytes = ImageLoader2.ImageToByteArray(icon, baseUri);

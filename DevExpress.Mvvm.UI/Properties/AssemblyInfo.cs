@@ -19,7 +19,7 @@ using DevExpress.Mvvm.Native;
 [assembly: AssemblyCopyright(AssemblyInfo.AssemblyCopyright)]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
 [assembly: ThemeInfo(ResourceDictionaryLocation.None, ResourceDictionaryLocation.SourceAssembly)]
 #endif
 

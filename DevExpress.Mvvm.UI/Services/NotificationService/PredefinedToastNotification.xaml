@@ -6,7 +6,7 @@
     xmlns:dxmvvmi="clr-namespace:DevExpress.Mvvm.UI.Native">
 
     <DataTemplate x:Key="DefaultCustomToastTemplate">
-        <Border BorderBrush="Black" BorderThickness="2" Background="White">
+        <Border Background="#FC972E">
             <TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Border>
     </DataTemplate>

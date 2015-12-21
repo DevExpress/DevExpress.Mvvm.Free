@@ -33,7 +33,7 @@ namespace DevExpress.Mvvm.UI {
         }
         KeyGesture keyGesture = null;
 #endif
-#if !NETFX_CORE && !SILVERLIGHT
+#if !NETFX_CORE
         static KeyToCommand() {
             EventNameProperty.OverrideMetadata(typeof(KeyToCommand), new PropertyMetadata("KeyUp"));
         }
@@ -48,11 +48,7 @@ namespace DevExpress.Mvvm.UI {
         }
         protected override bool CanInvoke(object sender, object eventArgs) {
             bool res = base.CanInvoke(sender, eventArgs);
-#if SILVERLIGHT
-            if(KeyGesture == null || !(eventArgs is KeyEventArgs)) return res;
-            KeyEventArgs keyEventArgs = (KeyEventArgs)eventArgs;
-            return res && keyEventArgs.Key == KeyGesture.Key && Keyboard.Modifiers == KeyGesture.ModifierKeys;
-#elif NETFX_CORE
+#if NETFX_CORE
 
             if(keyGesture == null || !(eventArgs is KeyRoutedEventArgs)) return res;
             KeyRoutedEventArgs keyEventArgs = (KeyRoutedEventArgs)eventArgs;

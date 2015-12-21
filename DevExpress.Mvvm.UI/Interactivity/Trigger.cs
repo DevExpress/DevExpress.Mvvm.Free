@@ -44,7 +44,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         public static readonly DependencyProperty EventNameProperty =
             DependencyProperty.Register("EventName", typeof(string), typeof(EventTriggerBase<T>),
             new PropertyMetadata("Loaded", (d, e) => ((EventTriggerBase<T>)d).OnEventNameChanged((string)e.OldValue, (string)e.NewValue)));
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         [IgnoreDependencyPropertiesConsistencyChecker]
         public static readonly DependencyProperty EventProperty =
             DependencyProperty.Register("Event", typeof(RoutedEvent), typeof(EventTriggerBase<T>),
@@ -60,7 +60,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             new PropertyMetadata(null, (d, e) => ((EventTriggerBase<T>)d).OnSourceObjectChanged()));
 
         static BindingExpression GetBindingExp(DependencyObject d, DependencyProperty dp) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             return BindingOperations.GetBindingExpression(d, dp);
 #else
             if(d is FrameworkElement)
@@ -72,7 +72,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             FrameworkElement fe = obj as FrameworkElement;
             if(fe != null)
                 return fe.Name;
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             FrameworkContentElement fce = obj as FrameworkContentElement;
             if(fce != null)
                 return fce.Name;
@@ -86,7 +86,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             FrameworkElement feParent = fe.Parent as FrameworkElement;
             FrameworkElement el = feParent ?? fe;
 
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             try {
                 res = LogicalTreeHelper.FindLogicalNode(el, elementName);
             } catch { }
@@ -115,7 +115,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             get { return (string)GetValue(EventNameProperty); }
             set { SetValue(EventNameProperty, value); }
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public RoutedEvent Event {
             get { return (RoutedEvent)GetValue(EventProperty); }
             set { SetValue(EventProperty, value); }
@@ -155,7 +155,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
                 Source = SourceObject;
                 return;
             }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             bool useVisualTreeCore = useVisualTree ?? false;
 #else
             bool useVisualTreeCore = useVisualTree ?? true;
@@ -191,17 +191,17 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         protected virtual void OnEvent(object sender, object eventArgs) { }
         protected virtual void OnSourceChanged(object oldSource, object newSource) {
             RaiseSourceChangedCount++;
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             EventHelper.UnsubscribeFromEvent(oldSource, Event);
 #endif
             EventHelper.UnsubscribeFromEvent(oldSource, EventName);
             EventHelper.SubscribeToEvent(newSource, EventName);
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             EventHelper.SubscribeToEvent(newSource, Event);
 #endif
         }
         protected virtual void OnEventNameChanged(string oldEventName, string newEventName) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             if(newEventName != null)
                 Event = null;
 #endif
@@ -209,7 +209,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             EventHelper.UnsubscribeFromEvent(Source, oldEventName);
             EventHelper.SubscribeToEvent(Source, newEventName);
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         protected virtual void OnEventChanged(RoutedEvent oldRoutedEvent, RoutedEvent newRoutedEvent) {
             if(newRoutedEvent != null)
                 EventName = null;
@@ -220,12 +220,12 @@ namespace DevExpress.Mvvm.UI.Interactivity {
 #endif
         protected override void OnAttached() {
             base.OnAttached();
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             EventHelper.UnsubscribeFromEvent(Source, Event);
 #endif
             EventHelper.UnsubscribeFromEvent(Source, EventName);
             EventHelper.SubscribeToEvent(Source, EventName);
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             EventHelper.SubscribeToEvent(Source, Event);
 #endif
             ResolveSource(false);
@@ -243,7 +243,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         protected override void OnDetaching() {
             UnsubscribeAssociatedObject();
             EventHelper.UnsubscribeFromEvent(Source, EventName);
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             EventHelper.UnsubscribeFromEvent(Source, Event);
 #endif
             Source = null;
@@ -253,7 +253,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             UnsubscribeAssociatedObject();
             FrameworkElement fe = AssociatedObject as FrameworkElement;
             if(fe != null) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
                 fe.Initialized += OnAssociatedObjectUpdated;
 #endif
                 fe.LayoutUpdated += AssociatedObjectLayoutUpdated;
@@ -261,7 +261,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
                 fe.Loaded += AssociatedObjectLoaded;
                 return;
             }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             FrameworkContentElement fce = AssociatedObject as FrameworkContentElement;
             if(fce != null) {
                 fce.Initialized += OnAssociatedObjectUpdated;
@@ -286,14 +286,14 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         void UnsubscribeAssociatedObject() {
             FrameworkElement fe = AssociatedObject as FrameworkElement;
             if(fe != null) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
                 fe.Initialized -= OnAssociatedObjectUpdated;
 #endif
                 fe.LayoutUpdated -= AssociatedObjectLayoutUpdated;
                 fe.SizeChanged -= AssociatedObjectSizeChanged;
                 fe.Loaded -= AssociatedObjectLoaded;
             }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             FrameworkContentElement fce = AssociatedObject as FrameworkContentElement;
             if(fce != null) {
                 fce.Initialized -= OnAssociatedObjectUpdated;

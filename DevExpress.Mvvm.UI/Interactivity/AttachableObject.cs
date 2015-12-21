@@ -6,8 +6,8 @@ using System.Windows;
 using System.Windows.Media.Animation;
 #else
 using System;
+using System.Reflection;
 using Windows.UI.Xaml;
-using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity.Internal;
 #endif
 
@@ -18,9 +18,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         void Detach();
     }
 
-#if SILVERLIGHT
-    public abstract class AttachableObjectBase : DependencyObject, IAttachableObject, INotifyPropertyChanged {
-#elif NETFX_CORE
+#if NETFX_CORE
     public abstract class AttachableObjectBase : FrameworkElement, IAttachableObject, INotifyPropertyChanged {
 #else
     public abstract class AttachableObjectBase : Animatable, IAttachableObject, INotifyPropertyChanged {
@@ -92,7 +90,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             AssociatedObject = null;
             IsAttached = false;
         }
- #if !SILVERLIGHT && !NETFX_CORE
+ #if !NETFX_CORE
         protected override bool FreezeCore(bool isChecking) {
             return false;
         }
@@ -125,22 +123,22 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         }
 
         protected void VerifyRead() {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             ReadPreamble();
 #endif
         }
         protected void VerifyWrite() {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             WritePreamble();
 #endif
         }
         protected void NotifyChanged() {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             WritePostscript();
 #endif
         }
 
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         protected override Freezable CreateInstanceCore() {
             return (Freezable)Activator.CreateInstance(GetType());
         }

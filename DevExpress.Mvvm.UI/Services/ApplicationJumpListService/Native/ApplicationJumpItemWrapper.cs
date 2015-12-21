@@ -42,7 +42,7 @@ namespace DevExpress.Mvvm.UI.Native {
     }
     public class ApplicationJumpPathWrap : JumpPath {
         public ApplicationJumpPathWrap(ApplicationJumpPathInfo applicationJumpPath) {
-            Guard.ArgumentNotNull(applicationJumpPath, "applicationJumpPath");
+            GuardHelper.ArgumentNotNull(applicationJumpPath, "applicationJumpPath");
             ApplicationJumpPath = applicationJumpPath;
         }
         public ApplicationJumpPathInfo ApplicationJumpPath { get; private set; }
@@ -67,7 +67,7 @@ namespace DevExpress.Mvvm.UI.Native {
     }
     public class ApplicationJumpTaskWrap : JumpTask, IJumpAction {
         public ApplicationJumpTaskWrap(ApplicationJumpTaskInfo applicationJumpTask) {
-            Guard.ArgumentNotNull(applicationJumpTask, "applicationJumpTask");
+            GuardHelper.ArgumentNotNull(applicationJumpTask, "applicationJumpTask");
             ApplicationJumpTask = applicationJumpTask;
         }
         public ApplicationJumpTaskInfo ApplicationJumpTask { get; private set; }

@@ -58,7 +58,7 @@ namespace DevExpress.Mvvm.UI {
 #if !NETFX_CORE
                     types = asm.GetTypes();
 #else
-                    types = asm.GetExportedTypes();
+                    types = Mvvm.Native.TypeExtensions.GetExportedTypes(asm);
 #endif
                 } catch(ReflectionTypeLoadException e) {
                     types = e.Types;

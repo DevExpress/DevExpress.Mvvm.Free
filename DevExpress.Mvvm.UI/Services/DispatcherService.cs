@@ -24,7 +24,7 @@ namespace DevExpress.Mvvm.UI {
         TimeSpan delay;
 #if NETFX_CORE
         public CoreDispatcherPriority DispatcherPriority { get; set; }
-#elif !SILVERLIGHT
+#else
         public DispatcherPriority DispatcherPriority { get; set; }
 
         public DispatcherService() {
@@ -37,7 +37,7 @@ namespace DevExpress.Mvvm.UI {
                 BeginInvokeCore(action);
                 return;
             }
-#if SILVERLIGHT || NETFX_CORE
+#if NETFX_CORE
             DispatcherTimer timer = new DispatcherTimer();
 #else
             DispatcherTimer timer = new DispatcherTimer(DispatcherPriority, Dispatcher);
@@ -58,9 +58,7 @@ namespace DevExpress.Mvvm.UI {
         }
 
         void BeginInvokeCore(Action action) {
-#if SILVERLIGHT
-            Dispatcher.BeginInvoke(action);
-#elif !NETFX_CORE
+#if !NETFX_CORE
             Dispatcher.BeginInvoke(action, DispatcherPriority, null);
 #else
             Dispatcher.RunAsync(DispatcherPriority, new DispatchedHandler(action)).AsTask();

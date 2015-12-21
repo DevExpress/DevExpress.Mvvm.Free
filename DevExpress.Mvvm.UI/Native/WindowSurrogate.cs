@@ -4,12 +4,8 @@ using System.Linq;
 using System.Text;
 using System.ComponentModel;
 using DevExpress.Mvvm.Native;
-#if !SILVERLIGHT
 using WindowBase = System.Windows.Window;
 using System.Windows;
-#else
-using WindowBase = DevExpress.Xpf.Core.DXWindowBase;
-#endif
 
 namespace DevExpress.Mvvm.UI.Native {
     public interface IWindowSurrogate {

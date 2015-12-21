@@ -2,6 +2,7 @@ using DevExpress.Mvvm.Native;
 using System.Windows;
 #if !NETFX_CORE
 using System.Windows.Controls;
+using System.Windows.Data;
 #else
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -38,20 +39,25 @@ namespace DevExpress.Mvvm.UI {
         protected object CreateAndInitializeView(string documentType, object viewModel, object parameter, object parentViewModel, IDocumentOwner documentOwner = null) {
             return ViewHelper.CreateAndInitializeView(ViewLocator, documentType, viewModel, parameter, parentViewModel, documentOwner, ViewTemplate, ViewTemplateSelector);
         }
-#if !SILVERLIGHT
         protected Style GetDocumentContainerStyle(DependencyObject documentContainer, object view, Style style, StyleSelector styleSelector) {
             return style ?? styleSelector.With(s => s.SelectStyle(ViewHelper.GetViewModelFromView(view), documentContainer));
         }
-#endif
         protected void UpdateThemeName(DependencyObject target) {
-#if !FREE && !SILVERLIGHT && !NETFX_CORE
-            string themeName = null;
-            if(AssociatedObject != null && DevExpress.Xpf.Core.ThemeManager.GetTreeWalker(target) == null) {
-                themeName = DevExpress.Xpf.Editors.Helpers.ThemeHelper.GetWindowThemeName(AssociatedObject);
-                if(!string.IsNullOrEmpty(themeName))
-                    DevExpress.Xpf.Core.ThemeManager.SetThemeName(target, themeName);
-            }
+#if !FREE && !NETFX_CORE
+            if(DevExpress.Xpf.Core.ThemeManager.GetTreeWalker(target) != null) return;
+            var themeTreeWalker = AssociatedObject.With(DevExpress.Xpf.Core.ThemeManager.GetTreeWalker);
+            if(themeTreeWalker == null) return;
+            string themeName = DevExpress.Xpf.Editors.Helpers.ThemeHelper.GetWindowThemeName(AssociatedObject);
+            if(DevExpress.Xpf.Core.ThemeManager.ApplicationThemeName != themeName)
+                DevExpress.Xpf.Core.ThemeManager.SetThemeName(target, themeName);
 #endif
         }
+#if !NETFX_CORE
+        protected void InitializeDocumentContainer(FrameworkElement documentContainer, DependencyProperty documentContainerViewProperty, Style documentContainerStyle) {
+            ViewHelper.SetBindingToViewModel(documentContainer, FrameworkElement.DataContextProperty, new PropertyPath(documentContainerViewProperty));
+            if(documentContainerStyle != null)
+                documentContainer.Style = documentContainerStyle;
+        }
+#endif
     }
 }

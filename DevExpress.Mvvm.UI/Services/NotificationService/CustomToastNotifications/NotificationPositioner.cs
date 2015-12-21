@@ -10,10 +10,11 @@ namespace DevExpress.Mvvm.UI.Native {
         }
 
         internal NotificationPosition position;
+        internal int maxCount;
+
         Rect screen;
         const double verticalMargin = 10;
         const double verticalScreenMargin = 20;
-        int maxCount;
         readonly List<ItemInfo> items = new List<ItemInfo>();
         public List<T> Items { get { return items.Select(i => i == null ? null : i.value).ToList(); } }
         double itemWidth;

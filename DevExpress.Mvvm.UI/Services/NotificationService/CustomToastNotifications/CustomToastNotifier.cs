@@ -52,7 +52,7 @@ namespace DevExpress.Mvvm.UI.Native {
     }
 
     public interface IScreen {
-        Rect GetWorkingArea();
+        Rect GetWorkingArea(System.Windows.Point point);
         event Action WorkingAreaChanged;
     }
 
@@ -85,18 +85,16 @@ namespace DevExpress.Mvvm.UI.Native {
         public Rect GetWorkingArea(System.Windows.Point point) {
             double xScale = GetDpiScaleProperty("DpiScaleX");
             double yScale = GetDpiScaleProperty("DpiScaleY");
-            var area = Screen.GetWorkingArea(new System.Drawing.Point((int)point.X, (int)point.Y));
+            var area = Screen.GetWorkingArea(new System.Drawing.Point((int)point.X + 1, (int)point.Y + 1));
             return new Rect(area.X / xScale, area.Y / yScale, area.Width / xScale, area.Height / yScale);
         }
 
-        public Rect GetWorkingArea() {
-            return GetWorkingArea(new System.Windows.Point());
-        }
         public event Action WorkingAreaChanged;
     }
 
     public class CustomNotifier {
-        internal class ToastInfo {
+        internal
+        class ToastInfo {
             public Window win;
             public CustomNotification toast;
             public Timer timer;
@@ -107,6 +105,7 @@ namespace DevExpress.Mvvm.UI.Native {
         const int maxVisibleToasts = 3;
         internal static NotificationPositioner<ToastInfo> positioner;
         IScreen screen;
+        System.Windows.Point currentScreenPosition = new System.Windows.Point();
 
         public Style Style { get; set; }
 
@@ -116,10 +115,20 @@ namespace DevExpress.Mvvm.UI.Native {
             UpdatePositioner(NotificationPosition.TopRight, maxVisibleToasts);
         }
 
+        List<ToastInfo> VisibleItems {
+            get { return positioner.Items.Where(i => i != null).ToList(); }
+        }
+
+        public void ChangeScreen(System.Windows.Point position) {
+            if(VisibleItems.Any() || currentScreenPosition == position)
+                return;
+            currentScreenPosition = position;
+            UpdatePositioner(positioner.position, positioner.maxCount);
+        }
+
         void screen_WorkingAreaChanged() {
-            positioner.Update(screen.GetWorkingArea());
-            List<ToastInfo> visible = positioner.Items.Where(i => i != null).ToList();
-            foreach (ToastInfo info in visible) {
+            positioner.Update(screen.GetWorkingArea(currentScreenPosition));
+            foreach (ToastInfo info in VisibleItems) {
                 info.timer.Stop();
                 info.timer.Start();
                 var newPos = positioner.GetItemPosition(info);
@@ -132,7 +141,7 @@ namespace DevExpress.Mvvm.UI.Native {
             if(positioner == null) {
                 positioner = new NotificationPositioner<ToastInfo>();
             }
-            positioner.Update(screen.GetWorkingArea(), position, maxCount);
+            positioner.Update(screen.GetWorkingArea(currentScreenPosition), position, maxCount);
         }
 
         public Task<NotificationResult> ShowAsync(CustomNotification toast, int msDuration = 3000) {

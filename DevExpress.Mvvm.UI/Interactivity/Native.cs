@@ -69,7 +69,7 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
             eventInfo.AddEventHandler(obj, this.subscribedEventHandler);
 #endif
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public void SubscribeToEvent(object obj, RoutedEvent routedEvent) {
             UIElement eventSource = obj as UIElement;
             if(eventSource == null || routedEvent == null) return;
@@ -83,6 +83,7 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
             if(this.subscribedEventHandler == null) return;
             Type type = obj.GetType();
             EventInfo info = type.GetEvent(eventName);
+
 #if NETFX_CORE
             if (this.handlerRegistrationToken is Delegate)
                 info.RemoveEventHandlerEx(obj, handlerRegistrationToken as Delegate);
@@ -96,7 +97,7 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
             this.handlerRegistrationToken = null;
 #endif
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public void UnsubscribeFromEvent(object obj, RoutedEvent routedEvent) {
             UIElement eventSource = obj as UIElement;
             if(eventSource == null || routedEvent == null) return;
@@ -108,6 +109,9 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
         Delegate GetEventHandlerToSubscrive(Type eventHandlerType) {
             if(!IsEventCorrect(eventHandlerType)) return null;
             ParameterInfo[] parameters = GetParameters(eventHandlerType);
+#if NETFX_CORE
+            DevExpress.Mvvm.Native.DotNetNativeAssistant.AddTypeElement(typeof(EventTriggerGenericHandler<,>), new Type[] { parameters[0].ParameterType, parameters[1].ParameterType }, activate: DotNetNativePolicy.Public, dynamic: DotNetNativePolicy.RequiredPublic);
+#endif
             Type handlerType = typeof(EventTriggerGenericHandler<,>).MakeGenericType(parameters[0].ParameterType, parameters[1].ParameterType);
             object instance = Activator.CreateInstance(handlerType, new object[] { EventHandler });
 #if !NETFX_CORE
@@ -119,6 +123,7 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
         }
         bool IsEventCorrect(Type eventHandlerType) {
             if(!typeof(Delegate).IsAssignableFrom(eventHandlerType)) return false;
+
             ParameterInfo[] parameters = GetParameters(eventHandlerType);
             if(parameters.Length != 2) return false;
             if(!typeof(object).IsAssignableFrom(parameters[0].ParameterType)) return false;

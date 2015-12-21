@@ -12,32 +12,20 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 
-#if !SILVERLIGHT
 using WindowBase = System.Windows.Window;
 using System.Windows.Input;
-#else
-using WindowBase = DevExpress.Xpf.Core.DXWindowBase;
-using System.Reflection;
-#endif
+
 namespace DevExpress.Mvvm.UI {
     public enum WindowShowMode { Dialog, Default }
     public class WindowService : ViewServiceBase, IWindowService, IDocumentOwner {
-#if !SILVERLIGHT
         static Type DefaultWindowType = typeof(Window);
-#endif
-#if !SILVERLIGHT
         const string WindowTypeException = "WindowType show be derived from the Window type";
-#else
-        const string WindowTypeException = "WindowType show be derived from the DXWindowBase type";
-#endif
 
-#if !SILVERLIGHT
         public static readonly DependencyProperty WindowStartupLocationProperty =
             DependencyProperty.Register("WindowStartupLocation", typeof(WindowStartupLocation), typeof(WindowService),
             new PropertyMetadata(WindowStartupLocation.CenterScreen));
         public static readonly DependencyProperty AllowSetWindowOwnerProperty =
             DependencyProperty.Register("AllowSetWindowOwner", typeof(bool), typeof(WindowService), new PropertyMetadata(true));
-#endif
         public static readonly DependencyProperty WindowStyleProperty =
             DependencyProperty.Register("WindowStyle", typeof(Style), typeof(WindowService), new PropertyMetadata(null));
         public static readonly DependencyProperty WindowTypeProperty =
@@ -50,7 +38,6 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("WindowShowMode", typeof(WindowShowMode), typeof(WindowService),
             new PropertyMetadata(WindowShowMode.Default));
 
-#if !SILVERLIGHT
         public WindowStartupLocation WindowStartupLocation {
             get { return (WindowStartupLocation)GetValue(WindowStartupLocationProperty); }
             set { SetValue(WindowStartupLocationProperty, value); }
@@ -59,7 +46,6 @@ namespace DevExpress.Mvvm.UI {
             get { return (bool)GetValue(AllowSetWindowOwnerProperty); }
             set { SetValue(AllowSetWindowOwnerProperty, value); }
         }
-#endif
         public Type WindowType {
             get { return (Type)GetValue(WindowTypeProperty); }
             set { SetValue(WindowTypeProperty, value); }
@@ -80,12 +66,10 @@ namespace DevExpress.Mvvm.UI {
             IWindowSurrogate window = WindowProxy.GetWindowSurrogate(Activator.CreateInstance(WindowType ?? DefaultWindowType));
             UpdateThemeName(window.RealWindow);
             window.RealWindow.Content = view;
-            window.RealWindow.Style = WindowStyle;
-#if !SILVERLIGHT
+            InitializeDocumentContainer(window.RealWindow, Window.ContentProperty, WindowStyle);
             window.RealWindow.WindowStartupLocation = this.WindowStartupLocation;
             if(AllowSetWindowOwner && AssociatedObject != null)
                 window.RealWindow.Owner = Window.GetWindow(AssociatedObject);
-#endif
             return window;
         }
         void OnWindowTypeChanged() {
@@ -142,21 +126,12 @@ namespace DevExpress.Mvvm.UI {
         }
         void IWindowService.Restore() {
             if(window != null) {
-#if !SILVERLIGHT
                 window.Show();
-#else
-                window.RealWindow.Visibility = Visibility.Visible;
-
-#endif
             }
         }
         void IWindowService.Hide() {
             if(window != null) {
-#if !SILVERLIGHT
                 window.Hide();
-#else
-                window.RealWindow.Visibility = Visibility.Collapsed;
-#endif
             }
         }
         void IWindowService.Close() {
@@ -169,11 +144,9 @@ namespace DevExpress.Mvvm.UI {
                 window.Closing -= OnWindowClosing;
             window.Close();
         }
-#if !SILVERLIGHT
         void IWindowService.SetWindowState(WindowState state) {
             if(window != null)
                 window.RealWindow.WindowState = state;
         }
-#endif
     }
 }

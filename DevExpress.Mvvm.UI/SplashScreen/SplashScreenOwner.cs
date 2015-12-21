@@ -6,6 +6,9 @@ using System.Windows;
 using System.Windows.Threading;
 using DevExpress.Mvvm.Native;
 using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Input;
+using System.Threading;
 
 using DevExpress.Mvvm.UI.Native;
 
@@ -13,7 +16,8 @@ namespace DevExpress.Mvvm.UI {
 
     public enum SplashScreenLocation {
         CenterContainer,
-        CenterWindow
+        CenterWindow,
+        CenterScreen
     }
     public enum SplashScreenLock {
         None,
@@ -50,6 +54,8 @@ namespace DevExpress.Mvvm.UI {
             WindowContainer result = null;
             if(splashScreenStartupLocation == WindowStartupLocation.CenterOwner)
                 result = new WindowArrangerContainer(Owner, SplashScreenLocation.CenterWindow) { ArrangeMode = SplashScreenArrangeMode.ArrangeOnStartupOnly };
+            if(splashScreenStartupLocation == WindowStartupLocation.CenterScreen)
+                result = new WindowArrangerContainer(Owner, SplashScreenLocation.CenterScreen) { ArrangeMode = SplashScreenArrangeMode.ArrangeOnStartupOnly };
             if(result == null || !result.IsInitialized)
                 result = new WindowContainer(Owner);
 
@@ -57,11 +63,15 @@ namespace DevExpress.Mvvm.UI {
         }
     }
 
-    internal class WindowLocker {
+    internal class ContainerLocker {
+        static object locker = new object();
+        static Dictionary<IntPtr, ContainerLockInfo> lockedWindowsDict = new Dictionary<IntPtr, ContainerLockInfo>();
+        static Dictionary<DependencyObject, ContainerLockInfo> lockedContainerDict = new Dictionary<DependencyObject, ContainerLockInfo>();
+        static Dictionary<WindowContainer, ContainerLockInfo> infosFromContainer = new Dictionary<WindowContainer, ContainerLockInfo>();
         readonly SplashScreenLock lockMode;
         WindowContainer Container { get; set; }
 
-        public WindowLocker(WindowContainer container, SplashScreenLock lockMode) {
+        public ContainerLocker(WindowContainer container, SplashScreenLock lockMode) {
             Container = container;
             this.lockMode = lockMode;
             if(!Container.IsInitialized)
@@ -77,14 +87,16 @@ namespace DevExpress.Mvvm.UI {
             Container.Initialized -= OnOwnerInitialized;
             var container = Container;
             Container = null;
-            if(container.Window == null || lockMode == SplashScreenLock.None)
+            if(lockMode == SplashScreenLock.None)
                 return;
 
-            SplashScreenHelper.InvokeAsync(container.Window, () => {
-                if(activateWindowIfNeeded && !SplashScreenHelper.ApplicationHasActiveWindow())
+            SplashScreenHelper.InvokeAsync(container, () => {
+                bool activateWindow = activateWindowIfNeeded && !SplashScreenHelper.ApplicationHasActiveWindow();
+                UnlockContainer(container);
+                if(activateWindow)
                     container.ActivateWindow();
-
-                SplashScreenHelper.UnlockWindow(container);
+                else if(Keyboard.FocusedElement == null)
+                    SplashScreenHelper.GetApplicationActiveWindow(false).Do(x => x.Focus());
             }, DispatcherPriority.Render);
         }
 
@@ -94,37 +106,192 @@ namespace DevExpress.Mvvm.UI {
         }
         void Initialize() {
             if(Container != null)
-                SplashScreenHelper.InvokeAsync(Container.Window, () => SplashScreenHelper.LockWindow(Container, lockMode), DispatcherPriority.Send, AsyncInvokeMode.AllowSyncInvoke);
+                SplashScreenHelper.InvokeAsync(Container, () => LockContainer(Container, lockMode), DispatcherPriority.Send, AsyncInvokeMode.AllowSyncInvoke);
         }
 
-    }
-    internal class WindowArranger : WindowRelationInfo {
-        new public WindowArrangerContainer Parent { get { return base.Parent as WindowArrangerContainer; } }
-        FrameworkElement ParentContainer { get { return Parent.WindowObject as FrameworkElement; } }
-        SplashScreenLocation childLocation;
-        Rect lastChildPos = Rect.Empty;
-        Rect lastParentPos = Rect.Empty;
-        Rect nextParentPos = Rect.Empty;
-        bool isParentClosed;
-        SplashScreenArrangeMode arrangeMode;
-        bool SkipArrange { get { return IsReleased || arrangeMode == SplashScreenArrangeMode.Skip; } }
-        bool IsArrangeValid { get { return nextParentPos == lastParentPos && lastChildPos.Width == Child.Window.ActualWidth && lastChildPos.Height == Child.Window.ActualHeight; } }
+        #region Lock logic
+        static void LockContainer(WindowContainer container, SplashScreenLock lockMode) {
+            if(container == null || container.Handle == IntPtr.Zero)
+                return;
 
-        protected internal WindowArranger(WindowArrangerContainer parent, SplashScreenLocation childLocation, SplashScreenArrangeMode arrangeMode)
-            : base(parent) {
-            this.childLocation = childLocation;
-            this.arrangeMode = arrangeMode;
-        }
+            lockMode = GetActualLockMode(container, lockMode);
+            if(lockMode == SplashScreenLock.None)
+                return;
 
-        protected override void ChildAttachedOverride() {
-            Child.Window.WindowStartupLocation = WindowStartupLocation.Manual;
-        }
-        protected override void CompleteInitializationOverride() {
-            if(Child.Window.Dispatcher.CheckAccess()) {
-                nextParentPos = childLocation == SplashScreenLocation.CenterContainer ? Parent.ControlStartupPosition : Parent.WindowStartupPosition;
-                UpdateChildPosition();
+            lock (locker) {
+                ContainerLockInfo lockInfo;
+                if(lockMode == SplashScreenLock.LoadingContent) {
+                    if(!lockedContainerDict.TryGetValue(container.WindowObject, out lockInfo))
+                        lockedContainerDict.Add(container.WindowObject, (lockInfo = new ContainerLockInfo(0, lockMode, (container.WindowObject as FrameworkElement).Return(x => x.IsHitTestVisible, () => true))));
+                } else if(!lockedWindowsDict.TryGetValue(container.Handle, out lockInfo))
+                    lockedWindowsDict.Add(container.Handle, (lockInfo = new ContainerLockInfo(0, lockMode, container.Window.Return(x => x.IsHitTestVisible, () => true))));
+
+                ++lockInfo.LockCounter;
+                infosFromContainer.Add(container, lockInfo);
+                if(lockInfo.LockCounter == 1)
+                    DisableWindow(container, lockMode);
             }
-            SplashScreenHelper.InvokeAsync(Parent.Window, () => UpdateNextParentRectAndChildPosition(true), DispatcherPriority.Normal, AsyncInvokeMode.AllowSyncInvoke);
+        }
+        static void UnlockContainer(WindowContainer container) {
+            if(container == null || container.Handle == IntPtr.Zero)
+                return;
+
+            lock (locker) {
+                ContainerLockInfo lockInfo;
+                if(!infosFromContainer.TryGetValue(container, out lockInfo))
+                    return;
+
+                infosFromContainer.Remove(container);
+                if(--lockInfo.LockCounter == 0) {
+                    if(lockInfo.LockMode == SplashScreenLock.LoadingContent)
+                        lockedContainerDict.Remove(container.WindowObject);
+                    else
+                        lockedWindowsDict.Remove(container.Handle);
+                    EnableWindow(container, lockInfo);
+                }
+            }
+        }
+        static void DisableWindow(WindowContainer container, SplashScreenLock lockMode) {
+            switch(lockMode) {
+                case SplashScreenLock.InputOnly:
+                    container.Window.IsHitTestVisible = false;
+                    container.Window.PreviewKeyDown += OnWindowKeyDown;
+                    break;
+                case SplashScreenLock.Full:
+                    SplashScreenHelper.SetWindowEnabled(container.Handle, false);
+                    break;
+                case SplashScreenLock.LoadingContent:
+                    FrameworkElement content = container.WindowObject as FrameworkElement;
+                    if(content != null) {
+                        content.PreviewKeyDown += OnWindowKeyDown;
+                        content.IsHitTestVisible = false;
+                    }
+                    break;
+            }
+        }
+        static void EnableWindow(WindowContainer container, ContainerLockInfo lockInfo) {
+            switch(lockInfo.LockMode) {
+                case SplashScreenLock.InputOnly:
+                    container.Window.IsHitTestVisible = lockInfo.IsHitTestVisible;
+                    container.Window.PreviewKeyDown -= OnWindowKeyDown;
+                    break;
+                case SplashScreenLock.Full:
+                    SplashScreenHelper.SetWindowEnabled(container.Handle, true);
+                    break;
+                case SplashScreenLock.LoadingContent:
+                    FrameworkElement content = container.WindowObject as FrameworkElement;
+                    if(content != null) {
+                        content.PreviewKeyDown -= OnWindowKeyDown;
+                        content.IsHitTestVisible = lockInfo.IsHitTestVisible;
+                    }
+                    break;
+            }
+        }
+        static SplashScreenLock GetActualLockMode(WindowContainer container, SplashScreenLock lockMode) {
+            SplashScreenLock result = SplashScreenLock.None;
+            if(lockMode == SplashScreenLock.Full || (lockMode == SplashScreenLock.InputOnly && container.Form != null))
+                result = SplashScreenLock.Full;
+            else if(lockMode == SplashScreenLock.LoadingContent && container.WindowObject == container.Window)
+                result = SplashScreenLock.InputOnly;
+            else if((lockMode == SplashScreenLock.InputOnly && container.Window != null) || lockMode == SplashScreenLock.LoadingContent)
+                result = lockMode;
+
+            return result;
+        }
+        static void OnWindowKeyDown(object sender, System.Windows.Input.KeyEventArgs e) {
+            e.Handled = true;
+        }
+        class ContainerLockInfo {
+            public int LockCounter { get; set; }
+            public SplashScreenLock LockMode { get; private set; }
+            public bool IsHitTestVisible { get; private set; }
+
+            public ContainerLockInfo(int lockCounter, SplashScreenLock lockMode, bool isHitTestVisible) {
+                LockCounter = lockCounter;
+                LockMode = lockMode;
+                IsHitTestVisible = isHitTestVisible;
+            }
+        }
+        #endregion
+    }
+
+    internal class CompositionTargetBasedArranger : WindowArrangerBase {
+        protected internal CompositionTargetBasedArranger(WindowArrangerContainer parent, SplashScreenLocation childLocation, SplashScreenArrangeMode arrangeMode)
+            : base(parent, childLocation, arrangeMode) { }
+
+        protected override void SubscribeChildEventsOverride() {
+            CompositionTarget.Rendering += OnChildRendering;
+        }
+        protected override void SubscribeParentEventsOverride() {
+            if(childLocation != SplashScreenLocation.CenterScreen)
+                RenderingSubscriber.GetInstance(Parent.ManagedThreadId).Rendering += OnParentRendering;
+        }
+        protected override void UnsubscribeParentEventsOverride() {
+            if(childLocation != SplashScreenLocation.CenterScreen)
+                RenderingSubscriber.GetInstance(Parent.ManagedThreadId).Rendering -= OnParentRendering;
+        }
+        void OnChildRendering(object sender, EventArgs e) {
+            if(IsReleased) {
+                CompositionTarget.Rendering -= OnChildRendering;
+                return;
+            }
+
+            if(((Dispatcher)sender).Thread.ManagedThreadId == Child.ManagedThreadId)
+                UpdateChildLocation();
+        }
+        void OnParentRendering(object sender, EventArgs e) {
+            if(IsReleased)
+                return;
+
+            if(((Dispatcher)sender).Thread.ManagedThreadId == Parent.ManagedThreadId)
+                UpdateParentLocation();
+        }
+        class RenderingSubscriber {
+            static Dictionary<int, RenderingSubscriber> instances = new Dictionary<int, RenderingSubscriber>();
+
+            public static RenderingSubscriber GetInstance(int threadId) {
+                RenderingSubscriber result;
+                if(!instances.TryGetValue(threadId, out result)) {
+                    result = new RenderingSubscriber();
+                    instances.Add(threadId, result);
+                }
+
+                return result;
+            }
+
+            RenderingSubscriber() { }
+
+            void OnRendering(object sender, EventArgs e) {
+                if(_rendering != null)
+                    _rendering(sender, e);
+                else
+                    CompositionTarget.Rendering -= OnRendering;
+            }
+
+            event EventHandler _rendering;
+            public event EventHandler Rendering {
+                add {
+                    var needSubscribe = _rendering == null;
+                    _rendering += value;
+                    if(needSubscribe)
+                        CompositionTarget.Rendering += OnRendering;
+                }
+                remove {
+                    _rendering -= value;
+                }
+            }
+        }
+    }
+    internal class WindowArranger : WindowArrangerBase {
+        protected internal WindowArranger(WindowArrangerContainer parent, SplashScreenLocation childLocation, SplashScreenArrangeMode arrangeMode)
+            : base(parent, childLocation, arrangeMode) { }
+
+        protected override void CompleteInitializationOverride() {
+            base.CompleteInitializationOverride();
+            if(Child.Window.Dispatcher.CheckAccess())
+                UpdateChildLocation();
+
+            SplashScreenHelper.InvokeAsync(Parent, () => UpdateNextParentRectAndChildPosition(true), DispatcherPriority.Normal, AsyncInvokeMode.AllowSyncInvoke);
         }
         protected override void SubscribeChildEventsOverride() {
             Child.Window.SizeChanged += ChildSizeChanged;
@@ -135,19 +302,30 @@ namespace DevExpress.Mvvm.UI {
             Child.Window.ContentRendered -= ChildSizeChanged;
         }
         protected override void SubscribeParentEventsOverride() {
+            if(childLocation == SplashScreenLocation.CenterScreen)
+                return;
             if(Parent.Window != null) {
                 Parent.Window.LocationChanged += OnParentSizeOrPositionChanged;
                 Parent.Window.SizeChanged += OnParentSizeOrPositionChanged;
+            } else if(Parent.Form != null) {
+                Parent.Form.LocationChanged += OnParentSizeOrPositionChanged;
+                Parent.Form.SizeChanged += OnParentSizeOrPositionChanged;
             }
             if(childLocation == SplashScreenLocation.CenterContainer && ParentContainer != null && Parent.Window != ParentContainer) {
                 ParentContainer.SizeChanged += OnParentSizeOrPositionChanged;
                 ParentContainer.LayoutUpdated += OnParentSizeOrPositionChanged;
             }
         }
+
         protected override void UnsubscribeParentEventsOverride() {
+            if(childLocation == SplashScreenLocation.CenterScreen)
+                return;
             if(Parent.Window != null) {
                 Parent.Window.LocationChanged -= OnParentSizeOrPositionChanged;
                 Parent.Window.SizeChanged -= OnParentSizeOrPositionChanged;
+            } else if(Parent.Form != null) {
+                Parent.Form.LocationChanged -= OnParentSizeOrPositionChanged;
+                Parent.Form.SizeChanged -= OnParentSizeOrPositionChanged;
             }
             if(childLocation == SplashScreenLocation.CenterContainer && ParentContainer != null && Parent.Window != ParentContainer) {
                 try {
@@ -155,10 +333,6 @@ namespace DevExpress.Mvvm.UI {
                     ParentContainer.LayoutUpdated -= OnParentSizeOrPositionChanged;
                 } catch { }
             }
-        }
-        protected override void OnParentClosed(object sender, EventArgs e) {
-            isParentClosed = true;
-            base.OnParentClosed(sender, e);
         }
 
         void OnParentSizeOrPositionChanged(object sender, EventArgs e) {
@@ -178,21 +352,69 @@ namespace DevExpress.Mvvm.UI {
             if(lastParentPos.IsEmpty)
                 SplashScreenHelper.InvokeAsync(Parent, () => UpdateNextParentRectAndChildPosition(true), DispatcherPriority.Normal, AsyncInvokeMode.AllowSyncInvoke);
             else
-                UpdateChildPosition();
+                UpdateChildLocation();
         }
         void UpdateNextParentRectAndChildPosition(bool skipSizeCheck) {
             if(SkipArrange || !Parent.IsInitialized)
                 return;
 
-            nextParentPos = isParentClosed
-                ? Rect.Empty
-                : childLocation == SplashScreenLocation.CenterContainer ? Parent.GetControlRect() : Parent.GetWindowRect();
+            UpdateParentLocation();
             if(!skipSizeCheck && lastParentPos == nextParentPos || nextParentPos.IsEmpty)
                 return;
 
-            SplashScreenHelper.InvokeAsync(Child, () => UpdateChildPosition(), DispatcherPriority.Normal, AsyncInvokeMode.AllowSyncInvoke);
+            SplashScreenHelper.InvokeAsync(Child, () => UpdateChildLocation(), DispatcherPriority.Normal, AsyncInvokeMode.AllowSyncInvoke);
         }
-        void UpdateChildPosition() {
+    }
+    internal abstract class WindowArrangerBase : WindowRelationInfo {
+        protected FrameworkElement ParentContainer { get { return Parent.WindowObject as FrameworkElement; } }
+        protected Rect lastChildPos = Rect.Empty;
+        protected Rect lastParentPos = Rect.Empty;
+        protected Rect nextParentPos = Rect.Empty;
+        protected SplashScreenLocation childLocation;
+        protected bool SkipArrange { get { return IsReleased || arrangeMode == SplashScreenArrangeMode.Skip; } }
+        protected bool IsArrangeValid { get { return nextParentPos == lastParentPos && lastChildPos.Width == Child.Window.ActualWidth && lastChildPos.Height == Child.Window.ActualHeight; } }
+        SplashScreenArrangeMode arrangeMode;
+
+        protected internal WindowArrangerBase(WindowArrangerContainer parent, SplashScreenLocation childLocation, SplashScreenArrangeMode arrangeMode) {
+            this.childLocation = childLocation;
+            this.arrangeMode = arrangeMode;
+            AttachParent(parent);
+        }
+
+        protected override void ChildAttachedOverride() {
+            Child.Window.WindowStartupLocation = WindowStartupLocation.Manual;
+        }
+        protected override void CompleteInitializationOverride() {
+            if(Child.Window.Dispatcher.CheckAccess()) {
+                switch(childLocation) {
+                    case SplashScreenLocation.CenterContainer:
+                        nextParentPos = ((WindowArrangerContainer)Parent).ControlStartupPosition;
+                        break;
+                    case SplashScreenLocation.CenterWindow:
+                        nextParentPos = ((WindowArrangerContainer)Parent).WindowStartupPosition;
+                        break;
+                    case SplashScreenLocation.CenterScreen:
+                        var screen = System.Windows.Forms.Screen.FromHandle(Parent.Handle);
+                        nextParentPos = new Rect(new Point(screen.WorkingArea.X, screen.WorkingArea.Y), new Size(screen.WorkingArea.Width, screen.WorkingArea.Height));
+                        break;
+                }
+            }
+        }
+        protected void UpdateParentLocation() {
+            switch(childLocation) {
+                case SplashScreenLocation.CenterContainer:
+                    nextParentPos = ActualIsParentClosed ? Rect.Empty : ((WindowArrangerContainer)Parent).GetControlRect();
+                    break;
+                case SplashScreenLocation.CenterWindow:
+                    nextParentPos = ActualIsParentClosed ? Rect.Empty : ((WindowArrangerContainer)Parent).GetWindowRect();
+                    break;
+                case SplashScreenLocation.CenterScreen:
+                    var screen = System.Windows.Forms.Screen.FromHandle(Parent.Handle);
+                    nextParentPos = new Rect(new Point(screen.WorkingArea.X, screen.WorkingArea.Y), new Size(screen.WorkingArea.Width, screen.WorkingArea.Height));
+                    break;
+            }
+        }
+        protected void UpdateChildLocation() {
             if(SkipArrange || Child == null || !Child.IsInitialized || IsArrangeValid)
                 return;
             if(arrangeMode == SplashScreenArrangeMode.ArrangeOnStartupOnly && lastParentPos != Rect.Empty && lastParentPos != nextParentPos) {
@@ -202,14 +424,27 @@ namespace DevExpress.Mvvm.UI {
             Rect bounds = nextParentPos;
             var window = Child.Window;
             if(!IsZero(window.ActualWidth) && !IsZero(window.ActualHeight)) {
-                window.Left = (int)(bounds.X + (bounds.Width - window.ActualWidth) * 0.5);
-                window.Top = (int)(bounds.Y + (bounds.Height - window.ActualHeight) * 0.5);
+                if(childLocation == SplashScreenLocation.CenterScreen)
+                    bounds = GetDpiBasedBounds(bounds, window);
+                var newPosition = new Point(bounds.X + (bounds.Width - window.ActualWidth) * 0.5, bounds.Y + (bounds.Height - window.ActualHeight) * 0.5);
+                window.Left = Math.Round(newPosition.X);
+                window.Top = Math.Round(newPosition.Y);
                 lastChildPos = new Rect(window.Left, window.Top, window.Width, window.Height);
+                lastParentPos = bounds;
             }
-            lastParentPos = bounds;
         }
         static bool IsZero(double value) {
             return value == 0d || double.IsNaN(value);
+        }
+        static Rect GetDpiBasedBounds(Rect bounds, Visual visual) {
+            var presentationSource = PresentationSource.FromVisual(visual);
+            if(presentationSource != null) {
+                return new Rect(bounds.X / presentationSource.CompositionTarget.TransformToDevice.M11,
+                    bounds.Y / presentationSource.CompositionTarget.TransformToDevice.M22,
+                    bounds.Width / presentationSource.CompositionTarget.TransformToDevice.M11,
+                    bounds.Height / presentationSource.CompositionTarget.TransformToDevice.M22);
+            }
+            return bounds;
         }
     }
     internal class WindowRelationInfo {
@@ -217,14 +452,13 @@ namespace DevExpress.Mvvm.UI {
         public WindowContainer Child { get; private set; }
         public bool IsInitialized { get; private set; }
         public bool IsReleased { get; private set; }
+        public bool ActualIsParentClosed { get { return isParentClosed || (Parent != null && Parent.IsWindowClosedBeforeInit); } }
+        bool isParentClosed;
 
         protected internal WindowRelationInfo(WindowContainer parent) {
-            if(parent == null)
-                throw new ArgumentNullException("Parent");
-
-            Parent = parent;
-            CompleteContainerInitialization(Parent);
+            AttachParent(parent);
         }
+        protected WindowRelationInfo() { }
 
         public void AttachChild(Window child) {
             if(Child != null)
@@ -247,6 +481,14 @@ namespace DevExpress.Mvvm.UI {
             Parent = null;
         }
 
+        protected void AttachParent(WindowContainer parent) {
+            if(parent == null)
+                throw new ArgumentNullException("Parent");
+
+            Parent = parent;
+            CompleteContainerInitialization(Parent);
+        }
+
         protected virtual void SubscribeParentEventsOverride() { }
         protected virtual void SubscribeChildEventsOverride() { }
         protected virtual void UnsubscribeParentEventsOverride() { }
@@ -254,6 +496,7 @@ namespace DevExpress.Mvvm.UI {
         protected virtual void CompleteInitializationOverride() { }
         protected virtual void ChildAttachedOverride() { }
         protected virtual void OnParentClosed(object sender, EventArgs e) {
+            isParentClosed = true;
             ParentClosed.Do(x => x(this, EventArgs.Empty));
         }
 
@@ -313,14 +556,16 @@ namespace DevExpress.Mvvm.UI {
             if(Parent == null)
                 return;
 
-            Parent.Window.Closed += OnParentClosed;
+            Parent.Window.Do(x => x.Closed += OnParentClosed);
+            Parent.Form.Do(x => x.FormClosed += OnParentClosed);
             SubscribeParentEventsOverride();
         }
         void UnsubscribeParentEvents() {
-            if(Parent == null || Parent.Window == null)
+            if(Parent == null)
                 return;
 
-            Parent.Window.Closed -= OnParentClosed;
+            Parent.Window.Do(x => x.Closed -= OnParentClosed);
+            Parent.Form.Do(x => x.FormClosed -= OnParentClosed);
             UnsubscribeParentEventsOverride();
         }
 
@@ -338,15 +583,27 @@ namespace DevExpress.Mvvm.UI {
         }
 
         public override WindowRelationInfo CreateOwnerContainer() {
-            return new WindowArranger(this, arrangeLocation, ArrangeMode);
+            return DXSplashScreen.UseLegacyLocationLogic
+                ? (WindowRelationInfo)new WindowArranger(this, arrangeLocation, ArrangeMode)
+                : new CompositionTargetBasedArranger(this, arrangeLocation, ArrangeMode);
         }
         public Rect GetWindowRect() {
-            return Window == null || !Window.IsLoaded ? Rect.Empty : LayoutHelper.GetScreenRect(Window);
+            if(Form != null)
+                return new Rect(Form.Left, Form.Top, Form.Width, Form.Height);
+            return Window == null || !Window.IsLoaded ? Rect.Empty : GetRealRect(Window);
         }
         public Rect GetControlRect() {
-            return !(WindowObject as FrameworkElement).Return(x => x.IsLoaded, () => false) || PresentationSource.FromDependencyObject(WindowObject) == null
+            return !FrameworkObject.Return(x => x.IsLoaded, () => false) || PresentationSource.FromDependencyObject(WindowObject) == null
                 ? Rect.Empty
-                : LayoutHelper.GetScreenRect(WindowObject as FrameworkElement);
+                : GetRealRect(FrameworkObject);
+        }
+        static Rect GetRealRect(FrameworkElement element) {
+            var rect = LayoutHelper.GetScreenRect(element);
+            bool subtractWidth = element.FlowDirection == FlowDirection.RightToLeft && !(element is Window);
+            if(subtractWidth)
+                rect.X -= rect.Width;
+
+            return rect;
         }
 
         protected override void CompleteInitializationOverride() {
@@ -357,14 +614,19 @@ namespace DevExpress.Mvvm.UI {
     internal class WindowContainer {
         public DependencyObject WindowObject { get; private set; }
         public Window Window { get; private set; }
+        public System.Windows.Forms.Form Form { get; private set; }
         public IntPtr Handle { get; private set; }
         public bool IsInitialized { get; private set; }
+        public bool IsWindowClosedBeforeInit { get; private set; }
+        public int ManagedThreadId { get; private set; }
+        protected FrameworkElement FrameworkObject { get; private set; }
 
         public WindowContainer(DependencyObject windowObject) {
             if(windowObject == null)
                 throw new ArgumentNullException("WindowObject");
 
             WindowObject = windowObject;
+            FrameworkObject = WindowObject as FrameworkElement;
             Initialize();
         }
 
@@ -381,32 +643,87 @@ namespace DevExpress.Mvvm.UI {
                 Window.Activate();
         }
         void Initialize() {
-            CompleteInitialization();
+            TryInitializeWindow();
+            if(IsInitialized || Window != null)
+                return;
+
+            if(!FrameworkObject.Return(x => x.IsLoaded, () => true))
+                FrameworkObject.Loaded += OnControlLoaded;
+            else
+                TryInitializeWindowForm();
+        }
+
+        void TryInitializeWindowForm() {
             if(IsInitialized)
                 return;
 
-            if(!(WindowObject as FrameworkElement).Return(x => x.IsLoaded, () => true))
-                (WindowObject as FrameworkElement).Loaded += OnControlLoaded;
+            HwndSource source = (WindowObject as Visual).With(x => PresentationSource.FromVisual(x) as HwndSource);
+            if(source == null || source.Handle == IntPtr.Zero)
+                return;
+
+            Form = System.Windows.Forms.Control.FromChildHandle(source.Handle).With(x => x.FindForm());
+            if(Form != null) {
+                Handle = Form.Handle;
+                ManagedThreadId = (int)(Form.Invoke(new Func<int>(() => Thread.CurrentThread.ManagedThreadId)));
+                CompleteInitialization();
+            }
+        }
+
+        void TryInitializeWindow() {
+            if(IsInitialized || IsWindowClosedBeforeInit)
+                return;
+
+            Window = (WindowObject as Window) ?? Window.GetWindow(WindowObject);
+            if(Window == null)
+                return;
+
+            IntPtr handle;
+            if(EnsureWindowHandle(out handle)) {
+                Handle = handle;
+                ManagedThreadId = Window.Dispatcher.Thread.ManagedThreadId;
+                CompleteInitialization();
+            }
+        }
+
+        bool EnsureWindowHandle(out IntPtr handle) {
+            handle = IntPtr.Zero;
+            WindowInteropHelper helper = new WindowInteropHelper(Window);
+            if(helper.Handle == IntPtr.Zero) {
+                try {
+                    helper.EnsureHandle();
+                } catch(InvalidOperationException) {
+                    IsWindowClosedBeforeInit = true;
+                    return false;
+                }
+            }
+
+            handle = helper.Handle;
+            return true;
+        }
+
+        void OnWindowSourceInitialized(object sender, EventArgs e) {
+            (sender as Window).SourceInitialized -= OnWindowSourceInitialized;
+            Initialize();
         }
         void CompleteInitialization() {
-            if(IsInitialized)
-                return;
-
-            Window window = (WindowObject as Window) ?? Window.GetWindow(WindowObject);
-            if(window == null)
-                return;
-
-            WindowInteropHelper helper = new WindowInteropHelper(window);
-            helper.EnsureHandle();
-            Window = window;
-            Handle = helper.Handle;
             CompleteInitializationOverride();
             IsInitialized = true;
             Initialized.Do(x => x(this, EventArgs.Empty));
         }
         void OnControlLoaded(object sender, RoutedEventArgs e) {
-            (sender as FrameworkElement).Loaded -= OnControlLoaded;
+            FrameworkObject.Loaded -= OnControlLoaded;
             Initialize();
+        }
+        static bool IsNormalDPI(Visual visual) {
+            var pSource = PresentationSource.FromVisual(visual);
+            if(pSource != null)
+                return pSource.CompositionTarget.TransformToDevice.M11 == 1;
+            using(var source = new HwndSource(new HwndSourceParameters())) {
+                if(source != null)
+                    return source.CompositionTarget.TransformToDevice.M11 == 1;
+            }
+
+            return true;
         }
 
         public event EventHandler Initialized;
@@ -425,24 +742,14 @@ namespace DevExpress.Mvvm.UI {
         const int GWL_EXSTYLE = (-20);
         const int GWL_HWNDPARENT = -8;
 
-        static object locker = new object();
-        static Dictionary<IntPtr, WindowLockInfo> lockedWindowsDict = new Dictionary<IntPtr, WindowLockInfo>();
-
-        class WindowLockInfo {
-            public int LockCounter { get; set; }
-            public SplashScreenLock LockMode { get; private set; }
-            public bool IsHitTestVisible { get; private set; }
-
-            public WindowLockInfo(int lockCounter, SplashScreenLock lockMode, bool isHitTestVisible) {
-                LockCounter = lockCounter;
-                LockMode = lockMode;
-                IsHitTestVisible = isHitTestVisible;
-            }
-        }
-
         public static void InvokeAsync(WindowContainer container, Action action, DispatcherPriority priority = DispatcherPriority.Normal, AsyncInvokeMode mode = AsyncInvokeMode.AsyncOnly) {
-            if(container != null)
+            if(container == null || !container.IsInitialized)
+                return;
+
+            if(container.Window != null)
                 InvokeAsync(container.Window, action, priority, mode);
+            else
+                InvokeAsync(container.Form, action, mode);
         }
         public static void InvokeAsync(DispatcherObject dispatcherObject, Action action, DispatcherPriority priority = DispatcherPriority.Normal, AsyncInvokeMode mode = AsyncInvokeMode.AsyncOnly) {
             if(dispatcherObject == null || dispatcherObject.Dispatcher == null)
@@ -452,6 +759,16 @@ namespace DevExpress.Mvvm.UI {
                 action.Invoke();
             else
                 dispatcherObject.Dispatcher.BeginInvoke(action, priority);
+
+        }
+        public static void InvokeAsync(System.Windows.Forms.Control dispatcherObject, Action action, AsyncInvokeMode mode = AsyncInvokeMode.AsyncOnly) {
+            if(dispatcherObject == null || dispatcherObject.IsDisposed)
+                return;
+
+            if(mode == AsyncInvokeMode.AllowSyncInvoke && !dispatcherObject.InvokeRequired)
+                action.Invoke();
+            else
+                dispatcherObject.BeginInvoke(action);
 
         }
         public static T FindParameter<T>(object parameter, T fallbackValue = default(T)) {
@@ -501,7 +818,7 @@ namespace DevExpress.Mvvm.UI {
         }
 
         [SecuritySafeCritical]
-        static void SetWindowEnabled(IntPtr windowHandle, bool isEnabled) {
+        internal static void SetWindowEnabled(IntPtr windowHandle, bool isEnabled) {
             if(windowHandle == IntPtr.Zero)
                 return;
 
@@ -516,70 +833,5 @@ namespace DevExpress.Mvvm.UI {
             SetWindowLong(wndHelper.Handle, GWL_EXSTYLE, exStyle | WS_EX_TRANSPARENT);
             return true;
         }
-        #region Lock logic
-        public static void LockWindow(WindowContainer container, SplashScreenLock lockMode) {
-            if(container == null || container.Handle == IntPtr.Zero || lockMode == SplashScreenLock.None)
-                return;
-
-            IntPtr handle = container.Handle;
-            lock(locker) {
-                WindowLockInfo lockInfo;
-                if(!lockedWindowsDict.TryGetValue(handle, out lockInfo))
-                    lockedWindowsDict.Add(handle, (lockInfo = new WindowLockInfo(1, lockMode, container.Window.IsHitTestVisible)));
-                else
-                    ++lockInfo.LockCounter;
-
-                if(lockInfo.LockCounter == 1)
-                    DisableWindow(container, lockMode);
-            }
-        }
-        public static void UnlockWindow(WindowContainer container) {
-            if(container.Handle == IntPtr.Zero)
-                return;
-
-            IntPtr handle = container.Handle;
-            lock(locker) {
-                WindowLockInfo lockInfo;
-                if(!lockedWindowsDict.TryGetValue(handle, out lockInfo))
-                    return;
-
-                if(--lockInfo.LockCounter == 0) {
-                    lockedWindowsDict.Remove(handle);
-                    EnableWindow(container, lockInfo);
-                }
-            }
-        }
-        static void DisableWindow(WindowContainer container, SplashScreenLock lockMode) {
-            if(lockMode == SplashScreenLock.Full)
-                SplashScreenHelper.SetWindowEnabled(container.Handle, false);
-            else if(lockMode == SplashScreenLock.InputOnly) {
-                container.Window.IsHitTestVisible = false;
-                container.Window.PreviewKeyDown += OnWindowKeyDown;
-            } else if(lockMode == SplashScreenLock.LoadingContent) {
-                FrameworkElement content = container.WindowObject as FrameworkElement;
-                if(content != null) {
-                    content.PreviewKeyDown -= OnWindowKeyDown;
-                    content.IsHitTestVisible = false;
-                }
-            }
-        }
-        static void EnableWindow(WindowContainer container, WindowLockInfo lockInfo) {
-            if(lockInfo.LockMode == SplashScreenLock.Full)
-                SplashScreenHelper.SetWindowEnabled(container.Handle, true);
-            else if(lockInfo.LockMode == SplashScreenLock.InputOnly) {
-                container.Window.IsHitTestVisible = lockInfo.IsHitTestVisible;
-                container.Window.PreviewKeyDown -= OnWindowKeyDown;
-            } else if(lockInfo.LockMode == SplashScreenLock.LoadingContent) {
-                FrameworkElement content = container.WindowObject as FrameworkElement;
-                if(content != null) {
-                    content.PreviewKeyDown -= OnWindowKeyDown;
-                    content.IsHitTestVisible = lockInfo.IsHitTestVisible;
-                }
-            }
-        }
-        static void OnWindowKeyDown(object sender, System.Windows.Input.KeyEventArgs e) {
-            e.Handled = true;
-        }
-        #endregion
     }
 }

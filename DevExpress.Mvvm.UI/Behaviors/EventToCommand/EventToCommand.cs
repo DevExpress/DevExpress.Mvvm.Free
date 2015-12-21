@@ -56,7 +56,7 @@ namespace DevExpress.Mvvm.UI {
             get { return (bool)GetValue(AllowChangingEventOwnerIsEnabledProperty); }
             set { SetValue(AllowChangingEventOwnerIsEnabledProperty, value); }
         }
-#if SILVERLIGHT || NETFX_CORE
+#if NETFX_CORE
         [TypeConverter(typeof(ModifierKeysConverter))]
 #endif
         public ModifierKeys? ModifierKeys {
@@ -101,7 +101,7 @@ namespace DevExpress.Mvvm.UI {
         }
         void UpdateIsEnabled() {
             if(Command == null) return;
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             FrameworkElement associatedFrameworkObject = Source as FrameworkElement;
 #else
             Control associatedFrameworkObject = Source as Control;

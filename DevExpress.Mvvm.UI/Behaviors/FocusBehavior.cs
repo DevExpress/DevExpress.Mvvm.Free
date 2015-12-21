@@ -20,11 +20,7 @@ using Windows.UI.Xaml.Data;
 namespace DevExpress.Mvvm.UI {
     [TargetType(typeof(Control))]
     public class FocusBehavior : EventTriggerBase<Control> {
-#if !SILVERLIGHT
         public readonly static TimeSpan DefaultFocusDelay = TimeSpan.FromMilliseconds(0);
-#else
-        public readonly static TimeSpan DefaultFocusDelay = TimeSpan.FromMilliseconds(500);
-#endif
         public static readonly DependencyProperty FocusDelayProperty =
             DependencyProperty.Register("FocusDelay", typeof(TimeSpan?), typeof(FocusBehavior),
             new PropertyMetadata(null));

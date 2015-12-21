@@ -14,7 +14,7 @@ using Windows.UI.Xaml.Data;
 
 namespace DevExpress.Mvvm.UI {
     public abstract class DocumentUIServiceBase : ViewServiceBase {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         static readonly DependencyProperty TitleListenProperty =
             DependencyProperty.RegisterAttached("DocumentTitleListen", typeof(object), typeof(DocumentUIServiceBase), new PropertyMetadata(null, (d, e) => ViewModelExtensions.SetDocumentTitle(d, e.NewValue)));
 #endif
@@ -31,14 +31,14 @@ namespace DevExpress.Mvvm.UI {
                 throw new InvalidOperationException("Cannot access the destroyed document.");
         }
         public static void SetTitleBinding(object documentContentView, DependencyProperty property, DependencyObject target, bool convertToString = false) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             BindingOperations.SetBinding(target, TitleListenProperty, new Binding() { Source = target, Path = new PropertyPath(property), Mode = BindingMode.OneWay });
 #endif
             object viewModel = ViewHelper.GetViewModelFromView(documentContentView);
             if(!DocumentViewModelHelper.IsDocumentContentOrDocumentViewModel(viewModel)) return;
             if(DocumentViewModelHelper.TitlePropertyHasImplicitImplementation(viewModel)) {
                 Binding binding = new Binding() { Path = new PropertyPath("Title"), Source = viewModel };
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
                 if(convertToString)
                     binding.Converter = new ObjectToStringConverter();
 #endif
@@ -84,7 +84,7 @@ namespace DevExpress.Mvvm.UI {
             }
             public void Update(DependencyObject target, object documentContentOrDocumentViewModel) {
                 object title = DocumentViewModelHelper.GetTitle(documentContentOrDocumentViewModel);
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
                 if(convertToString)
                     title = title == null ? string.Empty : title.ToString();
 #endif
@@ -100,7 +100,7 @@ namespace DevExpress.Mvvm.UI {
                 updater.Update(target, sender);
             }
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         class ObjectToStringConverter : IValueConverter {
             public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
                 return value == null ? string.Empty : value.ToString();

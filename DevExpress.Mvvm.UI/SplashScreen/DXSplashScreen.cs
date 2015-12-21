@@ -6,12 +6,13 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
-using System.Windows.Input;
 using System.Collections.Generic;
-using System.Text;
+using System.Windows.Interop;
 
 namespace DevExpress.Mvvm.UI {
     public static class DXSplashScreen {
+        public static bool UseLegacyLocationLogic { get; set; }
+
         public static readonly DependencyProperty SplashScreenTypeProperty =
             DependencyProperty.RegisterAttached("SplashScreenType", typeof(Type), typeof(DXSplashScreen), new PropertyMetadata(null, OnSplashScreenTypeChanged));
         public static Type GetSplashScreenType(Window obj) {
@@ -32,7 +33,7 @@ namespace DevExpress.Mvvm.UI {
             Show(type, WindowStartupLocation.CenterScreen, owner.With(x => new SplashScreenOwner(x)));
             owner.Dispatcher.BeginInvoke(new Action(Close), DispatcherPriority.Loaded);
         }
-        public static void Show<T>(Action action, WindowStartupLocation startupLocation = WindowStartupLocation.CenterScreen, SplashScreenOwner owner = null, SplashScreenClosingMode closingMode = SplashScreenClosingMode.OnParentClosed) {
+        public static void Show<T>(Action action, WindowStartupLocation startupLocation = WindowStartupLocation.CenterScreen, SplashScreenOwner owner = null, SplashScreenClosingMode closingMode = SplashScreenClosingMode.Default) {
             Show<T>(startupLocation, owner, closingMode);
             try {
                 action();
@@ -47,15 +48,15 @@ namespace DevExpress.Mvvm.UI {
                 SplashContainer = new SplashScreenContainer();
             SplashContainer.Show(windowCreator ?? DefaultSplashScreenWindowCreator, splashScreenCreator, windowCreatorParameter, splashScreenCreatorParameter);
         }
-        public static void Show<T>(WindowStartupLocation startupLocation = WindowStartupLocation.CenterScreen, SplashScreenOwner owner = null, SplashScreenClosingMode closingMode = SplashScreenClosingMode.OnParentClosed) {
+        public static void Show<T>(WindowStartupLocation startupLocation = WindowStartupLocation.CenterScreen, SplashScreenOwner owner = null, SplashScreenClosingMode closingMode = SplashScreenClosingMode.Default) {
             Show(typeof(T), startupLocation, owner, closingMode);
         }
-        public static void Show(Type splashScreenType, WindowStartupLocation startupLocation = WindowStartupLocation.CenterScreen, SplashScreenOwner owner = null, SplashScreenClosingMode closingMode = SplashScreenClosingMode.OnParentClosed) {
+        public static void Show(Type splashScreenType, WindowStartupLocation startupLocation = WindowStartupLocation.CenterScreen, SplashScreenOwner owner = null, SplashScreenClosingMode closingMode = SplashScreenClosingMode.Default) {
             CheckSplashScreenType(splashScreenType);
             if(typeof(Window).IsAssignableFrom(splashScreenType)) {
                 Func<object, Window> windowCreator = (p) => {
                     Window splashWindow = (Window)Activator.CreateInstance(SplashScreenHelper.FindParameter<Type>(p));
-                    splashWindow.WindowStartupLocation = SplashScreenHelper.FindParameter<WindowStartupLocation>(p, WindowStartupLocation.CenterScreen);
+                    splashWindow.WindowStartupLocation = SplashScreenHelper.FindParameter(p, WindowStartupLocation.CenterScreen);
                     return splashWindow;
                 };
                 Show(windowCreator, null, new object[] { splashScreenType, startupLocation, owner, closingMode }, null);
@@ -112,7 +113,7 @@ namespace DevExpress.Mvvm.UI {
                 ShowInTaskbar = false,
                 Topmost = true,
                 SizeToContent = SizeToContent.WidthAndHeight,
-                WindowStartupLocation = SplashScreenHelper.FindParameter<WindowStartupLocation>(parameter, WindowStartupLocation.CenterScreen)
+                WindowStartupLocation = SplashScreenHelper.FindParameter(parameter, WindowStartupLocation.CenterScreen)
             };
         }
         static object CreateDefaultSplashScreen(object parameter) {
@@ -157,7 +158,8 @@ namespace DevExpress.Mvvm.UI {
             IList<SplashScreenInfo> infosForRelease = new List<SplashScreenInfo>();
 #if DEBUGTEST || DEBUG
             internal SplashScreenInfo OldInfo = null;
-            internal bool Test_IsWindowStylePatched = false;
+   internal bool Test_IsWindowStylePatched = false;
+            internal bool Test_SkipWindowOpen = false;
 #endif
             public bool IsActive {
                 get {
@@ -232,10 +234,16 @@ namespace DevExpress.Mvvm.UI {
                 SubscribeParentEvents(windowCreatorParameter);
                 if(isResourcesLocked)
                     SyncEvent.Set();
-                if(info.Owner != null)
-                    PatchSplashScreenWindowStyle(info.SplashScreen);
-                info.SplashScreen.ShowDialog();
-                info.ActivateOwner();
+                bool skipOpen = info.CloseWithParent && info.RelationInfo.Return(x => x.ActualIsParentClosed, () => false);
+#if DEBUGTEST || DEBUG
+                Test_SkipWindowOpen = skipOpen;
+#endif
+                if(!skipOpen) {
+                    if(info.Owner != null)
+                        PatchSplashScreenWindowStyle(info.SplashScreen);
+                    info.SplashScreen.ShowDialog();
+                    info.ActivateOwner();
+                }
                 ReleaseResources(info);
             }
 
@@ -246,7 +254,7 @@ namespace DevExpress.Mvvm.UI {
                 if(result != null)
                     return result;
 
-                WindowStartupLocation startupLocation = SplashScreenHelper.FindParameter<WindowStartupLocation>(parameter, WindowStartupLocation.CenterScreen);
+                WindowStartupLocation startupLocation = SplashScreenHelper.FindParameter(parameter, WindowStartupLocation.CenterScreen);
                 return SplashScreenHelper.FindParameter<SplashScreenOwner>(parameter, null).With(x => x.CreateOwnerContainer(startupLocation));
             }
             void ReleaseResources(SplashScreenInfo container) {
@@ -264,8 +272,9 @@ namespace DevExpress.Mvvm.UI {
                 Dispatcher.CurrentDispatcher.InvokeShutdown();
             }
             void SubscribeParentEvents(object parameter) {
-                SplashScreenClosingMode closingMode = SplashScreenHelper.FindParameter<SplashScreenClosingMode>(parameter, SplashScreenClosingMode.OnParentClosed);
-                if(closingMode == SplashScreenClosingMode.Default || closingMode == SplashScreenClosingMode.OnParentClosed)
+                SplashScreenClosingMode closingMode = SplashScreenHelper.FindParameter(parameter, SplashScreenClosingMode.Default);
+                ActiveInfo.CloseWithParent = closingMode == SplashScreenClosingMode.Default || closingMode == SplashScreenClosingMode.OnParentClosed;
+                if(ActiveInfo.CloseWithParent)
                     ActiveInfo.RelationInfo.Do(x => x.ParentClosed += OnSplashScreenOwnerClosed);
             }
             void PatchSplashScreenWindowStyle(Window splashScreen) {
@@ -340,6 +349,7 @@ namespace DevExpress.Mvvm.UI {
                 internal volatile WindowRelationInfo RelationInfo = null;
                 internal volatile WindowContainer Owner = null;
                 internal bool? IsIndeterminate;
+                internal bool CloseWithParent;
                 public bool IsActive { get { return InternalThread != null; } }
 
                 internal void ActivateOwner() {
@@ -363,19 +373,36 @@ namespace DevExpress.Mvvm.UI {
             }
         }
         internal class SplashScreenWindow : Window {
+            const int WM_SYSCOMMAND = 0x0112;
+            const int SC_CLOSE = 0xF060;
+
             public bool IsActiveOnClosing { get; private set; }
+            protected IntPtr Handle { get; set; }
 
             public SplashScreenWindow() {
                 ShowActivated = false;
                 Loaded += OnWindowLoaded;
             }
-            protected override void OnPreviewKeyDown(KeyEventArgs e) {
-                if(e.Key == Key.System && e.SystemKey == Key.F4)
-                    e.Handled = true;
+
+            protected override void OnSourceInitialized(EventArgs e) {
+                Handle = new WindowInteropHelper(this).Handle;
+                ((HwndSource)HwndSource.FromHwnd(Handle)).AddHook(WndProc);
+            }
+            protected override void OnClosed(EventArgs e) {
+                if(Handle != IntPtr.Zero)
+                    ((HwndSource)HwndSource.FromHwnd(Handle)).Do(x => x.RemoveHook(WndProc));
             }
             protected override void OnClosing(CancelEventArgs e) {
                 IsActiveOnClosing = IsActive;
                 base.OnClosing(e);
+            }
+            IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) {
+                if(msg == WM_SYSCOMMAND) {
+                    int cmd = (wParam.ToInt32() & 0xfff0);
+                    if(cmd == SC_CLOSE)
+                        handled = true;
+                }
+                return IntPtr.Zero;
             }
             void OnWindowLoaded(object sender, RoutedEventArgs e) {
                 Loaded -= OnWindowLoaded;

@@ -29,7 +29,7 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty UseDispatcherProperty =
             DependencyProperty.Register("UseDispatcher", typeof(bool?), typeof(EventToCommandBase),
             new PropertyMetadata(null));
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public static readonly DependencyProperty DispatcherPriorityProperty =
             DependencyProperty.Register("DispatcherPriority", typeof(DispatcherPriority?), typeof(EventToCommandBase),
             new PropertyMetadata(null));
@@ -58,7 +58,7 @@ namespace DevExpress.Mvvm.UI {
         protected internal bool ActualUseDispatcher {
             get {
                 if(UseDispatcher == null) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
                     return DispatcherPriority != null;
 #else
                     return false;
@@ -67,7 +67,7 @@ namespace DevExpress.Mvvm.UI {
                 return UseDispatcher.Value;
             }
         }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
         public DispatcherPriority? DispatcherPriority {
             get { return (DispatcherPriority?)GetValue(DispatcherPriorityProperty); }
             set { SetValue(DispatcherPriorityProperty, value); }
@@ -83,7 +83,7 @@ namespace DevExpress.Mvvm.UI {
                 OnEventCore(sender, eventArgs);
                 return;
             }
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             bool commandIsBound = System.Windows.Data.BindingOperations.GetBindingExpression(this, CommandProperty) != null;
             if(Command == null && commandIsBound) {
                 Dispatcher.BeginInvoke(new Action(() => {
@@ -98,9 +98,7 @@ namespace DevExpress.Mvvm.UI {
             if(!ActualUseDispatcher)
                 Invoke(sender, eventArgs);
             else {
-#if SILVERLIGHT
-                Dispatcher.BeginInvoke(new Action<object, object>(Invoke), new object[] { sender, eventArgs });
-#elif NETFX_CORE
+#if NETFX_CORE
 #pragma warning disable 4014
                 Dispatcher.RunAsync(CoreDispatcherPriority.Low, new DispatchedHandler(() => Invoke(sender, eventArgs)));
 #pragma warning restore 4014
@@ -109,23 +107,16 @@ namespace DevExpress.Mvvm.UI {
 #endif
             }
             if(MarkRoutedEventsAsHandled) {
-#if SILVERLIGHT
-                if(eventArgs is MouseButtonEventArgs)
-                    ((MouseButtonEventArgs)eventArgs).Handled = true;
-                if(eventArgs is KeyEventArgs)
-                    ((KeyEventArgs)eventArgs).Handled = true;
-#elif NETFX_CORE
-                if(eventArgs is KeyEventArgs)
-                    ((KeyEventArgs)eventArgs).Handled = true;
+#if NETFX_CORE
+                if(eventArgs is KeyEventArgs) ((KeyEventArgs)eventArgs).Handled = true;
 #else
-                if(eventArgs is RoutedEventArgs)
-                    ((RoutedEventArgs)eventArgs).Handled = true;
+                if(eventArgs is RoutedEventArgs) ((RoutedEventArgs)eventArgs).Handled = true;
 #endif
             }
         }
         protected abstract void Invoke(object sender, object eventArgs);
         protected virtual bool CanInvoke(object sender, object eventArgs) {
-#if !SILVERLIGHT && !NETFX_CORE
+#if !NETFX_CORE
             FrameworkElement associatedFrameworkObject = Source as FrameworkElement;
 #else
             Control associatedFrameworkObject = Source as Control;
