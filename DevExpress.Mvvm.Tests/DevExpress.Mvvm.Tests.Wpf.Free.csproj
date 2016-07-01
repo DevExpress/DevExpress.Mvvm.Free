@@ -86,10 +86,18 @@
     <Compile Include="DefaultMessageBoxButtonLocalizerTests.cs" />
     <Compile Include="DelegateCommandTests.cs" />
     <Compile Include="DesignTimeHelperTests.cs" />
-    <Compile Include="DXBinding\BindingTests.cs" />
-    <Compile Include="DXBinding\CommandTests.cs" />
-    <Compile Include="DXBinding\EventTests.cs" />
-    <Compile Include="DXBinding\ParserTests.cs" />
+    <Compile Include="DXBinding\BindingTests.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DXBinding\CommandTests.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DXBinding\EventTests.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DXBinding\ParserTests.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="EnumHelperTests.cs" />
     <Compile Include="ExpressionHelperTests.cs" />
     <Compile Include="MessengerTests.cs" />
