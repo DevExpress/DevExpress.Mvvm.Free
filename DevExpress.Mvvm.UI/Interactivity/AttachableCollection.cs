@@ -4,16 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Windows;
-#if NETFX_CORE
-using Windows.UI.Xaml;
-#endif
 
 namespace DevExpress.Mvvm.UI.Interactivity {
-#if !NETFX_CORE
     public abstract class AttachableCollection<T> : FreezableCollection<T>, IAttachableObject where T : DependencyObject, IAttachableObject {
-#else
-    public abstract class AttachableCollection<T> : DependencyObjectCollection<T>, IAttachableObject where T : DependencyObject, IAttachableObject {
-#endif
 
         internal AttachableCollection() {
             ((INotifyCollectionChanged)this).CollectionChanged += this.OnCollectionChanged;
@@ -60,19 +53,13 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             return !InteractionHelper.IsInDesignMode(item);
         }
         void VerifyRead() {
-#if !NETFX_CORE
             ReadPreamble();
-#endif
         }
         void VerifyWrite() {
-#if !NETFX_CORE
             WritePreamble();
-#endif
         }
         void NotifyChanged() {
-#if !NETFX_CORE
             WritePostscript();
-#endif
         }
 
         internal virtual void ItemAdded(T item) {
@@ -100,10 +87,8 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             snapshot.Clear();
         }
         void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e) {
-#if !NETFX_CORE
             if(e.Action == NotifyCollectionChangedAction.Move)
                 return;
-#endif
             if(e.Action == NotifyCollectionChangedAction.Reset) {
                 ClearItems();
                 foreach(T item in this)
@@ -120,11 +105,9 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             }
         }
 
-#if !NETFX_CORE
         protected override sealed Freezable CreateInstanceCore() {
             return (Freezable)Activator.CreateInstance(GetType());
         }
-#endif
     }
 
     public sealed class BehaviorCollection : AttachableCollection<Behavior> { }

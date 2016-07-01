@@ -1,5 +1,6 @@
 using DevExpress.Mvvm.UI.Native;
 using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.Native;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,15 +8,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Threading;
-#else
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Data;
-#endif
 
 namespace DevExpress.Mvvm.UI {
     [TargetType(typeof(Control))]
@@ -69,11 +64,13 @@ namespace DevExpress.Mvvm.UI {
                 return FocusDelay ?? TimeSpan.FromMilliseconds(0);
         }
         void AssociatedObjectFocus() {
-#if !NETFX_CORE
-            AssociatedObject.Focus();
-#else
-            AssociatedObject.Focus(FocusState.Programmatic);
-#endif
+            if(AssociatedObject.Focusable && AssociatedObject.IsTabStop)
+                AssociatedObject.Focus();
+            else {
+                var children = LayoutTreeHelper.GetVisualChildren(AssociatedObject);
+                var controlToFocus = children.OfType<Control>().Where(x => x.Focusable && x.IsTabStop).FirstOrDefault();
+                controlToFocus.Do(x => x.Focus());
+            }
         }
         void DoFocus() {
             if(!IsAttached) return;
@@ -88,11 +85,7 @@ namespace DevExpress.Mvvm.UI {
             timer.Tick += OnTimerTick;
             timer.Start();
         }
- #if NETFX_CORE
-        void OnTimerTick(object sender, object e) {
-#else
         void OnTimerTick(object sender, EventArgs e) {
-#endif
             DispatcherTimer timer = (DispatcherTimer)sender;
             timer.Tick -= OnTimerTick;
             timer.Stop();

@@ -2,30 +2,18 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Linq;
 using DevExpress.Mvvm.Native;
-#if !FREE && !NETFX_CORE
-using DevExpress.Mvvm.UI.Native;
-#endif
 using System;
-#if NETFX_CORE
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Media;
-#else
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
-#endif
 
 namespace DevExpress.Mvvm.UI {
     public static class LayoutTreeHelper {
         static DependencyObject GetParent(DependencyObject element) {
-#if !NETFX_CORE
             if(element is Visual || element is Visual3D)
                 return VisualTreeHelper.GetParent(element);
             if(element is FrameworkContentElement)
                 return LogicalTreeHelper.GetParent(element);
             return null;
-#else
-            return VisualTreeHelper.GetParent(element);
-#endif
         }
 
         public static IEnumerable<DependencyObject> GetVisualParents(DependencyObject child, DependencyObject stopNode = null) {

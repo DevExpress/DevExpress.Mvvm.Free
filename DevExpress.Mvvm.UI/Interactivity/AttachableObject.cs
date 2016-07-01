@@ -1,15 +1,8 @@
 using System.ComponentModel;
-#if !NETFX_CORE
 using DevExpress.Mvvm.UI.Interactivity.Internal;
 using System;
 using System.Windows;
 using System.Windows.Media.Animation;
-#else
-using System;
-using System.Reflection;
-using Windows.UI.Xaml;
-using DevExpress.Mvvm.UI.Interactivity.Internal;
-#endif
 
 namespace DevExpress.Mvvm.UI.Interactivity {
     public interface IAttachableObject {
@@ -18,11 +11,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         void Detach();
     }
 
-#if NETFX_CORE
-    public abstract class AttachableObjectBase : FrameworkElement, IAttachableObject, INotifyPropertyChanged {
-#else
     public abstract class AttachableObjectBase : Animatable, IAttachableObject, INotifyPropertyChanged {
-#endif
         public bool IsAttached { get; private set; }
         internal bool _AllowAttachInDesignMode { get { return AllowAttachInDesignMode; } }
         protected virtual bool AllowAttachInDesignMode {
@@ -90,58 +79,26 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             AssociatedObject = null;
             IsAttached = false;
         }
- #if !NETFX_CORE
         protected override bool FreezeCore(bool isChecking) {
             return false;
         }
-#endif
         protected virtual void OnAttached() {
-#if NETFX_CORE
-            if(AssociatedObject is FrameworkElement) {
-                var frameworkElement = AssociatedObject as FrameworkElement;
-                DataContext = frameworkElement.DataContext;
-                frameworkElement.DataContextChanged += frameworkElement_DataContextChanged;
-            }
-#endif
         }
-#if NETFX_CORE
-        void frameworkElement_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args) {
-            OnDataContextChange(args.NewValue);
-        }
-        protected virtual void OnDataContextChange(object dataContext) {
-            DataContext = dataContext;
-        }
-#endif
         protected virtual void OnDetaching() {
-#if NETFX_CORE
-            if(AssociatedObject is FrameworkElement) {
-                var frameworkElement = AssociatedObject as FrameworkElement;
-                DataContext = null;
-                frameworkElement.DataContextChanged -= frameworkElement_DataContextChanged;
-            }
-#endif
         }
 
         protected void VerifyRead() {
-#if !NETFX_CORE
             ReadPreamble();
-#endif
         }
         protected void VerifyWrite() {
-#if !NETFX_CORE
             WritePreamble();
-#endif
         }
         protected void NotifyChanged() {
-#if !NETFX_CORE
             WritePostscript();
-#endif
         }
 
-#if !NETFX_CORE
         protected override Freezable CreateInstanceCore() {
             return (Freezable)Activator.CreateInstance(GetType());
         }
-#endif
     }
 }

@@ -1,13 +1,7 @@
 using DevExpress.Mvvm.Native;
 using System.Windows;
-#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Data;
-#else
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Style = Windows.UI.Xaml.Style;
-#endif
 
 namespace DevExpress.Mvvm.UI {
     public abstract class ViewServiceBase : ServiceBase {
@@ -42,22 +36,12 @@ namespace DevExpress.Mvvm.UI {
         protected Style GetDocumentContainerStyle(DependencyObject documentContainer, object view, Style style, StyleSelector styleSelector) {
             return style ?? styleSelector.With(s => s.SelectStyle(ViewHelper.GetViewModelFromView(view), documentContainer));
         }
-        protected void UpdateThemeName(DependencyObject target) {
-#if !FREE && !NETFX_CORE
-            if(DevExpress.Xpf.Core.ThemeManager.GetTreeWalker(target) != null) return;
-            var themeTreeWalker = AssociatedObject.With(DevExpress.Xpf.Core.ThemeManager.GetTreeWalker);
-            if(themeTreeWalker == null) return;
-            string themeName = DevExpress.Xpf.Editors.Helpers.ThemeHelper.GetWindowThemeName(AssociatedObject);
-            if(DevExpress.Xpf.Core.ThemeManager.ApplicationThemeName != themeName)
-                DevExpress.Xpf.Core.ThemeManager.SetThemeName(target, themeName);
-#endif
+        protected void UpdateThemeName(FrameworkElement target) {
         }
-#if !NETFX_CORE
         protected void InitializeDocumentContainer(FrameworkElement documentContainer, DependencyProperty documentContainerViewProperty, Style documentContainerStyle) {
             ViewHelper.SetBindingToViewModel(documentContainer, FrameworkElement.DataContextProperty, new PropertyPath(documentContainerViewProperty));
             if(documentContainerStyle != null)
                 documentContainer.Style = documentContainerStyle;
         }
-#endif
     }
 }

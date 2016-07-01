@@ -4,20 +4,13 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
-#if NETFX_CORE
-using Windows.UI.Xaml;
-#endif
 
 namespace DevExpress.Mvvm.UI {
     public class DependencyPropertyBehavior : Behavior<DependencyObject> {
         const BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public;
 
         public static readonly DependencyProperty BindingProperty = DependencyProperty.RegisterAttached("Binding", typeof(object), typeof(DependencyPropertyBehavior),
-#if !NETFX_CORE
             new FrameworkPropertyMetadata(null, (d, e) => ((DependencyPropertyBehavior)d).OnBindingPropertyChanged())  { BindsTwoWayByDefault = true } );
-#else
-            new PropertyMetadata(null, (d, e) => ((DependencyPropertyBehavior)d).OnBindingPropertyChanged()));
-#endif
         EventTriggerEventSubscriber EventHelper;
         public DependencyPropertyBehavior() {
             EventHelper = new EventTriggerEventSubscriber(OnEvent);

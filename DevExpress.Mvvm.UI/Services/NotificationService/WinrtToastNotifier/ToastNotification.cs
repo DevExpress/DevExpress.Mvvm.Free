@@ -53,7 +53,7 @@ namespace DevExpress.Internal {
         }
         #endregion IPredefinedToastNotificationContentFactory
     }
-    class WinRTToastNotification : IPredefinedToastNotification {
+    public class WinRTToastNotification : IPredefinedToastNotification {
         ToastNotificationHandlerInfo<HandlerDismissed> handlerDismissed;
         ToastNotificationHandlerInfo<HandlerActivated> handlerActivated;
         ToastNotificationHandlerInfo<HandlerFailed> handlerFailed;

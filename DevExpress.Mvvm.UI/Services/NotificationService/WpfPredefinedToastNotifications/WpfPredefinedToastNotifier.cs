@@ -10,9 +10,8 @@ using System.Windows.Media.Imaging;
 namespace DevExpress.Mvvm.UI.Native {
     public class WpfToastNotificationFactory : IPredefinedToastNotificationFactory {
         CustomNotifier notifier;
-        public WpfToastNotificationFactory() {
-            this.notifier = new CustomNotifier();
-            this.notifier.UpdatePositioner(NotificationPosition.TopRight, 3);
+        public WpfToastNotificationFactory(CustomNotifier notifier) {
+            this.notifier = notifier;
         }
         public IPredefinedToastNotification CreateToastNotification(IPredefinedToastNotificationContent content) {
             return new WpfPredefinedToastNotification((WpfPredefinedToastNotificationContent)content, notifier);

@@ -31,6 +31,7 @@ namespace DevExpress.Mvvm.UI.ViewInjection {
             where TStrategy : IStrategy, new() {
             Type tTarget = typeof(TTarget);
             Type tStrategy = typeof(TStrategy);
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(tTarget.TypeHandle);
             if(Strategies.ContainsKey(tTarget))
                 Strategies[tTarget] = tStrategy;
             else Strategies.Add(tTarget, tStrategy);

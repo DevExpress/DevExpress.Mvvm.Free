@@ -145,7 +145,7 @@ namespace DevExpress.Internal {
                 SetTextLine(content, i, info.Lines[i]);
             }
             if(!string.IsNullOrEmpty(info.ImagePath)) {
-                SetImageSrc(content, "file:///" + info.ImagePath);
+                SetImageSrc(content, new System.Uri(info.ImagePath).AbsoluteUri);
             }
             NotificationDuration actualDuration = info.Duration;
             if(info.Sound != PredefinedSound.Notification_Default) {

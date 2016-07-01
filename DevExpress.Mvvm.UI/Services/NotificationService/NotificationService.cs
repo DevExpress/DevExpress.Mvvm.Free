@@ -164,7 +164,7 @@ namespace DevExpress.Mvvm.UI {
                             throw new ArgumentNullException("ApplicationId");
                         predefinedNotificationsFactory = new WinRTToastNotificationFactory(ApplicationId);
                     } else {
-                        predefinedNotificationsFactory = new WpfToastNotificationFactory();
+                        predefinedNotificationsFactory = new WpfToastNotificationFactory(PredefinedNotifier);
                     }
                 }
                 return predefinedNotificationsFactory;
@@ -177,6 +177,15 @@ namespace DevExpress.Mvvm.UI {
                     customNotifier = new CustomNotifier();
                 }
                 return customNotifier;
+            }
+        }
+        CustomNotifier predefinedNotifier;
+        CustomNotifier PredefinedNotifier {
+            get {
+                if(predefinedNotifier == null) {
+                    predefinedNotifier = new CustomNotifier();
+                }
+                return predefinedNotifier;
             }
         }
         public bool UseWin8NotificationsIfAvailable {
@@ -209,6 +218,7 @@ namespace DevExpress.Mvvm.UI {
         }
         void UpdateCustomNotifierPositioner() {
             CustomNotifier.UpdatePositioner(CustomNotificationPosition, CustomNotificationVisibleMaxCount);
+            PredefinedNotifier.UpdatePositioner(CustomNotificationPosition, CustomNotificationVisibleMaxCount);
         }
         void OnCustomNotificationTemplateChanged() {
             CustomNotifier.ContentTemplate = CustomNotificationTemplate;

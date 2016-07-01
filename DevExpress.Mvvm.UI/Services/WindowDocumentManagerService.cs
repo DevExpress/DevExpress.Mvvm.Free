@@ -49,6 +49,7 @@ namespace DevExpress.Mvvm.UI {
                     e.Cancel = true;
                     Window.Hide();
                 }
+                state = destroyOnClose ? DocumentState.Destroyed : DocumentState.Hidden;
                 onClosing = false;
             }
             void IDocument.Close(bool force) {
@@ -76,6 +77,7 @@ namespace DevExpress.Mvvm.UI {
                 set { destroyOnClose = value; }
             }
             void IDocument.Show() {
+                state = DocumentState.Visible;
                 switch(owner.DocumentShowMode) {
                     case WindowShowMode.Dialog:
                         Window.ShowDialog();
@@ -84,7 +86,6 @@ namespace DevExpress.Mvvm.UI {
                         Window.Show();
                         break;
                 }
-                state = DocumentState.Visible;
             }
             void IDocument.Hide() {
                 Window.Hide();

@@ -194,7 +194,6 @@
     <Compile Include="ViewLocator\IViewLocator.cs" />
     <Compile Include="ViewLocator\ViewLocator.cs" />
     <Compile Include="ViewLocator\ViewLocatorBase.cs" />
-    <Compile Include="ViewLocator\ViewSelector.cs" />
     <Compile Include="ViewModelSourceExtension.cs" />
     <Compile Include="LayoutTreeHelper.cs" />
   </ItemGroup>
@@ -229,6 +228,26 @@
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="DXBinding\DXBinding.atg" />
+    <None Include="DXBinding\Parser.frame">
+      <DependentUpon>DXBinding.atg</DependentUpon>
+    </None>
+    <None Include="DXBinding\Scanner.frame">
+      <DependentUpon>DXBinding.atg</DependentUpon>
+    </None>
+    <Compile Include="DXBinding\Common.cs" />
+    <Compile Include="DXBinding\Exceptions.cs" />
+    <Compile Include="DXBinding\MarkupExtensions.cs" />
+    <Compile Include="DXBinding\Parser.cs">
+      <DependentUpon>DXBinding.atg</DependentUpon>
+    </Compile>
+    <Compile Include="DXBinding\ParserHelper.cs" />
+    <Compile Include="DXBinding\Scanner.cs">
+      <DependentUpon>DXBinding.atg</DependentUpon>
+    </Compile>
+    <Compile Include="DXBinding\Tree.cs" />
+    <Compile Include="DXBinding\TreeVisitor.cs" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

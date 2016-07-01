@@ -9,8 +9,8 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Input;
 using System.Threading;
-
 using DevExpress.Mvvm.UI.Native;
+
 
 namespace DevExpress.Mvvm.UI {
 
@@ -41,6 +41,16 @@ namespace DevExpress.Mvvm.UI {
     }
 
     public class SplashScreenOwner {
+        public static readonly DependencyProperty PreferVisualTreeForOwnerSearchProperty =
+            DependencyProperty.RegisterAttached("PreferVisualTreeForOwnerSearch", typeof(bool), typeof(SplashScreenOwner), new PropertyMetadata(false));
+
+        public static bool GetPreferVisualTreeForOwnerSearch(DependencyObject obj) {
+            return (bool)obj.GetValue(PreferVisualTreeForOwnerSearchProperty);
+        }
+        public static void SetPreferVisualTreeForOwnerSearch(DependencyObject obj, bool value) {
+            obj.SetValue(PreferVisualTreeForOwnerSearchProperty, value);
+        }
+
         public DependencyObject Owner { get; private set; }
 
         public SplashScreenOwner(DependencyObject owner) {
@@ -122,9 +132,9 @@ namespace DevExpress.Mvvm.UI {
                 ContainerLockInfo lockInfo;
                 if(lockMode == SplashScreenLock.LoadingContent) {
                     if(!lockedContainerDict.TryGetValue(container.WindowObject, out lockInfo))
-                        lockedContainerDict.Add(container.WindowObject, (lockInfo = new ContainerLockInfo(0, lockMode, (container.WindowObject as FrameworkElement).Return(x => x.IsHitTestVisible, () => true))));
+                        lockedContainerDict.Add(container.WindowObject, (lockInfo = new ContainerLockInfo(0, lockMode)));
                 } else if(!lockedWindowsDict.TryGetValue(container.Handle, out lockInfo))
-                    lockedWindowsDict.Add(container.Handle, (lockInfo = new ContainerLockInfo(0, lockMode, container.Window.Return(x => x.IsHitTestVisible, () => true))));
+                    lockedWindowsDict.Add(container.Handle, (lockInfo = new ContainerLockInfo(0, lockMode)));
 
                 ++lockInfo.LockCounter;
                 infosFromContainer.Add(container, lockInfo);
@@ -147,44 +157,30 @@ namespace DevExpress.Mvvm.UI {
                         lockedContainerDict.Remove(container.WindowObject);
                     else
                         lockedWindowsDict.Remove(container.Handle);
-                    EnableWindow(container, lockInfo);
+                    EnableWindow(container, lockInfo.LockMode);
                 }
             }
         }
         static void DisableWindow(WindowContainer container, SplashScreenLock lockMode) {
-            switch(lockMode) {
-                case SplashScreenLock.InputOnly:
-                    container.Window.IsHitTestVisible = false;
-                    container.Window.PreviewKeyDown += OnWindowKeyDown;
-                    break;
-                case SplashScreenLock.Full:
-                    SplashScreenHelper.SetWindowEnabled(container.Handle, false);
-                    break;
-                case SplashScreenLock.LoadingContent:
-                    FrameworkElement content = container.WindowObject as FrameworkElement;
-                    if(content != null) {
-                        content.PreviewKeyDown += OnWindowKeyDown;
-                        content.IsHitTestVisible = false;
-                    }
-                    break;
+            if(lockMode == SplashScreenLock.Full) {
+                SplashScreenHelper.SetWindowEnabled(container.Handle, false);
+            } else {
+                UIElement visual = lockMode == SplashScreenLock.InputOnly ? container.Window : container.WindowObject as UIElement;
+                if(visual != null) {
+                    visual.SetCurrentValue(UIElement.IsHitTestVisibleProperty, false);
+                    visual.PreviewKeyDown += OnWindowKeyDown;
+                }
             }
         }
-        static void EnableWindow(WindowContainer container, ContainerLockInfo lockInfo) {
-            switch(lockInfo.LockMode) {
-                case SplashScreenLock.InputOnly:
-                    container.Window.IsHitTestVisible = lockInfo.IsHitTestVisible;
-                    container.Window.PreviewKeyDown -= OnWindowKeyDown;
-                    break;
-                case SplashScreenLock.Full:
-                    SplashScreenHelper.SetWindowEnabled(container.Handle, true);
-                    break;
-                case SplashScreenLock.LoadingContent:
-                    FrameworkElement content = container.WindowObject as FrameworkElement;
-                    if(content != null) {
-                        content.PreviewKeyDown -= OnWindowKeyDown;
-                        content.IsHitTestVisible = lockInfo.IsHitTestVisible;
-                    }
-                    break;
+        static void EnableWindow(WindowContainer container, SplashScreenLock lockMode) {
+            if(lockMode == SplashScreenLock.Full) {
+                SplashScreenHelper.SetWindowEnabled(container.Handle, true);
+            } else {
+                UIElement visual = lockMode == SplashScreenLock.InputOnly ? container.Window : container.WindowObject as UIElement;
+                if(visual != null) {
+                    visual.SetCurrentValue(UIElement.IsHitTestVisibleProperty, true);
+                    visual.PreviewKeyDown -= OnWindowKeyDown;
+                }
             }
         }
         static SplashScreenLock GetActualLockMode(WindowContainer container, SplashScreenLock lockMode) {
@@ -204,12 +200,10 @@ namespace DevExpress.Mvvm.UI {
         class ContainerLockInfo {
             public int LockCounter { get; set; }
             public SplashScreenLock LockMode { get; private set; }
-            public bool IsHitTestVisible { get; private set; }
 
-            public ContainerLockInfo(int lockCounter, SplashScreenLock lockMode, bool isHitTestVisible) {
+            public ContainerLockInfo(int lockCounter, SplashScreenLock lockMode) {
                 LockCounter = lockCounter;
                 LockMode = lockMode;
-                IsHitTestVisible = isHitTestVisible;
             }
         }
         #endregion
@@ -673,7 +667,7 @@ namespace DevExpress.Mvvm.UI {
             if(IsInitialized || IsWindowClosedBeforeInit)
                 return;
 
-            Window = (WindowObject as Window) ?? Window.GetWindow(WindowObject);
+            Window = FindOwner();
             if(Window == null)
                 return;
 
@@ -685,6 +679,25 @@ namespace DevExpress.Mvvm.UI {
             }
         }
 
+        Window FindOwner() {
+            Window result = WindowObject as Window;
+            if(result != null)
+                return result;
+
+            bool visualTreeSearch = SplashScreenOwner.GetPreferVisualTreeForOwnerSearch(WindowObject);
+            if(visualTreeSearch)
+                result = LayoutHelper.FindParentObject<Window>(WindowObject);
+            if(result == null)
+                result = Window.GetWindow(WindowObject);
+
+            if(!visualTreeSearch && result != null && SplashScreenOwner.GetPreferVisualTreeForOwnerSearch(result)) {
+                visualTreeSearch = true;
+                var newWindow = LayoutHelper.FindParentObject<Window>(WindowObject);
+                if(newWindow != null)
+                    result = newWindow;
+            }
+            return result;
+        }
         bool EnsureWindowHandle(out IntPtr handle) {
             handle = IntPtr.Zero;
             WindowInteropHelper helper = new WindowInteropHelper(Window);
@@ -714,17 +727,6 @@ namespace DevExpress.Mvvm.UI {
             FrameworkObject.Loaded -= OnControlLoaded;
             Initialize();
         }
-        static bool IsNormalDPI(Visual visual) {
-            var pSource = PresentationSource.FromVisual(visual);
-            if(pSource != null)
-                return pSource.CompositionTarget.TransformToDevice.M11 == 1;
-            using(var source = new HwndSource(new HwndSourceParameters())) {
-                if(source != null)
-                    return source.CompositionTarget.TransformToDevice.M11 == 1;
-            }
-
-            return true;
-        }
 
         public event EventHandler Initialized;
     }
@@ -738,10 +740,13 @@ namespace DevExpress.Mvvm.UI {
         static extern int GetWindowLong(IntPtr hWnd, int nIndex);
         [DllImport("user32.dll")]
         static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
-        const int WS_EX_TRANSPARENT = 0x00000020;
+        internal const int WS_EX_TRANSPARENT = 0x00000020;
+        internal const int WS_EX_TOOLWINDOW = 0x00000080;
         const int GWL_EXSTYLE = (-20);
         const int GWL_HWNDPARENT = -8;
-
+#if DEBUGTEST || DEBUG
+        internal static int Test_WindowStyleModifier { get; set; }
+#endif
         public static void InvokeAsync(WindowContainer container, Action action, DispatcherPriority priority = DispatcherPriority.Normal, AsyncInvokeMode mode = AsyncInvokeMode.AsyncOnly) {
             if(container == null || !container.IsInitialized)
                 return;
@@ -825,13 +830,24 @@ namespace DevExpress.Mvvm.UI {
             EnableWindow(windowHandle, isEnabled);
         }
         [SecuritySafeCritical]
-        public static bool PatchWindowStyle(Window window) {
+        public static bool PatchWindowStyle(Window window, bool hasOwner) {
             var wndHelper = new WindowInteropHelper(window);
             if(wndHelper.Handle == IntPtr.Zero)
                 return false;
             int exStyle = GetWindowLong(wndHelper.Handle, GWL_EXSTYLE);
-            SetWindowLong(wndHelper.Handle, GWL_EXSTYLE, exStyle | WS_EX_TRANSPARENT);
+            int styleModifier = hasOwner
+                ? WS_EX_TRANSPARENT
+                : GetToolWindowStyle(window);
+#if DEBUGTEST || DEBUG
+            Test_WindowStyleModifier = styleModifier;
+#endif
+            SetWindowLong(wndHelper.Handle, GWL_EXSTYLE, exStyle | styleModifier);
             return true;
+        }
+        static int GetToolWindowStyle(Window window) {
+            return !DXSplashScreen.UseDefaultAltTabBehavior && window.WindowStyle == WindowStyle.None && window is DXSplashScreen.SplashScreenWindow
+                ? WS_EX_TOOLWINDOW
+                : 0;
         }
     }
 }

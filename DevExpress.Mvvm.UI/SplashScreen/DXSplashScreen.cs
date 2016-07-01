@@ -12,6 +12,7 @@ using System.Windows.Interop;
 namespace DevExpress.Mvvm.UI {
     public static class DXSplashScreen {
         public static bool UseLegacyLocationLogic { get; set; }
+        public static bool UseDefaultAltTabBehavior { get; set; }
 
         public static readonly DependencyProperty SplashScreenTypeProperty =
             DependencyProperty.RegisterAttached("SplashScreenType", typeof(Type), typeof(DXSplashScreen), new PropertyMetadata(null, OnSplashScreenTypeChanged));
@@ -158,7 +159,6 @@ namespace DevExpress.Mvvm.UI {
             IList<SplashScreenInfo> infosForRelease = new List<SplashScreenInfo>();
 #if DEBUGTEST || DEBUG
             internal SplashScreenInfo OldInfo = null;
-   internal bool Test_IsWindowStylePatched = false;
             internal bool Test_SkipWindowOpen = false;
 #endif
             public bool IsActive {
@@ -174,8 +174,10 @@ namespace DevExpress.Mvvm.UI {
             }
 
             public void Show(Func<object, Window> windowCreator, Func<object, object> splashScreenCreator, object windowCreatorParameter, object splashScreenCreatorParameter) {
-                if(ViewModelBase.IsInDesignMode) return;
-                if(IsActive) throw new InvalidOperationException(DXSplashScreenExceptions.Exception1);
+                if(ViewModelBase.IsInDesignMode)
+                    return;
+                if(IsActive)
+                    throw new InvalidOperationException(DXSplashScreenExceptions.Exception1);
                 lock(instanceLocker) {
                     instances.Add(this);
                 }
@@ -185,27 +187,31 @@ namespace DevExpress.Mvvm.UI {
                 SyncEvent.WaitOne();
             }
             public void Close() {
-                if(ViewModelBase.IsInDesignMode) return;
+                if(ViewModelBase.IsInDesignMode)
+                    return;
                 if(!IsActive)
                     throw new InvalidOperationException(DXSplashScreenExceptions.Exception3);
                 ActiveInfo.SplashScreen.Dispatcher.BeginInvoke(new Action<SplashScreenInfo>(CloseCore), ActiveInfo);
                 ChangeActiveContainer();
             }
             public void Progress(double value, double maxValue) {
-                if(ViewModelBase.IsInDesignMode) return;
+                if(ViewModelBase.IsInDesignMode)
+                    return;
                 if(!IsActive)
                     throw new InvalidOperationException(DXSplashScreenExceptions.Exception3);
 
                 ActiveInfo.SplashScreen.Dispatcher.BeginInvoke(new Action<SplashScreenInfo, double, double>(SetProgressCore), new object[] { ActiveInfo, value, maxValue });
             }
             public void SetState(object state) {
-                if(ViewModelBase.IsInDesignMode) return;
+                if(ViewModelBase.IsInDesignMode)
+                    return;
                 if(!IsActive)
                     throw new InvalidOperationException(DXSplashScreenExceptions.ServiceException2);
                 ActiveInfo.SplashScreen.Dispatcher.BeginInvoke(new Action<SplashScreenInfo, object>(SetStateCore), new object[] { ActiveInfo, state });
             }
             public void CallSplashScreenMethod<T>(Action<T> action) {
-                if(ViewModelBase.IsInDesignMode) return;
+                if(ViewModelBase.IsInDesignMode)
+                    return;
                 if(!IsActive)
                     throw new InvalidOperationException(DXSplashScreenExceptions.Exception3);
                 if(!(ActiveInfo.SplashScreen is ISplashScreen))
@@ -239,8 +245,7 @@ namespace DevExpress.Mvvm.UI {
                 Test_SkipWindowOpen = skipOpen;
 #endif
                 if(!skipOpen) {
-                    if(info.Owner != null)
-                        PatchSplashScreenWindowStyle(info.SplashScreen);
+                    PatchSplashScreenWindowStyle(info.SplashScreen, info.Owner != null);
                     info.SplashScreen.ShowDialog();
                     info.ActivateOwner();
                 }
@@ -258,9 +263,6 @@ namespace DevExpress.Mvvm.UI {
                 return SplashScreenHelper.FindParameter<SplashScreenOwner>(parameter, null).With(x => x.CreateOwnerContainer(startupLocation));
             }
             void ReleaseResources(SplashScreenInfo container) {
-#if DEBUGTEST || DEBUG
-                Test_IsWindowStylePatched = false;
-#endif
                 lock(instanceLocker) {
                     instances.Remove(this);
                 }
@@ -277,18 +279,14 @@ namespace DevExpress.Mvvm.UI {
                 if(ActiveInfo.CloseWithParent)
                     ActiveInfo.RelationInfo.Do(x => x.ParentClosed += OnSplashScreenOwnerClosed);
             }
-            void PatchSplashScreenWindowStyle(Window splashScreen) {
-                if(!SplashScreenHelper.PatchWindowStyle(splashScreen))
+            void PatchSplashScreenWindowStyle(Window splashScreen, bool hasOwner) {
+                if(!SplashScreenHelper.PatchWindowStyle(splashScreen, hasOwner))
                     splashScreen.SourceInitialized += OnSplashScreenSourceInitialized;
-#if DEBUGTEST || DEBUG
-                else
-                    Test_IsWindowStylePatched = true;
-#endif
             }
             void OnSplashScreenSourceInitialized(object sender, EventArgs e) {
                 Window window = (Window)sender;
                 window.SourceInitialized -= OnSplashScreenSourceInitialized;
-                PatchSplashScreenWindowStyle(window);
+                PatchSplashScreenWindowStyle(window, ActiveInfo.Return(x => x.Owner != null, () => false));
             }
             void OnSplashScreenOwnerClosed(object sender, EventArgs e) {
                 if(IsActive)
@@ -306,7 +304,8 @@ namespace DevExpress.Mvvm.UI {
             }
 
             static void SetProgressStateCore(SplashScreenInfo info, bool isIndeterminate) {
-                if(!(info.SplashScreen is ISplashScreen)) return;
+                if(!(info.SplashScreen is ISplashScreen))
+                    return;
                 if(isIndeterminate != info.IsIndeterminate) {
                     ((ISplashScreen)info.SplashScreen).SetProgressState(isIndeterminate);
                     info.IsIndeterminate = isIndeterminate;
@@ -385,12 +384,13 @@ namespace DevExpress.Mvvm.UI {
             }
 
             protected override void OnSourceInitialized(EventArgs e) {
+                base.OnSourceInitialized(e);
                 Handle = new WindowInteropHelper(this).Handle;
-                ((HwndSource)HwndSource.FromHwnd(Handle)).AddHook(WndProc);
+                HwndSource.FromHwnd(Handle).AddHook(WndProc);
             }
             protected override void OnClosed(EventArgs e) {
                 if(Handle != IntPtr.Zero)
-                    ((HwndSource)HwndSource.FromHwnd(Handle)).Do(x => x.RemoveHook(WndProc));
+                    HwndSource.FromHwnd(Handle).Do(x => x.RemoveHook(WndProc));
             }
             protected override void OnClosing(CancelEventArgs e) {
                 IsActiveOnClosing = IsActive;

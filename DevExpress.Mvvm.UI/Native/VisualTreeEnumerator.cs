@@ -3,12 +3,7 @@ using System.Collections;
 using System.Windows;
 using System.Collections.Generic;
 using System.Linq;
-#if !NETFX_CORE
 using System.Windows.Media;
-#else
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Media;
-#endif
 namespace DevExpress.Mvvm.UI.Native {
 
     public enum EnumeratorDirection { Forward, Backward }
@@ -97,11 +92,7 @@ namespace DevExpress.Mvvm.UI.Native {
             Reset();
         }
         protected virtual bool IsObjectVisual(DependencyObject d) {
-#if !NETFX_CORE
             return d is Visual;
-#else
-            return d is UIElement;
-#endif
         }
         protected override IEnumerator GetNestedObjects(object obj) {
             DependencyObject dObject = (DependencyObject)obj;
@@ -114,7 +105,6 @@ namespace DevExpress.Mvvm.UI.Native {
             return GetParents().Cast<DependencyObject>();
         }
     }
-#if !NETFX_CORE
     public class LogicalTreeEnumerator : VisualTreeEnumerator {
         Hashtable acceptedVisuals = new Hashtable();
         static IEnumerator GetVisualAndLogicalChildren(object obj, IEnumerator visualChildren, bool dependencyObjectsOnly, Hashtable acceptedVisuals) {
@@ -210,7 +200,6 @@ namespace DevExpress.Mvvm.UI.Native {
         }
         #endregion
     }
-#endif
     public class SingleObjectEnumerator : VisualTreeEnumerator {
         public SingleObjectEnumerator(DependencyObject dObject)
             : base(dObject) {

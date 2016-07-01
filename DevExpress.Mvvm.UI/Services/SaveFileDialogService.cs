@@ -36,8 +36,6 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("OverwritePrompt", typeof(bool), typeof(SaveFileDialogService), new PropertyMetadata(true));
         public static readonly DependencyProperty DefaultExtProperty =
             DependencyProperty.Register("DefaultExt", typeof(string), typeof(SaveFileDialogService), new PropertyMetadata(string.Empty));
-        public static readonly DependencyProperty DefaultFileNameProperty =
-            DependencyProperty.Register("DefaultFileName", typeof(string), typeof(SaveFileDialogService), new PropertyMetadata(string.Empty));
         public static readonly DependencyProperty FilterProperty =
             DependencyProperty.Register("Filter", typeof(string), typeof(SaveFileDialogService), new PropertyMetadata(string.Empty));
         public static readonly DependencyProperty FilterIndexProperty =
@@ -53,10 +51,6 @@ namespace DevExpress.Mvvm.UI {
         public string DefaultExt {
             get { return (string)GetValue(DefaultExtProperty); }
             set { SetValue(DefaultExtProperty, value); }
-        }
-        public string DefaultFileName {
-            get { return (string)GetValue(DefaultFileNameProperty); }
-            set { SetValue(DefaultFileNameProperty, value); }
         }
         public string Filter {
             get { return (string)GetValue(FilterProperty); }

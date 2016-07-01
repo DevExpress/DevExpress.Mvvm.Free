@@ -2,21 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Windows;
-#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Media;
-#else
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml;
-using Windows.UI;
-using Windows.UI.Xaml.Media;
-using DevExpress.Mvvm.Native;
-#endif
 
 namespace DevExpress.Mvvm.UI {
     public abstract class ViewLocatorBase : IViewLocator {
         protected abstract IEnumerable<Assembly> Assemblies { get; }
-        Dictionary<string, Type> types = new Dictionary<string, Type>();
+        Dictionary<string, Type> shortNameToTypeMapping = new Dictionary<string, Type>();
+        Dictionary<string, Type> fullNameToTypeMapping = new Dictionary<string, Type>();
         IEnumerator<Type> enumerator;
 
         object IViewLocator.ResolveView(string viewName) {
@@ -30,16 +23,17 @@ namespace DevExpress.Mvvm.UI {
                 return null;
 
             Type typeFromDictioanry;
-            if(types.TryGetValue(viewName, out typeFromDictioanry))
+            if(shortNameToTypeMapping.TryGetValue(viewName, out typeFromDictioanry)
+                || fullNameToTypeMapping.TryGetValue(viewName, out typeFromDictioanry))
                 return typeFromDictioanry;
 
-            if(enumerator == null)
-                enumerator = GetTypes();
+            if(enumerator == null) enumerator = GetTypes();
             while(enumerator.MoveNext()) {
-                if(!types.ContainsKey(enumerator.Current.Name)) {
-                    types[enumerator.Current.Name] = enumerator.Current;
+                if(!shortNameToTypeMapping.ContainsKey(enumerator.Current.Name)) {
+                    shortNameToTypeMapping[enumerator.Current.Name] = enumerator.Current;
+                    fullNameToTypeMapping[enumerator.Current.FullName] = enumerator.Current;
                 }
-                if(enumerator.Current.Name == viewName)
+                if(enumerator.Current.Name == viewName || enumerator.Current.FullName == viewName)
                     return enumerator.Current;
             }
             return null;
@@ -55,11 +49,7 @@ namespace DevExpress.Mvvm.UI {
             foreach(Assembly asm in Assemblies) {
                 Type[] types;
                 try {
-#if !NETFX_CORE
                     types = asm.GetTypes();
-#else
-                    types = Mvvm.Native.TypeExtensions.GetExportedTypes(asm);
-#endif
                 } catch(ReflectionTypeLoadException e) {
                     types = e.Types;
                 }

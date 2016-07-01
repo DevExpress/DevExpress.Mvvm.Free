@@ -7,8 +7,8 @@ namespace DevExpress.Mvvm.UI.Interactivity {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
     public sealed class TargetTypeAttribute : Attribute {
         public TargetTypeAttribute(Type targetType) : this(true, targetType) { }
-        public TargetTypeAttribute(bool isTargeType, Type targetType) {
-            IsTargetType = isTargeType;
+        public TargetTypeAttribute(bool isTargetType, Type targetType) {
+            IsTargetType = isTargetType;
             TargetType = targetType;
         }
         public bool IsTargetType { get; private set; }

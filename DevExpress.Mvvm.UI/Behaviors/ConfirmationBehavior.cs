@@ -102,8 +102,11 @@ namespace DevExpress.Mvvm.UI {
         }
 
         void ConfirmationCommandExecute(object parameter) {
+            var c = Command;
+            var p = CommandParameter ?? parameter;
+            if(c == null) return;
             if(ShowConfirmation())
-                Command.Do(x => x.Execute(CommandParameter ?? parameter));
+                c.Execute(CommandParameter ?? p);
         }
         bool ConfirmationCommandCanExecute(object parameter) {
             if(Command == null) return true;

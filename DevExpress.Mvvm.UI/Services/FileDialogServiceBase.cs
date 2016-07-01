@@ -23,6 +23,7 @@ namespace DevExpress.Mvvm.UI {
             bool AddExtension { get; set; }
             bool DereferenceLinks { get; set; }
             string InitialDirectory { get; set; }
+            string DefaultFileName { get; set; }
             bool RestoreDirectory { get; set; }
             bool ShowHelp { get; set; }
             bool SupportMultiDottedExtensions { get; set; }
@@ -89,6 +90,10 @@ namespace DevExpress.Mvvm.UI {
                 get { return fileDialog.InitialDirectory; }
                 set { fileDialog.InitialDirectory = value; }
             }
+            string IFileDialog.DefaultFileName {
+                get { return fileDialog.FileName; }
+                set { fileDialog.FileName = value; }
+            }
             string IFileDialog.Title {
                 get { return fileDialog.Title; }
                 set { fileDialog.Title = value; }
@@ -140,6 +145,8 @@ namespace DevExpress.Mvvm.UI {
            DependencyProperty.Register("DereferenceLinks", typeof(bool), typeof(FileDialogServiceBase), new PropertyMetadata(true));
         public static readonly DependencyProperty InitialDirectoryProperty =
             DependencyProperty.Register("InitialDirectory", typeof(string), typeof(FileDialogServiceBase), new PropertyMetadata(string.Empty));
+        public static readonly DependencyProperty DefaultFileNameProperty =
+            DependencyProperty.Register("DefaultFileName", typeof(string), typeof(FileDialogServiceBase), new PropertyMetadata(string.Empty));
         public static readonly DependencyProperty RestoreDirectoryProperty =
             DependencyProperty.Register("RestoreDirectory", typeof(bool), typeof(FileDialogServiceBase), new PropertyMetadata(false));
         public static readonly DependencyProperty ShowHelpProperty =
@@ -178,6 +185,10 @@ namespace DevExpress.Mvvm.UI {
         public string InitialDirectory {
             get { return (string)GetValue(InitialDirectoryProperty); }
             set { SetValue(InitialDirectoryProperty, value); }
+        }
+        public string DefaultFileName {
+            get { return (string)GetValue(DefaultFileNameProperty); }
+            set { SetValue(DefaultFileNameProperty, value); }
         }
         public bool RestoreDirectory {
             get { return (bool)GetValue(RestoreDirectoryProperty); }
@@ -251,6 +262,7 @@ namespace DevExpress.Mvvm.UI {
             FileDialog.CheckPathExists = CheckPathExists;
             FileDialog.DereferenceLinks = DereferenceLinks;
             FileDialog.InitialDirectory = InitialDirectory;
+            FileDialog.DefaultFileName = DefaultFileName;
             FileDialog.RestoreDirectory = RestoreDirectory;
             FileDialog.ShowHelp = ShowHelp;
             FileDialog.SupportMultiDottedExtensions = SupportMultiDottedExtensions;

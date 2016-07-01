@@ -4,28 +4,17 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using System.Reflection;
 using DevExpress.Mvvm.Native;
-#if !NETFX_CORE
 using System.Windows.Data;
 using System.Windows.Markup;
 using System.Collections.Generic;
 using DevExpress.Mvvm.UI.Native;
-using System.Reflection;
 using System.Collections;
 using System.Windows.Media;
 using System.Text.RegularExpressions;
-#else
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Markup;
-using CultureInfo = System.String;
-using Windows.UI;
-using System.Text.RegularExpressions;
-using Windows.UI.Xaml.Media;
-#endif
 
 namespace DevExpress.Mvvm.UI {
-#if !NETFX_CORE
     public class ReflectionConverter : IValueConverter {
         class TypeUnsetValue { }
         Type convertBackMethodOwner = typeof(TypeUnsetValue);
@@ -209,7 +198,7 @@ namespace DevExpress.Mvvm.UI {
             object collection;
             try {
                 collection = Activator.CreateInstance(targetType);
-            } catch (MissingMethodException e) {
+            } catch(MissingMethodException e) {
                 throw new NotSupportedCollectionException(targetType, null, e);
             }
             IList list = collection as IList;
@@ -238,26 +227,12 @@ namespace DevExpress.Mvvm.UI {
         }
     }
     public class NotSupportedCollectionException : Exception {
-        public NotSupportedCollectionException(Type collectionType, string message = null, Exception innerException = null) : base(message, innerException) {
+        public NotSupportedCollectionException(Type collectionType, string message = null, Exception innerException = null)
+            : base(message, innerException) {
             CollectionType = collectionType;
         }
         public Type CollectionType { get; private set; }
     }
-#endif
-#if !NETFX_CORE && !FREE
-    public class CriteriaOperatorConverter : IValueConverter {
-        public string Expression { get; set; }
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if(value == null) return null;
-            var criteriaOperator = DevExpress.Data.Filtering.CriteriaOperator.Parse(Expression);
-            var evaluator = new DevExpress.Data.Filtering.Helpers.ExpressionEvaluator(TypeDescriptor.GetProperties(value), criteriaOperator);
-            return evaluator.Evaluate(value);
-        }
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-            throw new NotSupportedException();
-        }
-    }
-#endif
     public class TypeCastConverter : IValueConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             return TypeCastHelper.TryCast(value, targetType);
@@ -296,11 +271,7 @@ namespace DevExpress.Mvvm.UI {
         public object Source { get; set; }
         public object Target { get; set; }
     }
-#if !NETFX_CORE
     [ContentProperty("Map")]
-#else
-    [ContentProperty(Name="Map")]
-#endif
     public class ObjectToObjectConverter : IValueConverter {
         public object DefaultSource { get; set; }
         public object DefaultTarget { get; set; }
@@ -326,35 +297,42 @@ namespace DevExpress.Mvvm.UI {
                     System.Convert.ToByte(m.Groups[3].ToString(), 16),
                     System.Convert.ToByte(m.Groups[4].ToString(), 16));
             }
+            var pairs = from brush in typeof(Colors).GetProperties()
+                        where brush.PropertyType == typeof(Color)
+                        let Color = (Color)brush.GetValue(null, null)
+                        select new { brush.Name, Color };
+            var pair = pairs.FirstOrDefault(x => x.Name == str);
+            if(pair != null)
+                return pair.Color;
             return null;
         }
-        object Coerce(object value, Type targetType) {
+        internal static object Coerce(object value, Type targetType, bool ignoreImplicitXamlConversions = false) {
             if(value == null || targetType == value.GetType()) {
                 return value;
             }
             var nullableType = Nullable.GetUnderlyingType(targetType);
-            var coerced = CoerceNonNullable(value, nullableType ?? targetType);
+            var coerced = CoerceNonNullable(value, nullableType ?? targetType, ignoreImplicitXamlConversions);
             if(nullableType != null) {
                 return Activator.CreateInstance(targetType, coerced);
             }
             return coerced;
         }
-        bool IsImplicitXamlConvertion(Type valueType, Type targetType) {
+        internal static bool IsImplicitXamlConvertion(Type valueType, Type targetType) {
             if(targetType == typeof(Thickness))
                 return true;
             if(targetType == typeof(ImageSource) && (valueType == typeof(string) || valueType == typeof(Uri)))
                 return true;
             return false;
         }
-        object CoerceNonNullable(object value, Type targetType) {
-            if (targetType == typeof(SolidColorBrush) ||
+        internal static object CoerceNonNullable(object value, Type targetType, bool ignoreImplicitXamlConversions) {
+            if(targetType == typeof(SolidColorBrush) ||
                 targetType == typeof(Brush) ||
                 targetType == typeof(Color)) {
                 object res = null;
                 if(value is Color) {
                     res = (Color)value;
                 }
-                if (value is string) {
+                if(value is string) {
                     res = ParseColor((string)value);
                 }
                 if(res != null) {
@@ -366,14 +344,10 @@ namespace DevExpress.Mvvm.UI {
             if(targetType == typeof(string)) {
                 return value.ToString();
             }
-#if !NETFX_CORE
             if(targetType.IsEnum && value is string) {
-#else
-            if(targetType.IsEnum() && value is string) {
-#endif
                 return Enum.Parse(targetType, (string)value, false);
             }
-            if(IsImplicitXamlConvertion(value.GetType(), targetType))
+            if(!ignoreImplicitXamlConversions && IsImplicitXamlConvertion(value.GetType(), targetType))
                 return value;
             try {
                 return System.Convert.ChangeType(value, targetType, System.Globalization.CultureInfo.InvariantCulture);
@@ -407,10 +381,8 @@ namespace DevExpress.Mvvm.UI {
     public class BooleanToVisibilityConverter : IValueConverter {
         bool hiddenInsteadOfCollapsed;
         public bool Inverse { get; set; }
-#if !NETFX_CORE
         [Obsolete, Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public bool HiddenInsteadCollapsed { get { return hiddenInsteadOfCollapsed; } set { hiddenInsteadOfCollapsed = value; } }
-#endif
         public bool HiddenInsteadOfCollapsed { get { return hiddenInsteadOfCollapsed; } set { hiddenInsteadOfCollapsed = value; } }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             bool booleanValue = ConverterHelper.GetBooleanValue(value);
@@ -459,9 +431,13 @@ namespace DevExpress.Mvvm.UI {
     public class FormatStringConverter : IValueConverter {
         public string FormatString { get; set; }
         public TextCaseFormat OutStringCaseFormat { get; set; }
+        public bool SplitPascalCase { get; set; }
 
         public virtual object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            return GetFormattedValue(FormatString, value, System.Globalization.CultureInfo.CurrentUICulture, OutStringCaseFormat);
+            var res = GetFormattedValue(FormatString, value, System.Globalization.CultureInfo.CurrentUICulture, OutStringCaseFormat);
+            if(res is string && SplitPascalCase)
+                return SplitStringHelper.SplitPascalCaseString((string)res);
+            return res;
         }
         public virtual object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             throw new NotSupportedException();
@@ -552,17 +528,13 @@ namespace DevExpress.Mvvm.UI {
             try {
                 var d = (double)System.Convert.ChangeType(value, typeof(double), null);
                 return d != 0d;
-            } catch (Exception) { }
+            } catch(Exception) { }
             return false;
         }
         public static Visibility BooleanToVisibility(bool booleanValue, bool inverse, bool hiddenInsteadOfCollapsed) {
             return (booleanValue ^ inverse) ?
                 Visibility.Visible :
-#if !NETFX_CORE
  (hiddenInsteadOfCollapsed ? Visibility.Hidden : Visibility.Collapsed);
-#else
-                Visibility.Collapsed;
-#endif
         }
     }
 }
