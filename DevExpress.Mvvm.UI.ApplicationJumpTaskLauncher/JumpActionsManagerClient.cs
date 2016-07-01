@@ -178,7 +178,7 @@ namespace DevExpress.Mvvm.UI.Native {
             public object Owner { get; private set; }
         }
         static Dictionary<string, HashSet<MemoryMappedFileInfo>> memoryMappedFiles = new Dictionary<string, HashSet<MemoryMappedFileInfo>>();
-        public static void ClearMamoryMappedFiles() {
+        public static void ClearMemoryMappedFiles() {
             memoryMappedFiles.Clear();
         }
         [SecuritySafeCritical]
