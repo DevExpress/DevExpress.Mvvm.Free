@@ -1,0 +1,40 @@
+-->begin
+-->namespace
+class Parser : ParserBase {
+	public Parser(Scanner scanner, IParserErrorHandler errorHandler) : base(scanner, errorHandler) { }
+	protected override int GetMaxTokenKind() { return maxT; }
+-->constants
+	protected override bool IsEOF(int n) {
+		return n == _EOF;
+	}
+-->declarations
+	protected override ErrorsBase CreateErrorHandler(IParserErrorHandler errorHandler) {
+		return new Errors(errorHandler);
+	}
+	protected override void Pragmas() {
+-->pragmas
+	}
+-->productions
+	protected override void ParseRoot() {
+-->parseRoot
+	}
+	protected override bool[,] GetSet() {
+		return new bool[,] {
+-->initialization
+		};
+	}
+}
+class Errors : ErrorsBase {
+	public Errors(IParserErrorHandler errorHandler) : base(errorHandler) { }
+	internal static string GetDefaultError(int n) {
+		string s;
+		switch (n) {
+-->errors
+			default: s = "error " + n; break;
+		}
+		return s;
+	}
+	protected override string GetError(int n) {
+		return GetDefaultError(n);
+	}
+}

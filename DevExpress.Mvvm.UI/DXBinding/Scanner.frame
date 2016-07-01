@@ -1,0 +1,57 @@
+-->begin
+using System;
+using System.IO;
+using System.Collections;
+-->namespace
+class Scanner : ScannerBase {
+-->declarations
+		static Scanner() {
+-->initialization
+		}
+        public Scanner(string fileName) : base(fileName) { }
+        public Scanner(Stream s) : base(s) { }
+
+        protected override void Casing1() {
+-->casing1
+		}
+        protected override void Casing2() {
+-->casing2
+		}
+
+-->comments
+
+		protected override void CheckLiteral() {
+-->literals
+		}
+		protected override int GetMaxT() {
+			return maxT;
+		}
+        protected override Token NextToken() {
+			while (ch == ' ' ||
+-->scan1
+			) NextCh();
+-->scan2
+			int recKind = noSym;
+			int recEnd = pos;
+			t = new Token();
+			t.pos = pos; t.col = col; t.line = line; t.charPos = charPos;
+			int state;
+			if (start.ContainsKey(ch)) { state = (int) start[ch]; }
+			else { state = 0; }
+			tlen = 0; AddCh();
+		
+			switch (state) {
+				case -1: { t.kind = eofSym; break; }
+				case 0: {
+					if (recKind != noSym) {
+						tlen = recEnd - t.pos;
+						SetScannerBehindT();
+					}
+					t.kind = recKind; break;
+				}
+-->scan3
+			}
+			t.val = new String(tval, 0, tlen);
+			return t;
+	}
+}

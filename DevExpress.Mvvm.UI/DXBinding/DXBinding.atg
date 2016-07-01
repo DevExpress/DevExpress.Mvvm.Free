@@ -1,0 +1,385 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+enum ParserMode { BindingExpr, BindingBackExpr, CommandExecute, CommandCanExecute, Event }
+
+COMPILER DXBinding
+	public ParserMode Mode { get; set; }
+	public NRoot Root { get { return root; } }
+	NRoot root;
+
+	bool NextIs_MethodExpr(int pos) {
+		return TokenEquals(pos, _Ident) && TokenEquals(pos + 1, "(");
+	}
+	bool NextIs_IdentExpr(int pos) {
+		return TokenEquals(pos, _Ident) && !TokenEquals(pos + 1, "(");
+	}
+	bool NextIs_TypeExprWrapped(int pos, string lParen, string rParen) { 
+		if(!TokenEquals(pos, lParen)) return false;
+		int length;
+		if(!NextIs_TypeExpr(pos+1, out length)) return false;
+		if(!TokenEquals(pos+1+length, rParen)) return false;
+		return true;
+	}
+	bool NextIs_TypeExpr(int pos) { 
+		int length; return NextIs_TypeExpr(pos, out length); 
+	}
+	bool NextIs_TypeExpr(int pos, out int length) {
+		length = 0;
+		if(TokenEquals(pos + length, NType.PrimitiveTypes)) {
+			length++;
+			if(TokenEquals(pos + length, "?")) length++;
+			return true;
+		}
+		if(TokenEquals(pos + length, "$") && TokenEquals(pos + length + 1, _Ident)) length+=2;
+		else { length = 0; return false; }
+		if(TokenEquals(pos + length, ":") && TokenEquals(pos + length + 1, _Ident)) {
+			length += 2;
+			if(TokenEquals(pos + length, "?")) length++;
+		}
+		return true;
+	}
+/*###############################################################*/
+CHARACTERS
+	digit			= '0'..'9'.
+	hex_digit		= digit + 'a'..'f' + 'A'..'F'.
+	letter			= 'a'..'z' + 'A'..'Z' + '_'.
+	string			= ANY - '`' - '\\' - '\n'.
+TOKENS
+	Ident			= letter {letter|digit}.
+	Int				= (digit{digit} ["U"|"u"|"L"|"l"|"UL"|"Ul"|"uL"|"ul"|"LU"|"Lu"|"lU"|"lu"])
+					| (("0x"|"0X") hex_digit{hex_digit} ["U"|"u"|"L"|"l"|"UL"|"Ul"|"uL"|"ul"|"LU"|"Lu"|"lU"|"lu"]).
+	Float			= (digit{digit} ("F"|"f"|"D"|"d"|"M"|"m"))
+					| ({digit} '.' digit{digit} [('e'|'E')['+'|'-']digit{digit}] ["F"|"f"|"D"|"d"|"M"|"m"])
+					| (digit{digit} (('e'|'E')['+'|'-']digit{digit}) ["F"|"f"|"D"|"d"|"M"|"m"]).
+	String			= "`" {string | "\\`" | "\\\'" | "\\\"" | "\\\\" | "\\0" | "\\a" | "\\b" | "\\f" | "\\n" | "\\r" | "\\t" | "\\v"} "`".
+IGNORE '\r' + '\n' + '\t'
+/*###############################################################*/
+PRODUCTIONS
+DXBinding
+=	(IF(Mode == ParserMode.BindingExpr) 
+	  ExprRoot
+	| IF(Mode == ParserMode.BindingBackExpr)
+	  Back_ExprRoot
+	| IF(Mode == ParserMode.CommandExecute)
+	  Execute_ExprRoot
+	| IF(Mode == ParserMode.CommandCanExecute)
+	  CanExecute_ExprRoot
+	| IF(Mode == ParserMode.Event)
+	  Event_ExprRoot)
+	EOF
+.
+ExprRoot									(. root = new NRoot(); NBase res; .)
+=	Expr<out res>							(. root.Exprs.Add(res); .)
+.
+Expr<out NBase res>= ConditionExpr<out res>.
+ConditionExpr<out NBase res>				(. res = null; NBase second = null; NBase third = null; .)
+=	NullCoalescingExpr<out res>
+	[ "?" Expr<out second> ":" Expr<out third>
+											(. res = new NTernary(NTernary.NKind.Condition, res, second, third); .)
+].
+NullCoalescingExpr<out NBase res>			(. res = null; NBase right = null; .)
+=	OrExpr<out res>
+	{ "??" OrExpr<out right>				(. res = new NBinary(NBinary.NKind.Coalesce, res, right); .)   
+}.
+OrExpr<out NBase res>						(. res = null; NBase right = null; .)
+=	AndExpr<out res>
+	{ ("||" | "or") AndExpr<out right>		(. res = new NBinary(NBinary.NKind.OrElse, res, right); .)  
+}.
+AndExpr<out NBase res>						(. res = null; NBase right = null; .)
+=	BitOrExpr<out res>
+	{ ("&&" | "and") BitOrExpr<out right>	(. res = new NBinary(NBinary.NKind.AndAlso, res, right); .)  
+}.
+BitOrExpr<out NBase res>					(. res = null; NBase right = null; .)
+=	BitXorExpr<out res> 
+	{ "|" BitXorExpr<out right>				(. res = new NBinary(NBinary.NKind.Or, res, right); .) 
+}.
+BitXorExpr<out NBase res>					(. res = null; NBase right = null; .)
+=	BitAndExpr<out res> 
+	{ "^" BitAndExpr<out right>				(. res = new NBinary(NBinary.NKind.Xor, res, right); .) 
+}.
+BitAndExpr<out NBase res>					(. res = null; NBase right = null; .)
+=	EqlExpr<out res>
+	{ "&" EqlExpr<out right>				(. res = new NBinary(NBinary.NKind.And, res, right); .)
+}.
+
+EqlExpr<out NBase res>						(. res = null; NBase right = null; .)
+=	RelExpr<out res> 
+	{ ("!=" | "ne") RelExpr<out right>				(. res = new NBinary(NBinary.NKind.NotEqual, res, right); .)
+	| ("==" | "eq") RelExpr<out right>				(. res = new NBinary(NBinary.NKind.Equal, res, right); .)
+}.
+RelExpr<out NBase res>						(. res = null; NBase right = null; .)
+=	ShiftExpr<out res>
+	{ ("<" | "lt") ShiftExpr<out right>		(. res = new NBinary(NBinary.NKind.Less, res, right); .)
+	| (">" | "gt") ShiftExpr<out right>		(. res = new NBinary(NBinary.NKind.Greater, res, right); .)
+	| ("<=" | "le") ShiftExpr<out right>	(. res = new NBinary(NBinary.NKind.LessOrEqual, res, right); .)
+	| (">=" | "ge") ShiftExpr<out right>	(. res = new NBinary(NBinary.NKind.GreaterOrEqual, res, right); .)
+	| "is" TypeExpr<out right>				(. res = new NCast(NCast.NKind.Is, res, (NType)right); .)
+	| "as" TypeExpr<out right>				(. res = new NCast(NCast.NKind.As, res, (NType)right); .)
+}.
+
+ShiftExpr<out NBase res>					(. res = null; NBase right = null; .)
+=	AddExpr<out res>
+	{ ("<<" | "shl") AddExpr<out right>				(. res = new NBinary(NBinary.NKind.ShiftLeft, res, right); .)
+	| (">>" | "shr") AddExpr<out right>				(. res = new NBinary(NBinary.NKind.ShiftRight, res, right); .)
+}.
+AddExpr<out NBase res>						(. res = null; NBase right = null; .)
+=	MulExpr<out res>				
+	{ "+" MulExpr<out right>				(. res = new NBinary(NBinary.NKind.Plus, res, right); .)
+	| "-" MulExpr<out right>				(. res = new NBinary(NBinary.NKind.Minus, res, right); .)
+}.
+MulExpr<out NBase res>						(. res = null; NBase right = null; .)
+=	UnaryExpr<out res>					
+	{ "*" UnaryExpr<out right>				(. res = new NBinary(NBinary.NKind.Mul, res, right); .)
+	| "/" UnaryExpr<out right>				(. res = new NBinary(NBinary.NKind.Div, res, right); .)
+	| "%" UnaryExpr<out right>				(. res = new NBinary(NBinary.NKind.Mod, res, right); .)
+}.
+UnaryExpr<out NBase res>					(. res = null; List<NUnaryBase> ops = new List<NUnaryBase>(); .)
+=	{ "+"									(. ops.Add(new NUnary(NUnary.NKind.Plus, null)); .)
+	| "-"									(. ops.Add(new NUnary(NUnary.NKind.Minus, null)); .)
+	| "~" 									(. ops.Add(new NUnary(NUnary.NKind.Not, null)); .)
+	| "!"									(. ops.Add(new NUnary(NUnary.NKind.Not, null)); .)
+	| IF(NextIs_TypeExprWrapped(1, "(", ")"))
+	    "("									(. NBase type; .)
+	    TypeExpr<out type>					(. ops.Add(new NCast(NCast.NKind.Cast, null, (NType)type)); .)
+	    ")"
+	| 										(. break; .)
+	} 
+	AtomRootExpr<out res>					(. for(int i = 0; i < ops.Count - 1; i++) ops[i].Value = ops[i+1]; .)
+											(. if(ops.Count > 0) { ops.Last().Value = res; res = ops.First(); } .)
+.
+AtomRootExpr<out NBase res>					(. res = null; .)
+=	(IF(Mode == ParserMode.BindingExpr)
+	  AtomExpr<out res>
+	| IF(Mode == ParserMode.BindingBackExpr)
+	  Back_AtomExpr<out res>
+	| IF(Mode == ParserMode.CommandExecute)
+	  Execute_AtomExpr<out res>
+	| IF(Mode == ParserMode.CommandCanExecute)
+	  CanExecute_AtomExpr<out res>
+	| IF(Mode == ParserMode.Event)
+	  Event_AtomExpr<out res>)
+.
+/*###############################################################*/
+AtomExpr<out NBase res>						(. res = null; .)
+=	( ConstExpr<out res>
+	| RelativeExpr<out res>
+	| TypeOfExpr<out res>
+	| IF(NextIs_TypeExpr(1))
+	  TypeIdentExpr<out res, true>
+	| IF(NextIs_MethodExpr(1))
+	  MethodExpr<out res>
+	| IdentExpr<out res>
+	| IndexExpr<out res>
+	| "("
+	  (IF(NextIs_TypeExpr(1))
+	    TypeIdentExpr<out res, false>		(. ((NType)res).Kind = NType.NKind.Attached; .)
+	  | Expr<out res>)
+	  ")"
+	) ReadNextIdents<ref res, true>
+.
+ReadNextIdents<ref NBase n, bool allowMethod>
+											(. NIdentBase cur = n as NIdentBase; NBase next = null; .)
+=	{ IndexExpr<out next>					(. if(cur == null) cur = (NIdentBase)(n = new NExprIdent(n, null)); .)
+											(. cur = cur.Next = (NIdentBase)next; .)
+	}
+	{ NextIdentExpr<out next, allowMethod>	(. if(cur == null) cur = (NIdentBase)(n = new NExprIdent(n, null)); .)
+											(. cur = cur.Next = (NIdentBase)next; .)
+	  { IndexExpr<out next>					(. cur = cur.Next = (NIdentBase)next; .)
+	  } }
+.
+RelativeExpr<out NBase res>					(. res = null; .)
+=	("@c" | "@DataContext")					(. res = new NRelative(t.val, null, NRelative.NKind.Context); .)
+	| ("@s" | "@Self")						(. res = new NRelative(t.val, null, NRelative.NKind.Self); .)
+	| ("@p" | "@TemplatedParent")			(. res = new NRelative(t.val, null, NRelative.NKind.Parent); .)
+	| ("@e" | "@ElementName")				(. res = new NRelative(t.val, null, NRelative.NKind.Element); .)
+	  "(" Ident								(. ((NRelative)res).ElementName = t.val; .)
+	  ")"
+	| ("@r" | "@StaticResource")			(. res = new NRelative(t.val, null, NRelative.NKind.Resource); .)
+	  "(" Ident								(. ((NRelative)res).ResourceName = t.val; .)
+	  ")"
+	| ("@Reference")						(. res = new NRelative(t.val, null, NRelative.NKind.Reference); .)
+	  "(" Ident								(. ((NRelative)res).ReferenceName = t.val; .)
+	  ")"
+	| ("@a" | "@FindAncestor")				(. res = new NRelative(t.val, null, NRelative.NKind.Ancestor); NBase type; .)
+	  "(" TypeExpr<out type>				(. ((NRelative)res).AncestorType = (NType)type; .)
+	  ["," Int								(. ((NRelative)res).AncestorLevel = (int)ParserHelper.ParseInt(t.val); .)
+	  ] ")"
+.
+
+
+TypeOfExpr<out NBase res>
+=	"typeof" "(" TypeExpr<out res> ")"		(. ((NType)res).Kind = NType.NKind.TypeOf; .)
+.
+TypeIdentExpr<out NBase res, bool allowMethod>
+											(. res = null; NBase ident = null; .)
+=	TypeExpr<out res> "."					(. ((NType)res).Kind = NType.NKind.Static; .)
+	(IF(allowMethod && NextIs_MethodExpr(1))
+	  MethodExpr<out ident>
+	| IdentExpr<out ident>)					(. ((NType)res).Ident = (NIdentBase)ident; .)
+.
+TypeExpr<out NBase res>						(. res = null; string type = string.Empty; .)
+= 	
+	(IF(TokenEquals(1, NType.PrimitiveTypes))
+	  Ident									(. type = t.val; .)
+	| "$" Ident								(. type = t.val; .)
+	  [":" Ident							(. type = type + ":" + t.val; .)
+	  ]
+	)										(. res = new NType(type, null, NType.NKind.Type, null); .)
+	["?"									(. ((NType)res).IsNullable = true; .)
+	]
+.
+
+NextIdentExpr<out NBase res, bool allowMethod>
+											(. res = null; .)
+=	"."
+	( "(" TypeIdentExpr<out res, false> ")"	(. ((NType)res).Kind = NType.NKind.Attached; .)
+	| IF(allowMethod && NextIs_MethodExpr(1))
+	  MethodExpr<out res>
+	| IdentExpr<out res>
+).
+IdentExpr<out NBase res>					(. res = null; .)
+=	Ident									(. res = new NIdent(t.val, null); .)
+.
+MethodExpr<out NBase res>					(. res = null; NBase arg; .)
+=	Ident									(. res = new NMethod(t.val, null, null); .)
+	"(" [ Expr<out arg>						(. ((NMethod)res).Args.Add(arg); .)
+		{ "," Expr<out arg>					(. ((NMethod)res).Args.Add(arg); .)
+		} ] ")"
+.
+IndexExpr<out NBase res>					(. res = null; List<NBase> args = new List<NBase>(); NBase arg = null; .)
+=	"[" Expr<out arg>						(. args.Add(arg); .)
+		{ "," Expr<out arg>					(. args.Add(arg); .)
+		} "]"								(. res = new NIndex(null, args.ToArray()); .)
+.
+ConstExpr<out NBase res>					(. res = null; .)
+=	Int										(. res = new NConstant(NConstant.NKind.Integer, ParserHelper.ParseInt(t.val)); .)
+	| Float									(. res = new NConstant(NConstant.NKind.Float, ParserHelper.ParseFloat(t.val)); .)
+	| String								(. res = new NConstant(NConstant.NKind.String, ParserHelper.ParseString(t.val)); .)
+	| "true"								(. res = new NConstant(NConstant.NKind.Boolean, ParserHelper.ParseBool(t.val)); .)
+	| "false"								(. res = new NConstant(NConstant.NKind.Boolean, ParserHelper.ParseBool(t.val)); .)
+	| "null"								(. res = new NConstant(NConstant.NKind.Null, null); .)
+.
+/*###############################################################*/
+Back_ExprRoot								(. root = new NRoot(); NBase res; .)
+=	IF(TokenExists(0, "="))
+	  Back_Assign<out res> {";"}			(. root.Exprs.Add(res); .)
+	  {IF(TokenEquals(0, ";") && !TokenEquals(1, _EOF))
+	    Back_Assign<out res> {";"}			(. root.Exprs.Add(res); .)
+	  }
+	| Expr<out res>							(. root.Exprs.Add(res); .)
+.
+Back_Assign<out NBase res>					(. res = null; NBase left; NBase expr; .)
+=	Back_AssignLeft<out left>
+	"=" Expr<out expr>						(. res = new NAssign((NIdentBase)left, expr); .)
+.
+Back_AssignLeft<out NBase res>				(. res = null; .)
+=	( RelativeExpr<out res>
+	| IdentExpr<out res>
+	| IndexExpr<out res>
+	| "(" 
+	  (IF(NextIs_TypeExpr(1))
+	    TypeIdentExpr<out res, false>		(. ((NType)res).Kind = NType.NKind.Attached; .)
+	  ) ")"
+	 ) ReadNextIdents<ref res, false>
+.
+Back_AtomExpr<out NBase res>				(. res = null; .)
+=	( ConstExpr<out res>
+	| Back_RelativeValueExpr<out res>
+	| TypeOfExpr<out res>
+	| IF(NextIs_TypeExpr(1))
+	  TypeIdentExpr<out res, true>
+	| "(" Expr<out res> ")"
+	)  ReadNextIdents<ref res, true>
+.
+Back_RelativeValueExpr<out NBase res>		(. res = null; .)
+=	("@v" | "@value")						(. res = new NRelative(t.val, null, NRelative.NKind.Value); .)
+.
+/*###############################################################*/
+Execute_ExprRoot							(. root = new NRoot(); NBase ident; .)
+=	Execute_Ident<out ident> {";"}			(. root.Exprs.Add((NIdentBase)ident); .)
+	{IF(TokenEquals(0, ";") && !TokenEquals(1, _EOF))
+	    Execute_Ident<out ident> {";"}		(. root.Exprs.Add((NIdentBase)ident); .)
+	}
+.
+Execute_Ident<out NBase res>				(. res = null; .)
+=	( RelativeExpr<out res>
+	| IF(NextIs_TypeExpr(1))
+	  TypeIdentExpr<out res, true>
+	| IF(NextIs_MethodExpr(1))
+	  MethodExpr<out res>
+	| IdentExpr<out res>
+	| IndexExpr<out res>
+	| "(" TypeIdentExpr<out res, false>		(. ((NType)res).Kind = NType.NKind.Attached; .)
+	  ")"
+	)  ReadNextIdents<ref res, true>
+.
+Execute_AtomExpr<out NBase res>				(. res = null; .)
+=	( ConstExpr<out res>
+	| Execute_RelativeExpr<out res>
+	| TypeOfExpr<out res>
+	| IF(NextIs_TypeExpr(1))
+	  TypeIdentExpr<out res, true>
+	| IF(NextIs_MethodExpr(1))
+	  MethodExpr<out res>
+	| IdentExpr<out res>
+	| IndexExpr<out res>
+	| "("
+	  (IF(NextIs_TypeExpr(1))
+	    TypeIdentExpr<out res, false>		(. ((NType)res).Kind = NType.NKind.Attached; .)
+	  | Expr<out res>)
+	  ")"
+	)  ReadNextIdents<ref res, true>
+.
+Execute_RelativeExpr<out NBase res>			(. res = null; .)
+=	RelativeExpr<out res>
+	| ("@parameter")						(. res = new NRelative(t.val, null, NRelative.NKind.Parameter); .)
+.
+/*###############################################################*/
+CanExecute_ExprRoot
+=	ExprRoot.
+CanExecute_AtomExpr<out NBase res>	
+=	Execute_AtomExpr<out res>.
+/*###############################################################*/
+Event_ExprRoot								(. root = new NRoot(); NBase ident; .)
+=	Event_Ident<out ident> {";"}			(. root.Exprs.Add((NIdentBase)ident); .)
+	{IF(TokenEquals(0, ";") && !TokenEquals(1, _EOF))
+	    Event_Ident<out ident> {";"}		(. root.Exprs.Add((NIdentBase)ident); .)
+	}
+.
+Event_Ident<out NBase res>					(. res = null; .)
+=	( Event_RelativeExpr<out res>
+	| IF(NextIs_TypeExpr(1))
+	  TypeIdentExpr<out res, true>
+	| IF(NextIs_MethodExpr(1))
+	  MethodExpr<out res>
+	| IdentExpr<out res>
+	| IndexExpr<out res>
+	| "(" TypeIdentExpr<out res, false>		(. ((NType)res).Kind = NType.NKind.Attached; .)
+	  ")"
+	)  ReadNextIdents<ref res, true>
+.
+Event_AtomExpr<out NBase res>				(. res = null; .)
+=	( ConstExpr<out res>
+	| Event_RelativeExpr<out res>
+	| TypeOfExpr<out res>
+	| IF(NextIs_TypeExpr(1))
+	  TypeIdentExpr<out res, true>
+	| IF(NextIs_MethodExpr(1))
+	  MethodExpr<out res>
+	| IdentExpr<out res>
+	| IndexExpr<out res>
+	| "("
+	  (IF(NextIs_TypeExpr(1))
+	    TypeIdentExpr<out res, false>		(. ((NType)res).Kind = NType.NKind.Attached; .)
+	  | Expr<out res>)
+	  ")"
+	) ReadNextIdents<ref res, true>
+.
+Event_RelativeExpr<out NBase res>			(. res = null; .)
+=	RelativeExpr<out res>
+	| ("@sender")							(. res = new NRelative(t.val, null, NRelative.NKind.Sender); .)
+	| ("@args")								(. res = new NRelative(t.val, null, NRelative.NKind.Args); .)
+.
+END DXBinding.
