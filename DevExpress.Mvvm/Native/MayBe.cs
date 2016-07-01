@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace DevExpress.Mvvm.Native {
@@ -113,6 +115,9 @@ namespace DevExpress.Mvvm.Native {
         public static IEnumerable<T> Yield<T>(this T singleElement) {
             yield return singleElement;
         }
+        public static T[] YieldToArray<T>(this T singleElement) {
+            return new[] { singleElement };
+        }
         public static IEnumerable<T> YieldIfNotNull<T>(this T singleElement) {
             if(singleElement != null)
                 yield return singleElement;
@@ -120,30 +125,39 @@ namespace DevExpress.Mvvm.Native {
         public static IEnumerable<T> Flatten<T>(this IEnumerable<T> source, Func<T, IEnumerable<T>> getItems) {
             return source.SelectMany(item => item.Yield().Concat(getItems(item).Flatten(getItems)));
         }
-        public static T MinBy<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector) where TKey : IComparable {
+        public static T MinByLast<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector) where TKey : IComparable {
             var comparer = Comparer<TKey>.Default;
             return source.Aggregate((x, y) => comparer.Compare(keySelector(x), keySelector(y)) < 0 ? x : y);
         }
+        public static T MinBy<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector) where TKey : IComparable {
+            var comparer = Comparer<TKey>.Default;
+            return source.Aggregate((x, y) => comparer.Compare(keySelector(x), keySelector(y)) <= 0 ? x : y);
+        }
         public static T MaxBy<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector) where TKey : IComparable {
             var comparer = Comparer<TKey>.Default;
-            return source.Aggregate((x, y) => comparer.Compare(keySelector(x), keySelector(y)) > 0 ? x : y);
+            return source.Aggregate((x, y) => comparer.Compare(keySelector(x), keySelector(y)) >= 0 ? x : y);
         }
-        public static IEnumerable<T> InsertDelimeter<T>(this IEnumerable<T> source, T delimeter) {
+        public static IEnumerable<T> InsertDelimiter<T>(this IEnumerable<T> source, T delimiter) {
             var en = source.GetEnumerator();
             if(en.MoveNext())
                 yield return en.Current;
             while(en.MoveNext()) {
-                yield return delimeter;
+                yield return delimiter;
                 yield return en.Current;
             }
         }
-#if !NETFX_CORE
+        public static string ConcatStringsWithDelimiter(this IEnumerable<string> source, string delimiter) {
+            var builder = new StringBuilder();
+            foreach(var str in source.InsertDelimiter(delimiter)) {
+                builder.Append(str);
+            }
+            return builder.ToString();
+        }
         public static IOrderedEnumerable<TSource> OrderBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, ListSortDirection sortDirection) {
             return sortDirection == ListSortDirection.Ascending ?
                 source.OrderBy(keySelector) :
                 source.OrderByDescending(keySelector);
         }
-#endif
         public static Func<T> Memoize<T>(this Func<T> getValue) {
             var lazy = new Lazy<T>(getValue);
             return () => lazy.Value;
@@ -158,102 +172,10 @@ namespace DevExpress.Mvvm.Native {
         public static Action CombineActions(params Action[] actions) {
             return () => actions.ForEach(x => x());
         }
-    }
-#if !NETFX_CORE && !FREE
-    public
-    static class TreeExtensions {
-        public static TResult FoldTree<T, TResult>(T root, Func<T, IEnumerable<T>> getChildren, Func<T, IEnumerable<TResult>, TResult> combineWithChildren) {
-            var children = getChildren(root).Select(x => FoldTree(x, getChildren, combineWithChildren));
-            return combineWithChildren(root, children);
-        }
-
-        public static IEnumerable<T> FlattenFromWithinForward<T>(this IEnumerable<T> rootPath, Func<T, IList<T>> getChildren, Func<IList<T>, T, int> indedOf = null) where T : class {
-            return rootPath.FlattenFromWithin(getChildren, indedOf, (s, gc, io) => GetNextElementInHierarchyCore(s, gc, io, skipChildren: false));
-        }
-        public static IEnumerable<T> FlattenFromWithinBackward<T>(this IEnumerable<T> rootPath, Func<T, IList<T>> getChildren, Func<IList<T>, T, int> indedOf = null) where T : class {
-            return rootPath.FlattenFromWithin(getChildren, indedOf, GetPrevElementInHierarchyCore);
-        }
-        static IEnumerable<T> FlattenFromWithin<T>(this IEnumerable<T> rootPath, Func<T, IList<T>> getChildren, Func<IList<T>, T, int> indedOf, Func<IImmutableStack<T>, Func<T, IList<T>>, Func<IList<T>, T, int>, IImmutableStack<T>> getNextElement) where T : class {
-            indedOf = indedOf ?? ((list, item) => list.IndexOf(item));
-            var originalStack = rootPath.ToImmutableStack();
-            Func<IImmutableStack<T>, IImmutableStack<T>> next = x => {
-                var nextElement = getNextElement(x, getChildren, indedOf);
-                return nextElement.Peek() == originalStack.Peek() ? null : nextElement;
-            };
-            return LinqExtensions.Unfold(originalStack, next, x => x == null).Select(x => x.Peek());
-        }
-
-        static IImmutableStack<T> GetNextElementInHierarchyCore<T>(IImmutableStack<T> rootStack, Func<T, IList<T>> getChildren, Func<IList<T>, T, int> indedOf, bool skipChildren) where T : class {
-            var currentElement = rootStack.Peek();
-            var children = getChildren(currentElement);
-            if(!skipChildren && children.Any())
-                return rootStack.Push(children.First());
-
-            var parents = rootStack.Pop();
-            var parent = parents.FirstOrDefault();
-            if(parent == null)
-                return rootStack;
-
-            var neighbors = getChildren(parent);
-            var index = indedOf(neighbors, currentElement);
-            if(index < neighbors.Count - 1)
-                return parents.Push(neighbors[index + 1]);
-
-            return GetNextElementInHierarchyCore(parents, getChildren, indedOf, skipChildren: true);
-        }
-
-        static IImmutableStack<T> GetPrevElementInHierarchyCore<T>(IImmutableStack<T> rootStack, Func<T, IList<T>> getChildren, Func<IList<T>, T, int> indedOf) where T : class {
-            var currentElement = rootStack.Peek();
-
-            Func<T, IEnumerable<T>> getChildrenPath = element => LinqExtensions.Unfold(element, x => getChildren(x).LastOrDefault(), x => x == null);
-
-            var parents = rootStack.Pop();
-            var parent = parents.FirstOrDefault();
-            if(parent == null) {
-                return ImmutableStack.Empty<T>().PushMultiple(getChildrenPath(currentElement));
-            }
-
-            var neighbors = getChildren(parent);
-            var index = indedOf(neighbors, currentElement);
-            if(index > 0) {
-                return parents.PushMultiple(getChildrenPath(neighbors[index - 1]));
-            }
-
-            return parents;
-        }
-
-        public static TreeWrapper<TNew, TValue> TransformTree<T, TNew, TValue, TState>(
-            T root,
-            TState state,
-            Func<T, IEnumerable<T>> getChildren,
-            Func<TreeWrapper<TNew, TValue>[], T, TState, TValue> getValue,
-            Func<T, TNew> getItem,
-            Func<TState, T, TState> getFirstChildState,
-            Func<TState, T, TState> advanceChildState) {
-
-            var childrenState = getFirstChildState(state, root);
-            var children = getChildren(root)
-                .Select(child => {
-                    var result = TransformTree(child, childrenState, getChildren, getValue, getItem, getFirstChildState, advanceChildState);
-                    childrenState = advanceChildState(childrenState, child);
-                    return result;
-                })
-                .ToArray();
-            return new TreeWrapper<TNew, TValue>(getItem(root), getValue(children, root, state), children);
+        public static ReadOnlyObservableCollection<T> ToReadOnlyObservableCollection<T>(this IEnumerable<T> source) {
+            return new ReadOnlyObservableCollection<T>(new ObservableCollection<T>(source));
         }
     }
-    public
-    struct TreeWrapper<T, TValue> {
-        public readonly T Item;
-        public readonly TValue Value;
-        public readonly TreeWrapper<T, TValue>[] Children;
-        public TreeWrapper(T item, TValue value, TreeWrapper<T, TValue>[] children) {
-            Item = item;
-            Value = value;
-            Children = children;
-        }
-    }
-#endif
 
     public
     static class TaskExtensions {

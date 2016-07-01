@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-#if NETFX_CORE
-using DevExpress.Mvvm.Native;
-#endif
 
 namespace DevExpress.Mvvm {
     public static class DocumentManagerServiceExtensions {

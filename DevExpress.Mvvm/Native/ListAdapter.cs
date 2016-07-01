@@ -51,7 +51,6 @@ namespace DevExpress.Mvvm.Native {
                 this.list1 = list1;
                 this.list2 = list2;
                 this.addItemToFirstList = addItemToFirstList;
-                int count = list1.Count + list2.Count;
             }
 
             void UpdateIndexMap() {
@@ -195,6 +194,127 @@ namespace DevExpress.Mvvm.Native {
             IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
         }
 
+        sealed class ResortedList : IList<T> {
+            readonly IList<T> list;
+            readonly Func<T, int> getInsertIndexFunc;
+            List<int> publicIndexes;
+            List<int> innerIndexes;
+
+            public ResortedList(IList<T> list, Func<T, int> getInsertIndexFunc) {
+                this.list = list;
+                this.getInsertIndexFunc = getInsertIndexFunc;
+            }
+
+            void UpdateIndexMap() {
+                int count = list.Count;
+                if(publicIndexes == null || publicIndexes.Count != count) {
+                    publicIndexes = Enumerable.Range(0, count).ToList();
+                    innerIndexes = Enumerable.Range(0, count).ToList();
+                    for(int innerIndex = 0; innerIndex < count; ++innerIndex) {
+                        int publicIndex = getInsertIndexFunc(list[innerIndex]);
+                        publicIndexes[innerIndex] = publicIndex;
+                        innerIndexes[publicIndex] = innerIndex;
+                    }
+                }
+            }
+
+            int InnerIndex(int publicIndex) {
+                return innerIndexes[publicIndex];
+            }
+            int PublicIndex(int innerIndex) {
+                return publicIndexes[innerIndex];
+            }
+            void SwapItemsVirtual(int publicIndex1, int publicIndex2) {
+                int innerIndex1 = innerIndexes[publicIndex1];
+                int innerIndex2 = innerIndexes[publicIndex2];
+                publicIndexes[innerIndex1] = publicIndex2;
+                publicIndexes[innerIndex2] = publicIndex1;
+                innerIndexes[publicIndex1] = innerIndex2;
+                innerIndexes[publicIndex2] = innerIndex1;
+            }
+            void MoveItemVirtual(int oldPublicIndex, int newPublicIndex) {
+                if(oldPublicIndex < newPublicIndex) {
+                    for(int i = oldPublicIndex; i < newPublicIndex; ++i)
+                        SwapItemsVirtual(i, i + 1);
+                } else {
+                    for(int i = oldPublicIndex; i > newPublicIndex; --i)
+                        SwapItemsVirtual(i, i - 1);
+                }
+            }
+
+            public void Insert(int publicIndex, T item) {
+                UpdateIndexMap();
+                list.Add(item);
+                int innerIndex = list.Count - 1;
+                for(int i = innerIndex; i < publicIndexes.Count; ++i)
+                    ++innerIndexes[publicIndexes[i]];
+                innerIndexes.Add(innerIndex);
+                publicIndexes.Insert(innerIndex, innerIndexes.Count - 1);
+                MoveItemVirtual(innerIndexes.Count - 1, publicIndex);
+            }
+            public bool Remove(T item) {
+                int index = IndexOf(item);
+                if(index < 0) return false;
+                RemoveAt(index);
+                return true;
+            }
+            public void RemoveAt(int publicIndex) {
+                UpdateIndexMap();
+                int innerIndex = InnerIndex(publicIndex);
+                MoveItemVirtual(publicIndex, innerIndexes.Count - 1);
+                publicIndexes.RemoveAt(innerIndex);
+                innerIndexes.RemoveAt(innerIndexes.Count - 1);
+                for(int i = innerIndex; i < publicIndexes.Count; ++i)
+                    --innerIndexes[publicIndexes[i]];
+                list.RemoveAt(innerIndex);
+            }
+
+            T GetItemCore(int index) {
+                int innerIndex = innerIndexes[index];
+                return list[innerIndex];
+            }
+            public T this[int index] {
+                get {
+                    UpdateIndexMap();
+                    return GetItemCore(index);
+                }
+                set {
+                    UpdateIndexMap();
+                    int innerIndex = innerIndexes[index];
+                    list[innerIndex] = (T)value;
+                }
+            }
+            public int Count { get { return list.Count; } }
+            bool ICollection<T>.IsReadOnly { get { return list.IsReadOnly; } }
+            public void Add(T item) {
+                Insert(Count, item);
+            }
+            public void Clear() {
+                list.Clear();
+                publicIndexes.Clear();
+                innerIndexes.Clear();
+            }
+            public bool Contains(T item) {
+                return list.Contains(item);
+            }
+            public int IndexOf(T item) {
+                UpdateIndexMap();
+                int index = list.IndexOf(item);
+                return publicIndexes[index];
+            }
+            void ICollection<T>.CopyTo(T[] array, int arrayIndex) {
+                foreach(var item in this)
+                    array[arrayIndex++] = item;
+            }
+            public IEnumerator<T> GetEnumerator() {
+                UpdateIndexMap();
+                int count = publicIndexes.Count;
+                for(int i = 0; i < count; ++i)
+                    yield return GetItemCore(i);
+            }
+            IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+        }
+
         sealed class SingletonList : IList<T> {
             readonly bool hasEmptyValue;
             readonly T emptyValue;
@@ -285,6 +405,10 @@ namespace DevExpress.Mvvm.Native {
         }
         public static IList<T> FromObject(Func<T> getValue, Action<T> setValue, T emptyValue) {
             return new SingletonList(getValue, setValue, true, emptyValue);
+        }
+
+        public static IList<T> FromUnsortedList(IList<T> list, Func<T, int> getInsertIndex) {
+            return new ResortedList(list, getInsertIndex);
         }
     }
 }

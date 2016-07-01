@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using DevExpress.Mvvm.Native;
-#if !NETFX_CORE
 using System.Windows.Threading;
-#endif
 
 namespace DevExpress.Mvvm.Native {
     public abstract class StrongReferenceActionInvokerBase : ActionInvokerBase {
@@ -14,11 +12,7 @@ namespace DevExpress.Mvvm.Native {
             ActionToInvoke = action;
         }
         protected Delegate ActionToInvoke { get; private set; }
-#if !NETFX_CORE
         protected override string MethodName { get { return ActionToInvoke.Method.Name; } }
-#else
-        protected override string MethodName { get { return ActionToInvoke.GetMethodInfo().Name; } }
-#endif
         protected override void ClearCore() {
             ActionToInvoke = null;
         }

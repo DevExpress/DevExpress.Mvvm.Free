@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel;
 
 namespace DevExpress.Mvvm.Native {
     public interface IAttributesProvider {
@@ -205,15 +206,15 @@ namespace DevExpress.Mvvm.Native {
             return GetAttributes<T>(member, inherit).FirstOrDefault() as T;
         }
         internal static Attribute[] GetAllAttributes(MemberInfo member, bool inherit = false) {
-            var externalAndFluentAPIAttrs = GetExternalAndFluentAPIAttrbutes(member.ReflectedType, member.Name) ?? new Attribute[0];
+            var externalAndFluentAPIAttrs = GetExternalAndFluentAPIAttributes(member.ReflectedType, member.Name) ?? new Attribute[0];
             return Attribute.GetCustomAttributes(member, inherit).Concat(externalAndFluentAPIAttrs).ToArray();
         }
 
-        public static IAttributesProvider GetAttrbutesProvider(Type componentType, IMetadataLocator locator) {
+        public static IAttributesProvider GetAttributesProvider(Type componentType, IMetadataLocator locator) {
             return CompositeMetadataAttributesProvider.Create(
                 GetMetadataTypes(locator, componentType).GetProviders(componentType, false));
         }
-        public static IAttributesProvider GetFilteringAttrbutesProvider(Type componentType, IMetadataLocator locator) {
+        public static IAttributesProvider GetFilteringAttributesProvider(Type componentType, IMetadataLocator locator) {
             return CompositeMetadataAttributesProvider.Create(
                 GetMetadataTypes(locator, componentType).GetProviders(componentType, true));
         }
@@ -228,7 +229,7 @@ namespace DevExpress.Mvvm.Native {
             yield return GetExternalMetadataAttributes(metadataClassType, componentType);
             yield return GetFluentAPIAttributes(metadataClassType, componentType);
             yield return GetFluentAPIAttributesFromStaticMethod(metadataClassType, componentType);
-            yield return GetExternalAndFluentAPIAttrbutesCore(metadataClassType);
+            yield return GetExternalAndFluentAPIAttributesCore(metadataClassType);
         }
         static IEnumerable<IAttributesProvider> GetAllFilteringMetadataAttributes(Type metadataClassType, Type componentType) {
             if(componentType.IsGenericType && metadataClassType.IsGenericTypeDefinition)
@@ -238,21 +239,39 @@ namespace DevExpress.Mvvm.Native {
             yield return GetFluentAPIAttributesFromStaticMethod(metadataClassType, componentType);
             yield return GetFluentAPIFilteringAttributes(metadataClassType, componentType);
             yield return GetFluentAPIFilteringAttributesFromStaticMethod(metadataClassType, componentType);
-            yield return GetExternalAndFluentAPIFilteringAttrbutesCore(metadataClassType);
+            yield return GetExternalAndFluentAPIFilteringAttributesCore(metadataClassType);
         }
         static readonly ConcurrentDictionary<Type, IAttributesProvider> Providers = new ConcurrentDictionary<Type, IAttributesProvider>();
         static readonly ConcurrentDictionary<Type, IAttributesProvider> FilteringProviders = new ConcurrentDictionary<Type, IAttributesProvider>();
-        public static IEnumerable<Attribute> GetExternalAndFluentAPIAttrbutes(Type componentType, string propertyName) {
-            var attributesProvider = Providers.GetOrAdd(componentType, x => GetExternalAndFluentAPIAttrbutesCore(x));
-            return GetExternalAndFluentAPIAttrbutes(attributesProvider, propertyName);
+        #region obsolete
+        [Obsolete("Use the GetAttributesProvider method instead."), EditorBrowsable(EditorBrowsableState.Never)]
+        public static IAttributesProvider GetAttrbutesProvider(Type componentType, IMetadataLocator locator) {
+            return GetAttributesProvider(componentType, locator);
         }
+        [Obsolete("Use the GetFilteringAttributesProvider method instead."), EditorBrowsable(EditorBrowsableState.Never)]
+        public static IAttributesProvider GetFilteringAttrbutesProvider(Type componentType, IMetadataLocator locator) {
+            return GetFilteringAttributesProvider(componentType, locator);
+        }
+        [Obsolete("Use the GetExternalAndFluentAPIAttributes method instead."), EditorBrowsable(EditorBrowsableState.Never)]
+        public static IEnumerable<Attribute> GetExternalAndFluentAPIAttrbutes(Type componentType, string propertyName) {
+            return GetExternalAndFluentAPIAttributes(componentType, propertyName);
+        }
+        [Obsolete("Use the GetExternalAndFluentAPIFilteringAttributes method instead."), EditorBrowsable(EditorBrowsableState.Never)]
         public static IEnumerable<Attribute> GetExternalAndFluentAPIFilteringAttrbutes(Type componentType, string propertyName) {
-            var attributesProvider = Providers.GetOrAdd(componentType, x => GetExternalAndFluentAPIAttrbutesCore(x));
-            var filteringAttributesProvider = FilteringProviders.GetOrAdd(componentType, x => GetExternalAndFluentAPIFilteringAttrbutesCore(x));
-            return GetExternalAndFluentAPIAttrbutes(CompositeMetadataAttributesProvider.Create(
+            return GetExternalAndFluentAPIFilteringAttributes(componentType, propertyName);
+        }
+        #endregion
+        public static IEnumerable<Attribute> GetExternalAndFluentAPIAttributes(Type componentType, string propertyName) {
+            var attributesProvider = Providers.GetOrAdd(componentType, x => GetExternalAndFluentAPIAttributesCore(x));
+            return GetExternalAndFluentAPIAttributes(attributesProvider, propertyName);
+        }
+        public static IEnumerable<Attribute> GetExternalAndFluentAPIFilteringAttributes(Type componentType, string propertyName) {
+            var attributesProvider = Providers.GetOrAdd(componentType, x => GetExternalAndFluentAPIAttributesCore(x));
+            var filteringAttributesProvider = FilteringProviders.GetOrAdd(componentType, x => GetExternalAndFluentAPIFilteringAttributesCore(x));
+            return GetExternalAndFluentAPIAttributes(CompositeMetadataAttributesProvider.Create(
                 new List<IAttributesProvider>() { attributesProvider , filteringAttributesProvider }), propertyName);
         }
-        static IEnumerable<Attribute> GetExternalAndFluentAPIAttrbutes(IAttributesProvider attributesProvider, string propertyName) {
+        static IEnumerable<Attribute> GetExternalAndFluentAPIAttributes(IAttributesProvider attributesProvider, string propertyName) {
             lock (attributesProvider) {
                 var attributes = attributesProvider.GetAttributes(propertyName);
                 var groupedAttributes = attributes.SelectMany(attr => GetAttributeTypes(attr).Select(x => new { type = x, value = attr })).GroupBy(x => x.type);
@@ -263,17 +282,17 @@ namespace DevExpress.Mvvm.Native {
             }
         }
 
-        static IAttributesProvider GetExternalAndFluentAPIAttrbutesCore(Type componentType) {
-            return GetExternalAndFluentAPIAttrbutesCore(componentType, false);
+        static IAttributesProvider GetExternalAndFluentAPIAttributesCore(Type componentType) {
+            return GetExternalAndFluentAPIAttributesCore(componentType, false);
         }
-        static IAttributesProvider GetExternalAndFluentAPIFilteringAttrbutesCore(Type componentType) {
+        static IAttributesProvider GetExternalAndFluentAPIFilteringAttributesCore(Type componentType) {
             return CompositeMetadataAttributesProvider.Create(new List<IAttributesProvider>() {
-                GetExternalAndFluentAPIAttrbutesCore(componentType, false),
-                GetExternalAndFluentAPIAttrbutesCore(componentType, true)
+                GetExternalAndFluentAPIAttributesCore(componentType, false),
+                GetExternalAndFluentAPIAttributesCore(componentType, true)
             });
         }
-        static IAttributesProvider GetExternalAndFluentAPIAttrbutesCore(Type componentType, bool forFiltering) {
-            IEnumerable<Type> hierarchy = componentType.Yield().Flatten(x => x.BaseType.YieldIfNotNull());
+        static IAttributesProvider GetExternalAndFluentAPIAttributesCore(Type componentType, bool forFiltering) {
+            IEnumerable<Type> hierarchy = componentType.Yield().Flatten(x => x.BaseType.YieldIfNotNull()).Reverse();
             IEnumerable<IAttributesProvider> result = new IAttributesProvider[0];
             foreach(var type in hierarchy) {
                 IEnumerable<Type> metadataClassType =

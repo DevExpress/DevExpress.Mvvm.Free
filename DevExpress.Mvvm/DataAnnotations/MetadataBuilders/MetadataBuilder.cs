@@ -13,6 +13,9 @@ namespace DevExpress.Mvvm.DataAnnotations {
             return GetBuilder(GetPropertyName(propertyExpression), createBuilderCallBack);
         }
 
+        protected internal PropertyMetadataBuilder<T, TProperty> PropertyCore<TProperty>(string memberName) {
+            return GetBuilder(memberName, x => new PropertyMetadataBuilder<T, TProperty>(x, this));
+        }
         protected internal PropertyMetadataBuilder<T, TProperty> PropertyCore<TProperty>(Expression<Func<T, TProperty>> propertyExpression) {
             return GetBuilder(propertyExpression, x => new PropertyMetadataBuilder<T, TProperty>(x, this));
         }
@@ -27,6 +30,9 @@ namespace DevExpress.Mvvm.DataAnnotations {
     public class MetadataBuilder<T> : ClassMetadataBuilder<T> {
         public PropertyMetadataBuilder<T, TProperty> Property<TProperty>(Expression<Func<T, TProperty>> propertyExpression) {
             return PropertyCore(propertyExpression);
+        }
+        public PropertyMetadataBuilder<T, TProperty> Property<TProperty>(string propertyName) {
+            return PropertyCore<TProperty>(propertyName);
         }
         public CommandMethodMetadataBuilder<T> CommandFromMethod(Expression<Action<T>> methodExpression) {
             return CommandFromMethodCore(methodExpression);

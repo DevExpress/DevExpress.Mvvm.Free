@@ -1,12 +1,7 @@
 using System;
 
-#if MVVM && !NETFX_CORE
 namespace DevExpress.Mvvm.Native {
     public static class GuardHelper {
-#else
-namespace DevExpress.Utils {
-    public static class Guard {
-#endif
         public static void ArgumentNotNull(object value, string name) {
             if (Object.ReferenceEquals(value, null))
                 ThrowArgumentNullException(name);
@@ -46,6 +41,10 @@ namespace DevExpress.Utils {
                 ThrowArgumentException(name, value, e);
                 throw new InvalidOperationException();
             }
+        }
+        public static void ArgumentMatch<TValue>(TValue value, string name, Func<TValue, bool> predicate) {
+            if(!predicate(value))
+                ThrowArgumentException(name, value);
         }
         static void ThrowArgumentException(string propName, object val, Exception innerException = null) {
             string valueStr =

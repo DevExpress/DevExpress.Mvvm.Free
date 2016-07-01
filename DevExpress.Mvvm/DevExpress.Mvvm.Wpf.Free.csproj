@@ -63,9 +63,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyVersion.cs" />
-    <Compile Include="BindableBase.cs" />
     <Compile Include="CellValue.cs" />
     <Compile Include="CollectionBindingHelper.cs" />
+    <Compile Include="Commands\DelegateCommand.cs" />
+    <Compile Include="Commands\UICommand.cs" />
     <Compile Include="DataAnnotationsResources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -108,6 +109,7 @@
     <Compile Include="Native\AsyncCommandFactory.cs" />
     <Compile Include="Native\DelegateCommandFactory.cs" />
     <Compile Include="Native\DesignTimeValuesProvider.cs" />
+    <Compile Include="Native\DPAccessModifierAttribute.cs" />
     <Compile Include="Native\EventFireCounter.cs" />
     <Compile Include="Native\ExpressionHelper.cs" />
     <Compile Include="Native\Guard.cs" />
@@ -116,13 +118,14 @@
     <Compile Include="Native\IUICommand.cs" />
     <Compile Include="Native\ListAdapter.cs" />
     <Compile Include="Native\MayBe.cs" />
+    <Compile Include="Native\MemberVisibility.cs" />
+    <Compile Include="Native\MemberVisibilityExtensions.cs" />
     <Compile Include="Native\NativeConstants.cs" />
     <Compile Include="Native\PropertyChangedHelper.cs" />
     <Compile Include="Native\SplitStringHelper.cs" />
     <Compile Include="Native\SyncCollectionHelper.cs" />
     <Compile Include="Native\TypeCastHelper.cs" />
     <Compile Include="Native\ViewModelDesignHelper.cs" />
-    <Compile Include="NavigationViewModelBase.cs" />
     <Compile Include="PropertyValueChangedEvent.cs" />
     <Compile Include="Services\ApplicationJumpListService\ApplicationJumpItems.cs" />
     <Compile Include="Services\ApplicationJumpListService\IApplicationJumpListService.cs" />
@@ -163,7 +166,6 @@
     <Compile Include="Services\ViewInjectionService\IViewInjectionService.cs" />
     <Compile Include="Services\ViewInjectionService\ViewInjectionManager.cs" />
     <Compile Include="Services\WindowService\ICurrentWindowService.cs" />
-    <Compile Include="DelegateCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\DocumentManagerService\DocumentManagerServiceExtensions.cs" />
     <Compile Include="Services\DocumentManagerService\IDocument.cs" />
@@ -172,9 +174,10 @@
     <Compile Include="Services\ServiceContainer.cs" />
     <Compile Include="Services\WindowService\IWindowService.cs" />
     <Compile Include="Services\WindowService\WindowServiceExtensions.cs" />
-    <Compile Include="UICommand.cs" />
-    <Compile Include="ViewModelBase.cs" />
-    <Compile Include="ViewModelSource.cs" />
+    <Compile Include="ViewModels\BindableBase.cs" />
+    <Compile Include="ViewModels\NavigationViewModelBase.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="ViewModels\ViewModelSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="DataAnnotationsResources.resx">

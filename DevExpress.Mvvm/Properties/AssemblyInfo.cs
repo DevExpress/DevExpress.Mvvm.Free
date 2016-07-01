@@ -1,6 +1,4 @@
-#if !NETFX_CORE
 using System.Windows.Markup;
-#endif
 using System.Resources;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -19,18 +17,14 @@ using DevExpress.Mvvm.Native;
 [assembly: AssemblyCopyright(AssemblyInfo.AssemblyCopyright)]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-#if !NETFX_CORE
 [assembly: CLSCompliant(true)]
 [assembly: AllowPartiallyTrustedCallers]
-#endif
 [assembly: SatelliteContractVersion(AssemblyInfo.SatelliteContractVersion)]
 [assembly: ComVisible(false)]
 [assembly: NeutralResourcesLanguage("en-US")]
 
-#if !NETFX_CORE
 [assembly: XmlnsPrefix(XmlNamespaceConstants.MvvmNamespaceDefinition, XmlNamespaceConstants.MvvmPrefix)]
 [assembly: XmlnsDefinition(XmlNamespaceConstants.MvvmNamespaceDefinition, XmlNamespaceConstants.MvvmNamespace)]
-#endif
 
 [assembly: AssemblyVersion(AssemblyInfo.Version)]
 [assembly: AssemblyFileVersion(AssemblyInfo.FileVersion)]

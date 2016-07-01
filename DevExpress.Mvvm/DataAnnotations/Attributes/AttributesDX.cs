@@ -14,12 +14,12 @@ namespace DevExpress.Mvvm.Native {
     }
 
     internal class DXMinLengthAttribute : DXValidationAttribute {
-        public DXMinLengthAttribute(int length, Func<string> errorMessageAccessor)
+        public DXMinLengthAttribute(int length, Func<object, string> errorMessageAccessor)
             : base(errorMessageAccessor, () => DataAnnotationsResourcesResolver.MinLengthAttribute_ValidationError) {
             this.Length = length;
         }
-        protected override string FormatErrorMessage(string name) {
-            return string.Format(CultureInfo.CurrentCulture, ErrorMessageString, name, this.Length);
+        protected override string FormatErrorMessage(string error, string name) {
+            return string.Format(CultureInfo.CurrentCulture, error, name, this.Length);
         }
         protected override bool IsValid(object value) {
             if(Length < 0)
@@ -35,15 +35,14 @@ namespace DevExpress.Mvvm.Native {
     public class DXMaxLengthAttribute : DXValidationAttribute {
         private const int MaxAllowableLength = -1;
         protected DXMaxLengthAttribute() { throw new NotSupportedException(); }
-        public DXMaxLengthAttribute(int length, Func<string> errorMessageAccessor)
+        public DXMaxLengthAttribute(int length, Func<object, string> errorMessageAccessor)
             : base(errorMessageAccessor, () => DataAnnotationsResourcesResolver.MaxLengthAttribute_ValidationError) {
             this.Length = length;
         }
 
-        protected override string FormatErrorMessage(string name) {
-            return string.Format(CultureInfo.CurrentCulture, base.ErrorMessageString, name, this.Length);
+        protected override string FormatErrorMessage(string error, string name) {
+            return string.Format(CultureInfo.CurrentCulture, error, name, this.Length);
         }
-
         protected override bool IsValid(object value) {
             if(Length == 0 || Length < -1)
                 throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, DataAnnotationsResourcesResolver.MaxLengthAttribute_InvalidMaxLength));
@@ -96,14 +95,14 @@ namespace DevExpress.Mvvm.Native {
     internal class RegularExpressionAttribute : DXValidationAttribute {
         readonly string pattern;
         Regex regex;
-        public RegularExpressionAttribute(string pattern, Func<string> errorMessageAccessor)
+        public RegularExpressionAttribute(string pattern, Func<object, string> errorMessageAccessor)
             : base(errorMessageAccessor, () => DataAnnotationsResourcesResolver.RegexAttribute_ValidationError) {
             if(string.IsNullOrEmpty(pattern))
                 throw new ArgumentNullException("pattern");
             this.pattern = pattern;
         }
-        protected override string FormatErrorMessage(string name) {
-            return string.Format(CultureInfo.CurrentCulture, ErrorMessageString, name, pattern);
+        protected override string FormatErrorMessage(string error, string name) {
+            return string.Format(CultureInfo.CurrentCulture, error, name, pattern);
         }
 
         protected override bool IsValid(object value) {
@@ -149,7 +148,7 @@ namespace DevExpress.Mvvm.Native {
         readonly IComparable maximum;
         readonly IComparable minimum;
 
-        public RangeAttribute(object minimum, object maximum, Func<string> errorMessageAccessor)
+        public RangeAttribute(object minimum, object maximum, Func<object, string> errorMessageAccessor)
             : base(errorMessageAccessor, () => DataAnnotationsResourcesResolver.RangeAttribute_ValidationError) {
             if(!(minimum is IComparable))
                 throw new ArgumentException("minimum");
@@ -158,8 +157,8 @@ namespace DevExpress.Mvvm.Native {
             this.minimum = minimum as IComparable;
             this.maximum = maximum as IComparable;
         }
-        protected override string FormatErrorMessage(string name) {
-            return string.Format(CultureInfo.CurrentCulture, ErrorMessageString, name, minimum, maximum);
+        protected override string FormatErrorMessage(string error, string name) {
+            return string.Format(CultureInfo.CurrentCulture, error, name, minimum, maximum);
         }
         protected override bool IsValid(object value) {
             if(value == null)
@@ -174,9 +173,10 @@ namespace DevExpress.Mvvm.Native {
             return minimum.CompareTo(val) <= 0 && maximum.CompareTo(val) >= 0;
         }
     }
+    [AttributeUsageAttribute(AttributeTargets.All, Inherited = true, AllowMultiple = true)]
     internal class CustomValidationAttribute : DXValidationAttribute {
         protected readonly Func<object, bool> isValidFunction;
-        public CustomValidationAttribute(Func<object, bool> isValidFunction, Func<string> errorMessageAccessor)
+        public CustomValidationAttribute(Func<object, bool> isValidFunction, Func<object, string> errorMessageAccessor)
             : base(errorMessageAccessor, () => DataAnnotationsResourcesResolver.CustomValidationAttribute_ValidationError) {
             this.isValidFunction = isValidFunction;
         }
@@ -184,9 +184,10 @@ namespace DevExpress.Mvvm.Native {
             return isValidFunction(value);
         }
     }
+    [AttributeUsageAttribute(AttributeTargets.All, Inherited = true, AllowMultiple = true)]
     internal class CustomInstanceValidationAttribute : DXValidationAttribute {
         readonly Func<object, object, bool> isValidFunction;
-        public CustomInstanceValidationAttribute(Func<object, object, bool> isValidFunction, Func<string> errorMessageAccessor)
+        public CustomInstanceValidationAttribute(Func<object, object, bool> isValidFunction, ErrorMessageAccessorDelegate errorMessageAccessor)
             : base(errorMessageAccessor, () => DataAnnotationsResourcesResolver.CustomValidationAttribute_ValidationError) {
             this.isValidFunction = isValidFunction;
         }

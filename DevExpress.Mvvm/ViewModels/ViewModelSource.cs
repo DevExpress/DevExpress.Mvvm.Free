@@ -37,7 +37,12 @@ namespace DevExpress.Mvvm.POCO {
     }
 
     public class ViewModelSource {
-        static readonly Dictionary<Type, ICustomAttributeBuilderProvider> attributeBuilderProviders = new Dictionary<Type, ICustomAttributeBuilderProvider>();
+        [ThreadStatic]
+        static Dictionary<Type, ICustomAttributeBuilderProvider> attributeBuilderProviders;
+        static Dictionary<Type, ICustomAttributeBuilderProvider> AttributeBuilderProviders {
+            get { return attributeBuilderProviders ?? (attributeBuilderProviders = new Dictionary<Type, ICustomAttributeBuilderProvider>()); }
+        }
+
         static ViewModelSource() {
             RegisterAttributeBuilderProvider(new DisplayAttributeBuilderProvider());
             RegisterAttributeBuilderProvider(new DisplayNameAttributeBuilderProvider());
@@ -45,12 +50,18 @@ namespace DevExpress.Mvvm.POCO {
             RegisterAttributeBuilderProvider(new BrowsableAttributeBuilderProvider());
         }
         static void RegisterAttributeBuilderProvider(ICustomAttributeBuilderProvider provider) {
-            attributeBuilderProviders[provider.AttributeType] = provider;
+            AttributeBuilderProviders[provider.AttributeType] = provider;
         }
-
-        static readonly Dictionary<Type, Type> types = new Dictionary<Type, Type>();
-
-        static readonly Dictionary<Type, object> Factories = new Dictionary<Type, object>();
+        [ThreadStatic]
+        static Dictionary<Type, Type> types;
+        static Dictionary<Type, Type> Types {
+            get { return types ?? (types = new Dictionary<Type, Type>()); }
+        }
+        [ThreadStatic]
+        static Dictionary<Type, object> factories;
+        static Dictionary<Type, object> Factories {
+            get { return factories ?? (factories = new Dictionary<Type, object>()); }
+        }
 
         public static T Create<T>() where T : class, new() {
             return Factory(() => new T())();
@@ -164,7 +175,7 @@ namespace DevExpress.Mvvm.POCO {
         public static Type GetPOCOType(Type type, ViewModelSourceBuilderBase builder = null) {
             Func<Type> createType = () => CreateType(type, builder);
             if(builder == null) builder = ViewModelSourceBuilderBase.Default;
-            return builder == ViewModelSourceBuilderBase.Default ? types.GetOrAdd(type, createType) : createType();
+            return builder == ViewModelSourceBuilderBase.Default ? Types.GetOrAdd(type, createType) : createType();
         }
         internal static ConstructorInfo GetConstructor(Type proxyType, Type[] argsTypes) {
             var ctor = proxyType.GetConstructor(argsTypes ?? Type.EmptyTypes);
@@ -394,7 +405,7 @@ namespace DevExpress.Mvvm.POCO {
         static void BuildCommandPropertyAttributes(PropertyBuilder commandProperty, MethodInfo commandMethod) {
             foreach(Attribute attribute in MetadataHelper.GetAllAttributes(commandMethod)) {
                 ICustomAttributeBuilderProvider provider;
-                if(attributeBuilderProviders.TryGetValue(attribute.GetType(), out provider))
+                if(AttributeBuilderProviders.TryGetValue(attribute.GetType(), out provider))
                     commandProperty.SetCustomAttribute(provider.CreateAttributeBuilder(attribute));
             }
         }
@@ -550,7 +561,20 @@ namespace DevExpress.Mvvm.POCO {
             method.SetParameters(typeof(object));
             ParameterBuilder value = method.DefineParameter(1, ParameterAttributes.None, "value");
             ILGenerator gen = method.GetILGenerator();
+            Label returnLabel = gen.DefineLabel();
 
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Ldarg_1);
+            gen.Emit(OpCodes.Ceq);
+            gen.Emit(OpCodes.Brfalse_S, returnLabel);
+
+            Expression<Func<InvalidOperationException>> exceptionExpression = () => new InvalidOperationException((string)null);
+            ConstructorInfo exceptionCtor = ExpressionHelper.GetConstructor(exceptionExpression);
+            gen.Emit(OpCodes.Ldstr, ViewModelBase.Error_ParentViewModel);
+            gen.Emit(OpCodes.Newobj, exceptionCtor);
+            gen.Emit(OpCodes.Throw);
+
+            gen.MarkLabel(returnLabel);
             gen.Emit(OpCodes.Ldarg_0);
             gen.Emit(OpCodes.Ldarg_1);
             gen.Emit(OpCodes.Stfld, parentViewModelField);
@@ -716,10 +740,13 @@ namespace DevExpress.Mvvm.POCO {
             gen.Emit(OpCodes.Ret);
             return method;
         }
-
-        static readonly Dictionary<Assembly, ModuleBuilder> builders = new Dictionary<Assembly, ModuleBuilder>();
+        [ThreadStatic]
+        static Dictionary<Assembly, ModuleBuilder> builders;
+        static Dictionary<Assembly, ModuleBuilder> Builders {
+            get { return builders ?? (builders = new Dictionary<Assembly, ModuleBuilder>()); }
+        }
         static ModuleBuilder GetModuleBuilder(Assembly assembly) {
-            return builders.GetOrAdd(assembly, () => CreateBuilder());
+            return Builders.GetOrAdd(assembly, () => CreateBuilder());
         }
         static ModuleBuilder CreateBuilder() {
             var assemblyName = new AssemblyName();

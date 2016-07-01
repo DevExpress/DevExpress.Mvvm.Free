@@ -22,16 +22,11 @@ namespace DevExpress.Utils {
         public static Assembly EntryAssembly {
             get {
                 if(entryAssembly == null)
-#if NETFX_CORE
-                    entryAssembly = Windows.UI.Xaml.Application.Current == null ? null : Windows.UI.Xaml.Application.Current.GetType().GetTypeInfo().Assembly;
-#else
                     entryAssembly = Assembly.GetEntryAssembly();
-#endif
                 return entryAssembly;
             }
             set { entryAssembly = value; }
         }
-#if !NETFX_CORE
         static Assembly GetReflectionOnlyLoadedAssembly(string asmName) {
             try {
                 return Assembly.ReflectionOnlyLoad(asmName);
@@ -39,7 +34,6 @@ namespace DevExpress.Utils {
                 return null;
             }
         }
-#endif
         const int PublicKeyTokenBytesLength = 8;
 
         static byte[] StringToBytes(string str) {
@@ -233,10 +227,10 @@ namespace DevExpress.Utils {
             int d = typeName.LastIndexOf('.');
             return d < 0 ? string.Empty : typeName.Remove(d);
         }
-        public static string GetDefultNamespace(Assembly assembly) {
+        public static string GetDefaultNamespace(Assembly assembly) {
             string defaultNamespace = null;
             if(!defaultNamespaces.TryGetValue(assembly, out defaultNamespace)) {
-                defaultNamespace = GetDefultNamespaceCore(assembly);
+                defaultNamespace = GetDefaultNamespaceCore(assembly);
                 defaultNamespaces.Add(assembly, defaultNamespace);
             }
             return defaultNamespace;
@@ -273,7 +267,7 @@ namespace DevExpress.Utils {
             }
         }
         static Stream GetEmbeddedResourceStreamCore(Assembly assembly, string name, bool nameIsFull) {
-            string nameSpace = GetDefultNamespace(assembly);
+            string nameSpace = GetDefaultNamespace(assembly);
             string fullName = nameSpace + name;
             Stream stream = assembly.GetManifestResourceStream(fullName);
             if(stream != null || nameIsFull) return stream;
@@ -283,7 +277,7 @@ namespace DevExpress.Utils {
             }
             return null;
         }
-        static string GetDefultNamespaceCore(Assembly assembly) {
+        static string GetDefaultNamespaceCore(Assembly assembly) {
             string[] names = assembly.GetManifestResourceNames();
             if(names.Length == 0) return string.Empty;
             if(names.Length == 1) return GetPartialName(assembly) + ".";

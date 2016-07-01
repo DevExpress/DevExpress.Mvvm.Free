@@ -80,11 +80,18 @@ namespace DevExpress.Mvvm.DataAnnotations {
         }
 
         public static PropertyMetadataBuilder<T, TProperty> InRange<T, TProperty>(this PropertyMetadataBuilder<T, TProperty> builder, TProperty minimum, TProperty maximum, Func<string> errorMessageAccessor = null) where TProperty : IComparable {
-            return builder.AddOrReplaceAttribute(new RangeAttribute(minimum, maximum, errorMessageAccessor));
+            return builder.AddOrReplaceAttribute(new RangeAttribute(minimum, maximum, DXValidationAttribute.ErrorMessageAccessor(errorMessageAccessor)));
+        }
+        public static PropertyMetadataBuilder<T, TProperty> InRange<T, TProperty>(this PropertyMetadataBuilder<T, TProperty> builder, TProperty minimum, TProperty maximum, Func<TProperty, string> errorMessageAccessor) where TProperty : IComparable {
+            return builder.AddOrReplaceAttribute(new RangeAttribute(minimum, maximum, DXValidationAttribute.ErrorMessageAccessor(errorMessageAccessor)));
         }
         public static PropertyMetadataBuilder<T, TProperty?> InRange<T, TProperty>(this PropertyMetadataBuilder<T, TProperty?> builder, TProperty? minimum, TProperty? maximum, Func<string> errorMessageAccessor = null) where TProperty : struct, IComparable {
-            return builder.AddOrReplaceAttribute(new RangeAttribute(minimum, maximum, errorMessageAccessor));
+            return builder.AddOrReplaceAttribute(new RangeAttribute(minimum, maximum, DXValidationAttribute.ErrorMessageAccessor(errorMessageAccessor)));
         }
+        public static PropertyMetadataBuilder<T, TProperty?> InRange<T, TProperty>(this PropertyMetadataBuilder<T, TProperty?> builder, TProperty? minimum, TProperty? maximum, Func<TProperty, string> errorMessageAccessor) where TProperty : struct, IComparable {
+            return builder.AddOrReplaceAttribute(new RangeAttribute(minimum, maximum, DXValidationAttribute.ErrorMessageAccessor(errorMessageAccessor)));
+        }
+
     }
     [CLSCompliant(false)]
     public static class NumericUnsignedPropertyMetadataBuilderExtensions {

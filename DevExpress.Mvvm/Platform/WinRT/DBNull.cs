@@ -1,2 +1,0 @@
-namespace DevExpress.Mvvm.Native {
-}

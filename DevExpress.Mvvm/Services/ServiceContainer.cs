@@ -2,12 +2,7 @@ using DevExpress.Mvvm.Native;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-#if !NETFX_CORE
 using System.Windows;
-#else
-using Windows.UI.Xaml;
-using Windows.ApplicationModel.Core;
-#endif
 
 namespace DevExpress.Mvvm {
     public class ServiceContainer : IServiceContainer {
@@ -130,11 +125,7 @@ namespace DevExpress.Mvvm {
 
         void CheckServiceType<T>() {
             Type type = typeof(T);
-#if !NETFX_CORE
             if(!type.IsInterface) {
-#else
-            if(!type.IsInterface()) {
-#endif
                 throw new ArgumentException("Services can be only accessed via interface types");
             }
         }
@@ -142,11 +133,7 @@ namespace DevExpress.Mvvm {
     class DefaultServiceContainer : ServiceContainer {
         public DefaultServiceContainer() : base(null) { }
         protected virtual ResourceDictionary GetApplicationResources() {
-#if !NETFX_CORE
             bool hasAccess = Application.Current.Return(x => x.Dispatcher.CheckAccess(), () => false);
-#else
-            bool hasAccess = Application.Current != null && CoreApplication.MainView.CoreWindow.Return(x => x.Dispatcher.HasThreadAccess, () => false);
-#endif
             return hasAccess ? Application.Current.Resources : null;
         }
         protected override T GetServiceCore<T>(string key, ServiceSearchMode searchMode, out bool serviceHasKey) {

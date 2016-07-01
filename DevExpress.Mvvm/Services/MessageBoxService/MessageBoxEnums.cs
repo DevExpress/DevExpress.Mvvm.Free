@@ -9,17 +9,10 @@ using DevExpress.Mvvm.Native;
 namespace DevExpress.Mvvm {
     public enum MessageResult {
         None, OK, Cancel, Yes, No,
-#if NETFX_CORE
-        Abort, Retry, Ignore, Close,
-#endif
     }
     public enum MessageButton {
         OK, OKCancel, YesNoCancel, YesNo,
-#if NETFX_CORE
-        AbortRetryIgnore, RetryCancel, Close,
-#endif
     }
-#if !NETFX_CORE
     public enum MessageIcon {
         None, Error, Question, Warning, Information,
         Hand = Error, Stop = Error, Exclamation = Warning, Asterisk = Information
@@ -101,5 +94,4 @@ namespace DevExpress.Mvvm {
             }
         }
     }
-#endif
 }

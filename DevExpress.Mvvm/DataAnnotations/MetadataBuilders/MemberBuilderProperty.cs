@@ -14,14 +14,19 @@ namespace DevExpress.Mvvm.DataAnnotations {
 
         public TBuilder Required(bool allowEmptyStrings = false, Func<string> errorMessageAccessor = null) { return RequiredCore(allowEmptyStrings, errorMessageAccessor); }
         public TBuilder Required(Func<string> errorMessageAccessor) { return RequiredCore(errorMessageAccessor); }
-        public TBuilder MaxLength(int maxLength, Func<string> errorMessageAccessor = null) { return MaxLengthCore(maxLength, errorMessageAccessor); }
-        public TBuilder MinLength(int minLength, Func<string> errorMessageAccessor = null) { return MinLengthCore(minLength, errorMessageAccessor); }
-        public TBuilder MatchesRegularExpression(string pattern, Func<string> errorMessageAccessor = null) { return MatchesRegularExpressionCore(pattern, errorMessageAccessor); }
-        public TBuilder MatchesRule(Func<TProperty, bool> isValidFunction, Func<string> errorMessageAccessor = null) { return MatchesRuleCore(isValidFunction, errorMessageAccessor); }
+        public TBuilder MaxLength(int maxLength, Func<string> errorMessageAccessor = null) { return MaxLengthCore(maxLength, GetErrorMessageAccessor(errorMessageAccessor)); }
+        public TBuilder MaxLength(int maxLength, Func<TProperty, string> errorMessageAccessor) { return MaxLengthCore(maxLength, errorMessageAccessor); }
+        public TBuilder MinLength(int minLength, Func<string> errorMessageAccessor = null) { return MinLengthCore(minLength, GetErrorMessageAccessor(errorMessageAccessor)); }
+        public TBuilder MinLength(int minLength, Func<TProperty, string> errorMessageAccessor) { return MinLengthCore(minLength, errorMessageAccessor); }
+        public TBuilder MatchesRegularExpression(string pattern, Func<string> errorMessageAccessor = null) { return MatchesRegularExpressionCore(pattern, GetErrorMessageAccessor(errorMessageAccessor)); }
+        public TBuilder MatchesRegularExpression(string pattern, Func<TProperty, string> errorMessageAccessor) { return MatchesRegularExpressionCore(pattern, errorMessageAccessor); }
+        public TBuilder MatchesRule(Func<TProperty, bool> isValidFunction, Func<string> errorMessageAccessor = null) { return MatchesRuleCore(isValidFunction, GetErrorMessageAccessor(errorMessageAccessor)); }
+        public TBuilder MatchesRule(Func<TProperty, bool> isValidFunction, Func<TProperty, string> errorMessageAccessor) { return MatchesRuleCore(isValidFunction, errorMessageAccessor); }
+        public TBuilder MatchesInstanceRule(Func<TProperty, T, bool> isValidFunction, Func<string> errorMessageAccessor = null) { return MatchesInstanceRuleCore(isValidFunction, errorMessageAccessor == null ? null : new Func<TProperty, T, string>((x,y) => errorMessageAccessor())); }
+        public TBuilder MatchesInstanceRule(Func<TProperty, T, bool> isValidFunction, Func<TProperty, T, string> errorMessageAccessor) { return MatchesInstanceRuleCore(isValidFunction, errorMessageAccessor); }
         [Obsolete("Use the MatchesInstanceRule(Func<TProperty, T, bool> isValidFunction, Func<string> errorMessageAccessor = null) method instead.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public TBuilder MatchesInstanceRule(Func<T, bool> isValidFunction, Func<string> errorMessageAccessor = null) { return MatchesInstanceRuleCore(isValidFunction, errorMessageAccessor); }
-        public TBuilder MatchesInstanceRule(Func<TProperty, T, bool> isValidFunction, Func<string> errorMessageAccessor = null) { return MatchesInstanceRuleCore(isValidFunction, errorMessageAccessor); }
 
 
         #region POCO

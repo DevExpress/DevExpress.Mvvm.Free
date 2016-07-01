@@ -6,12 +6,10 @@ namespace DevExpress.Mvvm {
     public interface IMessageButtonLocalizer {
         string Localize(MessageResult button);
     }
-#if !NETFX_CORE
     [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
     public interface IMessageBoxButtonLocalizer {
         string Localize(MessageBoxResult button);
     }
-#endif
     public class DefaultMessageButtonLocalizer : IMessageButtonLocalizer {
         public string Localize(MessageResult button) {
             switch(button) {
@@ -23,21 +21,10 @@ namespace DevExpress.Mvvm {
                     return "Yes";
                 case MessageResult.No:
                     return "No";
-#if NETFX_CORE
-                case MessageResult.Close:
-                    return "Close";
-                case MessageResult.Ignore:
-                    return "Ignore";
-                case MessageResult.Retry:
-                    return "Retry";
-                case MessageResult.Abort:
-                    return "Abort";
-#endif
             }
             return string.Empty;
         }
     }
-#if !NETFX_CORE
     [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
     public class DefaultMessageBoxButtonLocalizer : IMessageBoxButtonLocalizer {
         DefaultMessageButtonLocalizer localizer = new DefaultMessageButtonLocalizer();
@@ -64,5 +51,4 @@ namespace DevExpress.Mvvm {
             }
         }
     }
-#endif
 }

@@ -6,12 +6,7 @@ using System.Threading;
 using System.Windows;
 using DevExpress.Mvvm.Internal;
 using DevExpress.Mvvm.Native;
-#if !NETFX_CORE
 using System.Windows.Threading;
-#else
-using Windows.UI.Xaml;
-using Windows.UI.Core;
-#endif
 
 namespace DevExpress.Mvvm {
     public class Messenger : IMessenger {
@@ -41,7 +36,7 @@ namespace DevExpress.Mvvm {
                 list.Add(new ActionInvokerTokenPair(actionInvoker, token));
             }
             public void CleanUp() {
-                var removeLists = new List<FuzzyKeyValueVair<Type, List<ActionInvokerTokenPair>>>();
+                var removeLists = new List<FuzzyKeyValuePair<Type, List<ActionInvokerTokenPair>>>();
                 foreach(var list in this) {
                     foreach(ActionInvokerTokenPair removeAction in new List<ActionInvokerTokenPair>(list.Value)) {
                         if(removeAction.ActionInvoker.Target != null) continue;
@@ -74,9 +69,7 @@ namespace DevExpress.Mvvm {
             }
         }
 #endregion
-#if !NETFX_CORE
         const DispatcherPriority CleanUpPriority = DispatcherPriority.ApplicationIdle;
-#endif
         static readonly object defaultMessengerLock = new object();
         static IMessenger defaultMessenger;
         public static IMessenger Default {
@@ -165,14 +158,7 @@ namespace DevExpress.Mvvm {
         public void RequestCleanup() {
             if(cleanupScheduled) return;
             cleanupScheduled = true;
-#if NETFX_CORE
-#pragma warning disable 4014
-            if(!Windows.ApplicationModel.DesignMode.DesignModeEnabled)
-                Window.Current.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, new DispatchedHandler(Cleanup));
-#pragma warning restore 4014
-#else
             Dispatcher.CurrentDispatcher.BeginInvoke(new Action(Cleanup), CleanUpPriority, null);
-#endif
         }
         static IActionInvokerFactory CreateActionInvokerFactory(ActionReferenceType actionReferenceType) {
             return actionReferenceType == ActionReferenceType.WeakReference ?

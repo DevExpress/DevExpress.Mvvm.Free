@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 
 namespace DevExpress.Mvvm.Internal {
-    public class FuzzyKeyValueVair<TKey, TValue> {
-        public FuzzyKeyValueVair(TKey key, TValue value, bool useIncludeCondition) {
+    public class FuzzyKeyValuePair<TKey, TValue> {
+        public FuzzyKeyValuePair(TKey key, TValue value, bool useIncludeCondition) {
             Key = key;
             Value = value;
             UseIncludeCondition = useIncludeCondition;
@@ -12,7 +12,7 @@ namespace DevExpress.Mvvm.Internal {
         public TValue Value { get; private set; }
         public bool UseIncludeCondition { get; private set; }
     }
-    public class FuzzyDictionary<TKey, TValue> : IEnumerable<FuzzyKeyValueVair<TKey, TValue>> {
+    public class FuzzyDictionary<TKey, TValue> : IEnumerable<FuzzyKeyValuePair<TKey, TValue>> {
         Func<TKey, TKey, bool> includeCondition;
         Dictionary<TKey, TValue> exactlyPairs = new Dictionary<TKey, TValue>();
         Dictionary<TKey, TValue> otherPairs = new Dictionary<TKey, TValue>();
@@ -56,17 +56,17 @@ namespace DevExpress.Mvvm.Internal {
                 if(includeCondition(pair.Key, key)) yield return pair.Value;
             }
         }
-        IEnumerator<FuzzyKeyValueVair<TKey, TValue>> IEnumerable<FuzzyKeyValueVair<TKey, TValue>>.GetEnumerator() {
+        IEnumerator<FuzzyKeyValuePair<TKey, TValue>> IEnumerable<FuzzyKeyValuePair<TKey, TValue>>.GetEnumerator() {
             foreach(var pair in exactlyPairs)
-                yield return new FuzzyKeyValueVair<TKey, TValue>(pair.Key, pair.Value, false);
+                yield return new FuzzyKeyValuePair<TKey, TValue>(pair.Key, pair.Value, false);
             foreach(var pair in otherPairs)
-                yield return new FuzzyKeyValueVair<TKey, TValue>(pair.Key, pair.Value, true);
+                yield return new FuzzyKeyValuePair<TKey, TValue>(pair.Key, pair.Value, true);
         }
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
             foreach(var pair in exactlyPairs)
-                yield return new FuzzyKeyValueVair<TKey, TValue>(pair.Key, pair.Value, false);
+                yield return new FuzzyKeyValuePair<TKey, TValue>(pair.Key, pair.Value, false);
             foreach(var pair in otherPairs)
-                yield return new FuzzyKeyValueVair<TKey, TValue>(pair.Key, pair.Value, true);
+                yield return new FuzzyKeyValuePair<TKey, TValue>(pair.Key, pair.Value, true);
         }
     }
 }

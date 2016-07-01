@@ -34,17 +34,18 @@ namespace DevExpress.Mvvm {
             CollectionLocker doNotProcessTargetCollectionChanged;
             Func<TSource, TTarget> itemConverter;
             bool reverse;
+            readonly bool useStrongReferences;
 
             public CollectionOneWayBinding(IEnumerable target, Func<TSource, TTarget> itemConverter, IEnumerable source,
                     CollectionLocker doNotProcessSourceCollectionChanged,
-                    CollectionLocker doNotProcessTargetCollectionChanged, bool reverse) {
+                    CollectionLocker doNotProcessTargetCollectionChanged, bool reverse, bool useStrongReferences) {
                 source = GetListObject(source);
                 this.reverse = reverse;
+                this.useStrongReferences = useStrongReferences;
                 this.doNotProcessSourceCollectionChanged = doNotProcessSourceCollectionChanged;
                 this.doNotProcessTargetCollectionChanged = doNotProcessTargetCollectionChanged;
-
-                sourceRef = new WeakReference(source);
-                targetRef = new WeakReference(target);
+                sourceRef = useStrongReferences ? (object)source : new WeakReference(source);
+                targetRef = useStrongReferences ? (object)target : new WeakReference(target);
                 this.itemConverter = itemConverter;
                 var sourceNotify = source as INotifyCollectionChanged;
                 if(sourceNotify != null)
@@ -132,15 +133,16 @@ namespace DevExpress.Mvvm {
                     default: Reset(); break;
                 }
             }
-            WeakReference sourceRef;
-            IList<TSource> GetSource() { return GetList<TSource>(sourceRef); }
-            WeakReference targetRef;
-            IList<TTarget> GetTarget() { return GetList<TTarget>(targetRef); }
-            IList<T> GetList<T>(WeakReference listRef) {
-                object listObject = listRef.Target;
-                if(listObject == null) return null;
-                var list = listObject as IList<T>;
-                return list != null ? list : ListAdapter<T>.FromObjectList((IList)listObject);
+
+            object sourceRef;
+            object targetRef;
+
+            IList<TSource> GetSource() { return GetList<TSource>(useStrongReferences ? sourceRef : ((WeakReference)sourceRef).Target); }
+            IList<TTarget> GetTarget() { return GetList<TTarget>(useStrongReferences ? targetRef : ((WeakReference)targetRef).Target); }
+            IList<T> GetList<T>(object listRef) {
+                if(listRef == null) return null;
+                var list = listRef as IList<T>;
+                return list != null ? list : ListAdapter<T>.FromObjectList((IList)listRef);
             }
             IEnumerable GetListObject(IEnumerable source) {
                 var list = source as IList<TSource>;
@@ -155,11 +157,11 @@ namespace DevExpress.Mvvm {
             CollectionOneWayBinding<TTarget, TSource> sourceToTarget;
             CollectionOneWayBinding<TSource, TTarget> targetToSource;
 
-            public CollectionTwoWayBinding(IEnumerable target, Func<TSource, TTarget> itemConverter, IEnumerable source, Func<TTarget, TSource> itemBackConverter, bool reverse) {
+            public CollectionTwoWayBinding(IEnumerable target, Func<TSource, TTarget> itemConverter, IEnumerable source, Func<TTarget, TSource> itemBackConverter, bool reverse, bool useStrongReferences) {
                 CollectionLocker sourceLocker = new CollectionLocker();
                 CollectionLocker targetLocker = new CollectionLocker();
-                targetToSource = new CollectionOneWayBinding<TSource, TTarget>(source, itemBackConverter, target, targetLocker, sourceLocker, reverse);
-                sourceToTarget = new CollectionOneWayBinding<TTarget, TSource>(target, itemConverter, source, sourceLocker, targetLocker, reverse);
+                targetToSource = new CollectionOneWayBinding<TSource, TTarget>(source, itemBackConverter, target, targetLocker, sourceLocker, reverse, useStrongReferences);
+                sourceToTarget = new CollectionOneWayBinding<TTarget, TSource>(target, itemConverter, source, sourceLocker, targetLocker, reverse, useStrongReferences);
             }
             public void Reset() {
                 sourceToTarget.Reset();
@@ -173,37 +175,37 @@ namespace DevExpress.Mvvm {
         }
         #endregion
 
-        public static IDisposable BindOneWay<TTarget, TSource>(Func<TSource, TTarget> itemConverter, IList target, IList<TSource> source, bool reverse = false) {
+        public static IDisposable BindOneWay<TTarget, TSource>(Func<TSource, TTarget> itemConverter, IList target, IList<TSource> source, bool reverse = false, bool useStrongReferences = false) {
             AssertCollections(target, source);
-            return BindOneWayCore<TTarget, TSource>(target, itemConverter, source, reverse);
+            return BindOneWayCore<TTarget, TSource>(target, itemConverter, source, reverse, useStrongReferences);
         }
-        public static IDisposable BindOneWay<TTarget, TSource>(IList<TTarget> target, Func<TSource, TTarget> itemConverter, IEnumerable source, bool reverse = false) {
+        public static IDisposable BindOneWay<TTarget, TSource>(IList<TTarget> target, Func<TSource, TTarget> itemConverter, IEnumerable source, bool reverse = false, bool useStrongReferences = false) {
             AssertCollections(target, source);
-            return BindOneWayCore<TTarget, TSource>(target, itemConverter, source, reverse);
+            return BindOneWayCore<TTarget, TSource>(target, itemConverter, source, reverse, useStrongReferences);
         }
-        public static IDisposable Bind<TTarget, TSource>(Func<TSource, TTarget> itemConverter, IList target, IList<TSource> source, Func<TTarget, TSource> itemBackConverter, bool reverse = false) {
+        public static IDisposable Bind<TTarget, TSource>(Func<TSource, TTarget> itemConverter, IList target, IList<TSource> source, Func<TTarget, TSource> itemBackConverter, bool reverse = false, bool useStrongReferences = false) {
             AssertCollections(target, source);
-            return BindCore<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse);
+            return BindCore<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse, useStrongReferences);
         }
-        public static IDisposable Bind<TTarget, TSource>(IList<TTarget> target, Func<TSource, TTarget> itemConverter, Func<TTarget, TSource> itemBackConverter, IList source, bool reverse = false) {
+        public static IDisposable Bind<TTarget, TSource>(IList<TTarget> target, Func<TSource, TTarget> itemConverter, Func<TTarget, TSource> itemBackConverter, IList source, bool reverse = false, bool useStrongReferences = false) {
             AssertCollections(target, source);
-            return BindCore<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse);
+            return BindCore<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse, useStrongReferences);
         }
-        public static IDisposable Bind<TTarget, TSource>(Func<TSource, TTarget> itemConverter, IList target, Func<TTarget, TSource> itemBackConverter, IList source, bool reverse = false) {
+        public static IDisposable Bind<TTarget, TSource>(Func<TSource, TTarget> itemConverter, IList target, Func<TTarget, TSource> itemBackConverter, IList source, bool reverse = false, bool useStrongReferences = false) {
             AssertCollections(target, source);
-            return BindCore<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse);
+            return BindCore<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse, useStrongReferences);
         }
-        public static IDisposable Bind<TTarget, TSource>(IList<TTarget> target, Func<TSource, TTarget> itemConverter, IList<TSource> source, Func<TTarget, TSource> itemBackConverter, bool reverse = false) {
+        public static IDisposable Bind<TTarget, TSource>(IList<TTarget> target, Func<TSource, TTarget> itemConverter, IList<TSource> source, Func<TTarget, TSource> itemBackConverter, bool reverse = false, bool useStrongReferences = false) {
             AssertCollections(target, source);
-            return BindCore<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse);
+            return BindCore<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse, useStrongReferences);
         }
-        static IDisposable BindCore<TTarget, TSource>(IEnumerable target, Func<TSource, TTarget> itemConverter, IEnumerable source, Func<TTarget, TSource> itemBackConverter, bool reverse) {
-            var binding = new CollectionTwoWayBinding<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse);
+        static IDisposable BindCore<TTarget, TSource>(IEnumerable target, Func<TSource, TTarget> itemConverter, IEnumerable source, Func<TTarget, TSource> itemBackConverter, bool reverse, bool useStrongReferences) {
+            var binding = new CollectionTwoWayBinding<TTarget, TSource>(target, itemConverter, source, itemBackConverter, reverse, useStrongReferences);
             binding.Reset();
             return binding;
         }
-        static IDisposable BindOneWayCore<TTarget, TSource>(IEnumerable target, Func<TSource, TTarget> itemConverter, IEnumerable source, bool reverse) {
-            var binding = new CollectionOneWayBinding<TTarget, TSource>(target, itemConverter, source, new CollectionLocker(), new CollectionLocker(), reverse);
+        static IDisposable BindOneWayCore<TTarget, TSource>(IEnumerable target, Func<TSource, TTarget> itemConverter, IEnumerable source, bool reverse, bool useStrongReferences) {
+            var binding = new CollectionOneWayBinding<TTarget, TSource>(target, itemConverter, source, new CollectionLocker(), new CollectionLocker(), reverse, useStrongReferences);
             binding.Reset();
             return binding;
         }

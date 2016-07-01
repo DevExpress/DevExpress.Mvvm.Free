@@ -163,7 +163,7 @@ namespace DevExpress.Mvvm {
             public void PutToPersistentInjectionQueue(string regionName, object key, Func<object> factory, string viewName, Type viewType) {
                 foreach(InjectionItem item in PersistentInjectionQueue) {
                     if(item.RegionName == regionName && object.Equals(item.Key, key))
-                        throw new InvalidOperationException("Exception2");
+                        throw new InvalidOperationException(Exception2);
                 }
                 PersistentInjectionQueue.Add(new InjectionItem(regionName, key, factory, viewName, viewType));
             }
@@ -232,11 +232,7 @@ namespace DevExpress.Mvvm {
                 UnregisterCore(recipient, token, action, typeof(TMessage));
             }
             IActionInvoker CreateActionInvoker<TMessage>(object recipient, Action action) {
-                #if !NETFX_CORE
                     if(action.Method.IsStatic)
-                #else
-                    if(action.GetMethodInfo().IsStatic)
-                #endif
                         return new StrongReferenceActionInvoker(recipient, action);
                 return new WeakReferenceActionInvoker(recipient, action);
             }

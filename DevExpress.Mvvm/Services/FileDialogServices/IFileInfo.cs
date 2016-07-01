@@ -35,7 +35,7 @@ namespace DevExpress.Mvvm {
         }
         public static string GetFullName(this IFileInfo fileInfo) {
             Verify(fileInfo);
-            return string.Format("{0}\\{1}", fileInfo.DirectoryName, fileInfo.Name);
+            return Path.Combine(fileInfo.DirectoryName, fileInfo.Name);
         }
 
         internal static void Verify(IFileInfo fileInfo) {
