@@ -1,26 +1,15 @@
-#if NETFX_CORE
-using DevExpress.TestFramework.NUnit;
-#else
+using System.Windows.Controls;
+using System.Windows.Data;
 using NUnit.Framework;
-#endif
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
+using DevExpress.Mvvm.UI.Interactivity;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
 using System.Windows;
-using DevExpress.Mvvm.UI.Interactivity;
 using System.Linq;
-#if !NETFX_CORE
-using System.Windows.Controls;
-using System.Windows.Data;
-using Moq;
-#else
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Data;
-#endif
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
@@ -120,10 +109,8 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(parentViewModel, viewModel.With(x => x as ISupportParentViewModel).ParentViewModel);
             DocumentUIServiceBase.SetTitleBinding(button, TextBlock.TextProperty, textBlock);
             Assert.AreEqual("title", textBlock.Text);
-#if !NETFX_CORE
             viewModel.Title = "title2";
             Assert.AreEqual("title2", textBlock.Text);
-#endif
             var dObject = new DObject();
             Assert.AreEqual(null, ViewHelper.GetViewModelFromView(dObject));
             ViewHelper.InitializeView(button, null, "test", parentViewModel);
@@ -175,7 +162,6 @@ namespace DevExpress.Mvvm.Tests {
                 throw new NotImplementedException();
             }
         }
-#if !NETFX_CORE
         [Test]
         public void ResolveViewTest() {
             var parentViewModel = new ViewModel();
@@ -187,7 +173,7 @@ namespace DevExpress.Mvvm.Tests {
             ViewLocator.Default = new ViewLocator(new[] { this.GetType().Assembly });
             try {
                 var testView = ViewHelper.CreateAndInitializeView(null, "TestView", null, "param", parentViewModel);
-                Assert.IsInstanceOf(typeof(TestView), testView);
+                AssertHelper.IsInstanceOf(typeof(TestView), testView);
                 fallbackView = (DependencyObject)ViewHelper.CreateAndInitializeView(null, "foo", null, "param", parentViewModel);
                 fallbackElement = LayoutTreeHelper.GetVisualChildren(fallbackView).OfType<TextBlock>().First();
                 Assert.AreEqual("\"foo\" type not found.", fallbackElement.Text);
@@ -214,45 +200,6 @@ namespace DevExpress.Mvvm.Tests {
                 ViewLocator.Default = null;
             }
         }
-#endif
-#if !FREE && !NETFX_CORE
-        class TestViewLocator2 : ViewLocatorBase {
-            protected override IEnumerable<Assembly> Assemblies {
-                get {
-                    yield return typeof(DataController).Assembly;
-                    yield return typeof(Button).Assembly;
-                }
-            }
-        }
-        [Test]
-        public void ViewLocatorBaseTest() {
-            IViewLocator locator = new TestViewLocator2();
-            Button button1 = (Button)locator.ResolveView("Button");
-            Button button2 = (Button)locator.ResolveView("Button");
-            Assert.IsNotNull(button1);
-            Assert.IsNotNull(button2);
-            Assert.AreNotEqual(button1, button2);
-
-            DataController dc1 = (DataController)locator.ResolveView("DataController");
-            DataController dc2 = (DataController)locator.ResolveView("DataController");
-            Assert.IsNotNull(dc1);
-            Assert.IsNotNull(dc2);
-            Assert.AreNotEqual(dc1, dc2);
-
-            locator = new ViewLocator(typeof(DataController).Assembly, typeof(Button).Assembly);
-            button1 = (Button)locator.ResolveView("Button");
-            button2 = (Button)locator.ResolveView("Button");
-            Assert.IsNotNull(button1);
-            Assert.IsNotNull(button2);
-            Assert.AreNotEqual(button1, button2);
-
-            dc1 = (DataController)locator.ResolveView("DataController");
-            dc2 = (DataController)locator.ResolveView("DataController");
-            Assert.IsNotNull(dc1);
-            Assert.IsNotNull(dc2);
-            Assert.AreNotEqual(dc1, dc2);
-        }
-#endif
         [Test]
         public void CreateViewThrowExceptionOnNullArgumentsTest() {
             Action<InvalidOperationException> checkExceptionAction = x => {
@@ -310,33 +257,65 @@ namespace DevExpress.Mvvm.Tests {
 
             Assert.AreEqual(1, Interaction.GetBehaviors(view).Count);
         }
-#if !NETFX_CORE
+        class TestVM : ISupportParameter, ISupportParentViewModel, IDocumentContent {
+            public int ParameterChangingCounter { get; private set; }
+            public int ParentViewModelChangingCounter { get; private set; }
+            public int DocumentOwnerChangingCounter { get; private set; }
+            public object Parameter { get { return parameter; } set { ParameterChangingCounter++; parameter = value; } }
+            public object ParentViewModel { get { return parentViewModel; } set { ParentViewModelChangingCounter++; parentViewModel = value; } }
+            public IDocumentOwner DocumentOwner { get { return documentOwner; } set { DocumentOwnerChangingCounter++; documentOwner = value; } }
+            object parameter;
+            object parentViewModel;
+            IDocumentOwner documentOwner;
+
+            public object Title { get { throw new NotImplementedException(); } }
+            public void OnClose(CancelEventArgs e) { throw new NotImplementedException(); }
+            public void OnDestroy() { throw new NotImplementedException(); }
+        }
+        class TestDocumentOwner : IDocumentOwner {
+            public void Close(IDocumentContent documentContent, bool force = true) { throw new NotImplementedException(); }
+        }
         [Test]
         public void SetParameterTest() {
-            var viewModel = new Mock<ISupportParameter>(MockBehavior.Strict);
-            viewModel.SetupSet(x => x.Parameter = It.IsAny<object>()).Verifiable();
-            Button button = new Button() { DataContext = viewModel.Object };
+            var viewModel = new TestVM();
+            Button button = new Button() { DataContext = viewModel };
             ViewModelExtensions.SetParameter(button, 13);
-            viewModel.VerifySet(x => x.Parameter = 13, Times.Once());
+            Assert.AreEqual(13, viewModel.Parameter);
+            Assert.AreEqual(1, viewModel.ParameterChangingCounter);
         }
         [Test]
         public void SetParentViewModelTest() {
-            var viewModel = new Mock<ISupportParentViewModel>(MockBehavior.Strict);
-            viewModel.SetupSet(x => x.ParentViewModel = It.IsAny<object>()).Verifiable();
-            Button button = new Button() { DataContext = viewModel.Object };
+            var viewModel = new TestVM();
+            Button button = new Button() { DataContext = viewModel };
             ViewModelExtensions.SetParentViewModel(button, 13);
-            viewModel.VerifySet(x => x.ParentViewModel = 13, Times.Once());
+            Assert.AreEqual(13, viewModel.ParentViewModel);
+            Assert.AreEqual(1, viewModel.ParentViewModelChangingCounter);
         }
         [Test]
         public void SetDocumentOwnerTest() {
-            var viewModel = new Mock<IDocumentContent>(MockBehavior.Strict);
-            viewModel.SetupSet(x => x.DocumentOwner = It.IsAny<IDocumentOwner>()).Verifiable();
-            Button button = new Button() { DataContext = viewModel.Object };
-            var documentOwner = new Mock<IDocumentOwner>(MockBehavior.Strict);
-            ViewModelExtensions.SetDocumentOwner(button, documentOwner.Object);
-            viewModel.VerifySet(x => x.DocumentOwner = documentOwner.Object, Times.Once());
+            var viewModel = new TestVM();
+            Button button = new Button() { DataContext = viewModel };
+            var documentOwner = new TestDocumentOwner();
+            ViewModelExtensions.SetDocumentOwner(button, documentOwner);
+            Assert.AreSame(documentOwner, viewModel.DocumentOwner);
+            Assert.AreEqual(1, viewModel.DocumentOwnerChangingCounter);
         }
-#endif
+
+        [Test]
+        public void T370425() {
+            var vm1 = new ViewModel();
+            var vm2 = new ViewModel();
+            var vm3 = new ViewModel();
+            var vm4 = new ViewModel();
+            ViewHelper.InitializeView(null, vm2, null, vm1);
+            ViewHelper.InitializeView(null, vm3, null, vm2);
+            ViewHelper.InitializeView(null, vm4, null, vm3);
+            ViewHelper.InitializeView(null, vm2, null, vm4);
+
+            Assert.AreEqual(vm1, ((ISupportParentViewModel)vm2).ParentViewModel);
+            Assert.AreEqual(vm2, ((ISupportParentViewModel)vm3).ParentViewModel);
+            Assert.AreEqual(vm3, ((ISupportParentViewModel)vm4).ParentViewModel);
+        }
     }
     public class TestView : ViewModelBase {
     }

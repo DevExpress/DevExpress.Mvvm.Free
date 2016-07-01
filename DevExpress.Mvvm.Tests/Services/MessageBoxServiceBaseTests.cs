@@ -1,37 +1,38 @@
 using NUnit.Framework;
 using System;
-using System.Windows;
-using Moq;
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class MessageBoxServiceTests {
+        public class TestMessabeBoxService : IMessageBoxService {
+            public string MessageBoxText { get; private set; }
+            public string Caption { get; private set; }
+            public MessageButton Button { get; private set; }
+            public MessageIcon Icon { get; private set; }
+            public MessageResult DefaultResult { get; private set; }
+            public MessageResult Result { get; set; }
+            MessageResult IMessageBoxService.Show(string messageBoxText, string caption, MessageButton button, MessageIcon icon, MessageResult defaultResult) {
+                MessageBoxText = messageBoxText;
+                Caption = caption;
+                Button = button;
+                Icon = icon;
+                DefaultResult = defaultResult;
+                return Result;
+            }
+        }
+
         [Test]
         public void MessageBoxExtensionsTest() {
-            var mock = new Mock<IMessageBoxService>(MockBehavior.Strict);
-            mock.Setup(foo => foo.Show("Test", string.Empty, MessageButton.OK, MessageIcon.None, MessageResult.None)).
-                Returns((string text, string caption, MessageButton button, MessageIcon image, MessageResult none) => { return MessageResult.OK; });
-            Assert.AreEqual(true, mock.Object.ShowMessage("Test"));
-
-            mock = new Mock<IMessageBoxService>(MockBehavior.Strict);
-            mock.Setup(foo => foo.Show("Test", "Caption", MessageButton.OK, MessageIcon.None, MessageResult.None)).
-                Returns((string text, string caption, MessageButton button, MessageIcon image, MessageResult none) => { return MessageResult.OK; });
-            Assert.AreEqual(true, mock.Object.ShowMessage("Test", "Caption"));
-
-            mock = new Mock<IMessageBoxService>(MockBehavior.Strict);
-            mock.Setup(foo => foo.Show("Test", "Caption", MessageButton.OKCancel, MessageIcon.None, MessageResult.None)).
-                Returns((string text, string caption, MessageButton button, MessageIcon image, MessageResult none) => { return MessageResult.Cancel; });
-            Assert.AreEqual(MessageResult.Cancel, mock.Object.ShowMessage("Test", "Caption", MessageButton.OKCancel));
-
-            mock = new Mock<IMessageBoxService>(MockBehavior.Strict);
-            mock.Setup(foo => foo.Show("Test", "Caption", MessageButton.YesNoCancel, MessageIcon.Warning, MessageResult.None)).
-                Returns((string text, string caption, MessageButton button, MessageIcon image, MessageResult none) => { return MessageResult.No; });
-            Assert.AreEqual(MessageResult.No, mock.Object.ShowMessage("Test", "Caption", MessageButton.YesNoCancel, MessageIcon.Warning));
-
-            mock = new Mock<IMessageBoxService>(MockBehavior.Strict);
-            mock.Setup(foo => foo.Show("Test", "Caption", MessageButton.YesNoCancel, MessageIcon.Warning, MessageResult.Yes)).
-                Returns((string text, string caption, MessageButton button, MessageIcon image, MessageResult none) => { return MessageResult.Yes; });
-            Assert.AreEqual(MessageResult.Yes, mock.Object.ShowMessage("Test", "Caption", MessageButton.YesNoCancel, MessageIcon.Warning, MessageResult.Yes));
+            TestMessabeBoxService s;
+            s = new TestMessabeBoxService() { Result = MessageResult.OK } ;
+            Assert.AreEqual(true, s.ShowMessage("Test"));
+            Assert.AreEqual(true, s.ShowMessage("Test", "Caption"));
+            s = new TestMessabeBoxService() { Result = MessageResult.Cancel };
+            Assert.AreEqual(MessageResult.Cancel, s.ShowMessage("Test", "Caption", MessageButton.OKCancel));
+            s = new TestMessabeBoxService() { Result = MessageResult.No };
+            Assert.AreEqual(MessageResult.No, s.ShowMessage("Test", "Caption", MessageButton.YesNoCancel, MessageIcon.Warning));
+            s = new TestMessabeBoxService() { Result = MessageResult.Yes };
+            Assert.AreEqual(MessageResult.Yes, s.ShowMessage("Test", "Caption", MessageButton.YesNoCancel, MessageIcon.Warning, MessageResult.Yes));
         }
         [Test, ExpectedException(typeof(ArgumentNullException))]
         public void NullService1() {

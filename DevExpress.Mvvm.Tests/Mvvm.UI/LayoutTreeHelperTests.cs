@@ -1,61 +1,37 @@
-#if NETFX_CORE
-using DevExpress.TestFramework.NUnit;
-#else
 using NUnit.Framework;
-#endif
 using System.Linq;
 using System.Windows;
 using DevExpress.Mvvm.UI.Native;
-#if NETFX_CORE
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Markup;
-using Windows.UI.Xaml.Controls;
-using System.Threading.Tasks;
-#else
 using System.Windows.Controls;
 using System.Windows.Markup;
-#endif
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
     public class LayoutTreeHelperTests : BaseWpfFixture {
         public LayoutTreeHelperTests() {
-#if !NETFX_CORE
             textBoxTemplate = (DataTemplate)XamlReader.Parse(
-#else
-            textBoxTemplate = (DataTemplate)XamlReader.Load(
-#endif
 @"
 <DataTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" 
 xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
 <TextBox/>
 </DataTemplate>");
 
-#if !NETFX_CORE
             textBlockTemplate = (DataTemplate)XamlReader.Parse(
 @"<DataTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" 
 xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
 <TextBlock><Run>Text</Run></TextBlock>
 </DataTemplate>");
-#endif
+
         }
         DataTemplate textBoxTemplate;
-#if !NETFX_CORE
         [Test, Asynchronous]
-#if NETFX_CORE
-        public async Task GetVisualParents() {
-#else
         public void GetVisualParents() {
-#endif
             Grid grid = new Grid();
             ContentControl contentControl = new ContentControl();
             TextBox textBox;
             Window.Content = grid;
             grid.Children.Add(contentControl);
             contentControl.ContentTemplate = textBoxTemplate;
-#if NETFX_CORE
-            await
-#endif
             EnqueueShowWindow();
             EnqueueCallback(() => {
                 textBox = (TextBox)LayoutHelper.FindElement(contentControl, x => x is TextBox);
@@ -71,22 +47,14 @@ xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
             });
             EnqueueTestComplete();
         }
-#endif
         [Test, Asynchronous]
-#if NETFX_CORE
-        public async Task GetVisualChildren() {
-#else
         public void GetVisualChildren() {
-#endif
             Grid grid = new Grid();
             ContentControl contentControl = new ContentControl();
             TextBox textBox;
             Window.Content = grid;
             grid.Children.Add(contentControl);
             contentControl.ContentTemplate = textBoxTemplate;
-#if NETFX_CORE
-            await
-#endif
             EnqueueShowWindow();
             EnqueueCallback(() => {
                 textBox = (TextBox)LayoutHelper.FindElement(contentControl, x => x is TextBox);
@@ -97,7 +65,6 @@ xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
             EnqueueTestComplete();
         }
 
-#if !NETFX_CORE
         DataTemplate textBlockTemplate;
         [Test, Asynchronous]
         public void GetVisualParents2() {
@@ -122,6 +89,5 @@ xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
             });
             EnqueueTestComplete();
         }
-#endif
     }
 }

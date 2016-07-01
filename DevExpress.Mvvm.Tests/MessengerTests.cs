@@ -1,13 +1,5 @@
-#if !FREE && !NETFX_CORE
-using DevExpress.Xpf.Core.Tests;
-#endif
-#if NETFX_CORE
-using DevExpress.TestFramework.NUnit;
-#else
-using NUnit.Framework;
-#endif
 using System;
-
+using NUnit.Framework;
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
@@ -153,9 +145,6 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("test", recipient.Message);
         }
         [Test]
-#if NETFX_CORE
-        [TestRunner.Repeat]
-#endif
         public void BroadcastToOneType() {
             Messenger.Default = null; ;
             var recipient1 = new TestRecipient();

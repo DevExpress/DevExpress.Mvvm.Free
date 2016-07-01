@@ -1,35 +1,16 @@
-#if NETFX_CORE
-using DevExpress.TestFramework.NUnit;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-#else
 using NUnit.Framework;
-#endif
-#if !FREE && !NETFX_CORE
-using DevExpress.Xpf.Core.Tests;
-#endif
 using System.Windows;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity.Internal;
 using System.Threading.Tasks;
-#if !NETFX_CORE
 using System.Windows.Data;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-#else
-#endif
 
 namespace DevExpress.Mvvm.UI.Tests {
-#if !NETFX_CORE
     public class FakeTrigger : TriggerBase<DependencyObject> {
     }
-#else
- public class FakeTrigger : TriggerBase<FrameworkElement> {
-    }
-#endif
     public class FakeBehavior : Behavior<FrameworkElement> {
     }
 
@@ -69,7 +50,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             button = null;
         }
 
-#if !NETFX_CORE
         [Test, Asynchronous]
         public void Q458047_BindAttachedBehaviorInPopup() {
             Popup popup = new Popup();
@@ -89,18 +69,10 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
-#endif
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void InheritDataContextWhenElementInTree() {
-#else
-        public async Task InheritDataContextWhenElementInTree() {
-#endif
             button.DataContext = "test";
             Window.Content = button;
-#if NETFX_CORE
-            await
-#endif
             EnqueueShowWindow();
             EnqueueCallback(() => {
                 Assert.AreEqual(0, behavior.attachedFireCount);
@@ -112,16 +84,9 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueTestComplete();
         }
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void InheritDataContextWhenElementInTree2() {
-#else
-        public async Task InheritDataContextWhenElementInTree2() {
-#endif
             Border border = new Border() { DataContext = "test", Child = button };
             Window.Content = border;
-#if NETFX_CORE
-            await
-#endif
             EnqueueShowWindow();
             EnqueueCallback(() => {
                 Assert.AreEqual(0, behavior.attachedFireCount);
@@ -149,7 +114,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(1, behavior.attachedFireCount);
             Assert.AreEqual(1, behavior.detachingFireCount);
         }
-#if !NETFX_CORE
         [Test]
         public void BehaviorShouldNotBeFrozen_Test00_T196013() {
             var behavior = new FakeBehavior();
@@ -166,7 +130,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(behavior.IsFrozen);
             Assert.IsFalse(behavior.CanFreeze);
         }
-#endif
     }
 
     [TestFixture]
@@ -252,11 +215,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Grid element = new Grid();
             var testBehavior = new EventToCommand();
             BindingOperations.SetBinding(testBehavior, EventToCommand.CommandParameterProperty, new Binding() { Path = new PropertyPath("AssociatedObject"),
-#if !NETFX_CORE
                 RelativeSource = RelativeSource.Self
-#else
-                RelativeSource = new RelativeSource() { Mode = RelativeSourceMode.Self }
-#endif
             });
             Interaction.GetBehaviors(element).Add(testBehavior);
             Assert.AreSame(element, testBehavior.CommandParameter);

@@ -1,23 +1,15 @@
-#if !NETFX_CORE
 using NUnit.Framework;
-#endif
-#if !FREE && !NETFX_CORE
-using DevExpress.Xpf.Core.Tests;
-#endif
 using System;
 using System.Linq.Expressions;
 using DevExpress.Mvvm.DataAnnotations;
 using System.Windows.Input;
 using DevExpress.Mvvm.Native;
 using System.ComponentModel.DataAnnotations;
-#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.ComponentModel;
-#endif
 
 namespace DevExpress.Mvvm.Tests {
-#if !NETFX_CORE
     [TestFixture]
     public class ViewModelBaseTests {
         public interface IService1 { }
@@ -346,8 +338,14 @@ namespace DevExpress.Mvvm.Tests {
 #pragma warning restore 0618
         #endregion
         #endregion
+
+        [Test]
+        public void T370425() {
+            var vm = new TestViewModel();
+            AssertHelper.AssertThrows<InvalidOperationException>(() => ((ISupportParentViewModel)vm).ParentViewModel = vm,
+                e => Assert.AreEqual("ViewModel cannot be parent of itself.", e.Message));
+        }
     }
-#endif
     public class TestViewModel : ViewModelBase {
         public new IServiceContainer ServiceContainer { get { return base.ServiceContainer; } }
 

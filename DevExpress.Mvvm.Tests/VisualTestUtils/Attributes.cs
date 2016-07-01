@@ -1,17 +1,15 @@
-#if !NETFX_CORE
 using NUnit.Framework;
-#endif
 using System;
+using NUnit.Framework.Constraints;
+using System.Collections;
 
 namespace DevExpress {
-#if !NETFX_CORE
     public class DXExpectedExceptionAttribute : ExpectedExceptionAttribute {
         public DXExpectedExceptionAttribute(Type exceptionType, string message = null)
             : base(exceptionType) {
             ExpectedMessage = message;
         }
     }
-#endif
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public sealed class AsynchronousAttribute : Attribute {
     }
@@ -21,15 +19,22 @@ namespace DevExpress {
             this.IsBindingErrorsDetectionEnabled = isBindingErrorsDetectionEnabled;
         }
     }
-#if !NETFX_CORE
     public class TestCategoryAttribute : NUnit.Framework.CategoryAttribute {
         public TestCategoryAttribute(string name) : base(name) { }
     }
-#endif
 }
 
 namespace DevExpress.Tests {
     public class DevExpressTestsNamespace {
 
     }
+
+    public class DXRequiresSTAAttribute : NUnit.Framework.PropertyAttribute {
+        public DXRequiresSTAAttribute()
+            : base("APARTMENT_STATE", 0) {
+        }
+    }
+}
+namespace NUnit.Framework.SyntaxHelpers {
+    public class TestTuple { }
 }

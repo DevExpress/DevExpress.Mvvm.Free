@@ -1,4 +1,3 @@
-using DevExpress.Mvvm.UI.Native;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,6 +7,9 @@ using System.Reflection;
 using System.ComponentModel;
 using System.Collections;
 using System.Security;
+using System.Linq;
+using DevExpress.Mvvm.UI.Native;
+using System.IO;
 
 namespace DevExpress {
 
@@ -17,13 +19,21 @@ namespace DevExpress {
             AppDomainSetup appDomainSetup = new AppDomainSetup();
             appDomainSetup.ApplicationBase = AppDomain.CurrentDomain.BaseDirectory;
             AppDomain dom = AppDomain.CreateDomain("ConsistencyChecker", AppDomain.CurrentDomain.Evidence, appDomainSetup);
+            dom.AssemblyResolve += dom_AssemblyResolve;
             dom.SetData("assembly", assembly);
             dom.SetData("genericSubstitutes", genericSubstitutes);
             try {
                 dom.DoCallBack(DoCheck);
+                dom.AssemblyResolve -= dom_AssemblyResolve;
             } finally {
                 AppDomain.Unload(dom);
             }
+        }
+
+        static Assembly dom_AssemblyResolve(object sender, ResolveEventArgs args) {
+            if(args.Name.ToLower().Contains("nunit.framework"))
+                return Assembly.LoadFrom(Path.Combine(Environment.CurrentDirectory, "nunit.framework.2.6.dll"));
+            return null;
         }
         static void DoCheck() {
             new DependencyPropertiesConsistencyChecker().CheckDependencyPropertiesConsistencyForAssemblyCore((Assembly)AppDomain.CurrentDomain.GetData("assembly"), (Dictionary<Type, Type[]>)AppDomain.CurrentDomain.GetData("genericSubstitutes"));
@@ -57,48 +67,44 @@ namespace DevExpress {
         }
         void CheckDependencyPropertiesConsistencyForType(Type type) {
             FieldInfo[] fields = type.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-            foreach(FieldInfo fielIndo in fields) {
-                object[] attrs = fielIndo.GetCustomAttributes(typeof(IgnoreDependencyPropertiesConsistencyCheckerAttribute), false);
-                if(attrs != null && attrs.Length > 0)
+            foreach(var fieldInfo in fields) {
+                if(fieldInfo.FieldType != typeof(DependencyProperty)) continue;
+                if(fieldInfo.GetCustomAttributes(typeof(IgnoreDependencyPropertiesConsistencyCheckerAttribute), false).Any())
                     continue;
-                if(fielIndo.FieldType == typeof(DependencyProperty)) {
-                    CheckDependencyPropertyConsistencyForField(fielIndo);
+                if(!fieldInfo.IsStatic) {
+                    DependencyPropertyFieldInfoShouldBeStatic(fieldInfo);
+                    continue;
                 }
+                if(fieldInfo.DeclaringType.ContainsGenericParameters) {
+                    DependencyPropertyFieldNotTestedInGenericClass(fieldInfo);
+                    continue;
+                }
+                var accessModifier = (DPAccessModifierAttribute)fieldInfo.GetCustomAttributes(typeof(DPAccessModifierAttribute), false).FirstOrDefault();
+                if(accessModifier != null)
+                    CheckDependencyPropertyConsistencyForField(fieldInfo, accessModifier);
+                else
+                    CheckDependencyPropertyConsistencyForField(fieldInfo);
             }
+        }
+        void CheckDependencyPropertyConsistencyForField(FieldInfo fieldInfo, DPAccessModifierAttribute accessModifier) {
+            DependencyPropertyFieldInfoShouldBeReadonly(fieldInfo);
+            SetterVisibilityShouldBeStrongerThenOrEqualsToGetterVisibility(fieldInfo, accessModifier);
+            DependencyPropertyFieldVisibilityShouldBeEqualsToGetterVisibility(fieldInfo, accessModifier);
+            DependencyProperty property = DependencyPropertyShouldBeRegistered(fieldInfo);
+            if(property == null) return;
+            DependencyPropertyFieldInfoNameShouldMatchPropertyName(fieldInfo, property);
+            CheckDependencyPropertyOwner(fieldInfo, property);
+            CheckReadOnlyProperty(fieldInfo, property, accessModifier);
         }
         void CheckDependencyPropertyConsistencyForField(FieldInfo fieldInfo) {
             if(fieldInfo.Name == "IsActiveExProperty") return;
-
-            if(!fieldInfo.IsPublic)
-                DependencyPropertyFieldInfoShouldBePublic(fieldInfo);
-            if(!fieldInfo.IsStatic) {
-                DependencyPropertyFieldInfoShouldBeStatic(fieldInfo);
-                return;
-            }
-            if(!fieldInfo.IsInitOnly)
-                DependencyPropertyFieldInfoShouldBeReadonly(fieldInfo);
-            if(fieldInfo.DeclaringType.ContainsGenericParameters) {
-                DependencyPropertyFieldNotTestedInGenericClass(fieldInfo);
-                return;
-            }
-            DependencyProperty property = (DependencyProperty)fieldInfo.GetValue(null);
-            if(property == null) {
-                DependencyPropertyShouldBeRegistered(fieldInfo);
-                return;
-            }
-            if(fieldInfo.Name != property.Name + "Property")
-                DependencyPropertyFieldInfoNameShouldMatchPropertyName(fieldInfo);
+            DependencyPropertyFieldInfoShouldBePublic(fieldInfo);
+            DependencyPropertyFieldInfoShouldBeReadonly(fieldInfo);
+            DependencyProperty property = DependencyPropertyShouldBeRegistered(fieldInfo);
+            if(property == null) return;
+            DependencyPropertyFieldInfoNameShouldMatchPropertyName(fieldInfo, property);
             CheckDependencyPropertyOwner(fieldInfo, property);
-            if(property.ReadOnly) {
-                FieldInfo keyFieldInfo = fieldInfo.ReflectedType.GetField(fieldInfo.Name + "Key", BindingFlags.Static | BindingFlags.NonPublic);
-                if(keyFieldInfo == null) {
-                    ReadonlyDependencyPropertyOwnerShouldHaveDependencyPropertyKey(fieldInfo);
-                } else {
-                    if(!keyFieldInfo.IsInitOnly) {
-                        DependencyPropertyKeyFieldInfoShouldBeReadonly(fieldInfo);
-                    }
-                }
-            }
+            CheckReadOnlyProperty(fieldInfo, property, null);
             PropertyDescriptor propertyDescriptor = TypeDescriptor.GetProperties(fieldInfo.ReflectedType)[property.Name];
             if(propertyDescriptor != null) {
                 PropertyInfo propertyInfo = fieldInfo.ReflectedType.GetProperty(property.Name, BindingFlags.Public | BindingFlags.Instance);
@@ -115,8 +121,7 @@ namespace DevExpress {
                     }
 
                 }
-            }
-            else {
+            } else {
                 MethodInfo getMethod = fieldInfo.ReflectedType.GetMethod("Get" + property.Name, BindingFlags.Static | BindingFlags.Public);
                 if(getMethod == null)
                     DependencyPropertyOwnerShouldHavePublicGetter(fieldInfo);
@@ -134,6 +139,39 @@ namespace DevExpress {
                     }
                 }
             }
+        }
+        void CheckReadOnlyProperty(FieldInfo fieldInfo, DependencyProperty property, DPAccessModifierAttribute accessModifier) {
+            if(!property.ReadOnly) return;
+            FieldInfo keyFieldInfo = fieldInfo.ReflectedType.GetField(fieldInfo.Name + "Key", BindingFlags.Static | BindingFlags.NonPublic);
+            if(keyFieldInfo == null) {
+                ReadonlyDependencyPropertyOwnerShouldHaveDependencyPropertyKey(fieldInfo);
+            } else {
+                DependencyPropertyKeyFieldInfoShouldBeReadonly(fieldInfo);
+                if(accessModifier != null) {
+                    DependencyPropertyKeyFieldInfoShouldBePrivate(keyFieldInfo);
+                    ReadOnlyPropertySetterShouldNotBePublic(fieldInfo, accessModifier);
+                }
+            }
+        }
+        void SetterVisibilityShouldBeStrongerThenOrEqualsToGetterVisibility(FieldInfo fieldInfo, DPAccessModifierAttribute accessModifier) {
+            if(accessModifier.GetterVisibility.IsStrongerThen(accessModifier.SetterVisibility))
+                AddError(GetFieldInfoDescription(fieldInfo) + "SetterVisibilityShouldBeStrongerThenOrEqualsToGetterVisibility");
+        }
+        void DependencyPropertyFieldVisibilityShouldBeEqualsToGetterVisibility(FieldInfo fieldInfo, DPAccessModifierAttribute accessModifier) {
+            if(GetFieldVisibility(fieldInfo) != accessModifier.GetterVisibility)
+                AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyFieldVisibilityShouldBeEqualsToGetterVisibility");
+        }
+        void ReadOnlyPropertySetterShouldNotBePublic(FieldInfo fieldInfo, DPAccessModifierAttribute accessModifier) {
+            if(accessModifier.SetterVisibility == MemberVisibility.Public)
+                AddError(GetFieldInfoDescription(fieldInfo) + "ReadOnlyPropertySetterShouldNotBePublic");
+        }
+        static MemberVisibility GetFieldVisibility(FieldInfo fieldInfo) {
+            if(fieldInfo.IsFamilyOrAssembly) return MemberVisibility.ProtectedInternal;
+            if(fieldInfo.IsAssembly) return MemberVisibility.Internal;
+            if(fieldInfo.IsFamily) return MemberVisibility.Protected;
+            if(fieldInfo.IsPrivate) return MemberVisibility.Private;
+            if(fieldInfo.IsPublic) return MemberVisibility.Public;
+            throw new InvalidOperationException();
         }
         static Hashtable PropertyFromName;
         static Type keyType;
@@ -157,11 +195,15 @@ namespace DevExpress {
                 break;
             }
         }
-        void DependencyPropertyShouldBeRegistered(FieldInfo fieldInfo) {
-            AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyShouldBeRegistered");
+        DependencyProperty DependencyPropertyShouldBeRegistered(FieldInfo fieldInfo) {
+            var property = (DependencyProperty)fieldInfo.GetValue(null);
+            if(property == null)
+                AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyShouldBeRegistered");
+            return property;
         }
         void DependencyPropertyFieldInfoShouldBePublic(FieldInfo fieldInfo) {
-            AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyFieldInfoShouldBePublic");
+            if(!fieldInfo.IsPublic)
+                AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyFieldInfoShouldBePublic");
         }
         void DependencyPropertyFieldNotTestedInGenericClass(FieldInfo fieldInfo) {
             AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyFieldNotTestedInGenericClass");
@@ -170,13 +212,20 @@ namespace DevExpress {
             AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyFieldInfoShouldBeStatic");
         }
         void DependencyPropertyFieldInfoShouldBeReadonly(FieldInfo fieldInfo) {
-            AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyFieldInfoShouldBeReadonly");
+            if(!fieldInfo.IsInitOnly)
+                AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyFieldInfoShouldBeReadonly");
         }
         void DependencyPropertyKeyFieldInfoShouldBeReadonly(FieldInfo fieldInfo) {
-            AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyKeyFieldInfoShouldBeReadonly");
+            if(!fieldInfo.IsInitOnly)
+                AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyKeyFieldInfoShouldBeReadonly");
         }
-        void DependencyPropertyFieldInfoNameShouldMatchPropertyName(FieldInfo fieldInfo) {
-            AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyFieldInfoNameShouldMatchPropertyName");
+        void DependencyPropertyKeyFieldInfoShouldBePrivate(FieldInfo fieldInfo) {
+            if(!fieldInfo.IsPrivate)
+                AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyKeyFieldInfoShouldBePrivate");
+        }
+        void DependencyPropertyFieldInfoNameShouldMatchPropertyName(FieldInfo fieldInfo, DependencyProperty property) {
+            if(fieldInfo.Name != property.Name + "Property")
+                AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyFieldInfoNameShouldMatchPropertyName");
         }
         void DependencyPropertyOwnerTypeShouldMatchContainerType(FieldInfo fieldInfo) {
             AddError(GetFieldInfoDescription(fieldInfo) + "DependencyPropertyOwnerTypeShouldMatchGetterType");

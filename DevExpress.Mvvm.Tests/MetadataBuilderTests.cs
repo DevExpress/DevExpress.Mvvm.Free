@@ -18,15 +18,15 @@ namespace DevExpress.Mvvm.Tests {
     public class MetadataBuilderTestsBase {
         #region MetadataHelper
         protected virtual bool UseFilteringAttributes { get { return false; } }
-        public IEnumerable<Attribute> GetExternalAndFluentAPIAttrbutes(Type componentType, string propertyName) {
+        public IEnumerable<Attribute> GetExternalAndFluentAPIAttributes(Type componentType, string propertyName) {
             if(!UseFilteringAttributes)
-                return MetadataHelper.GetExternalAndFluentAPIAttrbutes(componentType, propertyName);
-            else return MetadataHelper.GetExternalAndFluentAPIFilteringAttrbutes(componentType, propertyName);
+                return MetadataHelper.GetExternalAndFluentAPIAttributes(componentType, propertyName);
+            else return MetadataHelper.GetExternalAndFluentAPIFilteringAttributes(componentType, propertyName);
         }
-        public IAttributesProvider GetAttrbutesProvider(Type componentType, IMetadataLocator locator) {
+        public IAttributesProvider GetAttributesProvider(Type componentType, IMetadataLocator locator) {
             if(!UseFilteringAttributes)
-                return MetadataHelper.GetAttrbutesProvider(componentType, locator);
-            else return MetadataHelper.GetFilteringAttrbutesProvider(componentType, locator);
+                return MetadataHelper.GetAttributesProvider(componentType, locator);
+            else return MetadataHelper.GetFilteringAttributesProvider(componentType, locator);
         }
         #endregion
     }
@@ -34,7 +34,6 @@ namespace DevExpress.Mvvm.Tests {
     public class MetadataBuilderTests : MetadataBuilderTestsBase {
 
         #region validation
-        [MetadataType(typeof(ValidationEntityMetadata))]
         public class ValidationEntity {
             public static string StringProperty1_CustomErrorText_Required;
             public static string StringProperty1_CustomErrorText_MinLength;
@@ -81,17 +80,29 @@ namespace DevExpress.Mvvm.Tests {
             public string CustomString { get; set; }
 
             public string TwoErrorsProperty { get; set; }
+
+
+            public int MatchesRulePropery { get; set; }
+            public int MatchesInstanceRulePropery { get; set; }
         }
         public class ValidationEntityMetadata : IMetadataProvider<ValidationEntity> {
+            public static bool IncludeValueToError = false;
             void IMetadataProvider<ValidationEntity>.BuildMetadata(MetadataBuilder<ValidationEntity> builder) {
                 builder.Property(x => x.StringProperty1)
                     .Required()
                     .MinLength(2)
                     .MaxLength(5);
-                builder.Property(x => x.StringProperty1_CustomError)
-                    .Required(() => ValidationEntity.StringProperty1_CustomErrorText_Required)
-                    .MinLength(2, () => ValidationEntity.StringProperty1_CustomErrorText_MinLength)
-                    .MaxLength(5, () => ValidationEntity.StringProperty1_CustomErrorText_MaxLength);
+                if(!IncludeValueToError) {
+                    builder.Property(x => x.StringProperty1_CustomError)
+                        .Required(() => ValidationEntity.StringProperty1_CustomErrorText_Required)
+                        .MinLength(2, () => ValidationEntity.StringProperty1_CustomErrorText_MinLength)
+                        .MaxLength(5, () => ValidationEntity.StringProperty1_CustomErrorText_MaxLength);
+                } else {
+                    builder.Property(x => x.StringProperty1_CustomError)
+                        .Required(() => ValidationEntity.StringProperty1_CustomErrorText_Required)
+                        .MinLength(2, x => ValidationEntity.StringProperty1_CustomErrorText_MinLength + x.ToString())
+                        .MaxLength(5, x => ValidationEntity.StringProperty1_CustomErrorText_MaxLength + x.ToString());
+                }
                 builder.Property(x => x.StringProperty2)
                     .Required()
                     .MinLength(2);
@@ -121,36 +132,105 @@ namespace DevExpress.Mvvm.Tests {
                     .InRange(9, 13);
                 builder.Property(x => x.DoubleRange_Nullable)
                     .InRange(9, 13);
-                builder.Property(x => x.DoubleRange_CustomError)
-                    .InRange(9, 13, () => ValidationEntity.DoubleRange_CustomErrorText);
+                if(!IncludeValueToError) {
+                    builder.Property(x => x.DoubleRange_CustomError)
+                        .InRange(9, 13, () => ValidationEntity.DoubleRange_CustomErrorText);
+                } else {
+                    builder.Property(x => x.DoubleRange_CustomError)
+                        .InRange(9, 13, x => ValidationEntity.DoubleRange_CustomErrorText + x.ToString());
+                }
                 builder.Property(x => x.IntRange)
                     .InRange(9, 13);
                 builder.Property(x => x.StringRange)
                     .InRange("B", "D");
                 builder.Property(x => x.StringRegExp)
                     .MatchesRegularExpression(@"^[a-z]{1,2}$");
-                builder.Property(x => x.StringRegExp_CustomError)
-                    .MatchesRegularExpression(@"^[a-z]{1,2}$", () => ValidationEntity.StringRegExp_CustomErrorText);
+                if(!IncludeValueToError) {
+                    builder.Property(x => x.StringRegExp_CustomError)
+                        .MatchesRegularExpression(@"^[a-z]{1,2}$", () => ValidationEntity.StringRegExp_CustomErrorText);
+                } else {
+                    builder.Property(x => x.StringRegExp_CustomError)
+                        .MatchesRegularExpression(@"^[a-z]{1,2}$", x => ValidationEntity.StringRegExp_CustomErrorText + x.ToString());
+                }
                 builder.Property(x => x.IntRegExp)
                     .MatchesRegularExpression(@"^[1-2]{1,2}$");
                 builder.Property(x => x.CustomString)
                     .MatchesRule(x => x.Length <= 2);
-                builder.Property(x => x.CustomString_CustomError)
-                    .MatchesRule(x => x.Length <= 2, () => ValidationEntity.CustomString_CustomErrorText);
+                if(!IncludeValueToError) {
+                    builder.Property(x => x.CustomString_CustomError)
+                        .MatchesRule(x => x.Length <= 2, () => ValidationEntity.CustomString_CustomErrorText);
+                    builder.Property(x => x.CustomString_CustomError3)
+                        .MatchesInstanceRule((value, instance) => instance.CustomString_CustomError2.Length <= 2 || value.Length <= 2, () => ValidationEntity.CustomString_CustomErrorText);
+                } else {
+                    builder.Property(x => x.CustomString_CustomError)
+                        .MatchesRule(x => x.Length <= 2, x => ValidationEntity.CustomString_CustomErrorText + x.ToString());
+                    builder.Property(x => x.CustomString_CustomError3)
+                        .MatchesInstanceRule((value, instance) => instance.CustomString_CustomError2.Length <= 2 || value.Length <= 2, (x, y) => ValidationEntity.CustomString_CustomErrorText + x.ToString() + y.ToString());
+                }
 #pragma warning disable 618
                 builder.Property(x => x.CustomString_CustomError2)
                     .MatchesInstanceRule(x => x.CustomString_CustomError2.Length <= 2, () => ValidationEntity.CustomString_CustomErrorText);
 #pragma warning restore 618
-                builder.Property(x => x.CustomString_CustomError3)
-                    .MatchesInstanceRule((value, instance) => instance.CustomString_CustomError2.Length <= 2 || value.Length <= 2, () => ValidationEntity.CustomString_CustomErrorText);
 
                 builder.Property(x => x.TwoErrorsProperty)
                     .MinLength(10)
                     .MaxLength(1);
+
+                builder.Property(x => x.MatchesRulePropery)
+                   .MatchesRule(x => x >= 0, x => "Cannot be less than 0: " + x.ToString())
+                   .MatchesRule(x => x <= 2, x => "Cannot be greater than 2: " + x.ToString());
+                builder.Property(x => x.MatchesInstanceRulePropery)
+                    .MatchesInstanceRule((x, y) => x >= 0, (x, y) => "Cannot be less than 0: " + x.ToString())
+                    .MatchesInstanceRule((x, y) => x <= 2, (x, y) => "Cannot be greater than 2: " + x.ToString());
+
             }
         }
         [Test]
         public void Validation() {
+            try {
+                ValidationEntityMetadata.IncludeValueToError = false;
+                MetadataLocator.Default = MetadataLocator.Create().AddMetadata<ValidationEntity, ValidationEntityMetadata>();
+                ValidationCore((x, y, e) => e);
+            } finally {
+                MetadataLocator.Default = null;
+                ValidationEntityMetadata.IncludeValueToError = false;
+                MetadataHelper.ClearMetadata();
+            }
+        }
+        [Test]
+        public void Validation2() {
+            try {
+                ValidationEntityMetadata.IncludeValueToError = true;
+                MetadataLocator.Default = MetadataLocator.Create().AddMetadata<ValidationEntity, ValidationEntityMetadata>();
+                ValidationCore((x, y, e) => {
+                    if(y != null) return e + x.ToString() + y.ToString();
+                    else return e + x.ToString();
+                });
+            } finally {
+                MetadataLocator.Default = null;
+                ValidationEntityMetadata.IncludeValueToError = false;
+                MetadataHelper.ClearMetadata();
+            }
+        }
+        [Test]
+        public void MatchesRuleTest() {
+            try {
+                MetadataLocator.Default = MetadataLocator.Create().AddMetadata<ValidationEntity, ValidationEntityMetadata>();
+                var entity = new ValidationEntity();
+                var v = CreateValidator<ValidationEntity, int>(x => x.MatchesRulePropery);
+                Assert.AreEqual("Cannot be less than 0: -2", v.GetErrorText(-2, entity));
+                Assert.AreEqual("Cannot be greater than 2: 3", v.GetErrorText(3, entity));
+
+                v = CreateValidator<ValidationEntity, int>(x => x.MatchesInstanceRulePropery);
+                Assert.AreEqual("Cannot be less than 0: -2", v.GetErrorText(-2, entity));
+                Assert.AreEqual("Cannot be greater than 2: 3", v.GetErrorText(3, entity));
+            } finally {
+                MetadataLocator.Default = null;
+                ValidationEntityMetadata.IncludeValueToError = false;
+                MetadataHelper.ClearMetadata();
+            }
+        }
+        void ValidationCore(Func<object, object, string, string> getError) {
             var entity = new ValidationEntity();
 
             string required = "The StringProperty1 field is required.";
@@ -167,9 +247,9 @@ namespace DevExpress.Mvvm.Tests {
             ValidationEntity.StringProperty1_CustomErrorText_Required = "{0} property required";
             Assert.AreEqual("StringProperty1_CustomError property required", property1Validator_CustomError.GetErrorText(null, entity));
             ValidationEntity.StringProperty1_CustomErrorText_MinLength = "{0} min";
-            Assert.AreEqual("StringProperty1_CustomError min", property1Validator_CustomError.GetErrorText("1", entity));
+            Assert.AreEqual(getError("1", null, "StringProperty1_CustomError min"), property1Validator_CustomError.GetErrorText("1", entity));
             ValidationEntity.StringProperty1_CustomErrorText_MaxLength = "{0} max";
-            Assert.AreEqual("StringProperty1_CustomError max", property1Validator_CustomError.GetErrorText("123456", entity));
+            Assert.AreEqual(getError("123456", null, "StringProperty1_CustomError max"), property1Validator_CustomError.GetErrorText("123456", entity));
 
 
             var property2Validator = CreateValidator<ValidationEntity, string>(x => x.StringProperty2);
@@ -222,7 +302,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(string.Empty, doubleRangeValidator.GetErrorText(null, entity));
             doubleRangeValidator = CreateValidator<ValidationEntity, double>(x => x.DoubleRange_CustomError);
             ValidationEntity.DoubleRange_CustomErrorText = "{0} range {1} {2}";
-            Assert.AreEqual("DoubleRange_CustomError range 9 13", doubleRangeValidator.GetErrorText(8d, entity));
+            Assert.AreEqual(getError(8d, null, "DoubleRange_CustomError range 9 13"), doubleRangeValidator.GetErrorText(8d, entity));
 
             var intRangeValidator = CreateValidator<ValidationEntity, int>(x => x.IntRange);
             Assert.AreEqual(string.Empty, intRangeValidator.GetErrorText(10, entity));
@@ -240,7 +320,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(@"The field StringRegExp must match the regular expression '^[a-z]{1,2}$'.", stringRegExpValidator.GetErrorText("Apple", entity));
             stringRegExpValidator = CreateValidator<ValidationEntity, string>(x => x.StringRegExp_CustomError);
             ValidationEntity.StringRegExp_CustomErrorText = "{0} regexp {1}";
-            Assert.AreEqual(@"StringRegExp_CustomError regexp ^[a-z]{1,2}$", stringRegExpValidator.GetErrorText("Apple", entity));
+            Assert.AreEqual(getError("Apple", null, @"StringRegExp_CustomError regexp ^[a-z]{1,2}$"), stringRegExpValidator.GetErrorText("Apple", entity));
 
             var intRegExpValidator = CreateValidator<ValidationEntity, int>(x => x.IntRegExp);
             Assert.AreEqual(string.Empty, intRegExpValidator.GetErrorText(1, entity));
@@ -251,7 +331,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("CustomString is not valid.", customStringValidator.GetErrorText("123", entity));
             customStringValidator = CreateValidator<ValidationEntity, string>(x => x.CustomString_CustomError);
             ValidationEntity.CustomString_CustomErrorText = "{0} custom";
-            Assert.AreEqual("CustomString_CustomError custom", customStringValidator.GetErrorText("123", entity));
+            Assert.AreEqual(getError("123", null, "CustomString_CustomError custom"), customStringValidator.GetErrorText("123", entity));
 
             entity.CustomString_CustomError2 = "123";
             customStringValidator = CreateValidator<ValidationEntity, string>(x => x.CustomString_CustomError2);
@@ -259,7 +339,7 @@ namespace DevExpress.Mvvm.Tests {
 
             customStringValidator = CreateValidator<ValidationEntity, string>(x => x.CustomString_CustomError3);
             Assert.AreEqual(string.Empty, customStringValidator.GetErrorText(string.Empty, entity));
-            Assert.AreEqual("CustomString_CustomError3 custom", customStringValidator.GetErrorText("123", entity));
+            Assert.AreEqual(getError("123", entity, "CustomString_CustomError3 custom"), customStringValidator.GetErrorText("123", entity));
 
             var twoErrorsValidator = CreateValidator<ValidationEntity, string>(x => x.TwoErrorsProperty);
             Assert.AreEqual("The field TwoErrorsProperty must be a string or array type with a minimum length of '10'. The field TwoErrorsProperty must be a string or array type with a maximum length of '1'.", twoErrorsValidator.GetErrorText("123", entity));
@@ -269,7 +349,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         static PropertyValidator CreateValidator<T, TProperty>(Expression<Func<T, TProperty>> propertyExpression) {
             string propertyName = BindableBase.GetPropertyNameFast(propertyExpression);
-            return PropertyValidator.FromAttributes(MetadataHelper.GetExternalAndFluentAPIAttrbutes(typeof(T), propertyName), propertyName);
+            return PropertyValidator.FromAttributes(MetadataHelper.GetExternalAndFluentAPIAttributes(typeof(T), propertyName), propertyName);
         }
         public class ValidationEntityWithDisplayNameAttributes {
             [DisplayName("_PropertyWithDisplayNameAttribute_")]
@@ -336,8 +416,8 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void SeveralExternalMetadata() {
-            Assert.IsNotNull(GetExternalAndFluentAPIAttrbutes(typeof(Class), "Property").OfType<ReadOnlyAttribute>().Single());
-            Assert.IsNotNull(GetExternalAndFluentAPIAttrbutes(typeof(Class), "BaseProperty").OfType<ReadOnlyAttribute>().Single());
+            Assert.IsNotNull(GetExternalAndFluentAPIAttributes(typeof(Class), "Property").OfType<ReadOnlyAttribute>().Single());
+            Assert.IsNotNull(GetExternalAndFluentAPIAttributes(typeof(Class), "BaseProperty").OfType<ReadOnlyAttribute>().Single());
         }
         #endregion
 
@@ -365,9 +445,9 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void MetadataWithFluentApiTest() {
-            Assert.IsNotNull(GetExternalAndFluentAPIAttrbutes(typeof(MetadataWithFluentApiClient), "Property").OfType<DXRequiredAttribute>().Single());
-            Assert.IsNotNull(GetExternalAndFluentAPIAttrbutes(typeof(MetadataWithFluentApiClient), "Property2").OfType<DisplayAttribute>().Single());
-            Assert.IsNotNull(GetExternalAndFluentAPIAttrbutes(typeof(MetadataWithFluentApiClient), "Property3").OfType<DXMaxLengthAttribute>().Single());
+            Assert.IsNotNull(GetExternalAndFluentAPIAttributes(typeof(MetadataWithFluentApiClient), "Property").OfType<DXRequiredAttribute>().Single());
+            Assert.IsNotNull(GetExternalAndFluentAPIAttributes(typeof(MetadataWithFluentApiClient), "Property2").OfType<DisplayAttribute>().Single());
+            Assert.IsNotNull(GetExternalAndFluentAPIAttributes(typeof(MetadataWithFluentApiClient), "Property3").OfType<DXMaxLengthAttribute>().Single());
         }
         #endregion
 
@@ -419,7 +499,7 @@ namespace DevExpress.Mvvm.Tests {
         public void InternalLocatorTest() {
             MetadataHelper.AddMetadata<TestDataMetadata>();
             try {
-                Assert.IsFalse(GetExternalAndFluentAPIAttrbutes(typeof(TestData), "Prop1").OfType<DisplayAttribute>().Single().AutoGenerateField);
+                Assert.IsFalse(GetExternalAndFluentAPIAttributes(typeof(TestData), "Prop1").OfType<DisplayAttribute>().Single().AutoGenerateField);
             } finally {
                 MetadataHelper.ClearMetadata();
             }
@@ -441,7 +521,7 @@ namespace DevExpress.Mvvm.Tests {
             MetadataLocator.Default = defaultLocator;
             MetadataHelper.AddMetadata<TestDataMetadata>();
             try {
-                Assert.IsTrue(GetExternalAndFluentAPIAttrbutes(typeof(TestData), "Prop1").OfType<DisplayAttribute>().Single().AutoGenerateField);
+                Assert.IsTrue(GetExternalAndFluentAPIAttributes(typeof(TestData), "Prop1").OfType<DisplayAttribute>().Single().AutoGenerateField);
             } finally {
                 MetadataHelper.ClearMetadata();
                 MetadataLocator.Default = null;
@@ -455,14 +535,14 @@ namespace DevExpress.Mvvm.Tests {
             MetadataLocator.Default = defaultLocator;
             MetadataHelper.AddMetadata<TestDataMetadata>();
             try {
-                Assert.IsTrue(GetExternalAndFluentAPIAttrbutes(typeof(TestData), "Prop1").OfType<DisplayAttribute>().Single().AutoGenerateField);
+                Assert.IsTrue(GetExternalAndFluentAPIAttributes(typeof(TestData), "Prop1").OfType<DisplayAttribute>().Single().AutoGenerateField);
             } finally {
                 MetadataHelper.ClearMetadata();
                 MetadataLocator.Default = null;
             }
             MetadataHelper.AddMetadata<TestDataMetadata>();
             try {
-                Assert.IsFalse(GetExternalAndFluentAPIAttrbutes(typeof(TestData), "Prop1").OfType<DisplayAttribute>().Single().AutoGenerateField);
+                Assert.IsFalse(GetExternalAndFluentAPIAttributes(typeof(TestData), "Prop1").OfType<DisplayAttribute>().Single().AutoGenerateField);
             } finally {
                 MetadataHelper.ClearMetadata();
             }
@@ -492,4 +572,5 @@ namespace DevExpress.Mvvm.Tests {
     public class InternalFilteringMetadataLocatorTests : InternalMetadataLocatorTests {
         protected override bool UseFilteringAttributes { get { return true; } }
     }
+
 }

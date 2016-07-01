@@ -26,7 +26,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         [TearDown]
         public void TearDown() {
             TestProcess.ClearApplications();
-            JumpActionsManagerBase.ClearMamoryMappedFiles();
+            JumpActionsManagerBase.ClearMemoryMappedFiles();
             applicationID = null;
         }
         [Test]

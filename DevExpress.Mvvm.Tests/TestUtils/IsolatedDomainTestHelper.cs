@@ -4,10 +4,12 @@ using System.Linq;
 using System.Reflection;
 using System.Security;
 using System.Security.Policy;
+using System.IO;
 
 namespace DevExpress.Mvvm.UI.Tests {
     class NewDomainTestHelper<T> : IDisposable {
         AppDomain domain;
+        public AppDomain AppDomain { get { return domain; } }
         T testObject;
         public T TestObject { get { return testObject; } }
         public NewDomainTestHelper()
@@ -57,8 +59,16 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
         static void RunTestCore(MethodInfo actionInfo, params object[] args) {
             using(var helper = new NewDomainTestHelper<IsolatedDomainTester>()) {
+                helper.AppDomain.AssemblyResolve += AppDomain_AssemblyResolve;
                 helper.TestObject.Test(actionInfo, args);
+                helper.AppDomain.AssemblyResolve -= AppDomain_AssemblyResolve;
             }
+        }
+
+        static Assembly AppDomain_AssemblyResolve(object sender, ResolveEventArgs args) {
+            if(args.Name.ToLower().Contains("nunit.framework"))
+                return Assembly.LoadFrom(Path.Combine(Environment.CurrentDirectory, "nunit.framework.2.6.dll"));
+            return null;
         }
         public static void RunTest(Action test) {
             RunTestCore(test.Method, new object[0]);

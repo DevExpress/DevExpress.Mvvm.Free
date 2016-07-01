@@ -257,9 +257,9 @@ namespace DevExpress.Mvvm.Tests {
             source.ElementAt(1)
                 .AreEqual(x => x.Name, "MemberTwo_");
         }
-        #endregion
+#endregion
 
-        #region sort mode
+#region sort mode
         public enum EnumWithSortMode{
             B,
             CCC,
@@ -309,6 +309,6 @@ namespace DevExpress.Mvvm.Tests {
         static string GetImageUri(ImageSource image) {
             return image.ToString();
         }
-        #endregion
+#endregion
     }
 }

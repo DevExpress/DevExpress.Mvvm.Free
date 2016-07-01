@@ -37,16 +37,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Castle.Core">
-      <HintPath>..\packages\Castle.Core.3.3.0\lib\net40-client\Castle.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Moq">
-      <HintPath>..\packages\Moq.4.2.1402.2112\lib\net40\Moq.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework, Version=2.4.7.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
-    </Reference>
     <Reference Include="DevExpress.Mvvm">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Bin\Framework4\DevExpress.Mvvm.dll</HintPath>
@@ -58,6 +48,10 @@
     <Reference Include="DevExpress.Mvvm.TestClasses.VB">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Bin\Framework4\DevExpress.Mvvm.TestClasses.VB.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework, Version=2.4.7.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -92,6 +86,10 @@
     <Compile Include="DefaultMessageBoxButtonLocalizerTests.cs" />
     <Compile Include="DelegateCommandTests.cs" />
     <Compile Include="DesignTimeHelperTests.cs" />
+    <Compile Include="DXBinding\BindingTests.cs" />
+    <Compile Include="DXBinding\CommandTests.cs" />
+    <Compile Include="DXBinding\EventTests.cs" />
+    <Compile Include="DXBinding\ParserTests.cs" />
     <Compile Include="EnumHelperTests.cs" />
     <Compile Include="ExpressionHelperTests.cs" />
     <Compile Include="MessengerTests.cs" />

@@ -1,14 +1,10 @@
-#if NETFX_CORE
-using DevExpress.TestFramework.NUnit;
-#else
-using NUnit.Framework;
-#endif
-using System.ComponentModel;
-using DevExpress.Mvvm.Native;
-using System.Collections.Generic;
-using System.Windows;
-using System.Linq.Expressions;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq.Expressions;
+using System.Windows;
+using DevExpress.Mvvm.Native;
+using NUnit.Framework;
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]

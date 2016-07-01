@@ -1,22 +1,16 @@
-#if NETFX_CORE
-using DevExpress.TestFramework;
-#else
 using NUnit.Framework;
-#endif
-#if !NETFX_CORE
 using DevExpress.Mvvm.Native;
-#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using NUnit.Framework.Constraints;
+using NUnit.Framework.SyntaxHelpers;
 namespace DevExpress {
-#if !NETFX_CORE
     public class SetNotEqualsException : AssertionException {
         public SetNotEqualsException(string message) : base(message) { }
     }
-#endif
     [System.Diagnostics.DebuggerNonUserCode]
     public static class AssertExtension {
         public static void AssertSequenceEqual(this IEnumerable expected, IEnumerable actual) {
@@ -68,21 +62,43 @@ namespace DevExpress {
             Assert.IsFalse(val);
             return val;
         }
-#if !NETFX_CORE
         public static TInput IsInstanceOfType<TInput>(this TInput obj, Type expectedType) where TInput : class {
-            Assert.IsInstanceOf(expectedType, obj);
+            DevExpress
+            .AssertHelper.IsInstanceOf(expectedType, obj);
             return obj;
         }
         public static TInput IsInstanceOfType<TInput>(this TInput obj, Func<TInput, object> valueEvaluator, Type expectedType) where TInput : class {
-            Assert.IsInstanceOf(expectedType, valueEvaluator(obj));
+            DevExpress
+            .AssertHelper.IsInstanceOf(expectedType, valueEvaluator(obj));
             return obj;
         }
-#endif
         static object GetActualValue<TInput>(TInput obj, Func<TInput, object> valueEvaluator) {
             return valueEvaluator == null ? obj : valueEvaluator(obj);
         }
     }
     public class AssertHelper {
+#pragma warning disable 612, 618
+        public static void IsInstanceOf(Type type, object target) {
+            Assert.IsInstanceOfType(type, target);
+        }
+        public static void IsInstanceOf(Type type, object target, string message) {
+            Assert.IsInstanceOfType(type, target, message);
+        }
+        public static void IsInstanceOf(Type expected, object actual, string message, params object[] args) {
+            Assert.IsInstanceOfType(expected, actual, message, args);
+        }
+#pragma warning restore 612, 618
+        public static Constraint HasCount(int count) {
+            var prop = typeof(Has).GetProperty("Count", BindingFlags.Public | BindingFlags.Static);
+            if(prop != null) {
+                var countConstraint = prop.GetValue(null, null);
+                var methodEqualTo = countConstraint.GetType().GetMethod("EqualTo", BindingFlags.Public | BindingFlags.Instance);
+                return methodEqualTo.Invoke(countConstraint, new object[] { count }) as Constraint;
+            }
+            var method = typeof(Has).GetMethod("Count", BindingFlags.Public | BindingFlags.Static);
+            return method.Invoke(null, new object[] { count }) as Constraint;
+        }
+
         public static void AssertAllPropertiesAreEqual(object expected, object actual, bool compareTypes = true) {
             AssertAllPropertiesAreEqual(expected, actual, new string[] { }, compareTypes);
         }
@@ -148,11 +164,7 @@ namespace DevExpress {
                 }
                 message += "\n";
             }
-#if !NETFX_CORE
             throw new SetNotEqualsException(message);
-#else
-      throw new Exception(message);
-#endif
         }
         public static void AssertThrows<T>(Action action, Action<T> checkException = null) where T : Exception {
             try {

@@ -13,7 +13,6 @@ using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.Native;
 using System.Windows.Controls;
 using System.Windows.Data;
-using Moq;
 using DevExpress.Mvvm.POCO;
 using DevExpress.Mvvm.TestClasses.VB;
 using System.Threading.Tasks;
@@ -619,6 +618,14 @@ namespace DevExpress.Mvvm.Tests {
             }, x => Assert.AreEqual("Property with setter cannot be Service Property: Property.", x.Message));
         }
         #endregion
+
+        public class T370425VM { }
+        [Test]
+        public void T370425() {
+            var vm = ViewModelSource.Create<T370425VM>();
+            AssertHelper.AssertThrows<InvalidOperationException>(() => ((ISupportParentViewModel)vm).ParentViewModel = vm,
+                e => Assert.AreEqual("ViewModel cannot be parent of itself.", e.Message));
+        }
 #pragma warning restore 0618
         #endregion
 
@@ -1815,37 +1822,61 @@ namespace DevExpress.Mvvm.Tests {
                 get { return serviceContainer ?? (serviceContainer = new ServiceContainer(this)); }
             }
         }
+        class IMessageBoxServiceMock : IMessageBoxService {
+            public MessageResult Show(string messageBoxText, string caption, MessageButton button, MessageIcon icon, MessageResult defaultResult) {
+                throw new NotImplementedException();
+            }
+        }
+        class ISplashScreenServiceMock : ISplashScreenService {
+            public bool IsSplashScreenActive { get { throw new NotImplementedException(); } }
+            public void HideSplashScreen() { throw new NotImplementedException(); }
+            public void SetSplashScreenProgress(double progress, double maxProgress) { throw new NotImplementedException(); }
+            public void SetSplashScreenState(object state) { throw new NotImplementedException(); }
+            public void ShowSplashScreen(string documentType) { throw new NotImplementedException(); }
+        }
+        class ISupportInitializeMock : ISupportInitialize {
+            public void BeginInit() { throw new NotImplementedException(); }
+            public void EndInit() { throw new NotImplementedException(); }
+        }
+        class IDocumentManagerServiceMock : IDocumentManagerService {
+            public IDocument ActiveDocument { get; set; }
+            public IEnumerable<IDocument> Documents { get { throw new NotImplementedException(); } }
+            public event ActiveDocumentChangedEventHandler ActiveDocumentChanged { add { } remove { } }
+            public IDocument CreateDocument(string documentType, object viewModel, object parameter, object parentViewModel) {
+                throw new NotImplementedException();
+            }
+        }
         [Test]
         public void ServicesTest() {
             var viewModel = ViewModelSource.Create<POCOViewModel_ServicesViaCustomImplementation>();
             Assert.IsNull(viewModel.SomeService);
             Assert.AreEqual(viewModel.GetType(), viewModel.GetType().GetProperty("MessageBox").DeclaringType);
 
-            var messageBoxMock = new Mock<IMessageBoxService>(MockBehavior.Strict);
+            var messageBox = new IMessageBoxServiceMock();
             Assert.IsNull(viewModel.MessageBox);
             Assert.IsNull(viewModel.MessageBoxProtectedInternal);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService(messageBoxMock.Object);
-            Assert.AreSame(messageBoxMock.Object, viewModel.MessageBox);
-            Assert.AreSame(messageBoxMock.Object, viewModel.MessageBoxProtectedInternal);
-            Assert.AreSame(messageBoxMock.Object, viewModel.MessageBoxNotVirtual);
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(messageBox);
+            Assert.AreSame(messageBox, viewModel.MessageBox);
+            Assert.AreSame(messageBox, viewModel.MessageBoxProtectedInternal);
+            Assert.AreSame(messageBox, viewModel.MessageBoxNotVirtual);
             Assert.IsNull(viewModel.MessageBoxWithSetter);
 
-            var splashScreenMock = new Mock<ISplashScreenService>(MockBehavior.Strict);
+            var splashScreen = new ISplashScreenServiceMock();
             Assert.IsNull(viewModel.GetSplashScreen());
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService(splashScreenMock.Object);
-            Assert.AreSame(splashScreenMock.Object, viewModel.GetSplashScreen());
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(splashScreen);
+            Assert.AreSame(splashScreen, viewModel.GetSplashScreen());
 
-            var supportInitializeMock = new Mock<ISupportInitialize>(MockBehavior.Strict);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService(supportInitializeMock.Object);
+            var supportInitializeMock = new ISupportInitializeMock();
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(supportInitializeMock);
             Assert.IsNull(viewModel.SupportInitialize);
 
             AssertHelper.AssertThrows<ServiceNotFoundException>(() => viewModel.DocumentManager.FindDocument(new object()));
 
             ParentViewModel parent = new ParentViewModel();
-            var documentManagerServiceMock = new Mock<IDocumentManagerService>(MockBehavior.Strict);
-            ((ISupportServices)parent).ServiceContainer.RegisterService(documentManagerServiceMock.Object);
+            var documentManagerServiceMock = new IDocumentManagerServiceMock();
+            ((ISupportServices)parent).ServiceContainer.RegisterService(documentManagerServiceMock);
             ((ISupportParentViewModel)viewModel).ParentViewModel = parent;
-            Assert.AreSame(documentManagerServiceMock.Object, viewModel.DocumentManager);
+            Assert.AreSame(documentManagerServiceMock, viewModel.DocumentManager);
         }
         public class POCOViewModel_Services : ISupportParentViewModel {
             public POCOViewModel_Services() {
@@ -1861,21 +1892,21 @@ namespace DevExpress.Mvvm.Tests {
             var viewModel = ViewModelSource.Create<POCOViewModel_Services>();
             Assert.AreEqual(viewModel.GetType(), viewModel.GetType().GetProperty("MessageBox").DeclaringType);
 
-            var messageBoxMock = new Mock<IMessageBoxService>(MockBehavior.Strict);
+            var messageBoxMock = new IMessageBoxServiceMock();
             Assert.IsNull(viewModel.MessageBox);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService(messageBoxMock.Object);
-            Assert.AreSame(messageBoxMock.Object, viewModel.MessageBox);
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(messageBoxMock);
+            Assert.AreSame(messageBoxMock, viewModel.MessageBox);
 
             ParentViewModel parent = new ParentViewModel();
-            var messageBoxMockParent = new Mock<IMessageBoxService>(MockBehavior.Strict);
-            ((ISupportServices)parent).ServiceContainer.RegisterService(messageBoxMockParent.Object);
+            var messageBoxMockParent = new IMessageBoxServiceMock();
+            ((ISupportServices)parent).ServiceContainer.RegisterService(messageBoxMockParent);
             viewModel.ParentViewModel = parent;
-            Assert.AreSame(messageBoxMock.Object, viewModel.MessageBox);
+            Assert.AreSame(messageBoxMock, viewModel.MessageBox);
 
-            var splashScreenMockParent = new Mock<ISplashScreenService>(MockBehavior.Strict);
+            var splashScreenMockParent = new ISplashScreenServiceMock();
             Assert.IsNull(viewModel.SplashScreen);
-            ((ISupportServices)parent).ServiceContainer.RegisterService(splashScreenMockParent.Object);
-            Assert.AreSame(splashScreenMockParent.Object, viewModel.SplashScreen);
+            ((ISupportServices)parent).ServiceContainer.RegisterService(splashScreenMockParent);
+            Assert.AreSame(splashScreenMockParent, viewModel.SplashScreen);
         }
 
         public class POCOViewModel_Services_Metadata {
@@ -1899,31 +1930,31 @@ namespace DevExpress.Mvvm.Tests {
             var viewModel = ViewModelSource.Create<POCOViewModel_Services_Metadata>();
             Assert.AreEqual(viewModel.GetType(), viewModel.GetType().GetProperty("MessageBox").DeclaringType);
 
-            var messageBoxMock1 = new Mock<IMessageBoxService>(MockBehavior.Strict);
-            var messageBoxMock2 = new Mock<IMessageBoxService>(MockBehavior.Strict);
+            var messageBoxMock1 = new IMessageBoxServiceMock();
+            var messageBoxMock2 = new IMessageBoxServiceMock();
             Assert.IsNull(viewModel.MessageBox);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService("x", messageBoxMock1.Object);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService("MessageBox1", messageBoxMock2.Object);
-            Assert.AreSame(messageBoxMock2.Object, viewModel.MessageBox);
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService("x", messageBoxMock1);
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService("MessageBox1", messageBoxMock2);
+            Assert.AreSame(messageBoxMock2, viewModel.MessageBox);
             Assert.IsNull(viewModel.NoMessageBox);
 
             ParentViewModel parent = new ParentViewModel();
             ((ISupportParentViewModel)viewModel).ParentViewModel = parent;
-            var splashScreenMockParent = new Mock<ISplashScreenService>(MockBehavior.Strict);
+            var splashScreenMockParent = new ISplashScreenServiceMock();
 
             Assert.IsNull(viewModel.SplashScreen);
-            ((ISupportServices)parent).ServiceContainer.RegisterService(splashScreenMockParent.Object);
-            Assert.AreSame(splashScreenMockParent.Object, viewModel.SplashScreen);
-            Assert.AreSame(splashScreenMockParent.Object, viewModel.SplashScreen_PreferParent);
+            ((ISupportServices)parent).ServiceContainer.RegisterService(splashScreenMockParent);
+            Assert.AreSame(splashScreenMockParent, viewModel.SplashScreen);
+            Assert.AreSame(splashScreenMockParent, viewModel.SplashScreen_PreferParent);
 
-            var splashScreenMock = new Mock<ISplashScreenService>(MockBehavior.Strict);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService(splashScreenMock.Object);
-            Assert.AreSame(splashScreenMock.Object, viewModel.SplashScreen);
-            Assert.AreSame(splashScreenMockParent.Object, viewModel.SplashScreen_PreferParent);
+            var splashScreenMock = new ISplashScreenServiceMock();
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(splashScreenMock);
+            Assert.AreSame(splashScreenMock, viewModel.SplashScreen);
+            Assert.AreSame(splashScreenMockParent, viewModel.SplashScreen_PreferParent);
 
-            var supportInitMock = new Mock<ISupportInitialize>(MockBehavior.Strict);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService(supportInitMock.Object);
-            Assert.AreSame(supportInitMock.Object, viewModel.SupportInitialize);
+            var supportInitMock = new ISupportInitializeMock();
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(supportInitMock);
+            Assert.AreSame(supportInitMock, viewModel.SupportInitialize);
         }
 
         [MetadataType(typeof(POCOViewModel_Services_Metadata_FluentAPIMetadata))]
@@ -1968,62 +1999,62 @@ namespace DevExpress.Mvvm.Tests {
             var viewModel = ViewModelSource.Create<POCOViewModel_Services_Metadata_FluentAPI>();
             Assert.AreEqual(viewModel.GetType(), viewModel.GetType().GetProperty("MessageBox").DeclaringType);
 
-            var messageBoxMock1 = new Mock<IMessageBoxService>(MockBehavior.Strict);
-            var messageBoxMock2 = new Mock<IMessageBoxService>(MockBehavior.Strict);
+            var messageBoxMock1 = new IMessageBoxServiceMock();
+            var messageBoxMock2 = new IMessageBoxServiceMock();
             Assert.IsNull(viewModel.MessageBox);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService("x", messageBoxMock1.Object);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService("MessageBox1", messageBoxMock2.Object);
-            Assert.AreSame(messageBoxMock2.Object, viewModel.MessageBox);
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService("x", messageBoxMock1);
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService("MessageBox1", messageBoxMock2);
+            Assert.AreSame(messageBoxMock2, viewModel.MessageBox);
             Assert.IsNull(viewModel.NoMessageBox);
 
             ParentViewModel parent = new ParentViewModel();
             ((ISupportParentViewModel)viewModel).ParentViewModel = parent;
-            var splashScreenMockParent = new Mock<ISplashScreenService>(MockBehavior.Strict);
+            var splashScreenMockParent = new ISplashScreenServiceMock();
 
             Assert.IsNull(viewModel.SplashScreen);
-            ((ISupportServices)parent).ServiceContainer.RegisterService(splashScreenMockParent.Object);
-            Assert.AreSame(splashScreenMockParent.Object, viewModel.SplashScreen);
-            Assert.AreSame(splashScreenMockParent.Object, viewModel.SplashScreen_PreferParent);
+            ((ISupportServices)parent).ServiceContainer.RegisterService(splashScreenMockParent);
+            Assert.AreSame(splashScreenMockParent, viewModel.SplashScreen);
+            Assert.AreSame(splashScreenMockParent, viewModel.SplashScreen_PreferParent);
 
-            var splashScreenMock = new Mock<ISplashScreenService>(MockBehavior.Strict);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService(splashScreenMock.Object);
-            Assert.AreSame(splashScreenMock.Object, viewModel.SplashScreen);
-            Assert.AreSame(splashScreenMockParent.Object, viewModel.SplashScreen_PreferParent);
+            var splashScreenMock = new ISplashScreenServiceMock();
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(splashScreenMock);
+            Assert.AreSame(splashScreenMock, viewModel.SplashScreen);
+            Assert.AreSame(splashScreenMockParent, viewModel.SplashScreen_PreferParent);
 
-            var supportInitMock = new Mock<ISupportInitialize>(MockBehavior.Strict);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService(supportInitMock.Object);
-            Assert.AreSame(supportInitMock.Object, viewModel.SupportInitialize);
+            var supportInitMock = new ISupportInitializeMock();
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(supportInitMock);
+            Assert.AreSame(supportInitMock, viewModel.SupportInitialize);
         }
         [Test]
         public void ServicesTest_Metadata_External() {
             var viewModel = ViewModelSource.Create<POCOViewModel_Services_Metadata_External>();
             Assert.AreEqual(viewModel.GetType(), viewModel.GetType().GetProperty("MessageBox").DeclaringType);
 
-            var messageBoxMock1 = new Mock<IMessageBoxService>(MockBehavior.Strict);
-            var messageBoxMock2 = new Mock<IMessageBoxService>(MockBehavior.Strict);
+            var messageBoxMock1 = new IMessageBoxServiceMock();
+            var messageBoxMock2 = new IMessageBoxServiceMock();
             Assert.IsNull(viewModel.MessageBox);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService("x", messageBoxMock1.Object);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService("MessageBox1", messageBoxMock2.Object);
-            Assert.AreSame(messageBoxMock2.Object, viewModel.MessageBox);
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService("x", messageBoxMock1);
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService("MessageBox1", messageBoxMock2);
+            Assert.AreSame(messageBoxMock2, viewModel.MessageBox);
             Assert.IsNull(viewModel.NoMessageBox);
 
             ParentViewModel parent = new ParentViewModel();
             ((ISupportParentViewModel)viewModel).ParentViewModel = parent;
-            var splashScreenMockParent = new Mock<ISplashScreenService>(MockBehavior.Strict);
+            var splashScreenMockParent = new ISplashScreenServiceMock();
 
             Assert.IsNull(viewModel.SplashScreen);
-            ((ISupportServices)parent).ServiceContainer.RegisterService(splashScreenMockParent.Object);
-            Assert.AreSame(splashScreenMockParent.Object, viewModel.SplashScreen);
-            Assert.AreSame(splashScreenMockParent.Object, viewModel.SplashScreen_PreferParent);
+            ((ISupportServices)parent).ServiceContainer.RegisterService(splashScreenMockParent);
+            Assert.AreSame(splashScreenMockParent, viewModel.SplashScreen);
+            Assert.AreSame(splashScreenMockParent, viewModel.SplashScreen_PreferParent);
 
-            var splashScreenMock = new Mock<ISplashScreenService>(MockBehavior.Strict);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService(splashScreenMock.Object);
-            Assert.AreSame(splashScreenMock.Object, viewModel.SplashScreen);
-            Assert.AreSame(splashScreenMockParent.Object, viewModel.SplashScreen_PreferParent);
+            var splashScreenMock = new ISplashScreenServiceMock();
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(splashScreenMock);
+            Assert.AreSame(splashScreenMock, viewModel.SplashScreen);
+            Assert.AreSame(splashScreenMockParent, viewModel.SplashScreen_PreferParent);
 
-            var supportInitMock = new Mock<ISupportInitialize>(MockBehavior.Strict);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService(supportInitMock.Object);
-            Assert.AreSame(supportInitMock.Object, viewModel.SupportInitialize);
+            var supportInitMock = new ISupportInitializeMock();
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(supportInitMock);
+            Assert.AreSame(supportInitMock, viewModel.SupportInitialize);
         }
 
         public class GetServiceViewModel { }
@@ -2036,13 +2067,13 @@ namespace DevExpress.Mvvm.Tests {
             Assert.IsNull(viewModel.GetService<IMessageBoxService>());
             TestHelper.AssertThrows<ServiceNotFoundException>(() => viewModel.GetRequiredService<IMessageBoxService>());
 
-            var messageBoxMock1 = new Mock<IMessageBoxService>(MockBehavior.Strict);
-            var messageBoxMock2 = new Mock<IMessageBoxService>(MockBehavior.Strict);
+            var messageBoxMock1 = new IMessageBoxServiceMock();
+            var messageBoxMock2 = new IMessageBoxServiceMock();
 
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService(messageBoxMock1.Object);
-            ((ISupportServices)parentViewModel).ServiceContainer.RegisterService(messageBoxMock2.Object);
-            Assert.AreSame(messageBoxMock1.Object, viewModel.GetService<IMessageBoxService>());
-            Assert.AreSame(messageBoxMock1.Object, viewModel.GetRequiredService<IMessageBoxService>());
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(messageBoxMock1);
+            ((ISupportServices)parentViewModel).ServiceContainer.RegisterService(messageBoxMock2);
+            Assert.AreSame(messageBoxMock1, viewModel.GetService<IMessageBoxService>());
+            Assert.AreSame(messageBoxMock1, viewModel.GetRequiredService<IMessageBoxService>());
             TestHelper.AssertThrows<ViewModelSourceException>(() => new GetServiceViewModel().GetService<IMessageBoxService>());
         }
         [Test]
@@ -2054,15 +2085,15 @@ namespace DevExpress.Mvvm.Tests {
             Assert.IsNull(viewModel.GetService<IMessageBoxService>("svc1"));
             TestHelper.AssertThrows<ServiceNotFoundException>(() => viewModel.GetRequiredService<IMessageBoxService>("svc1"));
 
-            var messageBoxMock1 = new Mock<IMessageBoxService>(MockBehavior.Strict);
-            var messageBoxMock2 = new Mock<IMessageBoxService>(MockBehavior.Strict);
-            var messageBoxMock3 = new Mock<IMessageBoxService>(MockBehavior.Strict);
+            var messageBoxMock1 = new IMessageBoxServiceMock();
+            var messageBoxMock2 = new IMessageBoxServiceMock();
+            var messageBoxMock3 = new IMessageBoxServiceMock();
 
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService("svc1", messageBoxMock1.Object);
-            ((ISupportServices)viewModel).ServiceContainer.RegisterService("svc2", messageBoxMock2.Object);
-            ((ISupportServices)parentViewModel).ServiceContainer.RegisterService("svc3", messageBoxMock3.Object);
-            Assert.AreSame(messageBoxMock1.Object, viewModel.GetService<IMessageBoxService>("svc1"));
-            Assert.AreSame(messageBoxMock2.Object, viewModel.GetService<IMessageBoxService>("svc2"));
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService("svc1", messageBoxMock1);
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService("svc2", messageBoxMock2);
+            ((ISupportServices)parentViewModel).ServiceContainer.RegisterService("svc3", messageBoxMock3);
+            Assert.AreSame(messageBoxMock1, viewModel.GetService<IMessageBoxService>("svc1"));
+            Assert.AreSame(messageBoxMock2, viewModel.GetService<IMessageBoxService>("svc2"));
             TestHelper.AssertThrows<ViewModelSourceException>(() => new GetServiceViewModel().GetService<IMessageBoxService>("svc1"));
         }
         #endregion

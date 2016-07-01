@@ -1,7 +1,4 @@
 #pragma warning disable 612,618
-#if !NETFX_CORE
-using NUnit.Framework;
-#endif
 using System;
 using System.Windows;
 using DevExpress.Mvvm.Native;
@@ -10,18 +7,11 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.ComponentModel;
-#if !NETFX_CORE
+using NUnit.Framework;
 using System.Windows.Controls;
-#else
-using DevExpress.TestFramework.NUnit;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using System.Reflection;
-using DevExpress.TestRunner.Utils;
-#endif
 
 namespace DevExpress.Mvvm.Tests {
-    public abstract class CommandTests : BaseWpfFixture {
+    public abstract class CommandTests {
         protected abstract CommandBase<object> CreateCommand(Action execute);
         protected abstract CommandBase<object> CreateCommand(Action execute, bool useCommandManager);
         protected abstract CommandBase<object> CreateCommand(Action execute, Func<bool> canExecute, bool? useCommandManager = null);
@@ -329,7 +319,6 @@ namespace DevExpress.Mvvm.Tests {
             command.RaiseCanExecuteChanged();
             Assert.IsTrue(button.IsEnabled);
         }
-#if !NETFX_CORE
         [Test]
         public void CanExecuteIsEnabledWithCommandManager() {
             Button button = new Button();
@@ -343,7 +332,6 @@ namespace DevExpress.Mvvm.Tests {
             DispatcherHelper.DoEvents();
             Assert.IsTrue(button.IsEnabled);
         }
-#endif
         #endregion
         #region RaiseCanExecuteChanged
         void RaiseCanExecuteChangedTest<T>(CommandBase<T> command) {
@@ -354,7 +342,6 @@ namespace DevExpress.Mvvm.Tests {
             command.RaiseCanExecuteChanged();
             Assert.AreEqual(1, counter.FireCount);
         }
-#if !NETFX_CORE
         void RaiseCanExecuteChangedWithCommandManagerTest<T>(CommandBase<T> command) {
             var counter = new CanExecuteChangedCounter(command);
             command.RaiseCanExecuteChanged();
@@ -366,7 +353,6 @@ namespace DevExpress.Mvvm.Tests {
             DispatcherHelper.DoEvents();
             Assert.AreEqual(1, counter.FireCount);
         }
-#endif
         [Test]
         public void RaiseCanExecuteChanged() {
             CommandBase<object> command1 = CreateCommand(() => { }, () => true, false);
@@ -378,7 +364,6 @@ namespace DevExpress.Mvvm.Tests {
             RaiseCanExecuteChangedTest(command3);
             RaiseCanExecuteChangedTest(command4);
         }
-#if !NETFX_CORE
         [Test]
         public void RaiseCanExecuteChangedWithCommandManager() {
             CommandBase<object> command1 = CreateCommand(() => { }, () => true);
@@ -390,7 +375,6 @@ namespace DevExpress.Mvvm.Tests {
             RaiseCanExecuteChangedWithCommandManagerTest(command3);
             RaiseCanExecuteChangedWithCommandManagerTest(command4);
         }
-#endif
         #endregion
         #region References and Memory
         public class ViewModel {
@@ -476,7 +460,6 @@ namespace DevExpress.Mvvm.Tests {
             MemoryLeaksHelper.EnsureCollected(wrButton);
         }
 
-#if !NETFX_CORE
         [Test]
         public void CommandMultithreading() {
             Window mainWindow = new Window();
@@ -501,7 +484,6 @@ namespace DevExpress.Mvvm.Tests {
             thread.Join();
             mainWindow.Close();
         }
-#endif
         #endregion
     }
     [TestFixture]
@@ -510,35 +492,19 @@ namespace DevExpress.Mvvm.Tests {
             return new DelegateCommand(execute);
         }
         protected override CommandBase<object> CreateCommand(Action execute, bool useCommandManager) {
-#if !NETFX_CORE
             return new DelegateCommand(execute, useCommandManager);
-#else
-            return new DelegateCommand(execute);
-#endif
         }
         protected override CommandBase<object> CreateCommand(Action execute, Func<bool> canExecute, bool? useCommandManager = null) {
-#if !NETFX_CORE
             return new DelegateCommand(execute, canExecute, useCommandManager);
-#else
-            return new DelegateCommand(execute, canExecute);
-#endif
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute) {
             return new DelegateCommand<T>(execute);
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute, bool useCommandManager) {
-#if !NETFX_CORE
             return new DelegateCommand<T>(execute, useCommandManager);
-#else
-            return new DelegateCommand<T>(execute);
-#endif
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute, Func<T, bool> canExecute, bool? useCommandManager = null) {
-#if !NETFX_CORE
             return new DelegateCommand<T>(execute, canExecute, useCommandManager);
-#else
-            return new DelegateCommand<T>(execute, canExecute);
-#endif
         }
         protected override void Execute(ICommand command, object parameter) {
             command.Execute(parameter);
@@ -552,26 +518,14 @@ namespace DevExpress.Mvvm.Tests {
             return new AsyncCommand(() => Task.Factory.StartNew(() => execute())) { AllowMultipleExecution = true };
         }
         protected override CommandBase<object> CreateCommand(Action execute, bool useCommandManager) {
-#if !NETFX_CORE
             if(execute == null)
                 return new AsyncCommand(null, useCommandManager) { AllowMultipleExecution = true };
             return new AsyncCommand(() => Task.Factory.StartNew(() => execute()), useCommandManager) { AllowMultipleExecution = true };
-#else
-            if(execute == null)
-                return new AsyncCommand(null) { AllowMultipleExecution = true };
-            return new AsyncCommand(() => Task.Factory.StartNew(() => execute())) { AllowMultipleExecution = true };
-#endif
         }
         protected override CommandBase<object> CreateCommand(Action execute, Func<bool> canExecute, bool? useCommandManager = null) {
-#if !NETFX_CORE
             if(execute == null)
                 return new AsyncCommand(null, canExecute, useCommandManager) { AllowMultipleExecution = true };
             return new AsyncCommand(() => Task.Factory.StartNew(() => execute()), canExecute, useCommandManager) { AllowMultipleExecution = true };
-#else
-            if(execute == null)
-                return new AsyncCommand(null, canExecute) { AllowMultipleExecution = true };
-            return new AsyncCommand(() => Task.Factory.StartNew(() => execute()), canExecute) { AllowMultipleExecution = true };
-#endif
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute) {
             if(execute == null)
@@ -579,54 +533,21 @@ namespace DevExpress.Mvvm.Tests {
             return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x))) { AllowMultipleExecution = true };
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute, bool useCommandManager) {
-#if !NETFX_CORE
             if(execute == null)
                 return new AsyncCommand<T>(null, useCommandManager) { AllowMultipleExecution = true };
             return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x)), useCommandManager) { AllowMultipleExecution = true };
-#else
-            if(execute == null)
-                return new AsyncCommand<T>(null) { AllowMultipleExecution = true };
-            return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x))) { AllowMultipleExecution = true };
-#endif
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute, Func<T, bool> canExecute, bool? useCommandManager = null) {
-#if !NETFX_CORE
             if(execute == null)
                 return new AsyncCommand<T>(null, canExecute, useCommandManager) { AllowMultipleExecution = true };
             return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x)), canExecute, useCommandManager) { AllowMultipleExecution = true };
-#else
-            if(execute == null)
-                return new AsyncCommand<T>(null, canExecute) { AllowMultipleExecution = true };
-            return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x)), canExecute) { AllowMultipleExecution = true };
-#endif
         }
         protected override void Execute(ICommand command, object parameter) {
             command.Execute(parameter);
-            Wait(command);
+            ((IAsyncCommand)command).Wait(latencyTime);
         }
 
-        const int latencyTime = 1;
-        void Wait(ICommand command) {
-            Type t = command.GetType();
-#if !NETFX_CORE
-            if(t.IsGenericType) {
-#else
-            if(t.IsGenericType()) {
-#endif
-                Type genericType = t.GetGenericArguments()[0];
-                GetType().GetMethod("Wait2", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).
-                    MakeGenericMethod(genericType).Invoke(this, new object[] { command });
-            } else {
-                Wait1(command);
-            }
-        }
-        void Wait1(ICommand command) {
-            ((AsyncCommand)command).executeTask.Wait(TimeSpan.FromSeconds(latencyTime));
-        }
-        void Wait2<T>(ICommand command) {
-            ((AsyncCommand<T>)command).executeTask.Wait(TimeSpan.FromSeconds(latencyTime));
-        }
-#if !NETFX_CORE
+        static TimeSpan latencyTime = TimeSpan.FromSeconds(2);
         bool executingAsyncMethod = false;
         AsyncCommand<int> asyncTestCommand;
 
@@ -657,115 +578,101 @@ namespace DevExpress.Mvvm.Tests {
             });
         }
 
-        [Test, Asynchronous]
+        [Test]
         public void AsyncIsExecuting() {
             asyncTestCommand = new AsyncCommand<int>(a => AsyncExecuteMethod(a));
             Assert.IsFalse(asyncTestCommand.IsExecuting);
             Assert.IsTrue(asyncTestCommand.CanExecute(100));
             executingAsyncMethod = true;
-            EnqueueCallback(() => {
-                asyncTestCommand.Execute(100);
-                Assert.IsTrue(asyncTestCommand.IsExecuting);
-                Assert.IsFalse(asyncTestCommand.CanExecute(100));
-            });
-            EnqueWaitForAsync(asyncTestCommand.executeTask);
-            EnqueueWait(() => !asyncTestCommand.IsExecuting);
-            EnqueueWindowUpdateLayout();
+
+            asyncTestCommand.Execute(100);
+            Assert.IsTrue(asyncTestCommand.IsExecuting);
+            Assert.IsFalse(asyncTestCommand.CanExecute(100));
+
+            asyncTestCommand.Wait(latencyTime);
             Assert.IsFalse(asyncTestCommand.IsExecuting);
             Assert.IsTrue(asyncTestCommand.CanExecute(100));
-            EnqueueConditional(() => !executingAsyncMethod);
-            EnqueueTestComplete();
+            Assert.IsFalse(executingAsyncMethod);
         }
-
-        [Test, Asynchronous]
+        [Test]
         public void AsyncCancelTest1() {
             AsyncCancelTestCore((a) => AsyncExecuteMethod(a));
         }
-        [Test, Asynchronous]
+        [Test]
         public void AsyncCancelTest2() {
             AsyncCancelTestCore((a) => AsyncExecuteMethod2(a));
         }
-        public void AsyncCancelTestCore(Func<int, Task> a) {
+        void AsyncCancelTestCore(Func<int, Task> a) {
             asyncTestCommand = new AsyncCommand<int>(a);
             Assert.IsNull(asyncTestCommand.CancellationTokenSource);
-            EnqueueCallback(() => {
-                asyncTestCommand.Execute(100);
-                Assert.IsNotNull(asyncTestCommand.CancellationTokenSource);
-                Assert.IsTrue(asyncTestCommand.IsExecuting);
-                asyncTestCommand.Cancel();
-                Assert.IsTrue(asyncTestCommand.ShouldCancel);
-                Assert.IsTrue(asyncTestCommand.IsCancellationRequested);
-                Assert.IsTrue(asyncTestCommand.IsExecuting);
-            });
-            EnqueueWait(() => asyncTestCommand.executeTask.IsCompleted);
-            EnqueueWait(() => !asyncTestCommand.IsExecuting);
-            EnqueueCallback(() => {
-                Assert.IsFalse(asyncTestCommand.IsExecuting);
-                Assert.IsFalse(asyncTestCommand.ShouldCancel);
-                Assert.IsTrue(asyncTestCommand.IsCancellationRequested);
-            });
-            EnqueueTestComplete();
+
+            asyncTestCommand.Execute(100);
+            Assert.IsNotNull(asyncTestCommand.CancellationTokenSource);
+            Assert.IsTrue(asyncTestCommand.IsExecuting);
+            asyncTestCommand.Cancel();
+            Assert.IsTrue(asyncTestCommand.ShouldCancel);
+            Assert.IsTrue(asyncTestCommand.IsCancellationRequested);
+            Assert.IsTrue(asyncTestCommand.IsExecuting);
+
+            asyncTestCommand.Wait(latencyTime);
+            Assert.IsTrue(asyncTestCommand.executeTask.IsCompleted);
+            Assert.IsFalse(asyncTestCommand.IsExecuting);
+            Assert.IsFalse(asyncTestCommand.ShouldCancel);
+            Assert.IsTrue(asyncTestCommand.IsCancellationRequested);
         }
-        [Test, Asynchronous]
+        [Test]
         public void AsyncCanExecuteTest1() {
             AsyncCanExecuteTestCore(a => AsyncExecuteMethod(a));
         }
-        [Test, Asynchronous]
+        [Test]
         public void AsyncCanExecuteTest2() {
             AsyncCanExecuteTestCore(a => AsyncExecuteMethod2(a));
         }
-        public void AsyncCanExecuteTestCore(Func<int, Task> a) {
+        void AsyncCanExecuteTestCore(Func<int, Task> a) {
             asyncTestCommand = new AsyncCommand<int>(a, o => true);
-            EnqueueCallback(() => {
-                asyncTestCommand.Execute(100);
-                Assert.IsTrue(asyncTestCommand.IsExecuting);
-                Assert.IsFalse(asyncTestCommand.CanExecute(100));
-                asyncTestCommand.Cancel();
-                Assert.IsTrue(asyncTestCommand.IsExecuting);
-                Assert.IsTrue(asyncTestCommand.ShouldCancel);
-                Assert.IsTrue(asyncTestCommand.IsCancellationRequested);
-            });
-            EnqueueWait(() => asyncTestCommand.executeTask.IsCompleted);
-            EnqueueWait(() => !asyncTestCommand.IsExecuting);
-            EnqueueCallback(() => {
-                Assert.IsFalse(asyncTestCommand.IsExecuting);
-                Assert.IsTrue(asyncTestCommand.CanExecute(100));
-                asyncTestCommand = new AsyncCommand<int>(a, o => false);
-                asyncTestCommand.Execute(100);
-                Assert.IsFalse(asyncTestCommand.IsExecuting);
-                Assert.IsFalse(asyncTestCommand.CanExecute(100));
-            });
-            EnqueueTestComplete();
+
+            asyncTestCommand.Execute(100);
+            Assert.IsTrue(asyncTestCommand.IsExecuting);
+            Assert.IsFalse(asyncTestCommand.CanExecute(100));
+            asyncTestCommand.Cancel();
+            Assert.IsTrue(asyncTestCommand.IsExecuting);
+            Assert.IsTrue(asyncTestCommand.ShouldCancel);
+            Assert.IsTrue(asyncTestCommand.IsCancellationRequested);
+
+            asyncTestCommand.Wait(latencyTime);
+            Assert.IsTrue(asyncTestCommand.executeTask.IsCompleted);
+            Assert.IsFalse(asyncTestCommand.IsExecuting);
+            Assert.IsTrue(asyncTestCommand.CanExecute(100));
+            asyncTestCommand = new AsyncCommand<int>(a, o => false);
+            asyncTestCommand.Execute(100);
+            Assert.IsFalse(asyncTestCommand.IsExecuting);
+            Assert.IsFalse(asyncTestCommand.CanExecute(100));
         }
-        [Test, Asynchronous]
+        [Test]
         public void AllowMultipleExecutionTest1() {
             AllowMultipleExecutionTestCore(a => AsyncExecuteMethod(a));
         }
-        [Test, Asynchronous]
+        [Test]
         public void AllowMultipleExecutionTest2() {
             AllowMultipleExecutionTestCore(a => AsyncExecuteMethod2(a));
         }
-        public void AllowMultipleExecutionTestCore(Func<int, Task> a) {
+        void AllowMultipleExecutionTestCore(Func<int, Task> a) {
             asyncTestCommand = new AsyncCommand<int>(a, o => true) { AllowMultipleExecution = true };
-            EnqueueCallback(() => {
-                asyncTestCommand.Execute(100);
-                Assert.IsTrue(asyncTestCommand.IsExecuting);
-                Assert.IsTrue(asyncTestCommand.CanExecute(100));
-                asyncTestCommand.Cancel();
-                Assert.IsTrue(asyncTestCommand.IsExecuting);
-                Assert.IsTrue(asyncTestCommand.CanExecute(100));
-            });
-            EnqueueWait(() => asyncTestCommand.executeTask.IsCompleted);
-            EnqueueWait(() => !asyncTestCommand.IsExecuting);
-            EnqueueCallback(() => {
-                Assert.IsFalse(asyncTestCommand.IsExecuting);
-                Assert.IsTrue(asyncTestCommand.CanExecute(100));
-                asyncTestCommand = new AsyncCommand<int>(a, o => false) { AllowMultipleExecution = true };
-                asyncTestCommand.Execute(100);
-                Assert.IsFalse(asyncTestCommand.IsExecuting);
-                Assert.IsFalse(asyncTestCommand.CanExecute(100));
-            });
-            EnqueueTestComplete();
+
+            asyncTestCommand.Execute(100);
+            Assert.IsTrue(asyncTestCommand.IsExecuting);
+            Assert.IsTrue(asyncTestCommand.CanExecute(100));
+            asyncTestCommand.Cancel();
+            Assert.IsTrue(asyncTestCommand.IsExecuting);
+            Assert.IsTrue(asyncTestCommand.CanExecute(100));
+
+            asyncTestCommand.Wait(latencyTime);
+            Assert.IsFalse(asyncTestCommand.IsExecuting);
+            Assert.IsTrue(asyncTestCommand.CanExecute(100));
+            asyncTestCommand = new AsyncCommand<int>(a, o => false) { AllowMultipleExecution = true };
+            asyncTestCommand.Execute(100);
+            Assert.IsFalse(asyncTestCommand.IsExecuting);
+            Assert.IsFalse(asyncTestCommand.CanExecute(100));
         }
         [Test, Asynchronous]
         public void IsExecutingPropertyChangedTest() {
@@ -776,18 +683,16 @@ namespace DevExpress.Mvvm.Tests {
                 if(e.PropertyName == "IsExecuting")
                     isExecutingChanged = true;
             };
-            EnqueueCallback(() => {
-                asyncTestCommand.Execute(100);
-                Assert.IsTrue(isExecutingChanged);
-                isExecutingChanged = false;
-            });
-            EnqueueWait(() => asyncTestCommand.executeTask.IsCompleted);
-            EnqueueWait(() => !asyncTestCommand.IsExecuting);
-            EnqueueWindowUpdateLayout();
-            EnqueueConditional(() => isExecutingChanged);
-            EnqueueTestComplete();
+
+            asyncTestCommand.Execute(100);
+            Assert.IsTrue(isExecutingChanged);
+            isExecutingChanged = false;
+
+            asyncTestCommand.Wait(latencyTime);
+            Assert.IsFalse(asyncTestCommand.IsExecuting);
+            Assert.IsTrue(isExecutingChanged);
         }
-        [Test, Asynchronous]
+        [Test]
         public void WaitTest() {
             asyncTestCommand = new AsyncCommand<int>((a) => AsyncExecuteMethod(a));
             int isExecutingChangedCount = 0;
@@ -803,7 +708,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(2, isExecutingChangedCount);
             Assert.AreEqual(false, asyncTestCommand.IsExecuting);
         }
-        [Test, Asynchronous]
+        [Test]
         public void CancelAndWaitTest() {
             asyncTestCommand = new AsyncCommand<int>(CancelInsideCommandAndWaitMethod);
             int isExecutingChangedCount = 0;
@@ -818,7 +723,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(2, isExecutingChangedCount);
             Assert.AreEqual(false, asyncTestCommand.IsExecuting);
         }
-        [Test, Asynchronous]
+        [Test]
         public void CancelAndWaitTest2() {
             asyncTestCommand = new AsyncCommand<int>(CancelInsideCommandAndWaitMethod);
             int isExecutingChangedCount = 0;
@@ -842,7 +747,6 @@ namespace DevExpress.Mvvm.Tests {
                 executingAsyncMethod = false;
             });
         }
-#endif
     }
 }
-#pragma warning restore 612,618
+#pragma warning restore 612, 618

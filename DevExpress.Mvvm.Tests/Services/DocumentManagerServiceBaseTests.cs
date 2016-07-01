@@ -1,20 +1,11 @@
-#if NETFX_CORE
-using DevExpress.TestFramework.NUnit;
-#else
+using DevExpress.Mvvm.POCO;
 using NUnit.Framework;
-#endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using DevExpress.Mvvm.UI;
 using System.Windows;
 using System.ComponentModel;
-#if !NETFX_CORE
-using Moq;
-using DevExpress.Mvvm.POCO;
-#else
-using Windows.UI.Xaml;
-#endif
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]

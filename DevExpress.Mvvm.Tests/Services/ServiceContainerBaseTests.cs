@@ -1,12 +1,7 @@
-#if NETFX_CORE
-using DevExpress.TestFramework.NUnit;
-using Windows.UI.Xaml;
-#else
-using NUnit.Framework;
-#endif
 using System;
 using System.Windows;
 using System.Linq;
+using NUnit.Framework;
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
@@ -476,59 +471,4 @@ namespace DevExpress.Mvvm.Tests {
         }
     }
 
-#if !FREE && !NETFX_CORE
-    [TestFixture]
-    public class ServiceBaseTests : BaseWpfFixture {
-        [Test]
-        public void UnregisterServiceOnDataContextChanged() {
-            Button control = new Button();
-            TestVM vm1 = TestVM.Create();
-            TestVM vm2 = TestVM.Create();
-            TestServiceBase service = new TestServiceBase();
-            Interaction.GetBehaviors(control).Add(service);
-            control.DataContext = vm1;
-            Assert.AreEqual(service, vm1.GetService<ITestService>());
-            control.DataContext = vm2;
-            Assert.AreEqual(null, vm1.GetService<ITestService>());
-            Assert.AreEqual(service, vm2.GetService<ITestService>());
-        }
-        [Test]
-        public void UnregisterServiceOnDetaching() {
-            Button control = new Button();
-            TestVM vm1 = TestVM.Create();
-            TestServiceBase service = new TestServiceBase();
-            Interaction.GetBehaviors(control).Add(service);
-            control.DataContext = vm1;
-            Assert.AreEqual(service, vm1.GetService<ITestService>());
-            Interaction.GetBehaviors(control).Remove(service);
-            Assert.AreEqual(null, vm1.GetService<ITestService>());
-        }
-        [Test]
-        public void T250427() {
-            Grid mainV = new Grid();
-            TestVM mainVM = TestVM.Create();
-            TestServiceBase mainService = new TestServiceBase();
-            Interaction.GetBehaviors(mainV).Add(mainService);
-            mainV.DataContext = mainVM;
-
-            Grid childV = new Grid();
-            TestVM childVM = TestVM.Create();
-            TestServiceBase childService = new TestServiceBase();
-            Interaction.GetBehaviors(childV).Add(childService);
-            mainV.Children.Add(childV);
-
-            Assert.AreEqual(childService, mainVM.GetService<ITestService>());
-            childV.DataContext = childVM;
-            Assert.AreEqual(mainService, mainVM.GetService<ITestService>());
-            Assert.AreEqual(childService, childVM.GetService<ITestService>());
-        }
-
-        public class TestVM {
-            public static TestVM Create() { return ViewModelSource.Create(() => new TestVM()); }
-            protected TestVM() { }
-        }
-        public interface ITestService { }
-        public class TestServiceBase : ServiceBase, ITestService { }
-    }
-#endif
 }

@@ -464,7 +464,8 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsNotNull(screen);
             var area = screen.WorkingArea;
             var expectedPos = new Point(area.X + (area.Width - pos.Width) * 0.5, area.Y + (area.Height - pos.Height) * 0.5);
-            Assert.AreEqual(expectedPos, pos.TopLeft);
+            Assert.IsTrue(Math.Abs(expectedPos.X - pos.Left) < 2);
+            Assert.IsTrue(Math.Abs(expectedPos.Y - pos.Top) < 2);
 
             var splashScreen = DXSplashScreen.SplashContainer.ActiveInfo.SplashScreen;
             SplashScreenHelper.InvokeAsync(splashScreen, () => {
@@ -476,7 +477,8 @@ namespace DevExpress.Mvvm.UI.Tests {
 
             pos = GetSplashScreenBounds();
             expectedPos = new Point(area.X + (area.Width - pos.Width) * 0.5, area.Y + (area.Height - pos.Height) * 0.5);
-            Assert.AreEqual(expectedPos, pos.TopLeft);
+            Assert.IsTrue(Math.Abs(expectedPos.X - pos.Left) < 2);
+            Assert.IsTrue(Math.Abs(expectedPos.Y - pos.Top) < 2);
             CloseDXSplashScreen();
         }
         [Test]
@@ -1226,12 +1228,19 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void SplashScreenStyleShouldBePatched_T257139_Test00() {
             var fakeOwner = new Border();
             DXSplashScreenService service = CreateDefaultSplashScreenAndShow(fakeOwner, activateWindow: false);
-            Assert.IsTrue(DXSplashScreen.SplashContainer.Test_IsWindowStylePatched);
+            Assert.AreEqual(SplashScreenHelper.WS_EX_TRANSPARENT, SplashScreenHelper.Test_WindowStyleModifier);
         }
         [Test]
         public void SplashScreenStyleShouldBePatched_T257139_Test01() {
+            DXSplashScreen.UseDefaultAltTabBehavior = true;
             DXSplashScreenService service = CreateDefaultSplashScreenAndShow(null, activateWindow: false, ownerSearchMode: SplashScreenOwnerSearchMode.OwnerOnly);
-            Assert.IsFalse(DXSplashScreen.SplashContainer.Test_IsWindowStylePatched);
+            Assert.AreEqual(0, SplashScreenHelper.Test_WindowStyleModifier);
+            DXSplashScreen.UseDefaultAltTabBehavior = false;
+        }
+        [Test]
+        public void SplashScreenStyleShouldBePatched_T257139_T335564_Test02() {
+            DXSplashScreenService service = CreateDefaultSplashScreenAndShow(null, activateWindow: false, ownerSearchMode: SplashScreenOwnerSearchMode.OwnerOnly);
+            Assert.AreEqual(SplashScreenHelper.WS_EX_TOOLWINDOW, SplashScreenHelper.Test_WindowStyleModifier);
         }
 
         void AssertIsActive(DXSplashScreenService service, bool checkValue) {

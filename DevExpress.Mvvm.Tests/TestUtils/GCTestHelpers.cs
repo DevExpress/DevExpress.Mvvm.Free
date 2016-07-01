@@ -3,6 +3,11 @@ using System.Linq;
 using System.Collections.Generic;
 
 namespace DevExpress {
+    public class GCTestHelperException : Exception {
+        public GCTestHelperException(string message) : base(message) {
+        }
+    }
+
     public static class GCTestHelper {
         static WeakReference Obtain(Func<object> obtainer) {
             return new WeakReference(obtainer());
@@ -22,11 +27,6 @@ namespace DevExpress {
         public static void EnsureCollected(IEnumerable<WeakReference> references) {
             AssertCollectedCore(references, -1);
         }
-#if NETFX_CORE
-        static void AssertCollectedCore(IEnumerable<WeakReference> references, int alreadyCollectedGen) {
-            SlowButSureAssertCollected(references.ToArray());
-        }
-#else
         static void AssertCollectedCore(IEnumerable<WeakReference> references, int alreadyCollectedGen) {
             int maxGeneration;
             List<WeakReference> nextIterationHolder = CollectExistingData(references, out maxGeneration);
@@ -53,7 +53,6 @@ namespace DevExpress {
             }
             return nextIterationHolder;
         }
-#endif
         static void SlowButSureAssertCollected(IList<WeakReference> nextIterationHolder) {
             GC.GetTotalMemory(true);
             if(nextIterationHolder.All(wr => !wr.IsAlive))
@@ -69,7 +68,7 @@ namespace DevExpress {
                 .Select(gr => string.Format("\t{0} object(s) of type {1}:\n{2}", gr.Count(), gr.Key.FullName
                     , string.Join("\n", gr.Select(o => o.ToString()).OrderBy(s => s).Select(s => string.Format("\t\t{0}", s)))
                     )));
-            throw new Exception(string.Format("{0} garbage object(s) not collected:\n{1}", notCollected.Length, objectsReport));
+            throw new GCTestHelperException(string.Format("{0} garbage object(s) not collected:\n{1}", notCollected.Length, objectsReport));
         }
         public static void CollectOptional(params WeakReference[] references) {
             CollectOptional(references.AsEnumerable());
@@ -84,10 +83,6 @@ namespace DevExpress {
             }
         }
         public static void CollectOptional(IEnumerable<WeakReference> references) {
-#if NETFX_CORE
-            GC.Collect();
-            GC.GetTotalMemory(true);
-#else
             if(IsHardOptional()) {
                 GC.Collect();
                 GC.GetTotalMemory(true);
@@ -97,7 +92,7 @@ namespace DevExpress {
                     GC.Collect(maxGeneration.Value, GCCollectionMode.Forced);
                 }
             }
-#endif
         }
     }
+
 }

@@ -1,33 +1,20 @@
-#if !NETFX_CORE
 using System.Windows.Media;
-using NUnit.Framework;
-#endif
 using System;
 using System.Windows;
+using NUnit.Framework;
 using DevExpress.Mvvm.UI;
-#if NETFX_CORE
-using DevExpress.TestFramework.NUnit;
-using Windows.UI.Xaml;
-using System.Globalization;
-using Windows.UI.Xaml.Data;
-using Windows.UI;
-using Windows.UI.Xaml.Media;
-#else
 using System.Globalization;
 using System.Windows.Data;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Moq;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using DevExpress.Mvvm.Native;
-#endif
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class ConvertersTest {
-#if !NETFX_CORE
         [Test]
         public void ReflectionConverterShouldNotPassNullIntoContructorIfTargetTypeIsNotValueType() {
             var converter1 = new ReflectionConverter();
@@ -63,29 +50,35 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void ReflectionConverter_ConvertMethodParametersTest() {
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert01(22)).Returns((int v) => ReflectionConverter_Result(v, null)), "Convert01", false);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert02(22)).Returns((object v) => ReflectionConverter_Result(v, null)), "Convert02", false);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert03(22, 14)).Returns((int v, int p) => ReflectionConverter_Result(v, p)), "Convert03", true);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert04(22, 14)).Returns((int v, object p) => ReflectionConverter_Result(v, p)), "Convert04", true);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert05(22, 14)).Returns((object v, object p) => ReflectionConverter_Result(v, p)), "Convert05", true);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert06(22, typeof(string), 14)).Returns((object v, Type t, int p) => ReflectionConverter_Result(v, p)), "Convert06", true);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert07(22, typeof(string), 14)).Returns((object v, Type t, object p) => ReflectionConverter_Result(v, p)), "Convert07", true);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert08(22, typeof(string), 14)).Returns((int v, Type t, object p) => ReflectionConverter_Result(v, p)), "Convert08", true);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert17(22, typeof(string))).Returns((object v, Type t) => ReflectionConverter_Result(v, null)), "Convert17", false);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert18(22, typeof(string))).Returns((int v, Type t) => ReflectionConverter_Result(v, null)), "Convert18", false);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert09(22, CultureInfo.InvariantCulture)).Returns((object v, CultureInfo c) => ReflectionConverter_Result(v, null)), "Convert09", false);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert10(22, CultureInfo.InvariantCulture)).Returns((int v, CultureInfo c) => ReflectionConverter_Result(v, null)), "Convert10", false);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert11(22, 14, CultureInfo.InvariantCulture)).Returns((int v, int p, CultureInfo c) => ReflectionConverter_Result(v, p)), "Convert11", true);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert12(22, 14, CultureInfo.InvariantCulture)).Returns((int v, object p, CultureInfo c) => ReflectionConverter_Result(v, p)), "Convert12", true);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert13(22, 14, CultureInfo.InvariantCulture)).Returns((object v, int p, CultureInfo c) => ReflectionConverter_Result(v, p)), "Convert13", true);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert14(22, typeof(string), 14, CultureInfo.InvariantCulture)).Returns((object v, Type t, int p, CultureInfo c) => ReflectionConverter_Result(v, p)), "Convert14", true);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert15(22, typeof(string), 14, CultureInfo.InvariantCulture)).Returns((object v, Type t, object p, CultureInfo c) => ReflectionConverter_Result(v, p)), "Convert15", true);
-            ReflectionConverter_ConvertMethodParametersTest(m => m.Setup(c => c.Convert16(22, typeof(string), 14, CultureInfo.InvariantCulture)).Returns((int v, Type t, object p, CultureInfo c) => ReflectionConverter_Result(v, p)), "Convert16", true);
+            ReflectionConvertTestMockStatic.Convert01Function = (object v) => ReflectionConverter_Result(v, null);
+            ReflectionConvertTestMockStatic.Convert02Function = (int v) => ReflectionConverter_Result(v, null);
+            ReflectionConverter_ConvertMethodParametersTestCore("Convert01", false); ReflectionConverter_ConvertMethodParametersTestCore("Convert02", false);
+            ReflectionConvertTestMockStatic.Convert03Function = (int v, int p) => ReflectionConverter_Result(v, p);
+            ReflectionConvertTestMockStatic.Convert04Function = (int v, object p) => ReflectionConverter_Result(v, p);
+            ReflectionConverter_ConvertMethodParametersTestCore("Convert03", true); ReflectionConverter_ConvertMethodParametersTestCore("Convert04", true);
+            ReflectionConvertTestMockStatic.Convert05Function = (object v, int p) => ReflectionConverter_Result(v, p);
+            ReflectionConvertTestMockStatic.Convert06Function = (object v, Type t, int p) => ReflectionConverter_Result(v, p);
+            ReflectionConverter_ConvertMethodParametersTestCore("Convert05", true); ReflectionConverter_ConvertMethodParametersTestCore("Convert06", true);
+            ReflectionConvertTestMockStatic.Convert07Function = (object v, Type t, object p) => ReflectionConverter_Result(v, p);
+            ReflectionConvertTestMockStatic.Convert08Function = (int v, Type t, object p) => ReflectionConverter_Result(v, p);
+            ReflectionConverter_ConvertMethodParametersTestCore("Convert07", true); ReflectionConverter_ConvertMethodParametersTestCore("Convert08", true);
+            ReflectionConvertTestMockStatic.Convert17Function = (object v, Type t) => ReflectionConverter_Result(v, null);
+            ReflectionConvertTestMockStatic.Convert18Function = (int v, Type t) => ReflectionConverter_Result(v, null);
+            ReflectionConverter_ConvertMethodParametersTestCore("Convert17", false); ReflectionConverter_ConvertMethodParametersTestCore("Convert18", false);
+            ReflectionConvertTestMockStatic.Convert09Function = (object v, CultureInfo c) => ReflectionConverter_Result(v, null);
+            ReflectionConvertTestMockStatic.Convert10Function = (int v, CultureInfo c) => ReflectionConverter_Result(v, null);
+            ReflectionConverter_ConvertMethodParametersTestCore("Convert09", false); ReflectionConverter_ConvertMethodParametersTestCore("Convert10", false);
+            ReflectionConvertTestMockStatic.Convert11Function = (int v, int p, CultureInfo c) => ReflectionConverter_Result(v, p);
+            ReflectionConvertTestMockStatic.Convert12Function = (int v, object p, CultureInfo c) => ReflectionConverter_Result(v, p);
+            ReflectionConverter_ConvertMethodParametersTestCore("Convert11", true); ReflectionConverter_ConvertMethodParametersTestCore("Convert12", true);
+            ReflectionConvertTestMockStatic.Convert13Function = (object v, int p, CultureInfo c) => ReflectionConverter_Result(v, p);
+            ReflectionConvertTestMockStatic.Convert14Function = (object v, Type t, int p, CultureInfo c) => ReflectionConverter_Result(v, p);
+            ReflectionConverter_ConvertMethodParametersTestCore("Convert13", true); ReflectionConverter_ConvertMethodParametersTestCore("Convert14", true);
+            ReflectionConvertTestMockStatic.Convert15Function = (object v, Type t, object p, CultureInfo c) => ReflectionConverter_Result(v, p);
+            ReflectionConvertTestMockStatic.Convert16Function = (int v, Type t, object p, CultureInfo c) => ReflectionConverter_Result(v, p);
+            ReflectionConverter_ConvertMethodParametersTestCore("Convert15", true); ReflectionConverter_ConvertMethodParametersTestCore("Convert16", true);
         }
-        void ReflectionConverter_ConvertMethodParametersTest(Action<Mock<IReflectionConverterTestMock>> setup, string method, bool withParameter) {
-            var mock = new Mock<IReflectionConverterTestMock>(MockBehavior.Strict);
-            ReflectionConvertTestMockStatic.Mock = mock.Object;
-            setup(mock);
+        void ReflectionConverter_ConvertMethodParametersTestCore(string method, bool withParameter) {
             IValueConverter reflectionConverter = new ReflectionConverter() { ConvertMethodOwner = typeof(ReflectionConvertTestMockStatic), ConvertMethod = method };
             Assert.AreEqual(withParameter ? "36" : "22", reflectionConverter.Convert(22, typeof(string), 14, CultureInfo.InvariantCulture));
         }
@@ -163,14 +156,6 @@ namespace DevExpress.Mvvm.Tests {
         void TestEnumerableConverter<TCollection>(IValueConverter converter) where TCollection : IEnumerable {
             AssertHelper.AssertEnumerablesAreEqual(new string[] { "0", "1", "2" }, (TCollection)converter.Convert(new int[] { 0, 1, 2 }, typeof(TCollection), null, null));
         }
-#endif
-#if !NETFX_CORE && !FREE
-        [Test]
-        public void CriteriaOperatorConverter_ToUpperCaseTest() {
-            var converter = new CriteriaOperatorConverter() { Expression = "Upper(This)" };
-            Assert.AreEqual("ABCD", converter.Convert("abcd", null, null, null));
-        }
-#endif
         [Test]
         public void BooleanToVisibilityConverter() {
             var converter = new BooleanToVisibilityConverter();
@@ -187,29 +172,23 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(false, converter.ConvertBack("test", typeof(bool), null, null));
             Assert.AreEqual(new bool?(true), converter.ConvertBack(Visibility.Visible, typeof(bool?), null, null));
             Assert.AreEqual(new bool?(false), converter.ConvertBack(Visibility.Collapsed, typeof(bool?), null, null));
-#if !NETFX_CORE
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Hidden, typeof(bool), null, null));
             Assert.AreEqual(new bool?(false), converter.ConvertBack(Visibility.Hidden, typeof(bool?), null, null));
-#endif
 
             converter.Inverse = true;
             Assert.AreEqual(Visibility.Collapsed, converter.Convert(true, typeof(Visibility), null, null));
             Assert.AreEqual(Visibility.Visible, converter.Convert(false, typeof(Visibility), null, null));
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Visible, typeof(bool), null, null));
             Assert.AreEqual(true, converter.ConvertBack(Visibility.Collapsed, typeof(bool), null, null));
-#if !NETFX_CORE
             Assert.AreEqual(true, converter.ConvertBack(Visibility.Hidden, typeof(bool), null, null));
-#endif
 
             converter.Inverse = false;
             converter.HiddenInsteadOfCollapsed = true;
             Assert.AreEqual(Visibility.Visible, converter.Convert(true, typeof(Visibility), null, null));
             Assert.AreEqual(true, converter.ConvertBack(Visibility.Visible, typeof(bool), null, null));
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Collapsed, typeof(bool), null, null));
-#if !NETFX_CORE
             Assert.AreEqual(Visibility.Hidden, converter.Convert(false, typeof(Visibility), null, null));
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Hidden, typeof(bool), null, null));
-#endif
         }
         [Test]
         public void NegationConverter_Convert_NoTargetType() {
@@ -410,6 +389,14 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(0x00, color.R);
             Assert.AreEqual(0x00, color.G);
             Assert.AreEqual(0xff, color.B);
+
+            converter.Map.Add(new MapItem { Source = "1", Target = "Red" });
+            color = ((SolidColorBrush)converter.Convert("1", typeof(Brush), null, null)).Color;
+            Assert.AreEqual(Colors.Red, color);
+
+            converter.Map.Add(new MapItem { Source = "2", Target = "Green" });
+            color = ((SolidColorBrush)converter.Convert("2", typeof(Brush), null, null)).Color;
+            Assert.AreEqual(Colors.Green, color);
         }
         [Test]
         public void ObjectToObjectCoercions() {
@@ -448,21 +435,6 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual((int?)10, converter.Convert(4, typeof(int?), null, null));
             Assert.AreEqual(null, converter.Convert(3, typeof(int?), null, null));
         }
-#if NETFX_CORE
-        [Test]
-        public void FormatStringConverter() {
-            var savedCulture = System.Globalization.CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol;
-            try {
-                FormatStringConverter converter = new FormatStringConverter();
-                converter.FormatString = "C0";
-                System.Globalization.CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol = "#test currency symbol#";
-                string s = (string)converter.Convert(13, typeof(string), null, System.Globalization.CultureInfo.InvariantCulture.NativeName);
-                Assert.IsTrue(s.Contains("#test currency symbol#"));
-            } finally {
-                System.Globalization.CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol = savedCulture;
-            }
-        }
-#else
         [Test]
         public void FormatStringConverter() {
             var savedCulture = System.Threading.Thread.CurrentThread.CurrentUICulture;
@@ -478,7 +450,6 @@ namespace DevExpress.Mvvm.Tests {
                 System.Threading.Thread.CurrentThread.CurrentUICulture = savedCulture;
             }
         }
-#endif
         [Test]
         public void FormatStringConverterOutStringCase() {
             FormatStringConverter converter = new FormatStringConverter() { FormatString = "MMMM" };
@@ -492,6 +463,13 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreNotEqual(s1, s3);
             Assert.AreEqual(s1.ToLower(), s2);
             Assert.AreEqual(s1.ToUpper(), s3);
+        }
+        [Test]
+        public void FormatStringConverterSplitPascalCase() {
+            FormatStringConverter converter = new FormatStringConverter() { SplitPascalCase = true };
+            Assert.AreEqual("This Is Test", (string)converter.Convert("ThisIsTest", typeof(string), null, null));
+            Assert.AreEqual("This Is Test", (string)converter.Convert("This Is Test", typeof(string), null, null));
+            Assert.AreEqual("This  Is  Test", (string)converter.Convert("This  Is  Test", typeof(string), null, null));
         }
 
         class MyClass {
@@ -573,21 +551,12 @@ namespace DevExpress.Mvvm.Tests {
         }
     }
     public class ToStringConverter : IValueConverter {
-#if !NETFX_CORE
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             return value.ToString();
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             throw new NotSupportedException();
         }
-#else
-        public object Convert(object value, Type targetType, object parameter, string language) {
-            return value.ToString();
-        }
-        public object ConvertBack(object value, Type targetType, object parameter, string language) {
-            throw new NotImplementedException();
-        }
-#endif
     }
     public class FromString {
         public FromString(string s) {
@@ -602,45 +571,62 @@ namespace DevExpress.Mvvm.Tests {
         public static string IntToString(int i) { return "S" + i.ToString(); }
         public static int StringToInt(string s) { return int.Parse(s.Substring(1)); }
     }
-    public interface IReflectionConverterTestMock {
-        string Convert01(object value);
-        string Convert02(int value);
-        string Convert03(int value, int parameter);
-        string Convert04(int value, object parameter);
-        string Convert05(object value, int parameter);
-        string Convert06(object value, Type targetType, int parameter);
-        string Convert07(object value, Type targetType, object parameter);
-        string Convert08(int value, Type targetType, object parameter);
-        string Convert09(object value, CultureInfo culture);
-        string Convert10(int value, CultureInfo culture);
-        string Convert11(int value, int parameter, CultureInfo culture);
-        string Convert12(int value, object parameter, CultureInfo culture);
-        string Convert13(object value, int parameter, CultureInfo culture);
-        string Convert14(object value, Type targetType, int parameter, CultureInfo culture);
-        string Convert15(object value, Type targetType, object parameter, CultureInfo culture);
-        string Convert16(int value, Type targetType, object parameter, CultureInfo culture);
-        string Convert17(object value, Type targetType);
-        string Convert18(int value, Type targetType);
-    }
     public static class ReflectionConvertTestMockStatic {
-        public static IReflectionConverterTestMock Mock { get; set; }
-        public static string Convert01(object value) { return Mock.Convert01(value); }
-        public static string Convert02(int value) { return Mock.Convert02(value); }
-        public static string Convert03(int value, int parameter) { return Mock.Convert03(value, parameter); }
-        public static string Convert04(int value, object parameter) { return Mock.Convert04(value, parameter); }
-        public static string Convert05(object value, int parameter) { return Mock.Convert05(value, parameter); }
-        public static string Convert06(object value, Type targetType, int parameter) { return Mock.Convert06(value, targetType, parameter); }
-        public static string Convert07(object value, Type targetType, object parameter) { return Mock.Convert07(value, targetType, parameter); }
-        public static string Convert08(int value, Type targetType, object parameter) { return Mock.Convert08(value, targetType, parameter); }
-        public static string Convert09(object value, CultureInfo culture) { return Mock.Convert09(value, culture); }
-        public static string Convert10(int value, CultureInfo culture) { return Mock.Convert10(value, culture); }
-        public static string Convert11(int value, int parameter, CultureInfo culture) { return Mock.Convert11(value, parameter, culture); }
-        public static string Convert12(int value, object parameter, CultureInfo culture) { return Mock.Convert12(value, parameter, culture); }
-        public static string Convert13(object value, int parameter, CultureInfo culture) { return Mock.Convert13(value, parameter, culture); }
-        public static string Convert14(object value, Type targetType, int parameter, CultureInfo culture) { return Mock.Convert14(value, targetType, parameter, culture); }
-        public static string Convert15(object value, Type targetType, object parameter, CultureInfo culture) { return Mock.Convert15(value, targetType, parameter, culture); }
-        public static string Convert16(int value, Type targetType, object parameter, CultureInfo culture) { return Mock.Convert16(value, targetType, parameter, culture); }
-        public static string Convert17(object value, Type targetType) { return Mock.Convert17(value, targetType); }
-        public static string Convert18(int value, Type targetType) { return Mock.Convert18(value, targetType); }
+        public delegate string Convert01Func(object value);
+        public delegate string Convert02Func(int value);
+        public delegate string Convert03Func(int value, int parameter);
+        public delegate string Convert04Func(int value, object parameter);
+        public delegate string Convert05Func(object value, int parameter);
+        public delegate string Convert06Func(object value, Type targetType, int parameter);
+        public delegate string Convert07Func(object value, Type targetType, object parameter);
+        public delegate string Convert08Func(int value, Type targetType, object parameter);
+        public delegate string Convert09Func(object value, CultureInfo culture);
+        public delegate string Convert10Func(int value, CultureInfo culture);
+        public delegate string Convert11Func(int value, int parameter, CultureInfo culture);
+        public delegate string Convert12Func(int value, object parameter, CultureInfo culture);
+        public delegate string Convert13Func(object value, int parameter, CultureInfo culture);
+        public delegate string Convert14Func(object value, Type targetType, int parameter, CultureInfo culture);
+        public delegate string Convert15Func(object value, Type targetType, object parameter, CultureInfo culture);
+        public delegate string Convert16Func(int value, Type targetType, object parameter, CultureInfo culture);
+        public delegate string Convert17Func(object value, Type targetType);
+        public delegate string Convert18Func(int value, Type targetType);
+
+        public static Convert01Func Convert01Function;
+        public static Convert02Func Convert02Function;
+        public static Convert03Func Convert03Function;
+        public static Convert04Func Convert04Function;
+        public static Convert05Func Convert05Function;
+        public static Convert06Func Convert06Function;
+        public static Convert07Func Convert07Function;
+        public static Convert08Func Convert08Function;
+        public static Convert09Func Convert09Function;
+        public static Convert10Func Convert10Function;
+        public static Convert11Func Convert11Function;
+        public static Convert12Func Convert12Function;
+        public static Convert13Func Convert13Function;
+        public static Convert14Func Convert14Function;
+        public static Convert15Func Convert15Function;
+        public static Convert16Func Convert16Function;
+        public static Convert17Func Convert17Function;
+        public static Convert18Func Convert18Function;
+
+        public static string Convert01(object value) { return Convert01Function(value); }
+        public static string Convert02(int value) { return Convert02Function(value); }
+        public static string Convert03(int value, int parameter) { return Convert03Function(value, parameter); }
+        public static string Convert04(int value, object parameter) { return Convert04Function(value, parameter); }
+        public static string Convert05(object value, int parameter) { return Convert05Function(value, parameter); }
+        public static string Convert06(object value, Type targetType, int parameter) { return Convert06Function(value, targetType, parameter); }
+        public static string Convert07(object value, Type targetType, object parameter) { return Convert07Function(value, targetType, parameter); }
+        public static string Convert08(int value, Type targetType, object parameter) { return Convert08Function(value, targetType, parameter); }
+        public static string Convert09(object value, CultureInfo culture) { return Convert09Function(value, culture); }
+        public static string Convert10(int value, CultureInfo culture) { return Convert10Function(value, culture); }
+        public static string Convert11(int value, int parameter, CultureInfo culture) { return Convert11Function(value, parameter, culture); }
+        public static string Convert12(int value, object parameter, CultureInfo culture) { return Convert12Function(value, parameter, culture); }
+        public static string Convert13(object value, int parameter, CultureInfo culture) { return Convert13Function(value, parameter, culture); }
+        public static string Convert14(object value, Type targetType, int parameter, CultureInfo culture) { return Convert14Function(value, targetType, parameter, culture); }
+        public static string Convert15(object value, Type targetType, object parameter, CultureInfo culture) { return Convert15Function(value, targetType, parameter, culture); }
+        public static string Convert16(int value, Type targetType, object parameter, CultureInfo culture) { return Convert16Function(value, targetType, parameter, culture); }
+        public static string Convert17(object value, Type targetType) { return Convert17Function(value, targetType); }
+        public static string Convert18(int value, Type targetType) { return Convert18Function(value, targetType); }
     }
 }

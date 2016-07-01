@@ -54,6 +54,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(string.Empty, service.Filter);
             Assert.AreEqual(1, service.FilterIndex);
             Assert.AreEqual(string.Empty, service.InitialDirectory);
+            Assert.AreEqual(string.Empty, service.DefaultFileName);
             Assert.AreEqual(false, service.Multiselect);
 
             IOpenFileDialogService iService = service;
@@ -82,6 +83,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             public bool CheckPathExists { get; set; }
             public bool DereferenceLinks { get; set; }
             public string InitialDirectory { get; set; }
+            public string DefaultFileName { get; set; }
             public bool RestoreDirectory { get; set; }
             public bool ShowHelp { get; set; }
             public bool SupportMultiDottedExtensions { get; set; }

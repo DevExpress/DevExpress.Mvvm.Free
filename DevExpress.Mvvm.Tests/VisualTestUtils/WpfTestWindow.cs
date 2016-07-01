@@ -214,7 +214,7 @@ namespace DevExpress {
                         setObject(obj);
                         return;
                     }
-                    DispatcherHelper.DoEvents(priority);
+                    DispatcherHelper.UpdateLayoutAndDoEvents(RealWindow, priority);
                 }
                 throw new Exception(GetTimeOutMessage(null, () => false));
             });
