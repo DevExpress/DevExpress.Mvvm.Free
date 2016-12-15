@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Windows;
+using System.Linq;
+
 
 namespace DevExpress.Mvvm.UI.Interactivity {
     public abstract class AttachableCollection<T> : FreezableCollection<T>, IAttachableObject where T : DependencyObject, IAttachableObject {
@@ -48,6 +50,8 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         }
 
         bool ShouldAttachItem(T item) {
+            if(InteractionHelper.GetEnableBehaviorsInDesignTime(AssociatedObject))
+                return true;
             if(!InteractionHelper.IsInDesignMode(AssociatedObject))
                 return true;
             return !InteractionHelper.IsInDesignMode(item);
@@ -110,6 +114,21 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         }
     }
 
-    public sealed class BehaviorCollection : AttachableCollection<Behavior> { }
+    public sealed class BehaviorCollection : AttachableCollection<Behavior> {
+        internal override void ItemAdded(Behavior item) {
+            CheckBehavior(item);
+            base.ItemAdded(item);
+        }
+        void CheckBehavior(Behavior item) {
+            var itemType = UniqueBehaviorTypeAttribute.GetDeclaredType(item.GetType());
+            if(itemType != null) {
+                var existBehaviorName =
+                this.FirstOrDefault(x => x != item && itemType.IsAssignableFrom(x.GetType())).With(x => x.GetType().Name);
+                if(!string.IsNullOrEmpty(existBehaviorName)) {
+                    throw new InvalidOperationException(string.Format("A behavior of the {0} base type already exists.", existBehaviorName));
+                }
+            }
+        }
+    }
     public sealed class TriggerCollection : AttachableCollection<TriggerBase> { }
 }

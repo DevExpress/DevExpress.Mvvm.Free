@@ -190,6 +190,8 @@ namespace DevExpress.Mvvm.POCO {
                     return false;
                 if(type.GetCustomAttributes(typeof(POCOViewModelAttribute), true).Any())
                     return true;
+                if(typeof(Component).IsAssignableFrom(type))
+                    return false;
                 if(GetCommandMethods(type).Any() && !type.GetProperties().Where(x => typeof(ICommand).IsAssignableFrom(x.PropertyType)).Any())
                     return true;
                 if(ViewModelSourceBuilderBase.Default.GetBindableProperties(type).Any() && !typeof(INotifyPropertyChanged).IsAssignableFrom(type))
@@ -498,38 +500,27 @@ namespace DevExpress.Mvvm.POCO {
                 | MethodAttributes.HideBySig;
             MethodBuilder method = type.DefineMethod(getMethod.Name, methodAttributes);
             method.SetReturnType(property.PropertyType);
+
             ILGenerator gen = method.GetILGenerator();
-            if(required)
-                EmitGetRequiredServicePropertyMethod(property.PropertyType, serviceName, searchMode, gen);
-            else
-                EmitGetOptionalServicePropertyMethod(property.PropertyType, serviceName, searchMode, gen);
-            return method;
-        }
-        static void EmitGetOptionalServicePropertyMethod(Type serviceType, string serviceName, ServiceSearchMode searchMode, ILGenerator gen) {
             Expression<Func<ISupportServices, IServiceContainer>> serviceContainerPropertyExpression = x => x.ServiceContainer;
-            Type[] getServiceMethodParams = string.IsNullOrEmpty(serviceName) ? new Type[] { typeof(ServiceSearchMode) } : new Type[] { typeof(string), typeof(ServiceSearchMode) };
-            MethodInfo getServiceMethod = typeof(IServiceContainer).GetMethod("GetService", BindingFlags.Instance | BindingFlags.Public, null, getServiceMethodParams, null).MakeGenericMethod(serviceType);
+            Type[] getServiceMethodParams = new Type[] { typeof(string), typeof(ServiceSearchMode) };
+            MethodInfo getServiceMethod =
+                required
+                ? typeof(ServiceContainerExtensions).GetMethod("GetRequiredService", BindingFlags.Static | BindingFlags.Public, null,
+                    new Type[] { typeof(IServiceContainer), typeof(string), typeof(ServiceSearchMode) }, null)
+                : typeof(IServiceContainer).GetMethod("GetService", BindingFlags.Instance | BindingFlags.Public, null,
+                    new Type[] { typeof(string), typeof(ServiceSearchMode) }, null);
+            getServiceMethod = getServiceMethod.MakeGenericMethod(property.PropertyType);
 
             gen.Emit(OpCodes.Ldarg_0);
             gen.Emit(OpCodes.Callvirt, ExpressionHelper.GetArgumentPropertyStrict(serviceContainerPropertyExpression).GetGetMethod());
-            if(!string.IsNullOrEmpty(serviceName))
-                gen.Emit(OpCodes.Ldstr, serviceName);
-            gen.Emit(OpCodes.Ldc_I4_S, (int)searchMode);
-            gen.Emit(OpCodes.Callvirt, getServiceMethod);
-            gen.Emit(OpCodes.Ret);
-        }
-        static void EmitGetRequiredServicePropertyMethod(Type serviceType, string serviceName, ServiceSearchMode searchMode, ILGenerator gen) {
-            Expression<Func<ISupportServices, IServiceContainer>> serviceContainerPropertyExpression = x => x.ServiceContainer;
-            Type[] getServiceMethodParams = string.IsNullOrEmpty(serviceName) ? new Type[] { typeof(IServiceContainer), typeof(ServiceSearchMode) } : new Type[] { typeof(IServiceContainer), typeof(string), typeof(ServiceSearchMode) };
-            MethodInfo getServiceMethod = typeof(ServiceContainerExtensions).GetMethod("GetRequiredService", BindingFlags.Static | BindingFlags.Public, null, getServiceMethodParams, null).MakeGenericMethod(serviceType);
-
-            gen.Emit(OpCodes.Ldarg_0);
-            gen.Emit(OpCodes.Callvirt, ExpressionHelper.GetArgumentPropertyStrict(serviceContainerPropertyExpression).GetGetMethod());
-            if(!string.IsNullOrEmpty(serviceName))
-                gen.Emit(OpCodes.Ldstr, serviceName);
+            if(string.IsNullOrEmpty(serviceName))
+                gen.Emit(OpCodes.Ldnull);
+            else gen.Emit(OpCodes.Ldstr, serviceName);
             gen.Emit(OpCodes.Ldc_I4_S, (int)searchMode);
             gen.Emit(OpCodes.Call, getServiceMethod);
             gen.Emit(OpCodes.Ret);
+            return method;
         }
         #endregion
 
@@ -1086,6 +1077,7 @@ namespace DevExpress.Mvvm.POCO {
     public class ViewModelSourceException : Exception {
         #region error messages
         internal const string Error_ObjectDoesntImplementIPOCOViewModel = "Object doesn't implement IPOCOViewModel.";
+        internal const string Error_ObjectDoesntImplementISupportServices = "Object doesn't implement ISupportServices.";
         internal const string Error_CommandNotFound = "Command not found: {0}.";
         internal const string Error_CommandNotAsync = "Command is not async";
         internal const string Error_ConstructorNotFound = "Constructor not found.";
@@ -1200,7 +1192,8 @@ namespace DevExpress.Mvvm.POCO {
             return ServiceContainerExtensions.GetRequiredService<TService>(GetServiceContainer(viewModel), key);
         }
         static IServiceContainer GetServiceContainer(object viewModel) {
-            GetPOCOViewModel(viewModel);
+            if(!(viewModel is ISupportServices))
+                throw new ViewModelSourceException(ViewModelSourceException.Error_ObjectDoesntImplementISupportServices);
             return ((ISupportServices)viewModel).ServiceContainer;
         }
         #endregion

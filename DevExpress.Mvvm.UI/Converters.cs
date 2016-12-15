@@ -307,9 +307,8 @@ namespace DevExpress.Mvvm.UI {
             return null;
         }
         internal static object Coerce(object value, Type targetType, bool ignoreImplicitXamlConversions = false) {
-            if(value == null || targetType == value.GetType()) {
-                return value;
-            }
+            if(value == null || targetType == typeof(object) || value.GetType() == targetType) return value;
+            if(value.GetType().IsAssignableFrom(targetType)) return value;
             var nullableType = Nullable.GetUnderlyingType(targetType);
             var coerced = CoerceNonNullable(value, nullableType ?? targetType, ignoreImplicitXamlConversions);
             if(nullableType != null) {
@@ -430,11 +429,13 @@ namespace DevExpress.Mvvm.UI {
     }
     public class FormatStringConverter : IValueConverter {
         public string FormatString { get; set; }
+        bool allowSimpleFormatString = true;
+        public bool AllowSimpleFormatString { get { return allowSimpleFormatString; } set { allowSimpleFormatString = value; } }
         public TextCaseFormat OutStringCaseFormat { get; set; }
         public bool SplitPascalCase { get; set; }
 
         public virtual object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            var res = GetFormattedValue(FormatString, value, System.Globalization.CultureInfo.CurrentUICulture, OutStringCaseFormat);
+            var res = GetFormattedValue(FormatString, value, System.Globalization.CultureInfo.CurrentUICulture, OutStringCaseFormat, AllowSimpleFormatString);
             if(res is string && SplitPascalCase)
                 return SplitStringHelper.SplitPascalCaseString((string)res);
             return res;
@@ -443,13 +444,12 @@ namespace DevExpress.Mvvm.UI {
             throw new NotSupportedException();
         }
 
-        public static object GetFormattedValue(string formatString, object value, System.Globalization.CultureInfo culture) {
-            string displayFormat = GetDisplayFormat(formatString);
+        public static object GetFormattedValue(string formatString, object value, System.Globalization.CultureInfo culture, bool allowSimpleFormatString = true) {
+            string displayFormat = GetDisplayFormat(formatString, allowSimpleFormatString);
             return string.IsNullOrEmpty(displayFormat) ? value : string.Format(culture, displayFormat, value);
         }
-        public static object GetFormattedValue(string formatString, object value, System.Globalization.CultureInfo culture,
-            TextCaseFormat outStringCaseFormat) {
-            object o = GetFormattedValue(formatString, value, culture);
+        public static object GetFormattedValue(string formatString, object value, System.Globalization.CultureInfo culture, TextCaseFormat outStringCaseFormat, bool allowSimpleFormatString = true) {
+            object o = GetFormattedValue(formatString, value, culture, allowSimpleFormatString);
             if(o == null)
                 return null;
 
@@ -462,9 +462,10 @@ namespace DevExpress.Mvvm.UI {
                     return o.ToString();
             }
         }
-        public static string GetDisplayFormat(string displayFormat) {
+        public static string GetDisplayFormat(string displayFormat, bool allowSimpleFormatString = true) {
             if(string.IsNullOrEmpty(displayFormat))
                 return string.Empty;
+            if(!allowSimpleFormatString) return displayFormat;
             string res = displayFormat;
             if(res.Contains("{"))
                 return res;

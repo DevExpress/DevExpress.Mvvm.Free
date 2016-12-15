@@ -1,5 +1,5 @@
 using DevExpress.Mvvm.Native;
-using DevExpress.Mvvm.UI.ViewInjection;
+using DevExpress.Mvvm.UI.ModuleInjection;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -23,12 +23,9 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty RegionNameProperty =
             DependencyProperty.Register("RegionName", typeof(string), typeof(ViewInjectionService),
             new PropertyMetadata(null));
-        static readonly DependencyPropertyKey ViewModelsPropertyKey =
-            DependencyProperty.RegisterReadOnly("ViewModels", typeof(IEnumerable<object>), typeof(ViewInjectionService), new PropertyMetadata(null));
-        public static readonly DependencyProperty ViewModelsProperty = ViewModelsPropertyKey.DependencyProperty;
         public static readonly DependencyProperty SelectedViewModelProperty =
             DependencyProperty.Register("SelectedViewModel", typeof(object), typeof(ViewInjectionService),
-            new PropertyMetadata(null, (d,e) => ((ViewInjectionService)d).OnSelectedViewModelChanged(e)));
+            new PropertyMetadata(null, (d, e) => ((ViewInjectionService)d).OnSelectedViewModelChanged(e)));
         public static readonly DependencyProperty SelectedViewModelChangedCommandProperty =
             DependencyProperty.Register("SelectedViewModelChangedCommand", typeof(ICommand), typeof(ViewInjectionService), new PropertyMetadata(null));
         public static readonly DependencyProperty ViewModelClosingCommandProperty =
@@ -51,8 +48,7 @@ namespace DevExpress.Mvvm.UI {
             set { SetValue(RegionNameProperty, value); }
         }
         public IEnumerable<object> ViewModels {
-            get { return (IEnumerable<object>)GetValue(ViewModelsProperty); }
-            private set { SetValue(ViewModelsPropertyKey, value); }
+            get { return viewModels.Values; }
         }
         public object SelectedViewModel {
             get { return (object)GetValue(SelectedViewModelProperty); }
@@ -69,7 +65,7 @@ namespace DevExpress.Mvvm.UI {
         protected override bool AllowAttachInDesignMode { get { return false; } }
 
         IViewInjectionManager ActualViewInjectionManager { get { return ViewInjectionManager ?? DevExpress.Mvvm.ViewInjectionManager.Default; } }
-        IStrategyManager ActualStrategyManager { get { return StrategyManager ?? DevExpress.Mvvm.UI.ViewInjection.StrategyManager.Default; } }
+        IStrategyManager ActualStrategyManager { get { return StrategyManager ?? DevExpress.Mvvm.UI.ModuleInjection.StrategyManager.Default; } }
         [EditorBrowsable(EditorBrowsableState.Never)]
         public IStrategy Strategy { get { return strategy ?? (strategy = ActualStrategyManager.CreateStrategy(AssociatedObject)); } }
         IStrategy strategy = null;
@@ -81,15 +77,9 @@ namespace DevExpress.Mvvm.UI {
             AssociatedObject.Unloaded += OnAssociatedObjectUnloaded;
             if(AssociatedObject.IsInitialized) OnAssociatedObjectInitialized(AssociatedObject, EventArgs.Empty);
             AssociatedObject.Initialized += OnAssociatedObjectInitialized;
-
-            if(SelectedViewModel != null) Strategy.SelectedViewModel = SelectedViewModel;
-            Strategy.SelectedViewModelChanged += OnStrategySelectedViewModelChanged;
-            Strategy.ViewModelClosing += OnStrategyViewModelClosing;
+            if(SelectedViewModel != null) Strategy.Select(SelectedViewModel);
         }
         protected override void OnDetaching() {
-            Strategy.SelectedViewModelChanged -= OnStrategySelectedViewModelChanged;
-            Strategy.ViewModelClosing -= OnStrategyViewModelClosing;
-
             AssociatedObject.Initialized -= OnAssociatedObjectInitialized;
             AssociatedObject.Loaded -= OnAssociatedObjectLoaded;
             AssociatedObject.Unloaded -= OnAssociatedObjectUnloaded;
@@ -105,22 +95,14 @@ namespace DevExpress.Mvvm.UI {
             Strategy.Uninitialize();
         }
         void OnAssociatedObjectInitialized(object sender, EventArgs e) {
-            Strategy.Initialize(this);
-            ViewModels = Strategy.ViewModels;
+            Strategy.Initialize(new StrategyOwner(this));
         }
-
         void OnSelectedViewModelChanged(DependencyPropertyChangedEventArgs e) {
-            if(IsAttached) Strategy.SelectedViewModel = e.NewValue;
-        }
-        void OnStrategySelectedViewModelChanged(object sender, PropertyValueChangedEventArgs<object> e) {
             SelectedViewModel = e.NewValue;
             SelectedViewModelChangedCommand.If(x => x.CanExecute(e)).Do(x => x.Execute(e));
             if(e.OldValue != null) ActualViewInjectionManager.RaiseNavigatedAwayEvent(e.OldValue);
             if(e.NewValue != null) ActualViewInjectionManager.RaiseNavigatedEvent(e.NewValue);
-        }
-        void OnStrategyViewModelClosing(object sender, ViewModelClosingEventArgs e) {
-            ViewModelClosingCommand.If(x => x.CanExecute(e)).Do(x => x.Execute(e));
-            ActualViewInjectionManager.RaiseViewModelClosingEvent(e);
+            if(IsAttached) Strategy.Select(e.NewValue);
         }
 
         Dictionary<object, object> viewModels = new Dictionary<object, object>();
@@ -135,17 +117,52 @@ namespace DevExpress.Mvvm.UI {
                 throw new InvalidOperationException(string.Format(Exception, string.IsNullOrEmpty(RegionName) ? "ViewInjectionService" : RegionName));
             }
             if(viewModels.ContainsKey(key)) return;
-            Strategy.Inject(viewModel, viewName, viewType);
+            Strategy.Inject(viewModel, viewType ?? (ViewLocator ?? DevExpress.Mvvm.UI.ViewLocator.Default).ResolveViewType(viewName));
             viewModels.Add(key, viewModel);
         }
         bool IViewInjectionService.Remove(object viewModel) {
             if(!Strategy.IsInitialized) return false;
-            var res = Strategy.Remove(viewModel);
-            if(res) {
-                var key = ((IViewInjectionService)this).GetKey(viewModel);
-                viewModels.Remove(key);
-            }
-            return res;
+            if(!CanRemoveCore(viewModel)) return false;
+            Strategy.Remove(viewModel);
+            RemoveCore(viewModel);
+            return true;
         }
+        bool CanRemoveCore(object viewModel) {
+            if(viewModel == null || !viewModels.ContainsValue(viewModel)) return true;
+            ViewModelClosingEventArgs e = new ViewModelClosingEventArgs(viewModel);
+            ViewModelClosingCommand.If(x => x.CanExecute(e)).Do(x => x.Execute(e));
+            ActualViewInjectionManager.RaiseViewModelClosingEvent(e);
+            return !e.Cancel;
+        }
+        void RemoveCore(object viewModel) {
+            var key = ((IViewInjectionService)this).GetKey(viewModel);
+            if(key == null) return;
+            viewModels.Remove(key);
+        }
+
+        #region StrategyOwner
+        class StrategyOwner : IStrategyOwner {
+            readonly ViewInjectionService owner;
+            public StrategyOwner(ViewInjectionService owner) {
+                this.owner = owner;
+            }
+
+            public string RegionName { get { return owner.RegionName; } }
+            public DependencyObject Target { get { return owner.AssociatedObject; } }
+            public string GetKey(object viewModel) {
+                return ((IViewInjectionService)owner).GetKey(viewModel) as string;
+            }
+            public bool CanRemoveViewModel(object viewModel) {
+                return owner.CanRemoveCore(viewModel);
+            }
+            public void RemoveViewModel(object viewModel) {
+                owner.RemoveCore(viewModel);
+            }
+            public void SelectViewModel(object viewModel) {
+                owner.SelectedViewModel = viewModel;
+            }
+            public void ConfigureChild(DependencyObject child) { }
+        }
+        #endregion
     }
 }

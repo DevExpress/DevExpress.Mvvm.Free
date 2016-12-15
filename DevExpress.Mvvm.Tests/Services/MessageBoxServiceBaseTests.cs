@@ -34,45 +34,17 @@ namespace DevExpress.Mvvm.Tests {
             s = new TestMessabeBoxService() { Result = MessageResult.Yes };
             Assert.AreEqual(MessageResult.Yes, s.ShowMessage("Test", "Caption", MessageButton.YesNoCancel, MessageIcon.Warning, MessageResult.Yes));
         }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
+        [Test]
         public void NullService1() {
             IMessageBoxService service = null;
-            service.Show("");
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService2() {
-            IMessageBoxService service = null;
-            service.Show("", "");
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService3() {
-            IMessageBoxService service = null;
-            service.ShowMessage("", "", MessageButton.OKCancel);
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService4() {
-            IMessageBoxService service = null;
-            service.ShowMessage("", "", MessageButton.OKCancel, MessageIcon.Warning);
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService11() {
-            IMessageBoxService service = null;
-            service.ShowMessage("");
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService12() {
-            IMessageBoxService service = null;
-            service.ShowMessage("", "");
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService13() {
-            IMessageBoxService service = null;
-            service.ShowMessage("", "", MessageButton.OKCancel);
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService14() {
-            IMessageBoxService service = null;
-            service.ShowMessage("", "", MessageButton.OKCancel, MessageIcon.Warning);
+            Assert.Throws<ArgumentNullException>(() => { service.Show(""); });
+            Assert.Throws<ArgumentNullException>(() => { service.Show("", ""); });
+            Assert.Throws<ArgumentNullException>(() => { service.ShowMessage("", "", MessageButton.OKCancel); });
+            Assert.Throws<ArgumentNullException>(() => { service.ShowMessage("", "", MessageButton.OKCancel, MessageIcon.Warning); });
+            Assert.Throws<ArgumentNullException>(() => { service.ShowMessage(""); });
+            Assert.Throws<ArgumentNullException>(() => { service.ShowMessage("", ""); });
+            Assert.Throws<ArgumentNullException>(() => { service.ShowMessage("", "", MessageButton.OKCancel); });
+            Assert.Throws<ArgumentNullException>(() => { service.ShowMessage("", "", MessageButton.OKCancel, MessageIcon.Warning); });
         }
     }
 }

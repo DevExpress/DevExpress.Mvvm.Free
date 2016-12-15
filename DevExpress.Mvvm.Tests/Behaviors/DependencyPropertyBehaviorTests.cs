@@ -101,7 +101,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
-        [Test, Asynchronous, Ignore]
+        [Test, Asynchronous, Ignore("Ignore")]
         public void ConvertableTypesTest() {
             var propertyChangedViewModel = new PropertyChangedViewModel() { FloatProperty = 100 };
             var button = new Button() { DataContext = propertyChangedViewModel };

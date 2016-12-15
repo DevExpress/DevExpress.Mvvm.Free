@@ -63,7 +63,7 @@ namespace DevExpress.Mvvm {
             RaisePropertyChanged(GetPropertyName(expression));
         }
         protected void RaisePropertiesChanged(params string[] propertyNames) {
-            if(propertyNames == null) {
+            if(propertyNames == null || propertyNames.Length == 0) {
                 RaisePropertyChanged(string.Empty);
                 return;
             }

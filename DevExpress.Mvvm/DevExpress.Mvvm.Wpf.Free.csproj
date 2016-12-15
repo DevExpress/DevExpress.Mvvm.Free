@@ -99,6 +99,15 @@
     <Compile Include="IDataErrorInfoHelper.cs" />
     <Compile Include="ILockable.cs" />
     <Compile Include="MessageBoxButtonLocalizer.cs" />
+    <Compile Include="ModuleInjection\Events.cs" />
+    <Compile Include="ModuleInjection\Exceptions.cs" />
+    <Compile Include="ModuleInjection\Manager.cs" />
+    <Compile Include="ModuleInjection\Module.cs" />
+    <Compile Include="ModuleInjection\Obsolete.cs" />
+    <Compile Include="ModuleInjection\Region.cs" />
+    <Compile Include="ModuleInjection\SerializationInfo.cs" />
+    <Compile Include="ModuleInjection\SerializationLogical.cs" />
+    <Compile Include="ModuleInjection\SerializationVisual.cs" />
     <Compile Include="Native\ActionInvoker\ActionInvokerBase.cs" />
     <Compile Include="Native\ActionInvoker\ActionInvokerFactories.cs" />
     <Compile Include="Native\ActionInvoker\IActionInvoker.cs" />
@@ -110,6 +119,7 @@
     <Compile Include="Native\DelegateCommandFactory.cs" />
     <Compile Include="Native\DesignTimeValuesProvider.cs" />
     <Compile Include="Native\DPAccessModifierAttribute.cs" />
+    <Compile Include="Native\DynamicAssemblyHelper.cs" />
     <Compile Include="Native\EventFireCounter.cs" />
     <Compile Include="Native\ExpressionHelper.cs" />
     <Compile Include="Native\Guard.cs" />
@@ -162,9 +172,6 @@
     <Compile Include="Services\SplashScreenService\SplashScreenServiceExtensions.cs" />
     <Compile Include="Services\TaskbarButtonService\ITaskbarButtonService.cs" />
     <Compile Include="Services\TaskbarButtonService\Native\ITaskbarThumbButtonInfo.cs" />
-    <Compile Include="Services\ViewInjectionService\IViewInjectionManager.cs" />
-    <Compile Include="Services\ViewInjectionService\IViewInjectionService.cs" />
-    <Compile Include="Services\ViewInjectionService\ViewInjectionManager.cs" />
     <Compile Include="Services\WindowService\ICurrentWindowService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\DocumentManagerService\DocumentManagerServiceExtensions.cs" />
@@ -174,10 +181,14 @@
     <Compile Include="Services\ServiceContainer.cs" />
     <Compile Include="Services\WindowService\IWindowService.cs" />
     <Compile Include="Services\WindowService\WindowServiceExtensions.cs" />
+    <Compile Include="TypeLocators\LocatorBase.cs" />
+    <Compile Include="TypeLocators\ViewLocator.cs" />
+    <Compile Include="TypeLocators\ViewModelLocator.cs" />
     <Compile Include="ViewModels\BindableBase.cs" />
     <Compile Include="ViewModels\NavigationViewModelBase.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="ViewModels\ViewModelSource.cs" />
+    <Compile Include="WeakEvent.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="DataAnnotationsResources.resx">

@@ -55,10 +55,12 @@ namespace DevExpress.Mvvm.Tests {
             Execute(command, null);
             Assert.AreEqual(default(bool), param);
         }
-        [Test, ExpectedException(typeof(FormatException))]
+        [Test]
         public void BoolParameterException() {
             ICommand command = CreateCommand<bool>(x => { });
-            command.CanExecute("True1");
+            Assert.Throws<FormatException>(() => {
+                command.CanExecute("True1");
+            });
         }
         [Test]
         public void NullableBoolParameter() {
@@ -107,10 +109,12 @@ namespace DevExpress.Mvvm.Tests {
             Execute(command, new Nullable<int>(2));
             Assert.AreEqual(2, param);
         }
-        [Test, ExpectedException(typeof(FormatException))]
+        [Test]
         public void IntParameterException() {
             ICommand command = CreateCommand<int>(x => { });
-            command.CanExecute("1.0");
+            Assert.Throws<FormatException>(() => {
+                command.CanExecute("1.0");
+            });
         }
         [Test]
         public void NullableIntParameter() {
@@ -149,10 +153,12 @@ namespace DevExpress.Mvvm.Tests {
                 Thread.CurrentThread.CurrentCulture = culture;
             }
         }
-        [Test, ExpectedException(typeof(FormatException))]
+        [Test]
         public void DoubleParameterException() {
             ICommand command = CreateCommand<double>(x => { });
-            Execute(command, "one");
+            Assert.Throws<FormatException>(() => {
+                Execute(command, "one");
+            });
         }
 
         [Test]
@@ -181,10 +187,12 @@ namespace DevExpress.Mvvm.Tests {
             Execute(command, new Nullable<Visibility>(Visibility.Collapsed));
             Assert.AreEqual(Visibility.Collapsed, param);
         }
-        [Test, ExpectedException(typeof(ArgumentException))]
+        [Test]
         public void EnumParameterException() {
             ICommand command = CreateCommand<Visibility>(x => { });
-            Execute(command, "visible");
+            Assert.Throws<ArgumentException>(() => {
+                Execute(command, "visible");
+            });
         }
         [Test]
         public void NullableEnumParameter() {
@@ -217,20 +225,24 @@ namespace DevExpress.Mvvm.Tests {
             Execute(command, pp);
             Assert.AreSame(pp, param);
         }
-        [Test, ExpectedException(typeof(InvalidCastException))]
+        [Test]
         public void CustomParameterException1() {
             ICommand command = CreateCommand<ParamClass1>(x => { });
-            command.CanExecute("a");
+            Assert.Throws<InvalidCastException>(() => {
+                command.CanExecute("a");
+            });
         }
         [Test]
         public void CustomParameterException2_T120478() {
             ICommand command = CreateCommand<ParamClass1>(x => { });
             command.CanExecute(new ParamClass2());
         }
-        [Test, ExpectedException(typeof(InvalidCastException))]
+        [Test]
         public void CustomParameterException3_T120478() {
             ICommand command = CreateCommand<ParamClass1>(x => { });
-            command.Execute(new ParamClass2());
+            Assert.Throws<InvalidCastException>(() => {
+                command.Execute(new ParamClass2());
+            });
         }
         [Test]
         public void DateTimeToStringParameter() {
@@ -256,21 +268,12 @@ namespace DevExpress.Mvvm.Tests {
             Execute(command, "param");
             Assert.AreEqual("param", param);
         }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void ExecuteNull1() {
-            CreateCommand(null);
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void ExecuteNull2() {
-            CreateCommand(null, null);
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void ExecuteNull3() {
-            CreateCommand<string>(null);
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void ExecuteNull4() {
-            CreateCommand<string>(null, null);
+        [Test]
+        public void ExecuteNull() {
+            Assert.Throws<ArgumentNullException>(() => { CreateCommand(null); });
+            Assert.Throws<ArgumentNullException>(() => { CreateCommand(null, null); });
+            Assert.Throws<ArgumentNullException>(() => { CreateCommand<string>(null); });
+            Assert.Throws<ArgumentNullException>(() => { CreateCommand<string>(null, null); });
         }
         [Test]
         public void ExecuteWhenCanExecuteIsFalse() {
@@ -674,7 +677,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.IsFalse(asyncTestCommand.IsExecuting);
             Assert.IsFalse(asyncTestCommand.CanExecute(100));
         }
-        [Test, Asynchronous]
+        [Test]
         public void IsExecutingPropertyChangedTest() {
             asyncTestCommand = new AsyncCommand<int>((a) => AsyncExecuteMethod(a));
             bool isExecutingChanged = false;

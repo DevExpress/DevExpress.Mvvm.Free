@@ -9,16 +9,18 @@ using DevExpress.Mvvm.UI.Native;
 
 namespace DevExpress.Mvvm.UI {
     [RuntimeNameProperty("Name")]
-    public abstract class ServiceBase : Behavior<FrameworkElement> {
-        public static readonly DependencyProperty NameProperty = DependencyProperty.Register("Name", typeof(string), typeof(ServiceBase), new PropertyMetadata(null));
+    public abstract class ServiceBaseGeneric<T> : Behavior<T> where T : DependencyObject {
+        [IgnoreDependencyPropertiesConsistencyCheckerAttribute]
+        public static readonly DependencyProperty NameProperty = DependencyProperty.Register("Name", typeof(string),
+            typeof(ServiceBaseGeneric<T>), new PropertyMetadata(null));
         public string Name { get { return (string)GetValue(NameProperty); } set { SetValue(NameProperty, value); } }
         [IgnoreDependencyPropertiesConsistencyCheckerAttribute]
-        static readonly DependencyProperty ServicesClientInternalProperty = DependencyProperty.Register("ServicesClientInternal", typeof(object), typeof(ServiceBase), new PropertyMetadata(null,
-            (d, e) => ((ServiceBase)d).OnServicesClientInternalChanged(e.OldValue as ISupportServices, e.NewValue as ISupportServices)));
+        static readonly DependencyProperty ServicesClientInternalProperty = DependencyProperty.Register("ServicesClientInternal", typeof(object), typeof(ServiceBaseGeneric<T>),
+            new PropertyMetadata(null, (d, e) => ((ServiceBaseGeneric<T>)d).OnServicesClientInternalChanged(e.OldValue as ISupportServices, e.NewValue as ISupportServices)));
         public bool YieldToParent { get; set; }
         internal bool ShouldInject { get; set; }
 
-        protected ServiceBase() {
+        protected ServiceBaseGeneric() {
             ShouldInject = true;
         }
         protected override void OnAttached() {
@@ -46,4 +48,5 @@ namespace DevExpress.Mvvm.UI {
             newServiceClient.Do(x => x.ServiceContainer.RegisterService(Name, this, YieldToParent));
         }
     }
+    public abstract class ServiceBase : ServiceBaseGeneric<FrameworkElement> { }
 }

@@ -71,7 +71,7 @@ namespace DevExpress.Mvvm.UI.Native {
             objects.Reset();
         }
     }
-    public class VisualTreeEnumerator : NestedObjectEnumeratorBase, IDisposable{
+    public class VisualTreeEnumerator : NestedObjectEnumeratorBase, IDisposable {
         static IEnumerator<object> GetDependencyObjectEnumerator(DependencyObject dObject, int startIndex, int endIndex, int step) {
             for(int i = startIndex; i != endIndex; i += step) {
                 yield return VisualTreeHelper.GetChild(dObject, i);
@@ -104,6 +104,55 @@ namespace DevExpress.Mvvm.UI.Native {
         public IEnumerable<DependencyObject> GetVisualParents() {
             return GetParents().Cast<DependencyObject>();
         }
+    }
+    public class VisualTreeEnumeratorWithConditionalStop : IEnumerator<DependencyObject> {
+        DependencyObject Root;
+        Stack<DependencyObject> Stack;
+        Predicate<DependencyObject> TreeStop;
+        public VisualTreeEnumeratorWithConditionalStop(DependencyObject root, Predicate<DependencyObject> treeStop) {
+            Stack = new Stack<DependencyObject>();
+            Root = root;
+            TreeStop = treeStop;
+        }
+        public void Dispose() {
+            Reset();
+            Stack = null;
+        }
+        #region IEnumerator Members
+        DependencyObject current;
+        object System.Collections.IEnumerator.Current {
+            get { return current; }
+        }
+        public DependencyObject Current {
+            get { return current; }
+        }
+        public bool MoveNext() {
+            if(current == null) {
+                current = Root;
+            } else {
+                int count = VisualTreeHelper.GetChildrenCount(current);
+                DependencyObject[] children = new DependencyObject[count];
+                for(int i = 0; i < count; i++) {
+                    children[i] = VisualTreeHelper.GetChild(current, i);
+                }
+                if(children.Length > 0) {
+                    for(int i = 0; i < children.Length; i++) {
+                        DependencyObject child = children[(children.Length - 1) - i];
+                        if(TreeStop != null && TreeStop(child))
+                            continue;
+                        Stack.Push(child);
+                    }
+                }
+                current = Stack.Count > 0 ? Stack.Pop() : null;
+            }
+            return current != null;
+        }
+        public void Reset() {
+            if(Stack != null)
+                Stack.Clear();
+            current = null;
+        }
+        #endregion
     }
     public class LogicalTreeEnumerator : VisualTreeEnumerator {
         Hashtable acceptedVisuals = new Hashtable();
@@ -150,55 +199,6 @@ namespace DevExpress.Mvvm.UI.Native {
             : base(dObject) {
             this.nestedChildrenPredicate = nestedChildrenPredicate;
         }
-    }
-    public class VisualTreeEnumeratorWithConditionalStop : IEnumerator<DependencyObject> {
-        DependencyObject Root;
-        Stack<DependencyObject> Stack;
-        Predicate<DependencyObject> TreeStop;
-        public VisualTreeEnumeratorWithConditionalStop(DependencyObject root, Predicate<DependencyObject> treeStop) {
-            Stack = new Stack<DependencyObject>();
-            Root = root;
-            TreeStop = treeStop;
-        }
-        public void Dispose() {
-            Reset();
-            Stack = null;
-        }
-        #region IEnumerator Members
-        DependencyObject current;
-        object System.Collections.IEnumerator.Current {
-            get { return current; }
-        }
-        public DependencyObject Current {
-            get { return current; }
-        }
-        public bool MoveNext() {
-            if(current == null) {
-                current = Root;
-            }
-            else {
-                int count = VisualTreeHelper.GetChildrenCount(current);
-                DependencyObject[] children = new DependencyObject[count];
-                for(int i = 0; i < count; i++) {
-                    children[i] = VisualTreeHelper.GetChild(current, i);
-                }
-                if(children.Length > 0) {
-                    for(int i = 0; i < children.Length; i++) {
-                        DependencyObject child = children[(children.Length - 1) - i];
-                        if(TreeStop != null && TreeStop(child)) continue;
-                        Stack.Push(child);
-                    }
-                }
-                current = Stack.Count > 0 ? Stack.Pop() : null;
-            }
-            return current != null;
-        }
-        public void Reset() {
-            if(Stack != null)
-                Stack.Clear();
-            current = null;
-        }
-        #endregion
     }
     public class SingleObjectEnumerator : VisualTreeEnumerator {
         public SingleObjectEnumerator(DependencyObject dObject)

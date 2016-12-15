@@ -76,11 +76,16 @@ namespace DevExpress.Mvvm.UI {
     }
     public class FormatStringConverterExtension : MarkupExtension {
         public string FormatString { get; set; }
+        bool allowSimpleFormatString = true;
+        public bool AllowSimpleFormatString { get { return allowSimpleFormatString; } set { allowSimpleFormatString = value; } }
         public bool SplitPascalCase { get; set; }
+        public FormatStringConverter.TextCaseFormat OutStringCaseFormat { get; set; }
         public override object ProvideValue(System.IServiceProvider serviceProvider) {
             return new FormatStringConverter() {
                 FormatString = this.FormatString,
-                SplitPascalCase = this.SplitPascalCase
+                AllowSimpleFormatString = this.AllowSimpleFormatString,
+                SplitPascalCase = this.SplitPascalCase,
+                OutStringCaseFormat = this.OutStringCaseFormat,
             };
         }
     }

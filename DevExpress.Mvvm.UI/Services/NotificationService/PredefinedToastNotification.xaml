@@ -14,6 +14,7 @@
     <DataTemplate x:Key="PredefinedToastTemplate">
         <Grid>
             <Grid.Resources>
+                <dxmvvmi:PredefinedNotificationViewModelBackgroundColorToBrushConverter x:Key="PredefinedNotificationViewModelBackgroundColorToBrushConverter"/>
                 <dxmvvm:ObjectToObjectConverter x:Key="ObjectToVisibilityConverter" DefaultTarget="Visible">
                     <dxmvvm:MapItem Source="{x:Null}" Target="Collapsed"/>
                 </dxmvvm:ObjectToObjectConverter>
@@ -58,11 +59,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
-            <Border Grid.ColumnSpan="2">
-                <Border.Background>
-                    <SolidColorBrush Color="{Binding BackgroundColor}"/>
-                </Border.Background>
-            </Border>
+            <Border Grid.ColumnSpan="2" Background="{Binding ., Converter={StaticResource PredefinedNotificationViewModelBackgroundColorToBrushConverter}}"/>
             <Image Source="{Binding Image}" Width="90" Height="90" Margin="0,0,-10,0" Visibility="{Binding Image, Converter={StaticResource ObjectToVisibilityConverter}}"/>
             <ContentControl Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Content="{Binding}" ContentTemplateSelector="{StaticResource ToastTemplateSelector}" Margin="20,14,65,0"/>
             <Image Grid.Column="1" Source="{Binding Icon}" Margin="20,15" Width="30" Height="25" Stretch="Uniform" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>

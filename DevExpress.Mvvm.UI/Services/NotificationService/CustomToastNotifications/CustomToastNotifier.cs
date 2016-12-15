@@ -75,18 +75,18 @@ namespace DevExpress.Mvvm.UI.Native {
             }, handler => DisplaySettingsChanged -= handler);
         }
 
-        double GetDpiScaleProperty(string name) {
-            PropertyInfo pi = typeof(FrameworkElement).GetProperty(name, BindingFlags.NonPublic | BindingFlags.Static);
-            if (pi != null)
-                return (double) pi.GetValue(null, null);
-            return 1d;
+        public static System.Windows.Point GetDpi() {
+            using(var textBox = new System.Windows.Forms.TextBox()) {
+                using(var graphics = textBox.CreateGraphics()) {
+                    return new System.Windows.Point(graphics.DpiX / 96, graphics.DpiY / 96);
+                }
+            }
         }
 
         public Rect GetWorkingArea(System.Windows.Point point) {
-            double xScale = GetDpiScaleProperty("DpiScaleX");
-            double yScale = GetDpiScaleProperty("DpiScaleY");
+            var dpi = GetDpi();
             var area = Screen.GetWorkingArea(new System.Drawing.Point((int)point.X + 1, (int)point.Y + 1));
-            return new Rect(area.X / xScale, area.Y / yScale, area.Width / xScale, area.Height / yScale);
+            return new Rect(area.X / dpi.X, area.Y / dpi.Y, area.Width / dpi.X, area.Height / dpi.Y);
         }
 
         public event Action WorkingAreaChanged;

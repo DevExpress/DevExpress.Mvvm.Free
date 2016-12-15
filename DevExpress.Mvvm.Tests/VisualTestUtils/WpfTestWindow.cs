@@ -80,12 +80,12 @@ namespace DevExpress {
             TearDownCore();
         }
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetUp() {
             FixtureSetUpCore();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTearDown() {
             FixtureTearDownCore();
         }

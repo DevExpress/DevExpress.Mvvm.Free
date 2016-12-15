@@ -14,6 +14,8 @@ namespace DevExpress.Mvvm.UI {
     [ContentProperty("LoadingChild")]
     public class LoadingDecorator : Decorator {
         const string Exception1 = "LoadingDecorator shows its SplashScreen in a separate thread, so it is impossible to put a DependencyObject into the SplashScreenDataContext.";
+        const string LOADING_CHILD_SET_TWICE_EXCEPTION = "The LoadingChild and LoadingChildTemplate properties cannot be used simultaneously.";
+        const string LOADING_CHILD_WRONG_TEMPLATE_EXCEPTION = "The LoadingChild template must contain FrameworkElement as the visual root.";
 
         #region Static
         public static readonly DependencyProperty UseFadeEffectProperty;
@@ -26,6 +28,7 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty OwnerLockProperty;
         public static readonly DependencyProperty SplashScreenLocationProperty;
         public static readonly DependencyProperty SplashScreenWindowStyleProperty;
+        public static readonly DependencyProperty LoadingChildTemplateProperty;
 
         static LoadingDecorator() {
             UseFadeEffectProperty = DependencyProperty.Register("UseFadeEffect", typeof(bool), typeof(LoadingDecorator),
@@ -48,6 +51,8 @@ namespace DevExpress.Mvvm.UI {
                 new PropertyMetadata(SplashScreenLocation.CenterContainer));
             SplashScreenWindowStyleProperty = DependencyProperty.Register("SplashScreenWindowStyle", typeof(Style), typeof(LoadingDecorator),
                 new PropertyMetadata(null, (d, e) => ((LoadingDecorator)d).OnIsSplashScreenWindowStyleChanged()));
+            LoadingChildTemplateProperty = DependencyProperty.Register("LoadingChildTemplate", typeof(DataTemplate), typeof(LoadingDecorator),
+                new PropertyMetadata(null, (d, e) => ((LoadingDecorator)d).OnLoadingChildTemplateChanged()));
         }
         #endregion
 
@@ -84,6 +89,10 @@ namespace DevExpress.Mvvm.UI {
             get { return (Style)GetValue(SplashScreenWindowStyleProperty); }
             set { SetValue(SplashScreenWindowStyleProperty, value); }
         }
+        public DataTemplate LoadingChildTemplate {
+            get { return (DataTemplate)GetValue(LoadingChildTemplateProperty); }
+            set { SetValue(LoadingChildTemplateProperty, value); }
+        }
         public SplashScreenLock OwnerLock {
             get { return (SplashScreenLock)GetValue(OwnerLockProperty); }
             set { SetValue(OwnerLockProperty, value); }
@@ -99,11 +108,9 @@ namespace DevExpress.Mvvm.UI {
             set {
                 if(loadingChild == value)
                     return;
+
                 loadingChild = value;
-                if(ViewModelBase.IsInDesignMode) {
-                    Child = loadingChild;
-                    return;
-                }
+                ValidateLoadingChild();
                 OnLoadingChildChanged();
             }
         }
@@ -140,6 +147,9 @@ namespace DevExpress.Mvvm.UI {
             SplashScreenTemplate.Do(x => x.Seal());
         }
         void OnLoaded(object sender, RoutedEventArgs e) {
+            if(!IsLoaded)
+                return;
+
             Loaded -= OnLoaded;
             if(ViewModelBase.IsInDesignMode)
                 return;
@@ -148,18 +158,67 @@ namespace DevExpress.Mvvm.UI {
         void OnUnloaded(object sender, RoutedEventArgs e) {
             CloseSplashScreenOnLoading();
         }
+        void ValidateLoadingChild() {
+            if(LoadingChild != null && LoadingChildTemplate != null && !ViewModelBase.IsInDesignMode)
+                throw new InvalidOperationException(LOADING_CHILD_SET_TWICE_EXCEPTION);
+        }
+        void OnLoadingChildTemplateChanged() {
+            ValidateLoadingChild();
+            LoadingChildTemplate.Do(x => x.Seal());
+            OnLoadingChildChanged();
+        }
         void OnLoadingChildChanged() {
-            Child = null;
-            if(LoadingChild == null || !IsLoaded)
+            if(ViewModelBase.IsInDesignMode) {
+                LoadChildInDesignTime();
                 return;
-            LoadingChild.Loaded += OnLoadingChildLoaded;
+            }
+            Child = null;
+            if((LoadingChild == null && LoadingChildTemplate == null) || !IsLoaded)
+                return;
             if(IsSplashScreenShown == null && IsVisible)
                 ShowSplashScreen();
 
-            SplashScreenHelper.InvokeAsync(this, () => Child = LoadingChild);
+            SplashScreenHelper.InvokeAsync(this, LoadChild);
+        }
+        void LoadChild() {
+            if(LoadingChild != null) {
+                LoadingChild.Loaded += OnLoadingChildLoaded;
+                Child = LoadingChild;
+            } else if (LoadingChildTemplate != null) {
+                var feChild = LoadingChildTemplate.LoadContent() as FrameworkElement;
+                if(feChild != null) {
+                    feChild.Loaded += OnLoadingChildLoaded;
+                    Child = feChild;
+                } else
+                    throw new InvalidOperationException(LOADING_CHILD_WRONG_TEMPLATE_EXCEPTION);
+            }
+        }
+        void LoadChildInDesignTime() {
+            if(LoadingChild != null && LoadingChildTemplate != null)
+                Child = CreateFallbackView(LOADING_CHILD_SET_TWICE_EXCEPTION);
+            else if(LoadingChild != null)
+                Child = LoadingChild;
+            else if(LoadingChildTemplate != null) {
+                var feChild = LoadingChildTemplate.LoadContent() as FrameworkElement;
+                if(feChild != null)
+                    Child = feChild;
+                else
+                    Child = CreateFallbackView(LOADING_CHILD_WRONG_TEMPLATE_EXCEPTION);
+            }
+        }
+        UIElement CreateFallbackView(string errorMessage) {
+            return new TextBlock() {
+                Text = errorMessage,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 25,
+                Foreground = new SolidColorBrush(Colors.Red),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
         }
         void OnLoadingChildLoaded(object sender, RoutedEventArgs e) {
             FrameworkElement child = (FrameworkElement)sender;
+
             child.Loaded -= OnLoadingChildLoaded;
             CloseSplashScreenOnLoading();
         }

@@ -20,19 +20,26 @@ namespace DevExpress.Mvvm.DataAnnotations {
             MemberMetadataStorage storage = storages.GetOrAdd(memberName ?? string.Empty, () => new MemberMetadataStorage());
             return (TBuilder)createBuilderCallBack(storage);
         }
-        TMetadataBuilder IAttributeBuilderInternal<TMetadataBuilder>.AddOrReplaceAttribute<TAttribute>(TAttribute attribute) {
+
+        protected TMetadataBuilder AddOrReplaceAttribute<TAttribute>(TAttribute attribute) where TAttribute : Attribute {
             GetBuilder<IPropertyMetadataBuilder>(null, x => {
                 x.AddOrReplaceAttribute(attribute);
                 return null;
             });
             return (TMetadataBuilder)this;
         }
-        TMetadataBuilder IAttributeBuilderInternal<TMetadataBuilder>.AddOrModifyAttribute<TAttribute>(Action<TAttribute> setAttributeValue) {
+        protected TMetadataBuilder AddOrModifyAttribute<TAttribute>(Action<TAttribute> setAttributeValue) where TAttribute : Attribute, new() {
             GetBuilder<IPropertyMetadataBuilder>(null, x => {
                 x.AddOrModifyAttribute(setAttributeValue);
                 return null;
             });
             return (TMetadataBuilder)this;
+        }
+        TMetadataBuilder IAttributeBuilderInternal<TMetadataBuilder>.AddOrReplaceAttribute<TAttribute>(TAttribute attribute) {
+            return AddOrReplaceAttribute(attribute);
+        }
+        TMetadataBuilder IAttributeBuilderInternal<TMetadataBuilder>.AddOrModifyAttribute<TAttribute>(Action<TAttribute> setAttributeValue) {
+            return AddOrModifyAttribute(setAttributeValue);
         }
 
         internal static string GetPropertyName<TProperty>(Expression<Func<T, TProperty>> expression) {

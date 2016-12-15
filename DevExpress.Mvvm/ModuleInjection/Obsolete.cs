@@ -1,8 +1,111 @@
 using DevExpress.Mvvm.Native;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 
+#region Events
+namespace DevExpress.Mvvm {
+    public delegate void ViewModelClosingEventHandler(object sender, ViewModelClosingEventArgs e);
+    public class ViewModelClosingEventArgs : CancelEventArgs {
+        public object ViewModel { get; private set; }
+        public ViewModelClosingEventArgs(object viewModel) {
+            ViewModel = viewModel;
+        }
+    }
+}
+#endregion
+
+#region IViewInjectionService
+namespace DevExpress.Mvvm {
+    public interface IViewInjectionService {
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        string RegionName { get; }
+        IEnumerable<object> ViewModels { get; }
+        object SelectedViewModel { get; set; }
+
+        object GetKey(object viewModel);
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        void Inject(object key, object viewModel, string viewName, Type viewType);
+        bool Remove(object viewModel);
+    }
+    public static class ViewInjectionServiceExtensions {
+        public static void Inject(this IViewInjectionService service, object key, object viewModel) {
+            VerifyService(service);
+            service.Inject(key, viewModel, string.Empty, null);
+        }
+        public static void Inject(this IViewInjectionService service, object key, object viewModel, string viewName) {
+            VerifyService(service);
+            service.Inject(key, viewModel, viewName, null);
+        }
+        public static void Inject(this IViewInjectionService service, object key, object viewModel, Type viewType) {
+            VerifyService(service);
+            service.Inject(key, viewModel, null, viewType);
+        }
+
+        public static object GetViewModel(this IViewInjectionService service, object key) {
+            VerifyService(service);
+            return service.ViewModels.FirstOrDefault(x => object.Equals(service.GetKey(x), key));
+        }
+        static void VerifyService(IViewInjectionService service) {
+            if(service == null)
+                throw new ArgumentNullException("service");
+        }
+    }
+}
+#endregion
+
+#region IViewInjectionManager
+namespace DevExpress.Mvvm {
+    public interface IViewInjectionManager {
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        void RegisterService(IViewInjectionService service);
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        void UnregisterService(IViewInjectionService service);
+        IViewInjectionService GetService(string regionName);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        void Inject(string regionName, object key, Func<object> viewModelFactory, string viewName, Type viewType);
+        void Remove(string regionName, object key);
+        void Navigate(string regionName, object key);
+
+        void RegisterNavigatedEventHandler(object viewModel, Action eventHandler);
+        void RegisterNavigatedAwayEventHandler(object viewModel, Action eventHandler);
+        void RegisterViewModelClosingEventHandler(object viewModel, Action<ViewModelClosingEventArgs> eventHandler);
+        void UnregisterNavigatedEventHandler(object viewModel, Action eventHandler = null);
+        void UnregisterNavigatedAwayEventHandler(object viewModel, Action eventHandler = null);
+        void UnregisterViewModelClosingEventHandler(object viewModel, Action<ViewModelClosingEventArgs> eventHandler = null);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        void RaiseNavigatedEvent(object viewModel);
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        void RaiseNavigatedAwayEvent(object viewModel);
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        void RaiseViewModelClosingEvent(ViewModelClosingEventArgs e);
+    }
+    public static class ViewInjectionManagerExtensions {
+        public static void Inject(this IViewInjectionManager service, string regionName, object key, Func<object> viewModelFactory) {
+            VerifyService(service);
+            service.Inject(regionName, key, viewModelFactory, null, null);
+        }
+        public static void Inject(this IViewInjectionManager service, string regionName, object key, Func<object> viewModelFactory, string viewName) {
+            VerifyService(service);
+            service.Inject(regionName, key, viewModelFactory, viewName, null);
+        }
+        public static void Inject(this IViewInjectionManager service, string regionName, object key, Func<object> viewModelFactory, Type viewType) {
+            VerifyService(service);
+            service.Inject(regionName, key, viewModelFactory, null, viewType);
+        }
+
+        static void VerifyService(IViewInjectionManager service) {
+            if(service == null)
+                throw new ArgumentNullException("service");
+        }
+    }
+}
+#endregion
+
+#region ViewInjectionManager
 namespace DevExpress.Mvvm {
     public enum ViewInjectionMode { Default, Persistent }
     public class ViewInjectionManager : IViewInjectionManager {
@@ -232,13 +335,66 @@ namespace DevExpress.Mvvm {
                 UnregisterCore(recipient, token, action, typeof(TMessage));
             }
             IActionInvoker CreateActionInvoker<TMessage>(object recipient, Action action) {
-                    if(action.Method.IsStatic)
-                        return new StrongReferenceActionInvoker(recipient, action);
+                if(action.Method.IsStatic)
+                    return new StrongReferenceActionInvoker(recipient, action);
                 return new WeakReferenceActionInvoker(recipient, action);
             }
         }
         class NavigatedMessage { }
         class NavigatedAwayMessage { }
+        internal class ViewInjectionServiceException : Exception {
+            public string RegionName { get; private set; }
+            public ViewInjectionServiceException(string regionName, string message) : base(message) {
+                RegionName = regionName;
+            }
+
+            const string _viewInjectionManager_PreInjectRequiresKey = "The PreInject procedure requires key to be not null and serializable.";
+            const string _viewInjectionManager_InjectRequiresPreInject = "This Injection procedure requires the PreInjection method to be called before.";
+            const string _viewInjectionManager_KeyShouldBeSerializable = "A key should be serializable.";
+            const string _viewInjectionManager_CannotInjectNullViewModel = "Cannot inject a view model, because it is null.";
+            const string _viewInjectionManager_CannotResolveViewModel = "ViewModelLocator cannot resolve a view model (the view model name is {0}).";
+            const string _viewInjectionService_ViewModelAlreadyExists = "A view model with the same key already exists.";
+            const string _strategyManager_NoStrategy = "Cannot find an appropriate strategy for the {0} container type.";
+            const string _invalidSelectedViewModel = "Cannot set the SelectedViewModel property to a value that does not exist in the ViewModels collection. Inject the view model before selecting it.";
+            const string _contentControl_ContentAlreadySet = "It is impossible to use ViewInjectionService for the control that has the Content property set.";
+            const string _itemsControl_ItemsSourceAlreadySet = "It is impossible to use ViewInjectionService for the control that has the ItemsSource property set.";
+            const string _viewTypeIsNotSupported = "This region does not support passing viewName/viewType into the injection procedure. Customize view at the target control level.";
+
+            public static ViewInjectionServiceException ViewInjectionManager_PreInjectRequiresKey() {
+                return new ViewInjectionServiceException(null, _viewInjectionManager_PreInjectRequiresKey);
+            }
+            public static ViewInjectionServiceException ViewInjectionManager_InjectRequiresPreInject() {
+                return new ViewInjectionServiceException(null, _viewInjectionManager_InjectRequiresPreInject);
+            }
+            public static ViewInjectionServiceException ViewInjectionManager_KeyShouldBeSerializable() {
+                return new ViewInjectionServiceException(null, _viewInjectionService_ViewModelAlreadyExists);
+            }
+            public static ViewInjectionServiceException ViewInjectionManager_CannotInjectNullViewModel() {
+                return new ViewInjectionServiceException(null, _viewInjectionManager_CannotInjectNullViewModel);
+            }
+            public static ViewInjectionServiceException ViewInjectionManager_CannotResolveViewModel(string viewModelName) {
+                return new ViewInjectionServiceException(null, string.Format(_viewInjectionManager_CannotResolveViewModel, viewModelName));
+            }
+            public static ViewInjectionServiceException ViewInjectionService_ViewModelAlreadyExists(string regionName) {
+                return new ViewInjectionServiceException(regionName, _viewInjectionService_ViewModelAlreadyExists);
+            }
+            public static ViewInjectionServiceException StrategyManager_NoStrategy(object target) {
+                return new ViewInjectionServiceException(null, string.Format(_strategyManager_NoStrategy, target.GetType().Name));
+            }
+            public static ViewInjectionServiceException InvalidSelectedViewModel(string regionNamee) {
+                return new ViewInjectionServiceException(regionNamee, _invalidSelectedViewModel);
+            }
+            public static ViewInjectionServiceException ContentControl_ContentAlreadySet(string regionName) {
+                return new ViewInjectionServiceException(regionName, _contentControl_ContentAlreadySet);
+            }
+            public static ViewInjectionServiceException ItemsControl_ItemsSourceAlreadySet(string regionName) {
+                return new ViewInjectionServiceException(regionName, _itemsControl_ItemsSourceAlreadySet);
+            }
+            public static ViewInjectionServiceException ViewTypeIsNotSupported(string regionName) {
+                return new ViewInjectionServiceException(regionName, _viewTypeIsNotSupported);
+            }
+        }
         #endregion
     }
 }
+#endregion

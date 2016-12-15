@@ -86,11 +86,35 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void RaisePropertyChangedWithNoParametersTest_B251476() {
             BindableBaseTest bb = new BindableBaseTest();
+            int propertyChangedCounter = 0;
+            string propertyChangedArgs = null;
+            bb.PropertyChanged += (d, e) => {
+                propertyChangedCounter++;
+                propertyChangedArgs = e.PropertyName;
+            };
             bb.RaisePropertyChanged(null);
+            Assert.AreEqual(1, propertyChangedCounter);
+            Assert.AreEqual(null, propertyChangedArgs);
+
             bb.RaisePropertyChanged(string.Empty);
+            Assert.AreEqual(2, propertyChangedCounter);
+            Assert.AreEqual(string.Empty, propertyChangedArgs);
+
             bb.RaisePropertyChanged();
+            Assert.AreEqual(3, propertyChangedCounter);
+            Assert.AreEqual(string.Empty, propertyChangedArgs);
+
+            bb.RaisePropertiesChanged();
+            Assert.AreEqual(4, propertyChangedCounter);
+            Assert.AreEqual(string.Empty, propertyChangedArgs);
+
             bb.RaisePropertiesChanged(null);
+            Assert.AreEqual(5, propertyChangedCounter);
+            Assert.AreEqual(string.Empty, propertyChangedArgs);
+
             bb.RaisePropertiesChanged(string.Empty);
+            Assert.AreEqual(6, propertyChangedCounter);
+            Assert.AreEqual(string.Empty, propertyChangedArgs);
         }
         [Test]
         public void SetPropertyTest() {
@@ -123,22 +147,12 @@ namespace DevExpress.Mvvm.Tests {
             bb.SomeProperty3 = 150;
             Assert.AreEqual(1, count);
         }
-        [Test, ExpectedException(typeof(ArgumentException))]
+        [Test]
         public void SetPropertyInvalidLambdaTest() {
             BindableBaseTest bb = new BindableBaseTest();
-            bb.SomeProperty4 = 150;
-        }
-
-        [Test, ExpectedException(typeof(ArgumentException))]
-        public void SetPropertyInvalidLambdaTest2() {
-            BindableBaseTest bb = new BindableBaseTest();
-            bb.SomeProperty5 = 150;
-        }
-
-        [Test, ExpectedException(typeof(ArgumentException))]
-        public void SetPropertyInvalidLambdaTest3() {
-            BindableBaseTest bb = new BindableBaseTest();
-            bb.SomeProperty6 = 150;
+            Assert.Throws<ArgumentException>(() => { bb.SomeProperty4 = 150; });
+            Assert.Throws<ArgumentException>(() => { bb.SomeProperty5 = 150; });
+            Assert.Throws<ArgumentException>(() => { bb.SomeProperty6 = 150; });
         }
         [Test]
         public void SetPropertyWithCallbackTest() {
@@ -158,7 +172,7 @@ namespace DevExpress.Mvvm.Tests {
             bb.SomeProperty7 = 150;
             Assert.AreEqual(1, count);
         }
-        #region property bag test
+#region property bag test
         class PropertyBagViewModel : BindableBase {
             public bool? IntPropertySetValueResult;
             public int IntProperty {
@@ -223,7 +237,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("x", viewModel.StringProperty);
             Assert.AreEqual(2, viewModel.StringPropertyChangedCount);
         }
-        #endregion
+#endregion
         [Test]
         public void ChangedCallbackWithOldValue() {
             BindableBaseTest2 obj = new BindableBaseTest2();

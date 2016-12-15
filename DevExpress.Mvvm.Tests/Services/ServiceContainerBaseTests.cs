@@ -1,7 +1,13 @@
+using DevExpress.Mvvm.UI;
+using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.POCO;
+using System.Windows.Controls;
+using System.Threading;
 using System;
 using System.Windows;
 using System.Linq;
 using NUnit.Framework;
+using System.Collections.Generic;
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
@@ -81,17 +87,17 @@ namespace DevExpress.Mvvm.Tests {
             container.UnregisterService(svc2);
             Assert.AreEqual(null, container.GetService<IService2>());
         }
-        [Test, ExpectedException(typeof(ArgumentException))]
+        [Test]
         public void GetServiceNotByInterfaceType() {
             IServiceContainer container = new ServiceContainer(null);
             TestService1 svc1 = new TestService1();
             container.RegisterService(svc1);
-            container.GetService<TestService1>();
+            Assert.Throws<ArgumentException>(() => { container.GetService<TestService1>(); });
         }
-        [Test, ExpectedException(typeof(ArgumentException))]
+        [Test]
         public void GetServiceNotByInterfaceTypeWinKeyName() {
             ServiceContainer container = new ServiceContainer(null);
-            container.GetService<TestService1>("svc1_");
+            Assert.Throws<ArgumentException>(() => { container.GetService<TestService1>("svc1_"); });
         }
         [Test]
         public void AddServicesWithKey() {
@@ -279,15 +285,11 @@ namespace DevExpress.Mvvm.Tests {
             }
             Assert.AreEqual(null, child.ServiceContainer.GetService<IService1>());
         }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
+        [Test]
         public void RegisterNull() {
             var child = new TestSupportServices();
-            child.ServiceContainer.RegisterService(null);
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void RegisterNullByKey() {
-            var child = new TestSupportServices();
-            child.ServiceContainer.RegisterService("key", null);
+            Assert.Throws<ArgumentNullException>(() => { child.ServiceContainer.RegisterService(null); });
+            Assert.Throws<ArgumentNullException>(() => { child.ServiceContainer.RegisterService("key", null); });
         }
         [Test]
         public void RegisterByNullKey() {
@@ -471,4 +473,117 @@ namespace DevExpress.Mvvm.Tests {
         }
     }
 
+    [TestFixture]
+    public class ServiceBaseTests : BaseWpfFixture {
+        [Test]
+        public void UnregisterServiceOnDataContextChanged() {
+            Button control = new Button();
+            TestVM vm1 = TestVM.Create();
+            TestVM vm2 = TestVM.Create();
+            TestServiceBase service = new TestServiceBase();
+            Interaction.GetBehaviors(control).Add(service);
+            control.DataContext = vm1;
+            Assert.AreEqual(service, vm1.GetService<ITestService>());
+            control.DataContext = vm2;
+            Assert.AreEqual(null, vm1.GetService<ITestService>());
+            Assert.AreEqual(service, vm2.GetService<ITestService>());
+        }
+        [Test]
+        public void UnregisterServiceOnDetaching() {
+            Button control = new Button();
+            TestVM vm1 = TestVM.Create();
+            TestServiceBase service = new TestServiceBase();
+            Interaction.GetBehaviors(control).Add(service);
+            control.DataContext = vm1;
+            Assert.AreEqual(service, vm1.GetService<ITestService>());
+            Interaction.GetBehaviors(control).Remove(service);
+            Assert.AreEqual(null, vm1.GetService<ITestService>());
+        }
+        [Test]
+        public void T250427() {
+            Grid mainV = new Grid();
+            TestVM mainVM = TestVM.Create();
+            TestServiceBase mainService = new TestServiceBase();
+            Interaction.GetBehaviors(mainV).Add(mainService);
+            mainV.DataContext = mainVM;
+
+            Grid childV = new Grid();
+            TestVM childVM = TestVM.Create();
+            TestServiceBase childService = new TestServiceBase();
+            Interaction.GetBehaviors(childV).Add(childService);
+            mainV.Children.Add(childV);
+
+            Assert.AreEqual(childService, mainVM.GetService<ITestService>());
+            childV.DataContext = childVM;
+            Assert.AreEqual(mainService, mainVM.GetService<ITestService>());
+            Assert.AreEqual(childService, childVM.GetService<ITestService>());
+        }
+
+        public class TestVM {
+            public static TestVM Create() { return ViewModelSource.Create(() => new TestVM()); }
+            protected TestVM() { }
+        }
+        public interface ITestService { }
+        public class TestServiceBase : ServiceBase, ITestService { }
+    }
+
+    [TestFixture]
+    public class ServiceContainerThreadTest :BaseWpfFixture {
+        const int iterationCount = 1000;
+        const int threadCount = 100;
+        void RunThreads(Action test) {
+            List<Thread> threads = new List<Thread>();
+            for(int i = 0; i < threadCount; i++)
+                threads.Add(new Thread(new ThreadStart(test)));
+            foreach(var t in threads) t.Start();
+            foreach(var t in threads) t.Join();
+            foreach(var t in threads) t.Abort();
+        }
+
+        protected override void SetUpCore() {
+            base.SetUpCore();
+            ServiceContainer.Default = null;
+        }
+        protected override void TearDownCore() {
+            ServiceContainer.Default = null;
+            base.TearDownCore();
+        }
+        [Test]
+        public void DefaultServiceContainerIsThreadSafe() {
+            Exception ex = null;
+            Action test = () => {
+                try {
+                    var key = Guid.NewGuid().ToString();
+                    ServiceContainer.Default.RegisterService(key, new TestServiceBase());
+                    for(int i = 0; i < iterationCount; i++)
+                        ServiceContainer.Default.GetService<ITestService>(key).AddItem(i.ToString());
+                } catch(Exception e) { ex = e; }
+            };
+            RunThreads(test);
+            Assert.AreEqual(null, ex);
+            Assert.AreEqual(threadCount, ServiceContainer.Default.GetServices<ITestService>().Count());
+            foreach(var s in ServiceContainer.Default.GetServices<ITestService>())
+                Assert.AreEqual(iterationCount, s.Items.Count());
+        }
+
+        public class TestVM : ISupportServices {
+            public IServiceContainer ServiceContainer { get; set; }
+            public TestVM(bool isThreadSafe) {
+                ServiceContainer = new ServiceContainer(isThreadSafe);
+            }
+        }
+        public interface ITestService {
+            IEnumerable<string> Items { get; }
+            void AddItem(string value);
+        }
+        public class TestServiceBase : ServiceBase, ITestService {
+            public IEnumerable<string> Items { get { return items; } }
+            List<string> items = new List<string>();
+            public void AddItem(string value) {
+                lock(items) {
+                    items.Add(value);
+                }
+            }
+        }
+    }
 }

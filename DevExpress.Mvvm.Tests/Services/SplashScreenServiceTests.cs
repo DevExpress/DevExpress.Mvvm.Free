@@ -127,21 +127,27 @@ namespace DevExpress.Mvvm.UI.Tests {
     }
     [TestFixture]
     public class DXSplashScreenTests : DXSplashScreenBaseTestFixture {
-        [Test, ExpectedException(typeof(InvalidOperationException))]
+        [Test]
         public void InvalidUsage_Test01() {
-            DXSplashScreen.Show<SplashScreenTestWindow>();
-            DXSplashScreen.Show<SplashScreenTestWindow>();
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.Show<SplashScreenTestWindow>();
+                DXSplashScreen.Show<SplashScreenTestWindow>();
+            });
         }
-        [Test, ExpectedException(typeof(InvalidOperationException))]
+        [Test]
         public void InvalidUsage_Test02() {
-            DXSplashScreen.Close();
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.Close();
+            });
         }
-        [Test, ExpectedException(typeof(InvalidOperationException))]
+        [Test]
         public void InvalidUsage_Test03() {
-            DXSplashScreen.Progress(0);
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.Progress(0);
+            });
         }
 
-        [Test, Ignore]
+        [Test, Ignore("Ignore")]
         public void Simple_Test() {
             DXSplashScreen.Show<SplashScreenTestWindow>();
             Assert.IsNotNull(DXSplashScreen.SplashContainer.ActiveInfo.InternalThread);
@@ -160,6 +166,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void Complex_Test() {
             DXSplashScreen.Show<SplashScreenTestWindow>();
             Assert.IsNotNull(DXSplashScreen.SplashContainer.ActiveInfo.InternalThread);
+            Assert.IsNotNull(DXSplashScreen.SplashContainer.ActiveInfo.Dispatcher);
             Assert.IsNotNull(DXSplashScreen.SplashContainer.ActiveInfo.SplashScreen);
             Assert.IsTrue(SplashScreenTestWindow.Instance.IsIndeterminate);
             DXSplashScreen.Progress(0);
@@ -223,9 +230,11 @@ namespace DevExpress.Mvvm.UI.Tests {
             DXSplashScreen.SetState("test");
             SplashScreenTestWindow.DoEvents();
         }
-        [Test, ExpectedException(typeof(InvalidOperationException))]
+        [Test]
         public void ShowWindowNotISplashScreen_Test() {
-            DXSplashScreen.Show<Window>();
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.Show<Window>();
+            });
         }
         [Test]
         public void ShowUserControl_Test() {
@@ -297,10 +306,12 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsNull(DXSplashScreen.SplashContainer.OldInfo.InternalThread);
             Assert.IsNull(DXSplashScreen.SplashContainer.OldInfo.SplashScreen);
         }
-        [Test, ExpectedException(typeof(InvalidOperationException))]
+        [Test]
         public void TestQ338517_2() {
             DXSplashScreen.Show<SplashScreenTestWindow>();
-            DXSplashScreen.CallSplashScreenMethod<UserControl>(x => x.Tag = "Test");
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.CallSplashScreenMethod<UserControl>(x => x.Tag = "Test");
+            });
         }
         [Test]
         public void SplashScreenOwner_Test00() {
@@ -621,12 +632,14 @@ namespace DevExpress.Mvvm.UI.Tests {
             SplashScreenTestWindow.DoEvents();
             service.HideSplashScreen();
         }
-        [Test, ExpectedException(typeof(InvalidOperationException))]
+        [Test]
         public void ShowWindowNotISplashScreen2() {
             ISplashScreenService service = new DXSplashScreenService() {
                 SplashScreenType = typeof(Window),
             };
-            service.ShowSplashScreen();
+            Assert.Throws<InvalidOperationException>(() => {
+                service.ShowSplashScreen();
+            });
         }
         [Test]
         public void ShowUserControl() {
@@ -803,11 +816,13 @@ namespace DevExpress.Mvvm.UI.Tests {
             };
             Assert.IsTrue(temp.IsSealed);
         }
-        [Test, ExpectedException(typeof(InvalidOperationException))]
+        [Test]
         public void ViewTemplateSelectorIsNotSupported() {
-            DXSplashScreenService service = new DXSplashScreenService() {
-                ViewTemplateSelector = new DataTemplateSelector(),
-            };
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreenService service = new DXSplashScreenService() {
+                    ViewTemplateSelector = new DataTemplateSelector(),
+                };
+            });
         }
 
         [Test]
@@ -1197,7 +1212,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(100, SplashScreenTestWindow.Instance.Progress);
             SplashScreenTestsHelper.CloseSplashScreenService(service);
         }
-        [Test, Ignore]
+        [Test, Ignore("Ignore")]
         public void UseIndependentWindow_Test07() {
             ISplashScreenService service = new DXSplashScreenService() {
                 ViewTemplate = SplashScreenTestsHelper.CreateDefaultTemplate(),

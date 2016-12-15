@@ -41,9 +41,9 @@ namespace DevExpress.Mvvm.UI.Tests {
         class IsolatedDomainTester : MarshalByRefObject {
             public void Test(MethodInfo actionInfo, params object[] args) {
                 object target = Activator.CreateInstance(actionInfo.DeclaringType);
-                MethodInfo setupFixture = target.GetType().GetMethods().FirstOrDefault((mi) => mi.GetCustomAttributes(typeof(TestFixtureSetUpAttribute), true).FirstOrDefault() != null);
+                MethodInfo setupFixture = target.GetType().GetMethods().FirstOrDefault((mi) => mi.GetCustomAttributes(typeof(OneTimeSetUpAttribute), true).FirstOrDefault() != null);
                 MethodInfo setup = target.GetType().GetMethods().FirstOrDefault((mi) => mi.GetCustomAttributes(typeof(SetUpAttribute), true).FirstOrDefault() != null);
-                MethodInfo tearDownFixture = target.GetType().GetMethods().FirstOrDefault((mi) => mi.GetCustomAttributes(typeof(TestFixtureTearDownAttribute), true).FirstOrDefault() != null);
+                MethodInfo tearDownFixture = target.GetType().GetMethods().FirstOrDefault((mi) => mi.GetCustomAttributes(typeof(OneTimeTearDownAttribute), true).FirstOrDefault() != null);
                 MethodInfo tearDown = target.GetType().GetMethods().FirstOrDefault((mi) => mi.GetCustomAttributes(typeof(TearDownAttribute), true).FirstOrDefault() != null);
 
                 if(setupFixture != null)

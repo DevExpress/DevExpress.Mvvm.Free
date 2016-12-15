@@ -107,6 +107,15 @@ namespace DevExpress.Mvvm.Native {
                 action(en1.Current, en2.Current);
             }
         }
+        public static int IndexOf<T>(this IEnumerable<T> source, Predicate<T> predicate) {
+            int index = 0;
+            foreach(var item in source) {
+                if(predicate(item))
+                    return index;
+                index++;
+            }
+            return -1;
+        }
         public static IEnumerable<T> Unfold<T>(T seed, Func<T, T> next, Func<T, bool> stop) {
             for(var current = seed; !stop(current); current = next(current)) {
                 yield return current;
@@ -171,6 +180,12 @@ namespace DevExpress.Mvvm.Native {
         }
         public static Action CombineActions(params Action[] actions) {
             return () => actions.ForEach(x => x());
+        }
+        public static Action<T> CombineActions<T>(params Action<T>[] actions) {
+            return p => actions.ForEach(x => x(p));
+        }
+        public static Action<T1, T2> CombineActions<T1, T2>(params Action<T1, T2>[] actions) {
+            return (p1, p2) => actions.ForEach(x => x(p1, p2));
         }
         public static ReadOnlyObservableCollection<T> ToReadOnlyObservableCollection<T>(this IEnumerable<T> source) {
             return new ReadOnlyObservableCollection<T>(new ObservableCollection<T>(source));

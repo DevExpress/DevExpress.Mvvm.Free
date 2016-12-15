@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 using System.Collections;
-namespace DevExpress.Xpf.DXBinding.Native {
+namespace DevExpress.DXBinding.Native {
 class Scanner : ScannerBase {
  const int maxT = 71;
  const int noSym = 71;

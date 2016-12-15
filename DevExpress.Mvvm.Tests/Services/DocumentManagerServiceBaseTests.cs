@@ -11,10 +11,10 @@ namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class DocumentManagerServiceTests {
         public class TestDocument : FrameworkElement, IDocument, IViewLocator {
-            #region Dependency Properties
+#region Dependency Properties
             public static readonly DependencyProperty TitleProperty =
                 DependencyProperty.Register("Title", typeof(string), typeof(TestDocument), new PropertyMetadata(null));
-            #endregion
+#endregion
 
             public TestDocument(string documentType, object viewModel, object parameter, object parentViewModel) {
                 ViewModel = viewModel;
@@ -43,6 +43,9 @@ namespace DevExpress.Mvvm.Tests {
             public object ViewModel { get; private set; }
             object IViewLocator.ResolveView(string name) { return this; }
             Type IViewLocator.ResolveViewType(string viewName) {
+                throw new NotImplementedException();
+            }
+            string IViewLocator.GetViewTypeName(Type type) {
                 throw new NotImplementedException();
             }
             public DocumentState State {
@@ -153,26 +156,14 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(viewModel, ((TestDocument)documentByViewModel).ViewModel);
             Assert.AreEqual(null, ((TestDocument)documentByViewModel).ParentViewModel);
         }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService_CreateDocumentIfNotExistsAndShow() {
+        [Test]
+        public void NullService() {
             IDocumentManagerService service = null;
             IDocument newDocument = null;
-            service.CreateDocumentIfNotExistsAndShow(ref newDocument, "Type", "X", "Y", "title");
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService_CreateDocument() {
-            IDocumentManagerService service = null;
-            service.CreateDocument(new TestViewModel());
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService_FindDocument() {
-            IDocumentManagerService service = null;
-            service.FindDocument("X", "Y");
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService_GetDocumentsByParentViewModel() {
-            IDocumentManagerService service = null;
-            service.GetDocumentsByParentViewModel("X");
+            Assert.Throws<ArgumentNullException>(() => { service.CreateDocumentIfNotExistsAndShow(ref newDocument, "Type", "X", "Y", "title"); });
+            Assert.Throws<ArgumentNullException>(() => { service.CreateDocument(new TestViewModel()); });
+            Assert.Throws<ArgumentNullException>(() => { service.FindDocument("X", "Y"); });
+            Assert.Throws<ArgumentNullException>(() => { service.GetDocumentsByParentViewModel("X"); });
         }
         [Test]
         public void SetTitleBindingTest() {

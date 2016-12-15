@@ -5,17 +5,15 @@ using System.Windows;
 using System.ComponentModel;
 
 namespace DevExpress.Mvvm.UI {
-    public interface IViewLocator {
-        object ResolveView(string name);
-        Type ResolveViewType(string name);
-    }
-
     public static class ViewLocatorExtensions {
         public static DataTemplate CreateViewTemplate(this IViewLocator viewLocator, Type viewType) {
             Verify(viewLocator);
+            return CreateViewTemplate(viewType);
+        }
+        public static DataTemplate CreateViewTemplate(Type viewType) {
             if(viewType == null) throw new ArgumentNullException("viewType");
             DataTemplate res = null;
-            if(!typeof(FrameworkElement).IsAssignableFrom(viewType) && !typeof(FrameworkContentElement).IsAssignableFrom(viewType))
+            if((!typeof(FrameworkElement).IsAssignableFrom(viewType) && !typeof(FrameworkContentElement).IsAssignableFrom(viewType)) || viewType.IsNested)
                 res = CreateFallbackViewTemplate(GetErrorMessage_CannotCreateDataTemplateFromViewType(viewType.Name));
             else {
                 res = CreateViewTemplateCore(viewType);
@@ -24,14 +22,13 @@ namespace DevExpress.Mvvm.UI {
             return res;
         }
         static DataTemplate CreateViewTemplateCore(Type viewType) {
-            var xaml = String.Format("<DataTemplate><v:{0} /></DataTemplate>", viewType.Name);
-            var context = new System.Windows.Markup.ParserContext();
-            context.XamlTypeMapper = new System.Windows.Markup.XamlTypeMapper(new string[0]);
-            context.XamlTypeMapper.AddMappingProcessingInstruction("v", viewType.Namespace, viewType.Assembly.FullName);
-            context.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
-            context.XmlnsDictionary.Add("x", "http://schemas.microsoft.com/winfx/2006/xaml");
-            context.XmlnsDictionary.Add("v", "v");
-            return (DataTemplate)System.Windows.Markup.XamlReader.Parse(xaml, context);
+            var xamlContext = new System.Windows.Markup.ParserContext();
+            xamlContext.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
+            xamlContext.XmlnsDictionary.Add("x", "http://schemas.microsoft.com/winfx/2006/xaml");
+            xamlContext.XmlnsDictionary.Add("v", string.Format("clr-namespace:{0};assembly={1}", viewType.Namespace, Utils.AssemblyHelper.GetPartialName(viewType.Assembly)));
+            string xaml = @"<DataTemplate><v:{0}/></DataTemplate>";
+            xaml = string.Format(xaml, viewType.Name);
+            return (DataTemplate)System.Windows.Markup.XamlReader.Parse(xaml, xamlContext);
         }
         public static DataTemplate CreateViewTemplate(this IViewLocator viewLocator, string viewName) {
             Verify(viewLocator);
@@ -70,7 +67,7 @@ namespace DevExpress.Mvvm.UI {
         public class FallbackView : Panel {
             public static readonly DependencyProperty TextProperty =
                 DependencyProperty.Register("Text", typeof(string), typeof(FallbackView),
-                new PropertyMetadata(null, (d,e) => ((FallbackView)d).OnTextChanged()));
+                new PropertyMetadata(null, (d, e) => ((FallbackView)d).OnTextChanged()));
             public string Text {
                 get { return (string)GetValue(TextProperty); }
                 set { SetValue(TextProperty, value); }

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>DevExpress.Mvvm.Tests</RootNamespace>
     <AssemblyName>DevExpress.Mvvm.Tests.Free</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
     <BaseIntermediateOutputPath>obj.Wpf.Free</BaseIntermediateOutputPath>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <SccProjectName>
@@ -35,6 +36,7 @@
     <DefineConstants>TRACE;DEBUG;MVVM;FREE;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DevExpress.Mvvm">
@@ -49,9 +51,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Bin\Framework4\DevExpress.Mvvm.TestClasses.VB.dll</HintPath>
     </Reference>
-    <Reference Include="nunit.framework, Version=2.4.7.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
+    <Reference Include="nunit.framework, Version=3.2.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.3.2.1\lib\net45\nunit.framework.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -86,22 +88,19 @@
     <Compile Include="DefaultMessageBoxButtonLocalizerTests.cs" />
     <Compile Include="DelegateCommandTests.cs" />
     <Compile Include="DesignTimeHelperTests.cs" />
-    <Compile Include="DXBinding\BindingTests.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DXBinding\CommandTests.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DXBinding\EventTests.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DXBinding\ParserTests.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="DXBinding\BindingTests.cs" />
+    <Compile Include="DXBinding\CommandTests.cs" />
+    <Compile Include="DXBinding\EventTests.cs" />
+    <Compile Include="DXBinding\ParserTests.cs" />
     <Compile Include="EnumHelperTests.cs" />
     <Compile Include="ExpressionHelperTests.cs" />
     <Compile Include="MessengerTests.cs" />
     <Compile Include="MetadataBuilderTests.cs" />
+    <Compile Include="ModuleInjection\CommonTests.cs" />
+    <Compile Include="ModuleInjection\ModuleInjectionTestsBase.cs" />
+    <Compile Include="ModuleInjection\Obsolete.cs" />
+    <Compile Include="ModuleInjection\SerializationTests.cs" />
+    <Compile Include="ModuleInjection\StrategiesTests.cs" />
     <Compile Include="Mvvm.UI\ItemsControlMouseEventArgsConverterTests.cs" />
     <Compile Include="Mvvm.UI\LayoutTreeHelperTests.cs" />
     <Compile Include="Behaviors\FunctionBindingBehaviorTests.cs" />
@@ -111,7 +110,6 @@
     <Compile Include="Services\SplashScreenServiceTests.cs" />
     <Compile Include="Services\TaskbarButtonServiceTests.cs" />
     <Compile Include="Services\ViewHelperTests.cs" />
-    <Compile Include="Services\ViewInjectionServiceTests.cs" />
     <Compile Include="Mvvm.UI\ConvertersTests.cs" />
     <Compile Include="Mvvm.UI\EventToCommandTests.cs" />
     <Compile Include="Behaviors\FocusBehaviorTests.cs" />
@@ -135,8 +133,9 @@
     <Compile Include="TestUtils\IsolatedDomainTestHelper.cs" />
     <Compile Include="TestUtils\MemoryLeaksHelper.cs" />
     <Compile Include="UICommandTests.cs" />
-    <Compile Include="ViewModelBaseTests.cs" />
-    <Compile Include="ViewModelSourceTests.cs" />
+    <Compile Include="ViewModels\ViewModelBaseTests.cs" />
+    <Compile Include="ViewModels\ViewModelLocatorTests.cs" />
+    <Compile Include="ViewModels\ViewModelSourceTests.cs" />
     <Compile Include="Views\EventToCommandTestView.xaml.cs">
       <DependentUpon>EventToCommandTestView.xaml</DependentUpon>
     </Compile>
@@ -150,6 +149,7 @@
     <Compile Include="VisualTestUtils\TestWindow.cs" />
     <Compile Include="VisualTestUtils\UITestHelper.cs" />
     <Compile Include="VisualTestUtils\WpfTestWindow.cs" />
+    <Compile Include="WeakEventTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -114,7 +114,9 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         }
 
         void ResolveSource(bool forceResolving, bool? useVisualTree = null) {
-            if(ViewModelBase.IsInDesignMode) return;
+            if(ViewModelBase.IsInDesignMode
+                && !InteractionHelper.GetEnableBehaviorsInDesignTime(AssociatedObject)
+            ) return;
             if(!IsAttached) return;
             if(Source != null && !forceResolving)
                 return;

@@ -14,9 +14,9 @@ using System.Windows.Data;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Collections.Generic;
 
 namespace DevExpress.Xpf.DXBinding.Tests {
-
     static class BindingTestHelper {
         public static TextBlock BindAssert(string property, string binding, object expected = null, object dataContext = null) {
             return BindAssert<TextBlock>("TextBlock", property, binding, expected, dataContext);
@@ -556,7 +556,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual("test", tb.Text);
         }
 
-        [Test, Ignore]
+        [Test, Ignore("Ignore")]
         public void PerformanceTest() {
 #region xamls
             string standardXaml = @"
@@ -971,6 +971,67 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         public void NotRaiseExceptionInDesingMode1() {
             DXBindingBase.IsInDesingModeCore = true;
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding '@a($FrameworkElement).DataContext', BackExpr='@value'}");
+        }
+    }
+    public class ParserTests_a {
+        public static int StaticIntProp { get; set; }
+        public static int StaticIntField { get; set; }
+        public static ParserTests_a StaticSelf { get; set; }
+        public static void Static(int intV = 0) {
+            StaticIntProp = StaticIntField = intV;
+            StaticSelf = new ParserTests_a().CreateInstance();
+            StaticSelf.IntProp = intV;
+        }
+        public static int StaticGetInt() {
+            return StaticIntProp;
+        }
+
+        public int @AtProp { get; set; }
+        public int @int { get; set; }
+        public virtual int IntProp { get; set; }
+        public int IntField;
+        public virtual double DoubleProp { get; set; }
+        public double DoubleField;
+        public virtual string StringProp { get; set; }
+        public string StringField;
+        public string[] Array { get; set; }
+        public Dictionary<Type, string> Dictionary { get; set; }
+        public ParserTests_a Self { get { return this; } }
+        public ParserTests_a(int intV = 0, double doubleV = 0, string stringV = "", string[] array = null, Dictionary<Type, string> dictionary = null) {
+            AtProp = @int = IntProp = IntField = intV;
+            DoubleProp = DoubleField = doubleV;
+            StringProp = StringField = stringV;
+            Array = array;
+            Dictionary = dictionary;
+        }
+        public ParserTests_a GetSelf() {
+            return this;
+        }
+        public ParserTests_a GetSelf(ParserTests_a a) {
+            return a;
+        }
+        public int GetInt(int v) {
+            return v;
+        }
+        public int GetInt(double v) {
+            return (int)v;
+        }
+        public object GetObject(int v) {
+            return v;
+        }
+        public object GetObject(double v) {
+            return v;
+        }
+        public object GetObject(object v) {
+            return v;
+        }
+
+        public T Generic1<T>(T v) {
+            return v;
+        }
+
+        protected virtual ParserTests_a CreateInstance() {
+            return new ParserTests_a();
         }
     }
     public class BindingTests_a : ParserTests_a {

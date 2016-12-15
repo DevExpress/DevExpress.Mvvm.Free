@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace DevExpress.Mvvm.Native {
     public enum PropertyDataType {
@@ -10,6 +6,7 @@ namespace DevExpress.Mvvm.Native {
         Password,
         MultilineText,
         PhoneNumber,
+        Url,
         ImageUrl,
         DateTime,
         Date,

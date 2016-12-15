@@ -4,16 +4,20 @@ using System.Reflection;
 using System.Linq;
 using DevExpress.Mvvm.POCO;
 using System.ComponentModel;
+using System.Linq.Expressions;
 
 namespace DevExpress.Mvvm {
     public static class IDataErrorInfoHelper {
-        public static bool HasErrors(IDataErrorInfo owner, int deep = 2) {
-            return HasErrors(owner, false, deep);
+        public static bool HasErrors<TOwner>(TOwner owner, int deep = 2, params Expression<Func<TOwner, object>>[] excludedProperties) {
+            var exProperties = excludedProperties.Select(x => ExpressionHelper.GetPropertyName(x)).ToList();
+            Func<PropertyDescriptor, bool> propertyFilter = x => !exProperties.Contains(x.Name);
+            return HasErrors((IDataErrorInfo)owner, false, deep, propertyFilter);
         }
-        public static bool HasErrors(IDataErrorInfo owner, bool ignoreOwnerError, int deep = 2) {
+        public static bool HasErrors(IDataErrorInfo owner, bool ignoreOwnerError, int deep = 2, Func<PropertyDescriptor, bool> propertyFilter = null) {
             if(owner == null) throw new ArgumentNullException("owner");
             if(--deep < 0) return false;
-            var properties = TypeDescriptor.GetProperties(owner).Cast<PropertyDescriptor>();
+            if(propertyFilter == null) propertyFilter = x => true;
+            var properties = TypeDescriptor.GetProperties(owner).Cast<PropertyDescriptor>().Where(propertyFilter);
             var errorProperty = properties.FirstOrDefault(p => p.Name == "Error");
             bool hasImplicitImplementation = ExpressionHelper.PropertyHasImplicitImplementation(owner, o => o.Error, false);
             if(errorProperty != null && hasImplicitImplementation) {

@@ -7,6 +7,16 @@ using System.Windows;
 
 namespace DevExpress.Mvvm.UI.Interactivity.Internal {
     public static class InteractionHelper {
+        public static readonly DependencyProperty EnableBehaviorsInDesignTimeProperty =
+            DependencyProperty.RegisterAttached("EnableBehaviorsInDesignTime", typeof(bool), typeof(InteractionHelper),
+            new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits));
+        public static bool GetEnableBehaviorsInDesignTime(DependencyObject d) {
+   if(d == null) return false;
+            return (bool)d.GetValue(EnableBehaviorsInDesignTimeProperty);
+        }
+        public static void SetEnableBehaviorsInDesignTime(DependencyObject d, bool value) {
+            d.SetValue(EnableBehaviorsInDesignTimeProperty, value);
+        }
         public static readonly DependencyProperty BehaviorInDesignModeProperty =
             DependencyProperty.RegisterAttached("BehaviorInDesignMode", typeof(InteractionBehaviorInDesignMode), typeof(InteractionHelper),
             new PropertyMetadata(InteractionBehaviorInDesignMode.Default));

@@ -1,11 +1,10 @@
-using DevExpress.Xpf.DXBinding.Native;
+using DevExpress.DXBinding.Native;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DevExpress.Xpf.DXBinding.Tests {
-
+namespace DevExpress.DXBinding.Tests {
     class ParserTestHelper {
         class BindingTreeInfoTest : BindingTreeInfo {
             public BindingTreeInfoTest(string input) : this(input, null) { }
@@ -690,10 +689,10 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             ParserTestHelper.Execute_AssertSyntaxTreeString("Method1();Method2();Prop");
             ParserTestHelper.Execute_AssertSyntaxTreeString("Method1(@parameter)");
 
-            AssertHelper.AssertThrows<Exception>(() => {
+            Assert.Throws<AssertionException> (() => {
                 ParserTestHelper.Execute_AssertSyntaxTreeString("@parameter");
             });
-            AssertHelper.AssertThrows<Exception>(() => {
+            Assert.Throws<AssertionException>(() => {
                 ParserTestHelper.Execute_AssertSyntaxTreeString("1");
             });
             ParserTestHelper.Execute_AssertSyntaxTreeString("Method(1)");

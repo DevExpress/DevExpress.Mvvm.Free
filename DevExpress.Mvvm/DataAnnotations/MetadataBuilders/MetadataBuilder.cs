@@ -2,6 +2,7 @@ using DevExpress.Mvvm.Native;
 using System;
 using System.Linq.Expressions;
 using System.Windows.Input;
+using System.ComponentModel;
 
 namespace DevExpress.Mvvm.DataAnnotations {
     public interface IMetadataProvider<T> {
@@ -26,6 +27,10 @@ namespace DevExpress.Mvvm.DataAnnotations {
             string methodName = GetMethod(methodExpression).Name;
             return GetBuilder(methodName, x => new CommandMethodMetadataBuilder<T>(x, this, methodName));
         }
+        protected static TBuilder DisplayNameCore<TBuilder>(TBuilder builder, string name) where TBuilder : ClassMetadataBuilder<T> {
+            builder.AddOrReplaceAttribute(new DisplayNameAttribute(name));
+            return builder;
+        }
     }
     public class MetadataBuilder<T> : ClassMetadataBuilder<T> {
         public PropertyMetadataBuilder<T, TProperty> Property<TProperty>(Expression<Func<T, TProperty>> propertyExpression) {
@@ -37,5 +42,6 @@ namespace DevExpress.Mvvm.DataAnnotations {
         public CommandMethodMetadataBuilder<T> CommandFromMethod(Expression<Action<T>> methodExpression) {
             return CommandFromMethodCore(methodExpression);
         }
+        public MetadataBuilder<T> DisplayName(string name) { return DisplayNameCore(this, name); }
     }
 }

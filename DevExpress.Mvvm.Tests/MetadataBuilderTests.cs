@@ -13,6 +13,9 @@ using System.Globalization;
 using System.Collections.Generic;
 using System.Collections;
 
+using PhoneAttribute = DevExpress.Mvvm.Native.PhoneAttribute;
+using UrlAttribute = DevExpress.Mvvm.Native.UrlAttribute;
+using EmailAddressAttribute = DevExpress.Mvvm.Native.EmailAddressAttribute;
 
 namespace DevExpress.Mvvm.Tests {
     public class MetadataBuilderTestsBase {
@@ -492,6 +495,26 @@ namespace DevExpress.Mvvm.Tests {
             TestHelper.AssertThrows<ArgumentException>(() => builder.CommandFromMethod(x => x.Method()).CanExecuteMethod(x => SomeMethod2()));
         }
         #endregion
+        [DisplayName("Test")]
+        public class DisplayNameTestClass {
+        }
+        public class DisplayNameTestClassMetadataProvider : IMetadataProvider<DisplayNameTestClass> {
+            void IMetadataProvider<DisplayNameTestClass>.BuildMetadata(MetadataBuilder<DisplayNameTestClass> builder) {
+                builder.DisplayName("Test2");
+            }
+        }
+        [Test]
+        public void DisplayNameTest() {
+            if(UseFilteringAttributes) return;
+            MetadataLocator.Default = MetadataLocator.Create().AddMetadata<DisplayNameTestClassMetadataProvider>();
+            try {
+                var attributes = GetExternalAndFluentAPIAttributes(typeof(DisplayNameTestClass), null);
+                var attr = GetExternalAndFluentAPIAttributes(typeof(DisplayNameTestClass), null).OfType<DisplayNameAttribute>().Single();
+                Assert.AreEqual("Test2", attr.DisplayName);
+            } finally {
+                MetadataLocator.Default = null;
+            }
+        }
     }
     [TestFixture]
     public class InternalMetadataLocatorTests : MetadataBuilderTestsBase {
@@ -572,5 +595,6 @@ namespace DevExpress.Mvvm.Tests {
     public class InternalFilteringMetadataLocatorTests : InternalMetadataLocatorTests {
         protected override bool UseFilteringAttributes { get { return true; } }
     }
+
 
 }

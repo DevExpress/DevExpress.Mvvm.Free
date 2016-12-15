@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace DevExpress.Xpf.DXBinding.Native {
+namespace DevExpress.DXBinding.Native {
     static class ParserHelper {
         static Stream StringToStream(string s) {
             var stream = new MemoryStream();

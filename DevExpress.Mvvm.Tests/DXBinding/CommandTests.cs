@@ -6,7 +6,6 @@ using System.Linq;
 using System.Windows.Controls;
 
 namespace DevExpress.Xpf.DXBinding.Tests {
-
     [TestFixture]
     public class CommandTests {
         [SetUp]

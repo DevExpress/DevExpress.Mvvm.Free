@@ -36,6 +36,20 @@ namespace DevExpress.Mvvm.UI {
         protected Style GetDocumentContainerStyle(DependencyObject documentContainer, object view, Style style, StyleSelector styleSelector) {
             return style ?? styleSelector.With(s => s.SelectStyle(ViewHelper.GetViewModelFromView(view), documentContainer));
         }
+        public static void UpdateThemeName(FrameworkElement target, FrameworkElement associatedObject) {
+        }
+        [System.Security.SecuritySafeCritical]
+        internal static void UpdateWindowOwner(Window w, FrameworkElement ownerObject) {
+            if(!ViewModelBase.IsInDesignMode)
+                w.Owner = Window.GetWindow(ownerObject);
+            else {
+                System.Windows.Interop.WindowInteropHelper windowInteropHelper = new System.Windows.Interop.WindowInteropHelper(w);
+                windowInteropHelper.Owner = GetActiveWindow();
+            }
+        }
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto, ExactSpelling = true)]
+        static extern System.IntPtr GetActiveWindow();
+
         protected void UpdateThemeName(FrameworkElement target) {
         }
         protected void InitializeDocumentContainer(FrameworkElement documentContainer, DependencyProperty documentContainerViewProperty, Style documentContainerStyle) {

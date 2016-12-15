@@ -29,6 +29,7 @@ namespace DevExpress.Internal {
         IPredefinedToastNotificationContent CreateTwoLineHeaderContent(string headlineText, string bodyText);
     }
     public interface IPredefinedToastNotificationFactory {
+        double ImageSize { get; }
         IPredefinedToastNotificationContentFactory CreateContentFactory();
         IPredefinedToastNotification CreateToastNotification(IPredefinedToastNotificationContent content);
         IPredefinedToastNotification CreateToastNotification(string bodyText);

@@ -203,6 +203,26 @@ namespace DevExpress.Mvvm.UI.Tests {
             CheckAttach(new TestBehaviorNotAllowAttachInDesignMode(), element);
         }
         [Test]
+        public void TestEnableBehaviorsInDesignTime() {
+            ViewModelDesignHelper.IsInDesignModeOverride = true;
+            var b = new TestBehaviorNotAllowAttachInDesignMode();
+            var border = new Border();
+            InteractionHelper.SetEnableBehaviorsInDesignTime(border, true);
+            var button = new Button();
+            border.Child = button;
+            CheckAttach(b, button);
+        }
+        [Test]
+        public void TestEnableBehaviorsInDesignTimeForEventTriggers() {
+            ViewModelDesignHelper.IsInDesignModeOverride = true;
+            var trigger = new FakeTrigger();
+            var border = new Border();
+            var button = new Button();
+            border.Child = button;
+            InteractionHelper.SetEnableBehaviorsInDesignTime(border, true);
+            CheckAttach(trigger, button);
+        }
+        [Test]
         public void TestAssociatedObjectImplementsINotifyPropertyChanged() {
             Grid element = new Grid();
             var testBehavior = new FakeBehavior();

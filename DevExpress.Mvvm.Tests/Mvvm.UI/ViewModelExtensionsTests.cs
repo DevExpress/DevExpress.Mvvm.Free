@@ -151,6 +151,9 @@ namespace DevExpress.Mvvm.Tests {
         }
         class TestViewLocator : IViewLocator {
             public FrameworkElement ResolvedView { get; private set; }
+            string IViewLocator.GetViewTypeName(Type type) {
+                throw new NotImplementedException();
+            }
             object IViewLocator.ResolveView(string name) {
                 ResolvedView = null;
                 if(name == "foo") {

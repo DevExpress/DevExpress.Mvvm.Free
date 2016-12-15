@@ -1,5 +1,6 @@
+using DevExpress.DXBinding.Native;
 using DevExpress.Mvvm.Native;
-using DevExpress.Xpf.DXBinding.Native;
+using DevExpress.Mvvm.UI;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,8 +14,6 @@ using System.Windows.Input;
 using System.Windows.Markup;
 
 namespace DevExpress.Xpf.DXBinding {
-    using DevExpress.Mvvm.UI;
-
     public abstract class DXBindingBase : MarkupExtension {
         internal static bool? IsInDesingModeCore = null;
         protected static string GetTargetPropertyName(object targetProperty) {
@@ -310,19 +309,16 @@ namespace DevExpress.Xpf.DXBinding {
         }
         protected override void Init() {
             TreeInfo = new BindingTreeInfo(Expr, BackExpr, ErrorHandler);
-            Calculator = new BindingCalculator(
-                TreeInfo.Expr, TreeInfo.BackExpr,
-                FallbackValue,
-                ErrorHandler);
+            Calculator = new BindingCalculator(TreeInfo, FallbackValue);
             Calculator.Init(TypeResolver);
         }
         protected override object GetProvidedValue() {
-            if(Mode == BindingMode.Default && TreeInfo.BackExpr == null
+            if(Mode == BindingMode.Default && TreeInfo.IsEmptyBackExpr()
                 && Calculator.Operands.Count() == 0)
                 ActualMode = BindingMode.OneWay;
             if((ActualMode == BindingMode.TwoWay || ActualMode == BindingMode.OneWayToSource)
-               && TreeInfo.BackExpr == null) {
-                if(BindingCalculator.IsSimpleExpr(TreeInfo.Expr))
+               && TreeInfo.IsEmptyBackExpr()) {
+                if(TreeInfo.IsSimpleExpr())
                     Calculator.Operands.FirstOrDefault().Do(x => x.SetMode(true));
                 else ErrorHandler.Throw(ErrorHelper.Err101_TwoWay(), null);
             }
@@ -415,10 +411,13 @@ namespace DevExpress.Xpf.DXBinding {
                 return ObjectToObjectConverter.Coerce(calculator.Resolve(values), targetType, true);
             }
             protected override object[] ConvertBack(object value, Type[] targetTypes) {
-                if(treeInfo.BackExpr == null && !BindingCalculator.IsSimpleExpr(treeInfo.Expr))
+                if(treeInfo.IsEmptyBackExpr() && !treeInfo.IsSimpleExpr())
                     errorHandler.Throw(ErrorHelper.Err101_TwoWay(), null);
                 if(!isBackConvesionInitialized) {
                     Type valueType = value.Return(x => x.GetType(), () => null);
+                    var backExprType = valueType ?? backConversionType;
+                    if(backExprType == null)
+                        errorHandler.Throw(ErrorHelper.Err104(), null);
                     calculator.InitBack(valueType ?? backConversionType);
                     isBackConvesionInitialized = true;
                 }
@@ -462,7 +461,7 @@ namespace DevExpress.Xpf.DXBinding {
         }
         protected override void Init() {
             TreeInfo = new CommandTreeInfo(Execute, CanExecute, ErrorHandler);
-            Calculator = new CommandCalculator(TreeInfo.ExecuteExpr, TreeInfo.CanExecuteExpr, FallbackCanExecute, ErrorHandler);
+            Calculator = new CommandCalculator(TreeInfo, FallbackCanExecute);
             Calculator.Init(TypeResolver);
         }
         protected override object GetProvidedValue() {
@@ -599,7 +598,7 @@ namespace DevExpress.Xpf.DXBinding {
         }
         protected override void Init() {
             TreeInfo = new EventTreeInfo(Handler, ErrorHandler);
-            Calculator = new EventCalculator(TreeInfo.Expr, ErrorHandler);
+            Calculator = new EventCalculator(TreeInfo);
             Calculator.Init(TypeResolver);
         }
         protected override object GetProvidedValue() {
@@ -708,7 +707,7 @@ namespace DevExpress.Xpf.DXBinding {
         }
         public static void Report(TOwner owner, string message) {
             var ex = (TSelf)Activator.CreateInstance(typeof(TSelf), owner, message, null);
-            Trace.WriteLine(ex.Report(message));
+            PresentationTraceSources.DataBindingSource.TraceEvent(TraceEventType.Error, 40, ex.Report(message));
         }
     }
     public sealed class DXBindingException : DXBindingExceptionBase<DXBindingException, DXBindingExtension> {

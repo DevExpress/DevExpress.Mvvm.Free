@@ -79,13 +79,13 @@ namespace DevExpress {
     public class AssertHelper {
 #pragma warning disable 612, 618
         public static void IsInstanceOf(Type type, object target) {
-            Assert.IsInstanceOfType(type, target);
+            Assert.IsInstanceOf(type, target);
         }
         public static void IsInstanceOf(Type type, object target, string message) {
-            Assert.IsInstanceOfType(type, target, message);
+            Assert.IsInstanceOf(type, target, message);
         }
         public static void IsInstanceOf(Type expected, object actual, string message, params object[] args) {
-            Assert.IsInstanceOfType(expected, actual, message, args);
+            Assert.IsInstanceOf(expected, actual, message, args);
         }
 #pragma warning restore 612, 618
         public static Constraint HasCount(int count) {

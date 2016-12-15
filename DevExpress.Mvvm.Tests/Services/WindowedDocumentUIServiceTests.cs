@@ -310,14 +310,16 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueTestComplete();
         }
 
-        [Test, ExpectedException(typeof(InvalidOperationException))]
+        [Test]
         public void TwoWayBindingReadonlyProperty() {
             BindingTestClass testClass = new BindingTestClass();
             WindowedDocumentUIService service = CreateService();
             Interaction.GetBehaviors(Window).Add(service);
             IDocumentManagerService iService = service;
-            BindingOperations.SetBinding(service, WindowedDocumentUIService.ActiveDocumentProperty,
+            Assert.Throws<InvalidOperationException>(() => {
+                BindingOperations.SetBinding(service, WindowedDocumentUIService.ActiveDocumentProperty,
                 new Binding() { Path = new PropertyPath(BindingTestClass.ReadonlyActiveDocumentProperty), Source = testClass, Mode = BindingMode.Default });
+            });
         }
 
         [Test]
@@ -499,6 +501,9 @@ namespace DevExpress.Mvvm.UI.Tests {
         IEnumerable<Type> GetBaseTypes(Type type) {
             for(var baseType = type; baseType != null; baseType = baseType.BaseType)
                 yield return baseType;
+        }
+        string IViewLocator.GetViewTypeName(Type type) {
+            throw new NotImplementedException();
         }
     }
 }

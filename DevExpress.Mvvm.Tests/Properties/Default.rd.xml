@@ -1,0 +1,18 @@
+<Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
+  <Application>
+    <Assembly Name="DevExpress.TestRunner" Dynamic="Required All" Browse="Required All"  Serialize="Required All" />
+    <Assembly Name="DevExpress.Mvvm.Tests" Dynamic="Required All" Browse="Required All" Serialize="Required All" />
+    <Type Name="DevExpress.Mvvm.Tests.AsyncCommandTests" Dynamic="Required PublicAndInternal">
+      <MethodInstantiation Name="Wait2" Arguments="System.Boolean" Dynamic="Required" />
+      <MethodInstantiation Name="Wait2" Arguments="System.Nullable{System.Boolean}" Dynamic="Required" />
+      <MethodInstantiation Name="Wait2" Arguments="System.Int32" Dynamic="Required" />
+      <MethodInstantiation Name="Wait2" Arguments="System.Nullable{System.Int32}" Dynamic="Required" />
+      <MethodInstantiation Name="Wait2" Arguments="System.Double" Dynamic="Required" />
+      <MethodInstantiation Name="Wait2" Arguments="System.Nullable{System.Double}" Dynamic="Required" />
+      <MethodInstantiation Name="Wait2" Arguments="Windows.UI.Xaml.Visibility" Dynamic="Required" />
+      <MethodInstantiation Name="Wait2" Arguments="System.Nullable{Windows.UI.Xaml.Visibility}" Dynamic="Required" />
+      <MethodInstantiation Name="Wait2" Arguments="System.Boolean" Dynamic="Required" />
+      <MethodInstantiation Name="Wait2" Arguments="System.Boolean" Dynamic="Required" />
+    </Type>
+  </Application>
+</Directives>

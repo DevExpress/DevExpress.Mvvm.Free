@@ -54,6 +54,14 @@ namespace DevExpress.Mvvm.UI.Native {
         public static Size ArrangeElementWithSingleChild(FrameworkElement element, Size arrangeSize) {
             return ArrangeElementWithSingleChild(element, arrangeSize, new Point(0, 0));
         }
+        public static T FindParentObject<T>(DependencyObject child) where T : class {
+            while(child != null) {
+                if(child is T)
+                    return child as T;
+                child = VisualTreeHelper.GetParent(child);
+            }
+            return null;
+        }
         public static FrameworkElement GetTopLevelVisual(DependencyObject d) {
             FrameworkElement topElement = d as FrameworkElement;
             while(d != null) {
@@ -63,6 +71,60 @@ namespace DevExpress.Mvvm.UI.Native {
             }
             return topElement;
         }
+        public static FrameworkElement GetRoot(FrameworkElement element) {
+            return FindRoot(element) as FrameworkElement;
+        }
+        public static Rect GetScreenRect(FrameworkElement element) {
+            if(element is Window) {
+                Window elementWindow = (Window)element;
+                if(elementWindow.WindowStyle == WindowStyle.None)
+                    return GetScreenRectCore(elementWindow, elementWindow);
+                else {
+                    if(elementWindow.WindowState == WindowState.Maximized) {
+                        var screen = System.Windows.Forms.Screen.FromHandle(new System.Windows.Interop.WindowInteropHelper(elementWindow).Handle);
+                        var workingArea = screen.WorkingArea;
+                        var leftTop = new Point(workingArea.Location.X, workingArea.Location.Y);
+                        var size = new Size(workingArea.Size.Width, workingArea.Size.Height);
+                        var presentationSource = PresentationSource.FromVisual(elementWindow);
+                        if(presentationSource != null) {
+                            leftTop = new Point(leftTop.X / presentationSource.CompositionTarget.TransformToDevice.M11, leftTop.Y / presentationSource.CompositionTarget.TransformToDevice.M22);
+                            size = new Size(size.Width / presentationSource.CompositionTarget.TransformToDevice.M11, size.Height / presentationSource.CompositionTarget.TransformToDevice.M22);
+                        }
+                        return new Rect(leftTop, size);
+                    } else return new Rect(new Point(elementWindow.Left, elementWindow.Top), new Size(elementWindow.Width, elementWindow.Height));
+                }
+            }
+            if(element == null) {
+                var screen = System.Windows.Forms.Screen.PrimaryScreen;
+                return new Rect(new Point(), new Size(screen.Bounds.Width, screen.Bounds.Height));
+            }
+            return GetScreenRectCore(Window.GetWindow(element), element);
+        }
+        static Rect GetScreenRectCore(Window window, FrameworkElement element) {
+            Point leftTop = element.PointToScreen(new Point());
+            if(element.FlowDirection == FlowDirection.RightToLeft && (element is Window))
+                leftTop = element.PointToScreen(new Point(element.ActualWidth, 0));
+            var presentationSource = window == null ? null : PresentationSource.FromVisual(window);
+            if(presentationSource != null) {
+                double dpiX = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M11;
+                double dpiY = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M22;
+                leftTop = new Point(leftTop.X * 96.0 / dpiX, leftTop.Y * 96.0 / dpiY);
+            }
+            return new Rect(leftTop, new Size(element.ActualWidth, element.ActualHeight));
+        }
+
+        static DependencyObject GetParentCore(DependencyObject d, bool useLogicalTree = false) {
+            DependencyObject parent = LogicalTreeHelper.GetParent(d);
+            if(!useLogicalTree || parent == null)
+                if(d is Visual) parent = VisualTreeHelper.GetParent(d);
+            return parent;
+        }
+        static bool IsVisibleInTreeCore(UIElement element, bool visualTreeOnly = false) {
+            return element.IsVisible;
+        }
+        static bool IsElementLoadedCore(FrameworkElement element) {
+            return element.IsLoaded;
+        }
 
         public static T FindAmongParents<T>(DependencyObject o, DependencyObject stopObject) where T : DependencyObject {
             while(!(o == null || o is T || o == stopObject)) {
@@ -70,7 +132,6 @@ namespace DevExpress.Mvvm.UI.Native {
             }
             return o as T;
         }
-
         public static IEnumerable GetRootPath(DependencyObject root, DependencyObject element) {
             DependencyObject parent = element;
             while(parent != null) {
@@ -80,34 +141,20 @@ namespace DevExpress.Mvvm.UI.Native {
                 parent = GetParent(parent);
             }
         }
-        public static FrameworkElement GetRoot(FrameworkElement element) {
-            return FindRoot(element) as FrameworkElement;
-        }
         public static DependencyObject FindRoot(DependencyObject d, bool useLogicalTree = false) {
-            DependencyObject current = d;
-            while(GetParent(current, useLogicalTree) != null)
+            DependencyObject result = d;
+            DependencyObject current = GetParent(d, useLogicalTree);
+            while(current != null) {
+                result = current;
                 current = GetParent(current, useLogicalTree);
-            return current;
+            }
+            return result;
         }
         public static DependencyObject GetParent(DependencyObject d, bool useLogicalTree = false) {
             if(DesignerProperties.GetIsInDesignMode(d)) {
                 if(CheckIsDesignTimeRoot(d)) return null;
             }
             return GetParentCore(d, useLogicalTree);
-        }
-        static DependencyObject GetParentCore(DependencyObject d, bool useLogicalTree = false) {
-            DependencyObject parent = LogicalTreeHelper.GetParent(d);
-            if(!useLogicalTree || parent == null)
-                if(d is Visual) parent = VisualTreeHelper.GetParent(d);
-            return parent;
-        }
-        public static T FindParentObject<T>(DependencyObject child) where T : class {
-            while(child != null) {
-                if(child is T)
-                    return child as T;
-                child = VisualTreeHelper.GetParent(child);
-            }
-            return null;
         }
         public static T FindLayoutOrVisualParentObject<T>(DependencyObject child, bool useLogicalTree = false, DependencyObject stopSearchNode = null) where T : class {
             return FindLayoutOrVisualParentObject(child, typeof(T), useLogicalTree, stopSearchNode) as T;
@@ -168,7 +215,6 @@ namespace DevExpress.Mvvm.UI.Native {
             return false;
         }
 
-
         public static void ForEachElement(FrameworkElement treeRoot, ElementHandler elementHandler) {
             VisualTreeEnumerator en = new VisualTreeEnumerator(treeRoot);
             while(en.MoveNext()) {
@@ -181,53 +227,13 @@ namespace DevExpress.Mvvm.UI.Native {
             Rect rect = new Rect(-margin.Left, -margin.Top, element.ActualWidth + margin.Right + margin.Left, element.ActualHeight + margin.Bottom + margin.Top);
             return rect.Contains(position);
         }
-
         public static bool IsVisibleInTree(UIElement element, bool visualTreeOnly = false) {
-            return element.IsVisible;
+            return IsVisibleInTreeCore(element, visualTreeOnly);
         }
-
         public static bool IsElementLoaded(FrameworkElement element) {
-            return element.IsLoaded;
-        }
-
-        public static Rect GetScreenRect(FrameworkElement element) {
-            if(element is Window) {
-                Window elementWindow = (Window)element;
-                if(elementWindow.WindowStyle == WindowStyle.None)
-                    return GetScreenRectCore(elementWindow, elementWindow);
-                else {
-                    if(elementWindow.WindowState == WindowState.Maximized) {
-                        var screen = System.Windows.Forms.Screen.FromHandle(new System.Windows.Interop.WindowInteropHelper(elementWindow).Handle);
-                        var workingArea = screen.WorkingArea;
-                        var leftTop = new Point(workingArea.Location.X, workingArea.Location.Y);
-                        var size = new Size(workingArea.Size.Width, workingArea.Size.Height);
-                        var presentationSource = PresentationSource.FromVisual(elementWindow);
-                        if(presentationSource != null) {
-                            leftTop = new Point(leftTop.X / presentationSource.CompositionTarget.TransformToDevice.M11, leftTop.Y / presentationSource.CompositionTarget.TransformToDevice.M22);
-                            size = new Size(size.Width / presentationSource.CompositionTarget.TransformToDevice.M11, size.Height / presentationSource.CompositionTarget.TransformToDevice.M22);
-                        }
-                        return new Rect(leftTop, size);
-                    } else return new Rect(new Point(elementWindow.Left, elementWindow.Top), new Size(elementWindow.Width, elementWindow.Height));
-                }
-            }
-            if(element == null) {
-                var screen = System.Windows.Forms.Screen.PrimaryScreen;
-                return new Rect(new Point(), new Size(screen.Bounds.Width, screen.Bounds.Height));
-            }
-            return GetScreenRectCore(Window.GetWindow(element), element);
-        }
-        static Rect GetScreenRectCore(Window window, FrameworkElement element) {
-            var leftTop = element.PointToScreen(new Point());
-            var presentationSource = window == null ? null : PresentationSource.FromVisual(window);
-            if(presentationSource != null) {
-                double dpiX = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M11;
-                double dpiY = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M22;
-                leftTop = new Point(leftTop.X * 96.0 / dpiX, leftTop.Y * 96.0 / dpiY);
-            }
-            return new Rect(leftTop, new Size(element.ActualWidth, element.ActualHeight));
+            return IsElementLoadedCore(element);
         }
 
         public delegate void ElementHandler(FrameworkElement e);
-
     }
 }

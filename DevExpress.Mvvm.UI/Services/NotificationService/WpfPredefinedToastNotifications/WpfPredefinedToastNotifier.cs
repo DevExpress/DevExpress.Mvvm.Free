@@ -36,6 +36,9 @@ namespace DevExpress.Mvvm.UI.Native {
                 return factoryCore;
             }
         }
+
+        public double ImageSize { get { return 90; } }
+
         public virtual IPredefinedToastNotificationContentFactory CreateContentFactory() {
             return new WpfPredefinedToastNotificationContentFactory();
         }

@@ -18,21 +18,11 @@ namespace DevExpress.Mvvm.UI.Native {
         static Type securityHelper;
         static MethodInfo mapUrlToZoneWrapperMethod;
 
-        public static byte[] ImageToByteArray(ImageSource source, Func<Uri> baseUriProvider = null) {
+        public static byte[] ImageToByteArray(ImageSource source, Func<Uri> baseUriProvider = null, Size? drawingImageSize = null) {
             if(source == null) throw new ArgumentNullException("source");
-            Stream stream;
-            Uri uri;
-            TryGetStreamAndUri(source, out uri, out stream);
             byte[] streamData;
-            if(stream == null) {
-                streamData = null;
-            } else {
-                try {
-                    streamData = StreamHelper.CopyAllBytes(stream);
-                } catch(ObjectDisposedException) {
-                    streamData = null;
-                }
-            }
+            Uri uri;
+            TryGetStreamDataAndUri(source, drawingImageSize, out uri, out streamData);
             if(streamData != null) {
                 if(streamData.Length == 0)
                     throw new ArgumentException("EndOfStream", "source");
@@ -69,29 +59,57 @@ namespace DevExpress.Mvvm.UI.Native {
             AddToCache(uri, data);
             return data;
         }
-        static void TryGetStreamAndUri(ImageSource imageSource, out Uri uri, out Stream stream) {
+        static byte[] TryCopyAllBytes(Stream stream) {
+            try {
+                return StreamHelper.CopyAllBytes(stream);
+            } catch(ObjectDisposedException) {
+                return null;
+            }
+        }
+        static void TryGetStreamDataAndUri(ImageSource imageSource, Size? drawingImageSize, out Uri uri, out byte[] streamData) {
             BitmapImage bitmapImage = imageSource as BitmapImage;
             if(bitmapImage != null) {
-                TryGetStreamAndUri(bitmapImage, out uri, out stream);
+                TryGetStreamDataAndUri(bitmapImage, out uri, out streamData);
                 return;
             }
             BitmapFrame bitmapFrame = imageSource as BitmapFrame;
             if(bitmapFrame != null) {
-                TryGetStreamAndUri(bitmapFrame, out uri, out stream);
+                TryGetStreamDataAndUri(bitmapFrame, out uri, out streamData);
+                return;
+            }
+            DrawingImage drawingImage = imageSource as DrawingImage;
+            if(drawingImage != null) {
+                TryGetStreamDataAndUri(drawingImage, drawingImageSize, out uri, out streamData);
                 return;
             }
             uri = null;
-            stream = null;
+            streamData = null;
         }
-        static void TryGetStreamAndUri(BitmapImage bitmapImage, out Uri uri, out Stream stream) {
+        static void TryGetStreamDataAndUri(DrawingImage drawingImage, Size? drawingImageSize, out Uri uri, out byte[] streamData) {
+            var width = drawingImageSize == null ? drawingImage.Width : drawingImageSize.Value.Width;
+            var height = drawingImageSize == null ? drawingImage.Height : drawingImageSize.Value.Height;
+            var renderBitmap = new RenderTargetBitmap((int)Math.Ceiling(width), (int)Math.Ceiling(height), 96, 96, PixelFormats.Pbgra32);
+            var drawingVisual = new DrawingVisual();
+            using(var drawingContext = drawingVisual.RenderOpen())
+                drawingContext.DrawImage(drawingImage, new Rect(new Point(), new Size(width, height)));
+            renderBitmap.Render(drawingVisual);
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+            using(var stream = new MemoryStream()) {
+                encoder.Save(stream);
+                streamData = stream.ToArray();
+            }
+            uri = null;
+        }
+        static void TryGetStreamDataAndUri(BitmapImage bitmapImage, out Uri uri, out byte[] streamData) {
             var bitmapStream = bitmapImage.StreamSource;
             if(bitmapStream != null && bitmapStream.CanRead)
-                stream = bitmapStream;
+                streamData = TryCopyAllBytes(bitmapStream);
             else
-                stream = null;
+                streamData = null;
             uri = bitmapImage.UriSource;
         }
-        static void TryGetStreamAndUri(BitmapFrame bitmapFrame, out Uri uri, out Stream stream) {
+        static void TryGetStreamDataAndUri(BitmapFrame bitmapFrame, out Uri uri, out byte[] streamData) {
             BitmapDecoder decoder = bitmapFrame.Decoder;
             FieldInfo streamField = GetDecoderField(decoder, "_stream");
             FieldInfo uriStreamField = GetDecoderField(decoder, "_uriStream");
@@ -100,9 +118,9 @@ namespace DevExpress.Mvvm.UI.Native {
             if(decoderStream == null || !decoderStream.CanRead)
                 decoderStream = (Stream)uriStreamField.GetValue(decoder);
             if(decoderStream != null && decoderStream.CanRead)
-                stream = decoderStream;
+                streamData = TryCopyAllBytes(decoderStream);
             else
-                stream = null;
+                streamData = null;
             var decoderUri = (Uri)uriField.GetValue(decoder);
             if(decoderUri != null && bitmapFrame.BaseUri != null)
                 decoderUri = new Uri(bitmapFrame.BaseUri, decoderUri);

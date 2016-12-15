@@ -218,11 +218,7 @@ namespace DevExpress.Mvvm.UI {
         }
         protected override void SubscribeParentEventsOverride() {
             if(childLocation != SplashScreenLocation.CenterScreen)
-                RenderingSubscriber.GetInstance(Parent.ManagedThreadId).Rendering += OnParentRendering;
-        }
-        protected override void UnsubscribeParentEventsOverride() {
-            if(childLocation != SplashScreenLocation.CenterScreen)
-                RenderingSubscriber.GetInstance(Parent.ManagedThreadId).Rendering -= OnParentRendering;
+                CompositionTarget.Rendering += OnParentRendering;
         }
         void OnChildRendering(object sender, EventArgs e) {
             if(IsReleased) {
@@ -234,46 +230,13 @@ namespace DevExpress.Mvvm.UI {
                 UpdateChildLocation();
         }
         void OnParentRendering(object sender, EventArgs e) {
-            if(IsReleased)
+            if(IsReleased) {
+                CompositionTarget.Rendering -= OnParentRendering;
                 return;
+            }
 
             if(((Dispatcher)sender).Thread.ManagedThreadId == Parent.ManagedThreadId)
                 UpdateParentLocation();
-        }
-        class RenderingSubscriber {
-            static Dictionary<int, RenderingSubscriber> instances = new Dictionary<int, RenderingSubscriber>();
-
-            public static RenderingSubscriber GetInstance(int threadId) {
-                RenderingSubscriber result;
-                if(!instances.TryGetValue(threadId, out result)) {
-                    result = new RenderingSubscriber();
-                    instances.Add(threadId, result);
-                }
-
-                return result;
-            }
-
-            RenderingSubscriber() { }
-
-            void OnRendering(object sender, EventArgs e) {
-                if(_rendering != null)
-                    _rendering(sender, e);
-                else
-                    CompositionTarget.Rendering -= OnRendering;
-            }
-
-            event EventHandler _rendering;
-            public event EventHandler Rendering {
-                add {
-                    var needSubscribe = _rendering == null;
-                    _rendering += value;
-                    if(needSubscribe)
-                        CompositionTarget.Rendering += OnRendering;
-                }
-                remove {
-                    _rendering -= value;
-                }
-            }
         }
     }
     internal class WindowArranger : WindowArrangerBase {
@@ -584,20 +547,15 @@ namespace DevExpress.Mvvm.UI {
         public Rect GetWindowRect() {
             if(Form != null)
                 return new Rect(Form.Left, Form.Top, Form.Width, Form.Height);
-            return Window == null || !Window.IsLoaded ? Rect.Empty : GetRealRect(Window);
+            return GetRealRect(Window);
         }
         public Rect GetControlRect() {
-            return !FrameworkObject.Return(x => x.IsLoaded, () => false) || PresentationSource.FromDependencyObject(WindowObject) == null
-                ? Rect.Empty
-                : GetRealRect(FrameworkObject);
+            return GetRealRect(FrameworkObject);
         }
         static Rect GetRealRect(FrameworkElement element) {
-            var rect = LayoutHelper.GetScreenRect(element);
-            bool subtractWidth = element.FlowDirection == FlowDirection.RightToLeft && !(element is Window);
-            if(subtractWidth)
-                rect.X -= rect.Width;
-
-            return rect;
+            if(element == null || !element.IsLoaded || PresentationSource.FromDependencyObject(element) == null)
+                return Rect.Empty;
+            return LayoutHelper.GetScreenRect(element);
         }
 
         protected override void CompleteInitializationOverride() {

@@ -102,37 +102,16 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(parentViewModel, service.ParentViewModel);
         }
 
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService1() {
+        [Test]
+        public void NullService() {
             IDialogService service = null;
-            service.ShowDialog(MessageBoxButton.OK, "Title", new TestViewModel());
+            Assert.Throws<ArgumentNullException>(() => { service.ShowDialog(MessageBoxButton.OK, "Title", new TestViewModel()); });
+            Assert.Throws<ArgumentNullException>(() => { service.ShowDialog(MessageBoxButton.OK, "Title", "docType", new TestViewModel()); });
+            Assert.Throws<ArgumentNullException>(() => { service.ShowDialog(MessageBoxButton.OK, "Title", "docType", 1, new TestViewModel()); });
+            Assert.Throws<ArgumentNullException>(() => { service.ShowDialog(new List<UICommand>(), "Title", new TestViewModel()); });
+            Assert.Throws<ArgumentNullException>(() => { service.ShowDialog(new List<UICommand>(), "Title", "docType", new TestViewModel()); });
+            Assert.Throws<ArgumentNullException>(() => { service.ShowDialog(new List<UICommand>(), "Title", "docType", 1, new TestViewModel()); });
         }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService2() {
-            IDialogService service = null;
-            service.ShowDialog(MessageBoxButton.OK, "Title", "docType", new TestViewModel());
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService3() {
-            IDialogService service = null;
-            service.ShowDialog(MessageBoxButton.OK, "Title", "docType", 1, new TestViewModel());
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService5() {
-            IDialogService service = null;
-            service.ShowDialog(new List<UICommand>(), "Title", new TestViewModel());
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService6() {
-            IDialogService service = null;
-            service.ShowDialog(new List<UICommand>(), "Title", "docType", new TestViewModel());
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService7() {
-            IDialogService service = null;
-            service.ShowDialog(new List<UICommand>(), "Title", "docType", 1, new TestViewModel());
-        }
-
         public class TestDialogService2 : TestDialogService, IMessageBoxButtonLocalizer {
             public string Localize(MessageBoxResult button) {
                 return "test";

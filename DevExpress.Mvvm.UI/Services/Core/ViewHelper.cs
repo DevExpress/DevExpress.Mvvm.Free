@@ -41,7 +41,7 @@ namespace DevExpress.Mvvm.UI {
                 ViewModelInitializer.SetViewModelProperties((DependencyObject)view, parameter, parentViewModel, documentOwner);
         }
         public static object CreateView(IViewLocator viewLocator, string documentType, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {
-            if(documentType == null && viewTemplate == null & viewTemplateSelector == null) {
+            if(documentType == null && viewTemplate == null && viewTemplateSelector == null) {
                 var ex = new InvalidOperationException(string.Format("{0}{1}To learn more, see: {2}", Error_CreateViewMissArguments, System.Environment.NewLine, HelpLink_CreateViewMissArguments));
                 ex.HelpLink = HelpLink_CreateViewMissArguments;
                 throw ex;

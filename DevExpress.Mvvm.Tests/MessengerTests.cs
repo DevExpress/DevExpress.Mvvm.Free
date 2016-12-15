@@ -125,7 +125,7 @@ namespace DevExpress.Mvvm.Tests {
             Messenger.Default = null;
         }
 
-        #region Send
+#region Send
         [Test]
         public void SendNullMessage() {
             bool ok = false;
@@ -186,8 +186,8 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreSame(v, message2);
             Assert.IsNull(message3);
         }
-        #endregion
-        #region Message Inheritance
+#endregion
+#region Message Inheritance
         [Test]
         public void MessageInheritance() {
             string message = null;
@@ -275,8 +275,8 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(DateTime.MaxValue, message3);
             Assert.AreSame(v, message4);
         }
-        #endregion
-        #region Register Unregister
+#endregion
+#region Register Unregister
         [Test]
         public void RegisterUnregister() {
             string message = null;
@@ -526,8 +526,8 @@ namespace DevExpress.Mvvm.Tests {
             Messenger.Default.Send("test");
             Assert.AreEqual("test", message);
         }
-        #endregion
-        #region Custom Messenger
+#endregion
+#region Custom Messenger
         [Test]
         public void CustomMessenger() {
             string message1 = null;
@@ -566,8 +566,8 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("test1", recipient1.Message);
             Assert.AreEqual("test2", recipient2.Message);
         }
-        #endregion
-        #region Memory
+#endregion
+#region Memory
         TestRecipient DeletingRecipientRecipient1;
         TestRecipient DeletingRecipientRecipient2;
         [Test]
@@ -656,54 +656,21 @@ namespace DevExpress.Mvvm.Tests {
             GC.Collect();
             Assert.IsFalse(recipientReference.IsAlive);
         }
-        #endregion
-        #region Extension Methods
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService1() {
+#endregion
+#region Extension Methods
+        [Test]
+        public void NullService() {
             IMessenger service = null;
-            service.Register<string>(new object(), x => { });
+            Assert.Throws<ArgumentNullException>(() => { service.Register<string>(new object(), x => { }); });
+            Assert.Throws<ArgumentNullException>(() => { service.Register<string>(new object(), true, x => { }); });
+            Assert.Throws<ArgumentNullException>(() => { service.Register<string>(new object(), new object(), x => { }); });
+            Assert.Throws<ArgumentNullException>(() => { service.Unregister<string>(new object(), x => { }); });
+            Assert.Throws<ArgumentNullException>(() => { service.Unregister<string>(new object()); });
+            Assert.Throws<ArgumentNullException>(() => { service.Unregister<string>(new object(), new object()); });
+            Assert.Throws<ArgumentNullException>(() => { service.Send(new object()); });
+            Assert.Throws<ArgumentNullException>(() => { service.Send(new object(), new object()); });
+            Assert.Throws<ArgumentNullException>(() => { service.Send<string, string>("test"); });
         }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService2() {
-            IMessenger service = null;
-            service.Register<string>(new object(), true, x => { });
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService3() {
-            IMessenger service = null;
-            service.Register<string>(new object(), new object(), x => { });
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService4() {
-            IMessenger service = null;
-            service.Unregister<string>(new object(), x => { });
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService5() {
-            IMessenger service = null;
-            service.Unregister<string>(new object());
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService6() {
-            IMessenger service = null;
-            service.Unregister<string>(new object(), new object());
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService7() {
-            IMessenger service = null;
-            service.Send(new object());
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService8() {
-            IMessenger service = null;
-            object token = new object();
-            service.Send(new object(), new object());
-        }
-        [Test, ExpectedException(typeof(ArgumentNullException))]
-        public void NullService9() {
-            IMessenger service = null;
-            service.Send<string, string>("test");
-        }
-        #endregion
+#endregion
     }
 }

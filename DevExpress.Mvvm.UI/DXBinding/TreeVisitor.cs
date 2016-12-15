@@ -1,12 +1,11 @@
-using DevExpress.Mvvm.Native;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace DevExpress.Xpf.DXBinding.Native {
-    class Operand {
+namespace DevExpress.DXBinding.Native {
+    public class Operand {
         public enum RelativeSource { Context, Self, Parent, Element, Resource, Reference, Ancestor }
         public string Path { get; private set; }
         public RelativeSource Source { get; private set; }
@@ -29,14 +28,14 @@ namespace DevExpress.Xpf.DXBinding.Native {
             AncestorLevel = ancestorLevel;
             IsTwoWay = false;
         }
-        public static Operand CreateOperand(string path, NRelative n, Func<NType, Type> resolveType) {
+        internal static Operand CreateOperand(string path, NRelative n, Func<NType, Type> resolveType) {
             if(path == null && n == null) return null;
             return new Operand(
                 path: path == null && n != null ? string.Empty : path,
                 source: GetRelativeSource(n as NRelative),
-                elementName: n.With(x => x.ElementName),
-                resourceName: n.With(x => x.ResourceName),
-                referenceName: n.With(x => x.ReferenceName),
+                elementName: n != null ? n.ElementName : null,
+                resourceName: n != null ? n.ResourceName : null,
+                referenceName: n != null ? n.ReferenceName : null,
                 ancestorType: GetAncestorType(n, resolveType),
                 ancestorLevel: GetAncestorLevel(n));
         }
@@ -59,7 +58,7 @@ namespace DevExpress.Xpf.DXBinding.Native {
         }
         static int GetAncestorLevel(NRelative n) {
             if(n == null || n.Kind != NRelative.NKind.Ancestor) return 0;
-            return n.AncestorLevel.Return(x => (int)x, () => 1);
+            return n.AncestorLevel ?? 1;
         }
 
         public override bool Equals(object obj) {
@@ -74,29 +73,28 @@ namespace DevExpress.Xpf.DXBinding.Native {
                 && AncestorLevel == v.AncestorLevel;
         }
         public override int GetHashCode() {
-            return Path.Return(x => x.GetHashCode(), () => 7)
-                ^ ElementName.Return(x => x.GetHashCode(), () => 13)
-                ^ ResourceName.Return(x => x.GetHashCode(), () => 17)
-                ^ ReferenceName.Return(x => x.GetHashCode(), () => 23)
-                ^ AncestorType.Return(x => x.GetHashCode(), () => 27)
+            return (Path != null ? Path.GetHashCode() : 7)
+                ^ (ElementName != null ? ElementName.GetHashCode() : 13)
+                ^ (ResourceName != null ? ResourceName.GetHashCode() : 17)
+                ^ (ReferenceName != null ? ReferenceName.GetHashCode() : 23)
+                ^ (AncestorType != null ? AncestorType.GetHashCode() : 27)
                 ^ AncestorLevel.GetHashCode()
                 ^ Source.GetHashCode();
         }
-
-        internal void SetMode(bool isTwoWay) {
+        public void SetMode(bool isTwoWay) {
             IsTwoWay = isTwoWay;
         }
         internal void SetBackConverter(Func<object[], object> backConverter) {
             BackConverter = backConverter;
         }
     }
-    class OperandInfo {
+    public class OperandInfo {
         public Type OperandType { get; private set; }
         public object OperandValue { get; private set; }
         public ParameterExpression Parameter { get; private set; }
         public void Init(object opValue) {
             OperandValue = opValue;
-            OperandType = opValue.Return(x => x.GetType(), () => null);
+            OperandType = opValue != null ? opValue.GetType() : null;
         }
         public void CreateParameter() {
             Parameter = Expression.Parameter(OperandType ?? typeof(object));
@@ -529,8 +527,9 @@ namespace DevExpress.Xpf.DXBinding.Native {
             IEnumerable<Operand> backOperands = new Operand[] { };
             assigns
                 .Select(x => x.Left).Select(RootIdent)
+                .ToList()
                 .ForEach(x => backOperands = backOperands.Union(x));
-            backOperands.ForEach(x => x.SetMode(true));
+            backOperands.ToList().ForEach(x => x.SetMode(true));
             foreach(var op in backOperands) {
                 if(operands.Contains(op))
                     operands[operands.IndexOf(op)].SetMode(true);
@@ -1102,15 +1101,15 @@ namespace DevExpress.Xpf.DXBinding.Native {
         }
     }
 
-    abstract class CalculatorBase {
+    public abstract class CalculatorBase {
         public IEnumerable<Operand> Operands { get { return OperandInfos.Keys; } }
-        protected VisitorType VisitorType { get; private set; }
-        protected VisitorOperand VisitorOperand { get; private set; }
-        protected VisitorExpression VisitorExpression { get; private set; }
+        internal VisitorType VisitorType { get; private set; }
+        internal VisitorOperand VisitorOperand { get; private set; }
+        internal VisitorExpression VisitorExpression { get; private set; }
+        internal Dictionary<VisitorType.TypeInfo, Type> TypeInfos { get; private set; }
+        protected Dictionary<Operand, OperandInfo> OperandInfos { get; private set; }
         protected IErrorHandler ErrorHandler { get; private set; }
         protected ITypeResolver TypeResolver { get; private set; }
-        protected Dictionary<VisitorType.TypeInfo, Type> TypeInfos { get; private set; }
-        protected Dictionary<Operand, OperandInfo> OperandInfos { get; private set; }
 
         public CalculatorBase(IErrorHandler errorHandler) {
             ErrorHandler = errorHandler;
@@ -1125,20 +1124,19 @@ namespace DevExpress.Xpf.DXBinding.Native {
             foreach(var typeInfo in TypeInfos.Keys.ToList())
                 TypeInfos[typeInfo] = VisitorType.ResolveType(typeInfo, typeResolver, ErrorHandler);
         }
-        protected void InitTypeInfos(IEnumerable<VisitorType.TypeInfo> typeInfos) {
+        internal void InitTypeInfos(IEnumerable<VisitorType.TypeInfo> typeInfos) {
             foreach(var typeInfo in typeInfos)
                 TypeInfos.Add(typeInfo, null);
         }
-        protected void InitOperands(IEnumerable<Operand> operands) {
+        internal void InitOperands(IEnumerable<Operand> operands) {
             foreach(var operand in operands)
                 OperandInfos.Add(operand, new OperandInfo());
             VisitorExpression = new VisitorExpression(OperandInfos, GetResolvedType, ErrorHandler);
         }
-        protected Type GetResolvedType(NType n) {
+        internal Type GetResolvedType(NType n) {
             return TypeInfos[new VisitorType.TypeInfo(n)];
         }
-
-        protected void ResolveCore(object[] opValues, bool forceRecompile, Action recompile, Action calculate) {
+        internal void ResolveCore(object[] opValues, bool forceRecompile, Action recompile, Action calculate) {
             CheckOperandsCount(opValues);
             bool needToRecompile = NeedToRecompile(opValues);
             InitOperandInfos(opValues);
@@ -1151,13 +1149,14 @@ namespace DevExpress.Xpf.DXBinding.Native {
         }
 
         void CheckOperandsCount(object[] opValues) {
-            if(Operands.Count() != opValues.Return(x => x.Count(), () => 0))
+            var opValuesCount = opValues != null ? opValues.Count() : 0;
+            if(Operands.Count() != opValuesCount)
                 throw new InvalidOperationException();
         }
         bool NeedToRecompile(object[] opValues) {
             if(opValues == null) return false;
             var opTypes = OperandInfos.Values.Select(x => x.OperandType);
-            var actualOpTypes = opValues.Select(x => x.Return(y => y.GetType(), () => null));
+            var actualOpTypes = opValues.Select(x => x != null ? x.GetType() : null);
             return !opTypes.SequenceEqual(actualOpTypes);
         }
         void InitOperandInfos(object[] opValues) {
@@ -1186,18 +1185,13 @@ namespace DevExpress.Xpf.DXBinding.Native {
             }
         }
     }
-    class BindingCalculator : CalculatorBase {
+    public class BindingCalculator : CalculatorBase {
         readonly NRoot expr;
         readonly NRoot backExpr;
         readonly object fallbackValue;
-        public static bool IsSimpleExpr(NRoot expr) {
-            if(expr.Exprs.Count() != 1) return false;
-            if(!(expr.Expr is NIdentBase)) return false;
-            NIdentBase rest;
-            var op = VisitorOperand.ReduceIdent((NIdentBase)expr.Expr, x => typeof(object), out rest);
-            return op != null && rest == null;
-        }
-        public BindingCalculator(NRoot expr, NRoot backExpr, object fallbackValue, IErrorHandler errorHandler)
+        public BindingCalculator(BindingTreeInfo treeInfo, object fallbackValue)
+            : this(treeInfo.Expr, treeInfo.BackExpr, fallbackValue, treeInfo.ErrorHandler) { }
+        internal BindingCalculator(NRoot expr, NRoot backExpr, object fallbackValue, IErrorHandler errorHandler)
             : base(errorHandler) {
             this.expr = expr;
             this.backExpr = backExpr;
@@ -1218,7 +1212,7 @@ namespace DevExpress.Xpf.DXBinding.Native {
             object res = fallbackValue;
             ResolveCore(opValues, calc == null,
                 () => { calc = VisitorExpression.Resolve(expr); },
-                () => { res = calc.Return(x => x(CollectParameterValues()), () => fallbackValue); });
+                () => { res = calc != null ? calc(CollectParameterValues()) : fallbackValue; });
             return res;
         }
         object[] CollectParameterValues() {
@@ -1230,11 +1224,13 @@ namespace DevExpress.Xpf.DXBinding.Native {
             return res.ToArray();
         }
     }
-    class CommandCalculator : CalculatorBase {
+    public class CommandCalculator : CalculatorBase {
         readonly NRoot executeExpr;
         readonly NRoot canExecuteExpr;
         readonly bool fallbackCanExecute;
-        public CommandCalculator(NRoot executeExpr, NRoot canExecuteExpr, bool fallbackCanExecute, IErrorHandler errorHandler)
+        public CommandCalculator(CommandTreeInfo treeInfo, bool fallbackCanExecute)
+            : this(treeInfo.ExecuteExpr, treeInfo.CanExecuteExpr, fallbackCanExecute, treeInfo.ErrorHandler) { }
+        internal CommandCalculator(NRoot executeExpr, NRoot canExecuteExpr, bool fallbackCanExecute, IErrorHandler errorHandler)
             : base(errorHandler) {
             this.executeExpr = executeExpr;
             this.canExecuteExpr = canExecuteExpr;
@@ -1262,7 +1258,7 @@ namespace DevExpress.Xpf.DXBinding.Native {
         }
         void Resolve(object[] opValues, object parameter, Action calculate) {
             if(ErrorHandler.HasError) return;
-            var actualParameterType = parameter.Return(x => x.GetType(), () => typeof(object));
+            var actualParameterType = parameter != null ? parameter.GetType() : typeof(object);
             ResolveCore(
                 opValues,
                 execute == null || canExecute == null || parameterType != actualParameterType,
@@ -1283,9 +1279,11 @@ namespace DevExpress.Xpf.DXBinding.Native {
             return res.ToArray();
         }
     }
-    class EventCalculator : CalculatorBase {
+    public class EventCalculator : CalculatorBase {
         readonly NRoot expr;
-        public EventCalculator(NRoot expr, IErrorHandler errorHandler)
+        public EventCalculator(EventTreeInfo treeInfo)
+            : this(treeInfo.Expr, treeInfo.ErrorHandler) { }
+        internal EventCalculator(NRoot expr, IErrorHandler errorHandler)
             : base(errorHandler) {
             this.expr = expr;
             InitTypeInfos(VisitorType.Resolve(expr, null));
@@ -1303,8 +1301,8 @@ namespace DevExpress.Xpf.DXBinding.Native {
             var input = CollectParameterValues(opValues, sender, args);
             ResolveCore(opValues, eventFunc == null || senderType == null || argsType == null,
                 () => {
-                    if(senderType == null) senderType = sender.With(x => x.GetType());
-                    if(argsType == null) argsType = args.With(x => x.GetType());
+                    if(senderType == null) senderType = sender != null ? sender.GetType() : null;
+                    if(argsType == null) argsType = args != null ? args.GetType() : null;
                     eventFunc = VisitorExpression.ResolveEvent(expr, senderType, argsType);
                 },
                 () => { eventFunc(input); });

@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace DevExpress.Mvvm.Native {
+    public interface IMappedList {
+        IList<int> Map { get; set; }
+    }
     public static class ListAdapter<T> {
         sealed class ObjectList : IList<T> {
             readonly IList innerList;
@@ -37,7 +40,7 @@ namespace DevExpress.Mvvm.Native {
             void IList<T>.RemoveAt(int index) { innerList.RemoveAt(index); }
         }
 
-        sealed class CombinedList<T1, T2> : IList<T>
+        sealed class CombinedList<T1, T2> : IList<T>, IMappedList
             where T1 : T
             where T2 : T {
 
@@ -55,9 +58,11 @@ namespace DevExpress.Mvvm.Native {
 
             void UpdateIndexMap() {
                 int count = Count;
-                if(publicIndexes == null || publicIndexes.Count != count) {
+                if(publicIndexes == null) {
                     publicIndexes = Enumerable.Range(0, count).ToList();
                     innerIndexes = Enumerable.Range(0, count).ToList();
+                } else if(publicIndexes.Count != count) {
+                    throw new InvalidOperationException();
                 }
             }
 
@@ -85,7 +90,35 @@ namespace DevExpress.Mvvm.Native {
                 }
             }
 
+            IList<int> IMappedList.Map {
+                get {
+                    UpdateIndexMap();
+                    var list1Map = (list1 as IMappedList).Return(x => x.Map, () => new List<int>());
+                    var list2Map = (list2 as IMappedList).Return(x => x.Map, () => new List<int>());
+                    return publicIndexes.Concat(list1Map).Concat(list2Map).ToList();
+                }
+                set {
+                    UpdateIndexMap();
+                    var newPublicIndexes = value.Take(Count);
+                    publicIndexes = newPublicIndexes.ToList();
+                    innerIndexes = publicIndexes.ToList();
+                    for(int innerIndex = 0; innerIndex < innerIndexes.Count; ++innerIndex)
+                        innerIndexes[publicIndexes[innerIndex]] = innerIndex;
+                    int taked = SetSubMap(list1, value.Skip(Count));
+                    SetSubMap(list2, value.Skip(Count + taked));
+                }
+            }
+            int SetSubMap<U>(IList<U> sublist, IEnumerable<int> map) {
+                var mappedSublist = sublist as IMappedList;
+                if(mappedSublist == null)
+                    return 0;
+                mappedSublist.Map = map.ToList();
+                return sublist.Count;
+            }
+
             public void Insert(int publicIndex, T item) {
+                if(publicIndex < 0 || publicIndex > Count)
+                    throw new ArgumentException("", "publicIndex");
                 UpdateIndexMap();
                 bool toFirstList = addItemToFirstList(item);
                 int innerIndex;
@@ -194,7 +227,7 @@ namespace DevExpress.Mvvm.Native {
             IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
         }
 
-        sealed class ResortedList : IList<T> {
+        sealed class ResortedList : IList<T>, IMappedList {
             readonly IList<T> list;
             readonly Func<T, int> getInsertIndexFunc;
             List<int> publicIndexes;
@@ -286,6 +319,31 @@ namespace DevExpress.Mvvm.Native {
             }
             public int Count { get { return list.Count; } }
             bool ICollection<T>.IsReadOnly { get { return list.IsReadOnly; } }
+
+            IList<int> IMappedList.Map {
+                get {
+                    UpdateIndexMap();
+                    var listMap = (list as IMappedList).Return(x => x.Map, () => new List<int>());
+                    return publicIndexes.Concat(listMap).ToList();
+                }
+                set {
+                    UpdateIndexMap();
+                    var newPublicIndexes = value.Take(Count);
+                    publicIndexes = newPublicIndexes.ToList();
+                    innerIndexes = publicIndexes.ToList();
+                    for(int innerIndex = 0; innerIndex < innerIndexes.Count; ++innerIndex)
+                        innerIndexes[publicIndexes[innerIndex]] = innerIndex;
+                    SetSubMap(list, value.Skip(Count));
+                }
+            }
+            int SetSubMap<U>(IList<U> sublist, IEnumerable<int> map) {
+                var mappedSublist = sublist as IMappedList;
+                if(mappedSublist == null)
+                    return 0;
+                mappedSublist.Map = map.ToList();
+                return sublist.Count;
+            }
+
             public void Add(T item) {
                 Insert(Count, item);
             }

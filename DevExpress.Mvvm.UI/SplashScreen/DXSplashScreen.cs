@@ -13,6 +13,11 @@ namespace DevExpress.Mvvm.UI {
     public static class DXSplashScreen {
         public static bool UseLegacyLocationLogic { get; set; }
         public static bool UseDefaultAltTabBehavior { get; set; }
+        internal static int MainThreadDelay { get; set; }
+
+        static DXSplashScreen() {
+            MainThreadDelay = 700;
+        }
 
         public static readonly DependencyProperty SplashScreenTypeProperty =
             DependencyProperty.RegisterAttached("SplashScreenType", typeof(Type), typeof(DXSplashScreen), new PropertyMetadata(null, OnSplashScreenTypeChanged));
@@ -184,14 +189,17 @@ namespace DevExpress.Mvvm.UI {
                 ActiveInfo.InternalThread = new Thread(InternalThreadEntryPoint);
                 ActiveInfo.InternalThread.SetApartmentState(ApartmentState.STA);
                 ActiveInfo.InternalThread.Start(new object[] { windowCreator, splashScreenCreator, windowCreatorParameter, splashScreenCreatorParameter, GetOwnerContainer(windowCreatorParameter) });
-                SyncEvent.WaitOne();
+                if(MainThreadDelay > 0)
+                    SyncEvent.WaitOne(MainThreadDelay);
+                else if(MainThreadDelay < 0)
+                    SyncEvent.WaitOne();
             }
             public void Close() {
                 if(ViewModelBase.IsInDesignMode)
                     return;
                 if(!IsActive)
                     throw new InvalidOperationException(DXSplashScreenExceptions.Exception3);
-                ActiveInfo.SplashScreen.Dispatcher.BeginInvoke(new Action<SplashScreenInfo>(CloseCore), ActiveInfo);
+                InvokeOnSplashScreenDispatcher(new Action<SplashScreenInfo>(CloseCore), ActiveInfo);
                 ChangeActiveContainer();
             }
             public void Progress(double value, double maxValue) {
@@ -200,14 +208,14 @@ namespace DevExpress.Mvvm.UI {
                 if(!IsActive)
                     throw new InvalidOperationException(DXSplashScreenExceptions.Exception3);
 
-                ActiveInfo.SplashScreen.Dispatcher.BeginInvoke(new Action<SplashScreenInfo, double, double>(SetProgressCore), new object[] { ActiveInfo, value, maxValue });
+                InvokeOnSplashScreenDispatcher(new Action<SplashScreenInfo, double, double>(SetProgressCore), new object[] { ActiveInfo, value, maxValue });
             }
             public void SetState(object state) {
                 if(ViewModelBase.IsInDesignMode)
                     return;
                 if(!IsActive)
                     throw new InvalidOperationException(DXSplashScreenExceptions.ServiceException2);
-                ActiveInfo.SplashScreen.Dispatcher.BeginInvoke(new Action<SplashScreenInfo, object>(SetStateCore), new object[] { ActiveInfo, state });
+                InvokeOnSplashScreenDispatcher(new Action<SplashScreenInfo, object>(SetStateCore), new object[] { ActiveInfo, state });
             }
             public void CallSplashScreenMethod<T>(Action<T> action) {
                 if(ViewModelBase.IsInDesignMode)
@@ -218,7 +226,15 @@ namespace DevExpress.Mvvm.UI {
                     throw new InvalidOperationException(DXSplashScreenExceptions.Exception4);
                 if(!typeof(T).IsAssignableFrom(ActiveInfo.SplashScreen.GetType()))
                     throw new InvalidOperationException(DXSplashScreenExceptions.Exception5);
-                ActiveInfo.SplashScreen.Dispatcher.BeginInvoke(action, ActiveInfo.SplashScreen);
+                InvokeOnSplashScreenDispatcher(action, ActiveInfo.SplashScreen);
+            }
+            void InvokeOnSplashScreenDispatcher(Delegate method, params object[] args) {
+                if(ActiveInfo == null)
+                    return;
+
+                var dispatcher = ActiveInfo.Dispatcher;
+                if(dispatcher != null)
+                    dispatcher.BeginInvoke(method, args);
             }
             void InternalThreadEntryPoint(object parameter) {
                 Func<object, Window> windowCreator = ((object[])parameter)[0] as Func<object, Window>;
@@ -228,6 +244,7 @@ namespace DevExpress.Mvvm.UI {
                 object syncRoot = ((ICollection)(new Style()).Resources).SyncRoot;
                 var info = ActiveInfo;
                 info.SplashScreen = windowCreator(windowCreatorParameter);
+                info.Dispatcher = info.SplashScreen.Dispatcher;
                 bool isResourcesLocked = Monitor.TryEnter(syncRoot);
                 if(!isResourcesLocked)
                     SyncEvent.Set();
@@ -245,7 +262,7 @@ namespace DevExpress.Mvvm.UI {
                 Test_SkipWindowOpen = skipOpen;
 #endif
                 if(!skipOpen) {
-                    PatchSplashScreenWindowStyle(info.SplashScreen, info.Owner != null);
+                    PatchSplashScreenWindowStyle(info.SplashScreen, info.Owner != null, true);
                     info.SplashScreen.ShowDialog();
                     info.ActivateOwner();
                 }
@@ -279,14 +296,15 @@ namespace DevExpress.Mvvm.UI {
                 if(ActiveInfo.CloseWithParent)
                     ActiveInfo.RelationInfo.Do(x => x.ParentClosed += OnSplashScreenOwnerClosed);
             }
-            void PatchSplashScreenWindowStyle(Window splashScreen, bool hasOwner) {
-                if(!SplashScreenHelper.PatchWindowStyle(splashScreen, hasOwner))
+            void PatchSplashScreenWindowStyle(Window splashScreen, bool hasOwner, bool checkDispatcherAccess) {
+                bool isAccessDenied = checkDispatcherAccess && (splashScreen.Dispatcher == null || !splashScreen.Dispatcher.CheckAccess());
+                if(isAccessDenied || !SplashScreenHelper.PatchWindowStyle(splashScreen, hasOwner))
                     splashScreen.SourceInitialized += OnSplashScreenSourceInitialized;
             }
             void OnSplashScreenSourceInitialized(object sender, EventArgs e) {
                 Window window = (Window)sender;
                 window.SourceInitialized -= OnSplashScreenSourceInitialized;
-                PatchSplashScreenWindowStyle(window, ActiveInfo.Return(x => x.Owner != null, () => false));
+                PatchSplashScreenWindowStyle(window, ActiveInfo.Return(x => x.Owner != null, () => false), false);
             }
             void OnSplashScreenOwnerClosed(object sender, EventArgs e) {
                 if(IsActive)
@@ -349,6 +367,7 @@ namespace DevExpress.Mvvm.UI {
                 internal volatile WindowContainer Owner = null;
                 internal bool? IsIndeterminate;
                 internal bool CloseWithParent;
+                internal volatile Dispatcher Dispatcher;
                 public bool IsActive { get { return InternalThread != null; } }
 
                 internal void ActivateOwner() {
@@ -357,6 +376,7 @@ namespace DevExpress.Mvvm.UI {
                 }
                 internal void ReleaseResources() {
                     Owner = null;
+                    Dispatcher = null;
                     RelationInfo.Do(x => x.Release());
                     RelationInfo = null;
                     SplashScreen.Content = null;

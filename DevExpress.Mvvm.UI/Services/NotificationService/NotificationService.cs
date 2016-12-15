@@ -281,7 +281,10 @@ namespace DevExpress.Mvvm.UI {
                     break;
             }
             if(image != null) {
-                content.SetImage(ImageLoader2.ImageToByteArray(image, GetBaseUri));
+                var dpi = PrimaryScreen.GetDpi();
+                var width = PredefinedNotificationsFactory.ImageSize;
+                var size = new Size(width * dpi.X, width * dpi.Y);
+                content.SetImage(ImageLoader2.ImageToByteArray(image, GetBaseUri, size));
             }
             content.SetDuration((DevExpress.Internal.NotificationDuration)PredefinedNotificationDuration);
             content.SetSound((DevExpress.Internal.PredefinedSound)Sound);

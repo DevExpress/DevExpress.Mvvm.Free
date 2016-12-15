@@ -1,9 +1,9 @@
+using DevExpress.Mvvm.Native;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Text;
-using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm {
     public enum ServiceSearchMode { PreferLocal, LocalOnly, PreferParents }
@@ -12,28 +12,41 @@ namespace DevExpress.Mvvm {
         void RegisterService(object service, bool yieldToParent = false);
         void RegisterService(string key, object service, bool yieldToParent = false);
         void UnregisterService(object service);
+
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
+        object GetService(Type type, string key, ServiceSearchMode searchMode, out bool serviceHasKey);
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
+        IEnumerable<object> GetServices(Type type, bool localOnly);
+
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         T GetService<T>(string key, ServiceSearchMode searchMode, out bool serviceHasKey) where T : class;
         T GetService<T>(ServiceSearchMode searchMode = ServiceSearchMode.PreferLocal) where T : class;
         T GetService<T>(string key, ServiceSearchMode searchMode = ServiceSearchMode.PreferLocal) where T : class;
     }
     public static class ServiceContainerExtensions {
-        public static T GetRequiredService<T>(this IServiceContainer serviceContainer, string key) where T : class {
-            return serviceContainer.GetRequiredService<T>(key, ServiceSearchMode.PreferLocal);
-        }
-        public static T GetRequiredService<T>(this IServiceContainer serviceContainer) where T : class {
-            return serviceContainer.GetRequiredService<T>(null, ServiceSearchMode.PreferLocal);
-        }
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static T GetRequiredService<T>(this IServiceContainer serviceContainer, string key, ServiceSearchMode searchMode) where T : class {
+        public static object GetService(this IServiceContainer serviceContainer, Type type, string key, ServiceSearchMode searchMode = ServiceSearchMode.PreferLocal) {
             VerifyServiceContainer(serviceContainer);
-            return CheckService(serviceContainer.GetService<T>(key, searchMode));
+            bool serviceHasKey;
+            return serviceContainer.GetService(type, key, searchMode, out serviceHasKey);
         }
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static T GetRequiredService<T>(this IServiceContainer serviceContainer, ServiceSearchMode searchMode) where T : class {
+        public static IEnumerable<T> GetServices<T>(this IServiceContainer serviceContainer, bool localOnly = true) where T : class {
             VerifyServiceContainer(serviceContainer);
-            return CheckService(serviceContainer.GetService<T>(searchMode));
+            return serviceContainer.GetServices(typeof(T), localOnly).OfType<T>();
         }
+
+        public static T GetRequiredService<T>(this IServiceContainer serviceContainer, ServiceSearchMode searchMode = ServiceSearchMode.PreferLocal) where T : class {
+            VerifyServiceContainer(serviceContainer);
+            bool serviceHasKey;
+            var res = (T)serviceContainer.GetService(typeof(T), null, searchMode, out serviceHasKey);
+            return CheckService(res);
+        }
+        public static T GetRequiredService<T>(this IServiceContainer serviceContainer, string key, ServiceSearchMode searchMode = ServiceSearchMode.PreferLocal) where T : class {
+            VerifyServiceContainer(serviceContainer);
+            bool serviceHasKey;
+            var res = (T)serviceContainer.GetService(typeof(T), key, searchMode, out serviceHasKey);
+            return CheckService(res);
+        }
+
         static void VerifyServiceContainer(IServiceContainer serviceContainer) {
             if(serviceContainer == null)
                 throw new ArgumentNullException("serviceContainer");

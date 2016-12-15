@@ -4,12 +4,6 @@ using NUnit.Framework.Constraints;
 using System.Collections;
 
 namespace DevExpress {
-    public class DXExpectedExceptionAttribute : ExpectedExceptionAttribute {
-        public DXExpectedExceptionAttribute(Type exceptionType, string message = null)
-            : base(exceptionType) {
-            ExpectedMessage = message;
-        }
-    }
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public sealed class AsynchronousAttribute : Attribute {
     }

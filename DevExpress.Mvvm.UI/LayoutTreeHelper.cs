@@ -26,10 +26,11 @@ namespace DevExpress.Mvvm.UI {
             var result = LinqExtensions.Unfold(child, x => x != stopNode ? GetParent(x) : null, x => x == null);
             return includeStartNode ? result : result.Skip(1);
         }
-        internal static IEnumerable<DependencyObject> GetVisualChildrenCore(DependencyObject parent, bool includeStartNode) {
+        internal static IEnumerable<DependencyObject> GetVisualChildrenCore(DependencyObject parent, bool includeStartNode, Func<DependencyObject, bool> skipChildren = null) {
             var result = parent
                 .Yield()
-                .Flatten(x => Enumerable.Range(0, x != null ? VisualTreeHelper.GetChildrenCount(x) : 0).Select(index => VisualTreeHelper.GetChild(x, index)));
+                .Flatten(x => skipChildren != null && skipChildren(x) ? Enumerable.Empty<DependencyObject>() :
+                    Enumerable.Range(0, x != null ? VisualTreeHelper.GetChildrenCount(x) : 0).Select(index => VisualTreeHelper.GetChild(x, index)));
             return includeStartNode ? result : result.Skip(1);
         }
     }

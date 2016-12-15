@@ -1,8 +1,4 @@
 using System.Windows.Media;
-using System;
-using System.Windows;
-using NUnit.Framework;
-using DevExpress.Mvvm.UI;
 using System.Globalization;
 using System.Windows.Data;
 using System.Collections;
@@ -11,6 +7,10 @@ using System.Linq;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using DevExpress.Mvvm.Native;
+using System;
+using System.Windows;
+using NUnit.Framework;
+using DevExpress.Mvvm.UI;
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
@@ -132,10 +132,12 @@ namespace DevExpress.Mvvm.Tests {
                 Assert.AreEqual("Cannot create an abstract class.", e.InnerException.Message);
             });
         }
-        [Test, ExpectedException(typeof(NotSupportedCollectionException))]
+        [Test]
         public void EnumerableConverter_TryConvertToInvalidCollectionTest() {
             var converter = new EnumerableConverter() { TargetItemType = typeof(string), ItemConverter = new ToStringConverter() };
-            converter.Convert(new int[] { 0, 1, 2 }, Enumerable.Empty<string>().GetType(), null, null);
+            Assert.Throws<NotSupportedCollectionException>(() => {
+                converter.Convert(new int[] { 0, 1, 2 }, Enumerable.Empty<string>().GetType(), null, null);
+            });
         }
         [Test]
         public void EnumerableConverter_DetectTargetItemTypeTest() {
@@ -148,10 +150,12 @@ namespace DevExpress.Mvvm.Tests {
             TestEnumerableConverter<ObservableCollection<string>>(converter);
             TestEnumerableConverter<ReadOnlyCollection<string>>(converter);
         }
-        [Test, ExpectedException(typeof(InvalidOperationException))]
+        [Test]
         public void EnumerableConverter_DetectTargetItemTypeFailTest() {
             var converter = new EnumerableConverter() { ItemConverter = new ToStringConverter() };
-            converter.Convert(new int[] { 0, 1, 2 }, typeof(StringCollection), null, null);
+            Assert.Throws<InvalidOperationException>(() => {
+                converter.Convert(new int[] { 0, 1, 2 }, typeof(StringCollection), null, null);
+            });
         }
         void TestEnumerableConverter<TCollection>(IValueConverter converter) where TCollection : IEnumerable {
             AssertHelper.AssertEnumerablesAreEqual(new string[] { "0", "1", "2" }, (TCollection)converter.Convert(new int[] { 0, 1, 2 }, typeof(TCollection), null, null));

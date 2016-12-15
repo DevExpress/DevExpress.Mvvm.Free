@@ -61,6 +61,9 @@ namespace DevExpress.Mvvm.UI.Tests {
             public Type ResolveViewType(string name) {
                 throw new NotImplementedException();
             }
+            string IViewLocator.GetViewTypeName(Type type) {
+                throw new NotImplementedException();
+            }
         }
         public class ParentViewModel : ViewModelBase {
             public object TestParameter {

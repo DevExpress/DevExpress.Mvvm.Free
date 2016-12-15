@@ -1,50 +1,39 @@
-using DevExpress.Mvvm;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DXMarkup = DevExpress.Xpf.DXBinding.DXBindingBase;
-using DXMarkupBinding = DevExpress.Xpf.DXBinding.DXBindingExtension;
-using DXMarkupCommand = DevExpress.Xpf.DXBinding.DXCommandExtension;
-using DXMarkupEvent = DevExpress.Xpf.DXBinding.DXEventExtension;
 
-namespace DevExpress.Xpf.DXBinding.Native {
-    static class ErrorHelper {
-        static string NameDXBinding { get { return GetMarkupName(typeof(DXMarkupBinding)); } }
-        static string NameDXBindingExpr { get { return BindableBase.GetPropertyName(() => ((DXMarkupBinding)null).Expr); } }
-        static string NameDXBindingBackExpr { get { return BindableBase.GetPropertyName(() => ((DXMarkupBinding)null).BackExpr); } }
-        static string NameDXCommand { get { return GetMarkupName(typeof(DXMarkupCommand)); } }
-        static string NameDXCommandExecute { get { return BindableBase.GetPropertyName(() => ((DXMarkupCommand)null).Execute); } }
-        static string NameDXCommandCanExecute { get { return BindableBase.GetPropertyName(() => ((DXMarkupCommand)null).CanExecute); } }
-        static string NameDXEvent { get { return GetMarkupName(typeof(DXMarkupEvent)); } }
-        static string NameDXEventHandler { get { return BindableBase.GetPropertyName(() => ((DXMarkupEvent)null).Handler); } }
-        static string GetMarkupTarget(DXMarkup markup) {
-            return GetMarkupTarget(markup.GetType());
-        }
+namespace DevExpress.DXBinding.Native {
+    public static class ErrorHelper {
+        static string NameDXBinding { get { return "DXBinding"; } }
+        static string NameDXBindingExpr { get { return "Expr"; } }
+        static string NameDXBindingBackExpr { get { return "BackExpr"; } }
+        static string NameDXCommand { get { return "DXCommand"; } }
+        static string NameDXCommandExecute { get { return "Execute"; } }
+        static string NameDXCommandCanExecute { get { return "CanExecute"; } }
+        static string NameDXEvent { get { return "DXEvent"; } }
+        static string NameDXEventHandler { get { return "Handler"; } }
         static string GetMarkupTarget(Type markup) {
-            if(markup == typeof(DXMarkupBinding) || markup == typeof(DXMarkupCommand))
+            if(GetMarkupName(markup) == "DXBinding" || GetMarkupName(markup) == "DXCommand")
                 return "a DependencyProperty";
-            else if(markup == typeof(DXMarkupEvent))
+            else if(GetMarkupName(markup) == "DXEvent")
                 return "an event";
             else throw new NotImplementedException();
-        }
-        static string GetMarkupName(DXMarkup markup) {
-            return GetMarkupName(markup.GetType());
         }
         static string GetMarkupName(Type markup) {
             return markup.Name.Replace("Extension", "");
         }
 
         const string err001 = "The {0} cannot resolve the IProvideValueTarget service.";
-        public static string Err001(DXMarkup markup) {
-            return string.Format(err001, GetMarkupName(markup));
+        public static string Err001(object markup) {
+            return string.Format(err001, GetMarkupName(markup.GetType()));
         }
         const string err002 = "The {0} can only be set on {1} of a DependencyObject.";
-        public static string Err002(DXMarkup markup) {
-            return string.Format(err002, GetMarkupName(markup), GetMarkupTarget(markup));
+        public static string Err002(object markup) {
+            return string.Format(err002, GetMarkupName(markup.GetType()), GetMarkupTarget(markup.GetType()));
         }
         const string err003 = "The {0} cannot be used in styles.";
-        public static string Err003(DXMarkup markup) {
-            return string.Format(err003, GetMarkupName(markup));
+        public static string Err003(object markup) {
+            return string.Format(err003, GetMarkupName(markup.GetType()));
         }
         const string err004 = "Cannot resolve the '{0}' type.";
         public static string Err004(string type) {
@@ -129,7 +118,7 @@ namespace DevExpress.Xpf.DXBinding.Native {
                 { "invalid Event_Ident", "invalid identifier expression" },
                 { "invalid Event_RelativeExpr", "invalid expression" },
           };
-        public static string ReportParserError(int pos, string msg, ParserMode mode) {
+        internal static string ReportParserError(int pos, string msg, ParserMode mode) {
             foreach(var r in parserErrorReplacementMapping)
                 msg = msg.Replace(r.Key, r.Value);
             string caption = string.Empty;

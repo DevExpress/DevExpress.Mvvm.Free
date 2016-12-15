@@ -1,6 +1,9 @@
 using DevExpress.Internal;
 using System;
 using System.Windows;
+using System.Windows.Data;
+using System.Globalization;
+using System.Windows.Media;
 
 namespace DevExpress.Mvvm.UI.Native {
     public static class NotificationServiceTemplatesHelper {
@@ -33,6 +36,17 @@ namespace DevExpress.Mvvm.UI.Native {
                 }
                 return predefinedToastTemplate;
             }
+        }
+    }
+
+    public class PredefinedNotificationViewModelBackgroundColorToBrushConverter : IValueConverter {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+            var vm = value as PredefinedToastNotificationVewModel;
+            return new SolidColorBrush { Color = vm == null ? Colors.Transparent : vm.BackgroundColor };
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+            throw new NotImplementedException();
         }
     }
 }

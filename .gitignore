@@ -6,8 +6,10 @@
 *.user
 *.sln.docstates
 
-# Build results
+# NuGet packages
+packages/
 
+# Build results
 [Dd]ebug/
 [Rr]elease/
 x64/

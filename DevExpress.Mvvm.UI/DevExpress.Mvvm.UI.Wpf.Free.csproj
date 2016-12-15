@@ -57,6 +57,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Entity" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Management" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
@@ -85,18 +86,6 @@
     <Compile Include="Behaviors\WindowFadeAnimationBehavior.cs" />
     <Compile Include="Converters.cs" />
     <Compile Include="ConvertersExtensions.cs" />
-    <Compile Include="DXBinding\Common.cs" />
-    <Compile Include="DXBinding\Exceptions.cs" />
-    <Compile Include="DXBinding\MarkupExtensions.cs" />
-    <Compile Include="DXBinding\Parser.cs">
-      <DependentUpon>DXBinding.atg</DependentUpon>
-    </Compile>
-    <Compile Include="DXBinding\ParserHelper.cs" />
-    <Compile Include="DXBinding\Scanner.cs">
-      <DependentUpon>DXBinding.atg</DependentUpon>
-    </Compile>
-    <Compile Include="DXBinding\Tree.cs" />
-    <Compile Include="DXBinding\TreeVisitor.cs" />
     <Compile Include="Interactivity\AttachableCollection.cs" />
     <Compile Include="Interactivity\AttachableObject.cs" />
     <Compile Include="Interactivity\Behavior.cs" />
@@ -104,9 +93,17 @@
     <Compile Include="Interactivity\Native.cs" />
     <Compile Include="Interactivity\TargetTypeAttribute.cs" />
     <Compile Include="Interactivity\Trigger.cs" />
+    <Compile Include="ModuleInjection\Obsolete.cs" />
+    <Compile Include="ModuleInjection\Region.cs" />
+    <Compile Include="ModuleInjection\Serialization.cs" />
+    <Compile Include="ModuleInjection\Strategies.cs" />
+    <Compile Include="ModuleInjection\StrategiesWindow.cs" />
+    <Compile Include="ModuleInjection\StrategyBase.cs" />
+    <Compile Include="ModuleInjection\StrategyManager.cs" />
     <Compile Include="Native\ApplicationHelper.cs" />
     <Compile Include="Native\CollectionWrapper.cs" />
     <Compile Include="Native\DependencyObjectExt.cs" />
+    <Compile Include="Native\DependencyPropertyRegistrator.cs" />
     <Compile Include="Native\DPConsistencyCheckerAttribute.cs" />
     <Compile Include="Native\ImageLoader2.cs" />
     <Compile Include="Native\LayoutHelper.cs" />
@@ -178,6 +175,7 @@
     <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Windows.UI.Notifications.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\WindowsVersion.cs" />
     <Compile Include="Services\NotificationService\WpfPredefinedToastNotifications\Colors.cs" />
     <Compile Include="Services\NotificationService\WpfPredefinedToastNotifications\PredefinedToastNotificationVewModel.cs" />
     <Compile Include="Services\NotificationService\WpfPredefinedToastNotifications\ToastTemplateSelector.cs" />
@@ -191,8 +189,6 @@
     <Compile Include="Services\TaskbarButtonService\Native\TaskbarThumbButtonInfoWrapper.cs" />
     <Compile Include="Services\TaskbarButtonService\TaskbarButtonService.cs" />
     <Compile Include="Services\TaskbarButtonService\TaskbarThumbButtonInfoCollection.cs" />
-    <Compile Include="Services\ViewInjectionService\ViewInjectionService.cs" />
-    <Compile Include="Services\ViewInjectionService\ViewInjectionStrategies.cs" />
     <Compile Include="Services\WindowDocumentManagerService.cs" />
     <Compile Include="Native\WindowSurrogate.cs" />
     <Compile Include="Services\WindowService.cs" />
@@ -205,7 +201,6 @@
     <Compile Include="SplashScreen\WaitIndicators.cs" />
     <Compile Include="ViewLocator\IViewLocator.cs" />
     <Compile Include="ViewLocator\ViewLocator.cs" />
-    <Compile Include="ViewLocator\ViewLocatorBase.cs" />
     <Compile Include="ViewModelSourceExtension.cs" />
     <Compile Include="LayoutTreeHelper.cs" />
   </ItemGroup>
@@ -248,6 +243,18 @@
     <None Include="DXBinding\Scanner.frame">
       <DependentUpon>DXBinding.atg</DependentUpon>
     </None>
+    <Compile Include="DXBinding\Common.cs" />
+    <Compile Include="DXBinding\Exceptions.cs" />
+    <Compile Include="DXBinding\MarkupExtensions.cs" />
+    <Compile Include="DXBinding\Parser.cs">
+      <DependentUpon>DXBinding.atg</DependentUpon>
+    </Compile>
+    <Compile Include="DXBinding\ParserHelper.cs" />
+    <Compile Include="DXBinding\Scanner.cs">
+      <DependentUpon>DXBinding.atg</DependentUpon>
+    </Compile>
+    <Compile Include="DXBinding\Tree.cs" />
+    <Compile Include="DXBinding\TreeVisitor.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

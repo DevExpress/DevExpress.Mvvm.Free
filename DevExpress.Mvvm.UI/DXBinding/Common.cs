@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace DevExpress.Xpf.DXBinding.Native {
+namespace DevExpress.DXBinding.Native {
     interface IParserErrorHandler {
         bool HasError { get; }
         void Error(int pos, string msg);
@@ -21,14 +21,15 @@ namespace DevExpress.Xpf.DXBinding.Native {
             error += ErrorHelper.ReportParserError(pos, msg, mode);
         }
     }
-    interface IErrorHandler {
+
+    public interface IErrorHandler {
         bool HasError { get; }
         void ClearError();
         void SetError();
         void Report(string msg, bool critical);
         void Throw(string msg, Exception innerException);
     }
-    abstract class ErrorHandlerBase : IErrorHandler {
+    public abstract class ErrorHandlerBase : IErrorHandler {
         public bool HasError { get; protected set; }
         public void ClearError() {
             HasError = false;
@@ -47,25 +48,25 @@ namespace DevExpress.Xpf.DXBinding.Native {
         protected abstract void ReportCore(string msg);
         protected abstract void ThrowCore(string msg, Exception innerException);
     }
-    interface ITypeResolver {
+    public interface ITypeResolver {
         Type ResolveType(string type);
     }
 
-    abstract class TreeInfoBase {
-        protected readonly IErrorHandler errorHandler;
+    public abstract class TreeInfoBase {
+        public IErrorHandler ErrorHandler { get; private set; }
         readonly ExprInfo[] exprs;
-        protected TreeInfoBase(ExprInfo[] exprs, IErrorHandler errorHandler) {
+        internal TreeInfoBase(ExprInfo[] exprs, IErrorHandler errorHandler) {
             this.exprs = exprs;
-            this.errorHandler = errorHandler;
+            this.ErrorHandler = errorHandler;
             for(int i = 0; i < exprs.Count(); i++)
                 exprs[i].Init(Throw);
         }
         protected string GetExprString(int i) { return exprs.ElementAt(i).exprString; }
-        protected NRoot GetExpr(int i) { return exprs.ElementAt(i).Expr; }
         protected virtual void Throw(string msg) {
-            errorHandler.Throw(msg, null);
+            ErrorHandler.Throw(msg, null);
         }
-        protected class ExprInfo {
+        internal NRoot GetExpr(int i) { return exprs.ElementAt(i).Expr; }
+        internal class ExprInfo {
             public readonly string exprString;
             public readonly string defaultExprString;
             readonly ParserMode parseMode;
@@ -92,23 +93,33 @@ namespace DevExpress.Xpf.DXBinding.Native {
             NRoot expr;
         }
     }
-    class BindingTreeInfo : TreeInfoBase {
+    public class BindingTreeInfo : TreeInfoBase {
         public string ExprString { get { return GetExprString(0); } }
-        public NRoot Expr { get { return GetExpr(0); } }
         public string BackExprString { get { return GetExprString(1); } }
-        public NRoot BackExpr { get { return GetExpr(1); } }
+        internal NRoot Expr { get { return GetExpr(0); } }
+        internal NRoot BackExpr { get { return GetExpr(1); } }
         public BindingTreeInfo(string expr, string backExpr, IErrorHandler errorHandler)
             : base(new[] {
                     new ExprInfo(expr, "@DataContext", ParserMode.BindingExpr),
                     new ExprInfo(backExpr, null, ParserMode.BindingBackExpr) },
                   errorHandler) {
         }
+        public bool IsSimpleExpr() {
+            if(Expr.Exprs.Count() != 1) return false;
+            if(!(Expr.Expr is NIdentBase)) return false;
+            NIdentBase rest;
+            var op = VisitorOperand.ReduceIdent((NIdentBase)Expr.Expr, x => typeof(object), out rest);
+            return op != null && rest == null;
+        }
+        public bool IsEmptyBackExpr() {
+            return BackExpr == null;
+        }
     }
-    class CommandTreeInfo : TreeInfoBase {
+    public class CommandTreeInfo : TreeInfoBase {
         public string ExecuteExprString { get { return GetExprString(0); } }
-        public NRoot ExecuteExpr { get { return GetExpr(0); } }
         public string CanExecuteExprString { get { return GetExprString(1); } }
-        public NRoot CanExecuteExpr { get { return GetExpr(1); } }
+        internal NRoot ExecuteExpr { get { return GetExpr(0); } }
+        internal NRoot CanExecuteExpr { get { return GetExpr(1); } }
         public CommandTreeInfo(string executeExpr, string canExecuteExpr, IErrorHandler errorHandler)
             : base(new[] {
                 new ExprInfo(executeExpr, null, ParserMode.CommandExecute),
@@ -116,9 +127,9 @@ namespace DevExpress.Xpf.DXBinding.Native {
             }, errorHandler) {
         }
     }
-    class EventTreeInfo : TreeInfoBase {
+    public class EventTreeInfo : TreeInfoBase {
         public string ExprString { get { return GetExprString(0); } }
-        public NRoot Expr { get { return GetExpr(0); } }
+        internal NRoot Expr { get { return GetExpr(0); } }
         public EventTreeInfo(string expr, IErrorHandler errorHandler)
             : base(new[] {
                 new ExprInfo(expr, null, ParserMode.Event)
