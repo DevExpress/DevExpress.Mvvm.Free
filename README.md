@@ -14,7 +14,7 @@ Although DevExpress provides [documentation](https://documentation.devexpress.co
 
 NuGet
 ====================
-The Free DevExpress MVVM Framework is available from [NugGet](https://www.nuget.org/packages/DevExpressMvvm).
+The Free DevExpress MVVM Framework is available from [NuGet](https://www.nuget.org/packages/DevExpressMvvm).
 
 
 16.1.4 Release Notes
