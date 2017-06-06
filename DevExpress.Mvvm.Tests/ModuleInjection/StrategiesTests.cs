@@ -74,6 +74,20 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         }
         [Test]
         public void Test() { }
+        [Test]
+        public void ClearTest() {
+            IPanelWrapper<Panel> target;
+            Init("region", out target);
+            Manager.Register("region", new Module("A", () => new object(), typeof(View1_BaseTests)));
+            Manager.Register("region", new Module("B", () => new object(), typeof(View1_BaseTests)));
+
+            Manager.Inject("region", "A");
+            Manager.Inject("region", "B");
+            Show(target);
+            Assert.AreEqual(2, target.Children.OfType<object>().Count());
+            Manager.Clear("region");
+            Assert.AreEqual(0, target.Children.OfType<object>().Count());
+        }
     }
     [TestFixture]
     public class StrategyContentPresenterTests : StrategyBaseContentPresenterTests<ContentPresenter> {

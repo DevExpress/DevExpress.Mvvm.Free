@@ -264,6 +264,18 @@ namespace DevExpress.DXBinding.Tests {
             ParserTestHelper.AssertSyntaxTreeString("Method().($Type.Attached1).Prop", "Method().(Type.Attached1).Prop");
             ParserTestHelper.AssertSyntaxTreeString("Prop.($Type.Attached1).($Type.Attached2).Method()", "Prop.(Type.Attached1).(Type.Attached2).Method()");
         }
+        [Test, Category("T476018")]
+        public void Attached_NotAttached() {
+            ParserTestHelper.AssertSyntaxTreeString("($sys:DateTime.Now)", "(sys:DateTime.Now)");
+            ParserTestHelper.AssertSyntaxTreeString("($DateTime.Now)", "(DateTime.Now)");
+            ParserTestHelper.AssertSyntaxTreeString("($sys:DateTime.Now.Year)", "sys:DateTime.Now.Year");
+            ParserTestHelper.AssertSyntaxTreeString("($DateTime.Now.Year)", "DateTime.Now.Year");
+            ParserTestHelper.AssertSyntaxTreeString("($sys:DateTime.Now())", "sys:DateTime.Now()");
+            ParserTestHelper.AssertSyntaxTreeString("($DateTime.Now())", "DateTime.Now()");
+            ParserTestHelper.AssertSyntaxTreeString("($sys:DateTime.Now().Year)", "sys:DateTime.Now().Year");
+            ParserTestHelper.AssertSyntaxTreeString("($DateTime.Now().Year)", "DateTime.Now().Year");
+            ParserTestHelper.AssertSyntaxTreeString("($sys:DateTime.Now.Year - Row.HireDate.Year)", "sys:DateTime.Now.Year-Row.HireDate.Year");
+        }
         [Test]
         public void TypeOf() {
             ParserTestHelper.AssertSyntaxTreeString("typeof ( $ Window )", "typeof(Window)");
@@ -505,6 +517,14 @@ namespace DevExpress.DXBinding.Tests {
             ParserTestHelper.AssertArithmetic("1 == 1 ? true && true : false", true);
             ParserTestHelper.AssertArithmetic("1 == 1 ? true && true ? 1 : 2 : 3", 1 == 1 ? true && true ? 1 : 2 : 3);
         }
+        [Test, Category("T491236")]
+        public void TernaryOperations() {
+            ParserTestHelper.AssertSyntaxTreeString("@e(el1).Pr1?@e(el2).Pr2:@e(el3).Pr3");
+            ParserTestHelper.AssertArithmetic("@e(el1).BoolProp?@e(el2).IntProp:@e(el3).IntProp",
+                2, "BoolProp;IntProp;IntProp", new object[] { true, 2, 3 });
+            ParserTestHelper.AssertArithmetic("@e(el1).BoolProp?@e(el2).IntProp:@e(el3).IntProp",
+                3, "BoolProp;IntProp;IntProp", new object[] { false, 2, 3 });
+        }
 
         [Test]
         public void BackMode_Basic() {
@@ -558,7 +578,7 @@ namespace DevExpress.DXBinding.Tests {
                 new object[] { new ValidationTests_a() }, null);
             ParserTestHelper.AssertValidation("GetSelf().MethodA(1)", null,
                     new object[] { new ValidationTests_b() },
-                    @"The 'MethodA' property or method is not found on object 'ValidationTests_b'.");
+                    @"The 'MethodA(Int32)' method is not found on object 'ValidationTests_b'.");
         }
         [Test]
         public void DefaultErrorTest() {
@@ -603,6 +623,36 @@ namespace DevExpress.DXBinding.Tests {
         public void AcceptEscapedStringLiterals() {
             ParserTestHelper.BackMode_AssertSyntaxTreeString("a = `\\``", "a=\"`\"");
             ParserTestHelper.BackMode_AssertSyntaxTreeString("a = `a\\`\\n\\t' \\0 \\a \\b \\f \\r \\v`", "a=\"a`\n\t' \0 \a \b \f \r \v\"");
+        }
+        [Test, Category("T504788")]
+        public void MethodParameters() {
+            ParserTestHelper.AssertArithmetic(
+                "$sys:String.Format(`Page: {0} of {1}`, IntProp, DoubleProp)",
+                "Page: 1 of 2",
+                null,
+                new[] { 1, 2d },
+                x => typeof(string));
+        }
+        [Test]
+        public void AttachedOperands() {
+            ParserTestHelper.AssertArithmetic(
+                "($x:Class.AttachedProp)",
+                1,
+                null,
+                new object[] { 1 },
+                null);
+            ParserTestHelper.AssertArithmetic(
+                "$sys:Math.Max(($x:Class.AttachedProp1), ($x:Class.AttachedProp2))",
+                2,
+                null,
+                new object[] { 1, 2 },
+                x => typeof(Math));
+            ParserTestHelper.AssertArithmetic(
+                "$sys:Math.Max(@e(element1).($x:Class.AttachedProp1), @e(element2).($x:Class.AttachedProp2))",
+                2,
+                null,
+                new object[] { 1, 2 },
+                x => typeof(Math));
         }
     }
     public class ParserTests_a {
@@ -791,9 +841,9 @@ namespace DevExpress.DXBinding.Tests {
             ex("B(a3, a1)"); Assert.IsTrue(obj.B14); obj.Clear();
             ex("B(a3, a2)"); Assert.IsTrue(obj.B15); obj.Clear();
             ParserTestHelper.Execute_AssertValidation("o; a1; a2; a3; a4; " + "B(a3, a3)",
-                new object[] { o, a1, a2, a3, a4, obj }, "The 'B' property or method is not found on object 'ResearchStandardMethodSearch'.");
+                new object[] { o, a1, a2, a3, a4, obj }, "The 'B(a3, a3)' method is not found on object 'ResearchStandardMethodSearch'.");
             ParserTestHelper.Execute_AssertValidation("o; a1; a2; a3; a4; " + "C(a4, a4)",
-                new object[] { o, a1, a2, a3, a4, obj }, "The 'C' property or method is not found on object 'ResearchStandardMethodSearch'.");
+                new object[] { o, a1, a2, a3, a4, obj }, "The 'C(a4, a4)' method is not found on object 'ResearchStandardMethodSearch'.");
         }
         class ResearchStandardMethodSearch {
 #region A

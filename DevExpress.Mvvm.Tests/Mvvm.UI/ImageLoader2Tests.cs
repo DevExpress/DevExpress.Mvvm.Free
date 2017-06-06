@@ -19,15 +19,21 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
         [Test]
         public void LoadLocalImages2() {
-            TestUri(
+            TestUri(ImageFormat.Png,
                 AssemblyHelper.GetResourceUri(typeof(ImageLoader2Tests).Assembly, "Services/ApplicationJumpListService/Code_Central.png")
+            );
+        }
+        [Test]
+        public void LoadLocalImages3() {
+            TestUri(ImageFormat.Icon,
+                AssemblyHelper.GetResourceUri(typeof(ImageLoader2Tests).Assembly, "Services/ApplicationJumpListService/demoicon.ico")
             );
         }
         [Test, Explicit]
         public void LoadWebImage() {
-            TestUri(new Uri("https://html5box.com/images/image.png"));
+            TestUri(ImageFormat.Png, new Uri("https://html5box.com/images/image.png"));
         }
-        void TestUri(params Uri[] uris) {
+        void TestUri(ImageFormat format, params Uri[] uris) {
             List<ImageSource> sources = new List<ImageSource>();
             foreach(Uri uri in uris) {
                 sources.Add(new BitmapImage(uri));
@@ -38,10 +44,10 @@ namespace DevExpress.Mvvm.UI.Tests {
                 Assert.IsNotNull(data);
                 Assert.AreNotEqual(0, data.Length);
                 Bitmap bitmap = new Bitmap(new MemoryStream(data));
-                Assert.AreEqual(ImageFormat.Png, bitmap.RawFormat);
+                Assert.AreEqual(format, bitmap.RawFormat);
             }
         }
-        DrawingImage Image {
+        DrawingImage DrawingImage {
             get {
                 var pen = new System.Windows.Media.Pen() { Thickness = 3, Brush = System.Windows.Media.Brushes.Green };
                 var geometry = new GeometryDrawing() { Geometry = Geometry.Parse("M 105,195 C 105,25 355,350 400,170 H 270"), Pen = pen };
@@ -52,9 +58,27 @@ namespace DevExpress.Mvvm.UI.Tests {
                 return image;
             }
         }
+        RenderTargetBitmap RenderTargetBitmap {
+            get {
+                var pen = new System.Windows.Media.Pen() { Thickness = 3, Brush = System.Windows.Media.Brushes.Green };
+                var image = new RenderTargetBitmap(100, 100, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                var drawingVisual = new DrawingVisual();
+                using(var drawingContext = drawingVisual.RenderOpen())
+                    drawingContext.DrawRectangle(System.Windows.Media.Brushes.Red, pen, new System.Windows.Rect(new System.Windows.Point(30, 30), new System.Windows.Size(30, 20)));
+                image.Render(drawingVisual);
+                return image;
+            }
+        }
+        System.Windows.Interop.InteropBitmap InteropBitmap {
+            get {
+                var icon = new Icon(AssemblyHelper.GetResourceStream(typeof(ImageLoader2Tests).Assembly, "Services/ApplicationJumpListService/demoicon.ico", true));
+                return (System.Windows.Interop.InteropBitmap)System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(icon.Handle, System.Windows.Int32Rect.Empty, BitmapSizeOptions.FromWidthAndHeight(icon.Width, icon.Height));
+            }
+        }
+
         [Test]
         public void LoadDrawingImage() {
-            var data = ImageLoader2.ImageToByteArray(Image);
+            var data = ImageLoader2.ImageToByteArray(DrawingImage);
             Assert.IsNotNull(data);
             Assert.AreEqual(3682, data.Length);
             Bitmap bitmap = new Bitmap(new MemoryStream(data));
@@ -64,8 +88,30 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(86, bitmap.Height);
         }
         [Test]
+        public void LoadInteropBitmap() {
+            var data = ImageLoader2.ImageToByteArray(InteropBitmap);
+            Assert.IsNotNull(data);
+            Assert.AreEqual(1164, data.Length);
+            Bitmap bitmap = new Bitmap(new MemoryStream(data));
+            Assert.AreEqual(ImageFormat.Png, bitmap.RawFormat);
+            Assert.AreEqual(System.Drawing.Imaging.PixelFormat.Format32bppArgb, bitmap.PixelFormat);
+            Assert.AreEqual(32, bitmap.Width);
+            Assert.AreEqual(32, bitmap.Height);
+        }
+        [Test]
+        public void LoadGenericBitmapSource() {
+            var data = ImageLoader2.ImageToByteArray(RenderTargetBitmap);
+            Assert.IsNotNull(data);
+            Assert.AreEqual(304, data.Length);
+            Bitmap bitmap = new Bitmap(new MemoryStream(data));
+            Assert.AreEqual(ImageFormat.Png, bitmap.RawFormat);
+            Assert.AreEqual(System.Drawing.Imaging.PixelFormat.Format32bppArgb, bitmap.PixelFormat);
+            Assert.AreEqual(100, bitmap.Width);
+            Assert.AreEqual(100, bitmap.Height);
+        }
+        [Test]
         public void LoadDrawingImage_Resize() {
-            var data = ImageLoader2.ImageToByteArray(Image, drawingImageSize: new System.Windows.Size(150, 45));
+            var data = ImageLoader2.ImageToByteArray(DrawingImage, drawingImageSize: new System.Windows.Size(150, 45));
             Assert.IsNotNull(data);
             Assert.AreEqual(1821, data.Length);
             Bitmap bitmap = new Bitmap(new MemoryStream(data));

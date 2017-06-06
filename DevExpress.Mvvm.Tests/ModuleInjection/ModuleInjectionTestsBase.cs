@@ -11,7 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 
 namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
-    class TestEmptyViewModel {
+    internal class TestEmptyViewModel {
         public string name;
     }
     public class View1_BaseTests : Grid { }
@@ -166,7 +166,8 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             MemoryLeaksHelper.EnsureCollected(refs);
         }
     }
-    static class ModuleInjectionExtensions {
+
+    internal static class ModuleInjectionExtensions {
         public static void Register(this IModuleManagerBase manager, string regionName, string key, Func<object> vmFactory) {
             manager.Register(regionName, new Module(key, vmFactory));
         }
@@ -887,21 +888,21 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         public virtual void ModuleInjection_InjectMethods() {
             ViewInjection_InjectMethodsCore(false);
         }
-        protected void ViewInjection_InjectMethodsCore(bool navigateBeforeCheck) {
+        protected void ViewInjection_InjectMethodsCore(bool navigateBeforeCheck, bool navigateBeforeFirstCheck = false) {
             IViewInjectionService service; IItemsControlWrapper<T> target;
             Init(out service, out target);
-            var refs = ViewInjection_InjectMethodsCore(service, target, navigateBeforeCheck);
+            var refs = ViewInjection_InjectMethodsCore(service, target, navigateBeforeCheck, navigateBeforeFirstCheck);
             service = null; target = null;
             InjectionTestHelper.EnsureCollected(refs);
         }
-        protected void ModuleInjection_InjectMethodsCore(bool navigateBeforeCheck) {
+        protected void ModuleInjection_InjectMethodsCore(bool navigateBeforeCheck, bool navigateBeforeFirstCheck = false) {
             IItemsControlWrapper<T> target;
             Init("region", out target);
-            var refs = ModuleInjection_InjectMethodsCore("region", target, navigateBeforeCheck);
+            var refs = ModuleInjection_InjectMethodsCore("region", target, navigateBeforeCheck, navigateBeforeFirstCheck);
             target = null;
             InjectionTestHelper.EnsureCollected(refs);
         }
-        WeakReference[] ViewInjection_InjectMethodsCore(IViewInjectionService service, IItemsControlWrapper<T> target, bool navigateBeforeCheck) {
+        WeakReference[] ViewInjection_InjectMethodsCore(IViewInjectionService service, IItemsControlWrapper<T> target, bool navigateBeforeCheck, bool navigateBeforeFirstCheck) {
             object vm1 = new TestEmptyViewModel { name = "vm1" };
             object vm2 = new TestEmptyViewModel { name = "vm2" };
             Show(target);
@@ -912,6 +913,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Assert.AreEqual(2, service.ViewModels.Count());
 
             DispatcherHelper.DoEvents();
+            if(navigateBeforeFirstCheck) {
+                service.SelectedViewModel = vm1;
+                DispatcherHelper.DoEvents();
+            }
             Assert.AreSame(vm1, GetVisualChildren(target).First().DataContext);
             if(navigateBeforeCheck) {
                 service.SelectedViewModel = vm2;
@@ -921,7 +926,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
 
             return CollectReferencesAndCloseWindow(target, new object[] { vm1, vm2, service, target.Target });
         }
-        WeakReference[] ModuleInjection_InjectMethodsCore(string regionName, IItemsControlWrapper<T> target, bool navigateBeforeCheck) {
+        WeakReference[] ModuleInjection_InjectMethodsCore(string regionName, IItemsControlWrapper<T> target, bool navigateBeforeCheck, bool navigateBeforeFirstCheck) {
             object vm1 = null;
             object vm2 = null;
             Show(target);
@@ -937,6 +942,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Assert.AreEqual("2", Manager.GetRegion(regionName).GetKey(vm2));
 
             DispatcherHelper.DoEvents();
+            if(navigateBeforeFirstCheck) {
+                Manager.Navigate(regionName, "1");
+                DispatcherHelper.DoEvents();
+            }
             Assert.AreSame(vm1, GetVisualChildren(target).First().DataContext);
             if(navigateBeforeCheck) {
                 Manager.Navigate(regionName, "2");
@@ -958,21 +967,21 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         public virtual void ModuleInjection_InjectWithItemTemplate() {
             ModuleInjection_InjectWithItemTemplateCore(false);
         }
-        protected void ViewInjection_InjectWithItemTemplateCore(bool navigateBeforeCheck) {
+        protected void ViewInjection_InjectWithItemTemplateCore(bool navigateBeforeCheck, bool navigateBeforeFirstCheck = false) {
             IViewInjectionService service; IItemsControlWrapper<T> target;
             Init(out service, out target);
-            var refs = ViewInjection_InjectWithItemTemplateCore(service, target, navigateBeforeCheck);
+            var refs = ViewInjection_InjectWithItemTemplateCore(service, target, navigateBeforeCheck, navigateBeforeFirstCheck);
             service = null; target = null;
             InjectionTestHelper.EnsureCollected(refs);
         }
-        protected void ModuleInjection_InjectWithItemTemplateCore(bool navigateBeforeCheck) {
+        protected void ModuleInjection_InjectWithItemTemplateCore(bool navigateBeforeCheck, bool navigateBeforeFirstCheck = false) {
             IItemsControlWrapper<T> target;
             Init("region", out target);
-            var refs = ModuleInjection_InjectWithItemTemplateCore("region", target, navigateBeforeCheck);
+            var refs = ModuleInjection_InjectWithItemTemplateCore("region", target, navigateBeforeCheck, navigateBeforeFirstCheck);
             target = null;
             InjectionTestHelper.EnsureCollected(refs);
         }
-        WeakReference[] ViewInjection_InjectWithItemTemplateCore(IViewInjectionService service, IItemsControlWrapper<T> target, bool navigateBeforeCheck) {
+        WeakReference[] ViewInjection_InjectWithItemTemplateCore(IViewInjectionService service, IItemsControlWrapper<T> target, bool navigateBeforeCheck, bool navigateBeforeFirstCheck) {
             target.ItemTemplate = new DataTemplate() { VisualTree = new FrameworkElementFactory(typeof(TextBox)) };
             object vm1 = new TestEmptyViewModel { name = "vm1" };
             object vm2 = new TestEmptyViewModel { name = "vm2" };
@@ -981,6 +990,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             service.Inject(null, vm1);
             service.Inject(null, vm2, typeof(View1_BaseTests));
             DispatcherHelper.DoEvents();
+            if(navigateBeforeFirstCheck) {
+                service.SelectedViewModel = vm1;
+                DispatcherHelper.DoEvents();
+            }
             Assert.AreSame(vm1, GetVisualChildren(target).OfType<TextBox>().First(x => x.DataContext == vm1).DataContext);
             if(navigateBeforeCheck) {
                 service.SelectedViewModel = vm2;
@@ -990,7 +1003,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
 
             return CollectReferencesAndCloseWindow(target, new object[] { vm1, vm2, service, target.Target });
         }
-        WeakReference[] ModuleInjection_InjectWithItemTemplateCore(string regionName, IItemsControlWrapper<T> target, bool navigateBeforeCheck) {
+        WeakReference[] ModuleInjection_InjectWithItemTemplateCore(string regionName, IItemsControlWrapper<T> target, bool navigateBeforeCheck, bool navigateBeforeFirstCheck) {
             target.ItemTemplate = new DataTemplate() { VisualTree = new FrameworkElementFactory(typeof(TextBox)) };
             object vm1 = null;
             object vm2 = null;
@@ -1002,6 +1015,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Manager.Inject(regionName, "1");
             Manager.Inject(regionName, "2");
             DispatcherHelper.DoEvents();
+            if(navigateBeforeFirstCheck) {
+                Manager.Navigate(regionName, "1");
+                DispatcherHelper.DoEvents();
+            }
             Assert.AreSame(vm1, GetVisualChildren(target).OfType<TextBox>().First(x => x.DataContext == vm1).DataContext);
             if(navigateBeforeCheck) {
                 Manager.Navigate(regionName, "2");
@@ -1297,7 +1314,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             DispatcherHelper.DoEvents();
 
             serviceHelper.AssertViewModelRemoving(1);
-            Assert.AreEqual(vm2, service.SelectedViewModel);
+            if(checkSelection) Assert.AreEqual(vm2, service.SelectedViewModel);
             service.Inject(null, vm1);
             DispatcherHelper.DoEvents();
 
@@ -1310,7 +1327,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             DispatcherHelper.DoEvents();
 
             serviceHelper.AssertViewModelRemoving(2);
-            Assert.AreSame(vm1, service.SelectedViewModel);
+            if(checkSelection) Assert.AreSame(vm1, service.SelectedViewModel);
             service.Remove(vm1);
             Assert.AreEqual(0, service.ViewModels.Count());
             DispatcherHelper.DoEvents();
@@ -1470,21 +1487,27 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
 
         [Test]
         public virtual void ViewInjection_RemoveViewModelSimpleTest2() {
-            IViewInjectionService service; ISelectorWrapper<T> target;
-            Init(out service, out target);
-            var refs = ViewInjection_RemoveViewModelSimpleTestCore2(service, target);
-            service = null; target = null;
-            InjectionTestHelper.EnsureCollected(refs);
+            ViewInjection_RemoveViewModelSimpleTest2(true);
         }
         [Test]
         public virtual void ModuleInjection_RemoveViewModelSimpleTest2() {
+            ModuleInjection_RemoveViewModelSimpleTest2(true);
+        }
+        protected void ViewInjection_RemoveViewModelSimpleTest2(bool checkSelection) {
+            IViewInjectionService service; ISelectorWrapper<T> target;
+            Init(out service, out target);
+            var refs = ViewInjection_RemoveViewModelSimpleTestCore2(service, target, checkSelection);
+            service = null; target = null;
+            InjectionTestHelper.EnsureCollected(refs);
+        }
+        protected void ModuleInjection_RemoveViewModelSimpleTest2(bool checkSelection) {
             ISelectorWrapper<T> target;
             Init("region", out target);
-            var refs = ModuleInjection_RemoveViewModelSimpleTestCore2("region", target);
+            var refs = ModuleInjection_RemoveViewModelSimpleTestCore2("region", target, checkSelection);
             target = null;
             InjectionTestHelper.EnsureCollected(refs);
         }
-        WeakReference[] ViewInjection_RemoveViewModelSimpleTestCore2(IViewInjectionService service, ISelectorWrapper<T> target) {
+        WeakReference[] ViewInjection_RemoveViewModelSimpleTestCore2(IViewInjectionService service, ISelectorWrapper<T> target, bool checkSelection) {
             var serviceHelper = InjectionTestHelper.CreateServiceHelper(service);
             object vm1 = new TestEmptyViewModel { name = "vm1" };
             object vm2 = new TestEmptyViewModel { name = "vm2" };
@@ -1503,7 +1526,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             DispatcherHelper.DoEvents();
 
             serviceHelper.AssertViewModelRemoving(1);
-            Assert.AreSame(vm2, service.SelectedViewModel);
+            if(checkSelection) Assert.AreSame(vm2, service.SelectedViewModel);
             service.Inject(null, vm1);
             Assert.AreEqual(2, service.ViewModels.Count());
             service.SelectedViewModel = vm1;
@@ -1514,7 +1537,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             DispatcherHelper.DoEvents();
 
             serviceHelper.AssertViewModelRemoving(2);
-            Assert.AreSame(vm1, service.SelectedViewModel);
+            if(checkSelection) Assert.AreSame(vm1, service.SelectedViewModel);
             service.Remove(vm1);
             Assert.AreEqual(0, service.ViewModels.Count());
             DispatcherHelper.DoEvents();
@@ -1525,7 +1548,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             serviceHelper.Dispose();
             return CollectReferencesAndCloseWindow(target, new object[] { vm1, vm2, service, target.Target });
         }
-        WeakReference[] ModuleInjection_RemoveViewModelSimpleTestCore2(string regionName, ISelectorWrapper<T> target) {
+        WeakReference[] ModuleInjection_RemoveViewModelSimpleTestCore2(string regionName, ISelectorWrapper<T> target, bool checkSelection) {
             var serviceHelper = InjectionTestHelper.CreateServiceHelper(target.Target, regionName);
             object vm1 = null;
             object vm2 = null;
@@ -1546,7 +1569,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             DispatcherHelper.DoEvents();
 
             serviceHelper.AssertViewModelRemoving(1);
-            Assert.AreSame(vm2, target.SelectedItem);
+            if(checkSelection) Assert.AreSame(vm2, target.SelectedItem);
             Manager.Inject(regionName, "1");
             Assert.AreEqual(2, ((IEnumerable)target.ItemsSource).OfType<object>().Count());
             Manager.Navigate(regionName, "1");
@@ -1556,7 +1579,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             DispatcherHelper.DoEvents();
 
             serviceHelper.AssertViewModelRemoving(2);
-            Assert.AreSame(vm1, target.SelectedItem);
+            if(checkSelection) Assert.AreSame(vm1, target.SelectedItem);
             Manager.Remove(regionName, "1");
             Assert.AreSame(null, target.SelectedItem);
             serviceHelper.AssertViewModelRemoving(3);

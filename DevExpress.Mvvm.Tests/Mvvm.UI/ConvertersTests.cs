@@ -439,6 +439,86 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual((int?)10, converter.Convert(4, typeof(int?), null, null));
             Assert.AreEqual(null, converter.Convert(3, typeof(int?), null, null));
         }
+        class T491851_Convertible : T491851_Convertible_Base { }
+        class T491851_Convertible_Base : IConvertible {
+            public int toTypeCalled = 0;
+            public TypeCode GetTypeCode() {
+                throw new NotImplementedException();
+            }
+
+            public bool ToBoolean(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public byte ToByte(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public char ToChar(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public DateTime ToDateTime(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public decimal ToDecimal(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public double ToDouble(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public short ToInt16(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public int ToInt32(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public long ToInt64(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public sbyte ToSByte(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public float ToSingle(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public string ToString(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public object ToType(Type conversionType, IFormatProvider provider) {
+                toTypeCalled++;
+                throw new NotImplementedException();
+            }
+
+            public ushort ToUInt16(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public uint ToUInt32(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+
+            public ulong ToUInt64(IFormatProvider provider) {
+                throw new NotImplementedException();
+            }
+        }
+        [Test]
+        public void DontConvertAlreadyCorrectTypes() {
+            var converter = new ObjectToObjectConverter();
+            var target = new T491851_Convertible();
+            converter.Map.Add(new MapItem { Source = 1, Target = target });
+            Assert.AreEqual(target, converter.Convert(1, typeof(T491851_Convertible_Base), null, null));
+            Assert.AreEqual(0, target.toTypeCalled);
+        }
         [Test]
         public void FormatStringConverter() {
             var savedCulture = System.Threading.Thread.CurrentThread.CurrentUICulture;

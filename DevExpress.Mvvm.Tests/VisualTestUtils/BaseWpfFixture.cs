@@ -165,3 +165,23 @@ namespace DevExpress {
         }
     }
 }
+namespace DevExpress {
+    using System.Windows.Threading;
+
+    [SetUpFixture]
+    class WpfSetupFixtureBase {
+        Dispatcher dispatcher;
+        [OneTimeSetUp]
+        public void RunBeforeAnyTests() {
+            dispatcher = Dispatcher.CurrentDispatcher;
+            DispatcherHelper.ForceIncreasePriorityContextIdleMessages();
+        }
+        [OneTimeTearDown]
+        public void RunAfterAnyTests() {
+            if(dispatcher != null) {
+                dispatcher.InvokeShutdown();
+                dispatcher = null;
+            }
+        }
+    }
+}

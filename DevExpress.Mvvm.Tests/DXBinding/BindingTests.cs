@@ -467,6 +467,25 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             tb.Text = "2";
             Assert.AreEqual("2", panel.Tag);
         }
+        [Test, Category("T491236")]
+        public void RelativeSourceElementName2() {
+            string xaml = @"
+<Grid x:Name=""panel"" Tag=""1"">
+    <CheckBox x:Name=""cb"" IsChecked=""True""/>
+    <TextBox x:Name=""tb1"" Text=""text1""/>
+    <TextBox x:Name=""tb2"" Text=""text2""/>
+    <TextBox Text=""{b:DXBinding '@e(cb).IsChecked ? @e(tb1).Text : @e(tb2).Text', Mode=OneWay}""/>
+</Grid>
+";
+            var panel = BindingTestHelper.LoadXaml<Grid>(xaml);
+            var cb = (CheckBox)panel.Children[0];
+            var tb1 = (TextBox)panel.Children[1];
+            var tb2 = (TextBox)panel.Children[2];
+            var tb = (TextBox)panel.Children[3];
+            Assert.AreEqual("text1", tb.Text);
+            cb.IsChecked = false;
+            Assert.AreEqual("text2", tb.Text);
+        }
         [Test]
         public void RelativeSourceStaticResource() {
             string xaml = @"
@@ -944,8 +963,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 return "F(bool, string)";
             }
         }
-        [Test]
-        public void DontThrowWhenStaticPropertyNotFound() {
+        [Test, Category("T360515")]
+        public void DontThrowWhenStaticPropertyNotFound_01() {
             try {
                 var vm = BindingTests_a.Create();
                 var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text",
@@ -955,7 +974,9 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 var e = (DXBindingException)xamlException.InnerException;
                 Assert.IsTrue(e.Message.Contains("Grey") && e.Message.Contains("Brushes"));
             }
-
+        }
+        [Test, Category("T360515")]
+        public void DontThrowWhenStaticPropertyNotFound() {
             try {
                 var vm = BindingTests_a.Create();
                 var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text",

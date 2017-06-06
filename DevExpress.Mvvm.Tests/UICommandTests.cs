@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Linq.Expressions;
-using System.Windows;
+using System.Reflection;
+using System.Threading.Tasks;
 using DevExpress.Mvvm.Native;
 using NUnit.Framework;
 

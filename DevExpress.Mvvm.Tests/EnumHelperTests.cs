@@ -144,6 +144,13 @@ namespace DevExpress.Mvvm.Tests {
             [Display(AutoGenerateField = false)]
             MemberThree,
         }
+        public enum EnumWithIncorrectIconName {
+            [Display(ShortName = "OneMember")]
+            [Image(UriPrefix + "icon1Incorrect.ico")]
+            MemberOne,
+            MemberTwo
+        }
+
         [EnumMetadataType(typeof(EnumWithDisplayNameMetadata))]
         public enum EnumWithDisplayName_ExternalMetadata1 {
             MemberOne,
@@ -233,6 +240,20 @@ namespace DevExpress.Mvvm.Tests {
             }
         }
 
+        [Test, NUnit.Framework.Description("T521914")]
+        public void ShowImageExceptionTest() {
+            Assert.Throws<NullReferenceException>(() => EnumSourceHelperCore.GetEnumSource(typeof(EnumWithIncorrectIconName), true, null, false,
+                EnumMembersSortMode.Default, (x, y) => { throw new InvalidOperationException(); }));
+        }
+        [Test, NUnit.Framework.Description("T521914")]
+        public void ShowImageTest() {
+            var source = EnumSourceHelperCore.GetEnumSource(typeof(EnumWithIncorrectIconName), true, null, false,
+                EnumMembersSortMode.Default, (x, y) => { throw new InvalidOperationException(); }, showImage: false);
+            source.Select(x => x.Name).SequenceEqual(new[] { "OneMember", "MemberTwo" }).IsTrue();
+            Assert.IsNull(source.ElementAt(0).Image);
+            Assert.IsNull(source.ElementAt(1).Image);
+        }
+
         static void AssertEnumWithDisplayName(Type enumType) {
             var source = EnumSourceHelper.GetEnumSource(enumType);
             source.AreEqual(x => x.Count(), 2);
@@ -309,6 +330,6 @@ namespace DevExpress.Mvvm.Tests {
         static string GetImageUri(ImageSource image) {
             return image.ToString();
         }
-#endregion
+        #endregion
     }
 }

@@ -37,6 +37,11 @@ namespace DevExpress.Mvvm.UI.Tests {
             DeleteItem,
             CutItem
         }
+        enum TestEnum3 {
+            [Image(UriPrefix + "CustomCut.png")]
+            [Display(Description = "CustomCutDescription")]
+            CutItem
+        }
         bool EnumMemberInfoComparer(EnumMemberInfo enumMemberInfo, string description, string id, string imageName, string name) {
             return description == enumMemberInfo.Description
                 && (enumMemberInfo.Id == null) ? (id == null) : id == enumMemberInfo.Id.ToString()
@@ -160,6 +165,38 @@ namespace DevExpress.Mvvm.UI.Tests {
                UriPrefix + "Copy.png", "CopyItem"));
         }
 
+        [Test]
+        public void BehaviorAllowImagesChanged() {
+            ListBox listBox = new ListBox();
+            ComboBox comboBox = new ComboBox();
+            ItemsControl itemsControl = new ItemsControl();
+
+            EnumItemsSourceBehavior listBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum1) };
+            EnumItemsSourceBehavior comboBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum1) };
+            EnumItemsSourceBehavior itemsControlBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum1) };
+
+            Interaction.GetBehaviors(listBox).Add(listBoxBehavior);
+            Interaction.GetBehaviors(comboBox).Add(comboBoxBehavior);
+            Interaction.GetBehaviors(itemsControl).Add(itemsControlBehavior);
+
+            Assert.IsTrue(((EnumMemberInfo)listBox.Items.GetItemAt(0)).ShowImage);
+            Assert.IsTrue(((EnumMemberInfo)comboBox.Items.GetItemAt(0)).ShowImage);
+            Assert.IsTrue(((EnumMemberInfo)itemsControl.Items.GetItemAt(0)).ShowImage);
+
+            listBoxBehavior.AllowImages = false;
+            comboBoxBehavior.AllowImages = false;
+            itemsControlBehavior.AllowImages = false;
+
+            Assert.IsFalse(((EnumMemberInfo)listBox.Items.GetItemAt(0)).ShowImage);
+            Assert.IsFalse(((EnumMemberInfo)comboBox.Items.GetItemAt(0)).ShowImage);
+            Assert.IsFalse(((EnumMemberInfo)itemsControl.Items.GetItemAt(0)).ShowImage);
+
+            listBox = new ListBox();
+            listBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum3), AllowImages = false };
+            Interaction.GetBehaviors(listBox).Add(listBoxBehavior);
+            Assert.AreEqual(1, listBox.Items.Count);
+            Assert.IsNull(((EnumMemberInfo)listBox.Items.GetItemAt(0)).Image);
+        }
         [Test]
         public void BehaviorSortModeChanged() {
             ListBox listBox = new ListBox();

@@ -51,9 +51,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Bin\Framework4\DevExpress.Mvvm.TestClasses.VB.dll</HintPath>
     </Reference>
-    <Reference Include="nunit.framework, Version=3.2.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.3.2.1\lib\net45\nunit.framework.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="nunit.framework, Version=3.7.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.3.7.1\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -83,7 +82,6 @@
     <Compile Include="Behaviors\EnumItemsSourceBehaviorTests.cs" />
     <Compile Include="Behaviors\FunctionToCommandBehaviorTests.cs" />
     <Compile Include="Behaviors\ValidationErrorsHostBehaviorTests.cs" />
-    <Compile Include="BindableBaseTests.cs" />
     <Compile Include="CollectionBindingHelperTests.cs" />
     <Compile Include="DefaultMessageBoxButtonLocalizerTests.cs" />
     <Compile Include="DelegateCommandTests.cs" />
@@ -133,6 +131,7 @@
     <Compile Include="TestUtils\IsolatedDomainTestHelper.cs" />
     <Compile Include="TestUtils\MemoryLeaksHelper.cs" />
     <Compile Include="UICommandTests.cs" />
+    <Compile Include="ViewModels\BindableBaseTests.cs" />
     <Compile Include="ViewModels\ViewModelBaseTests.cs" />
     <Compile Include="ViewModels\ViewModelLocatorTests.cs" />
     <Compile Include="ViewModels\ViewModelSourceTests.cs" />

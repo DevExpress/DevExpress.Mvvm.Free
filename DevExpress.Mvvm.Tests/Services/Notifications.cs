@@ -350,7 +350,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             WaitWithDispatcher(task);
         }
 
-        [Test]
+        [Test, Category("TODO")]
         public void ResolutionChangingTest() {
             var testScreen = new TestScreen { bounds = new Rect(0, 0, 1000, 500) };
             var notifier = new CustomNotifier(testScreen);
