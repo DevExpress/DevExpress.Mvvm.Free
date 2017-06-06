@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace DevExpress.Mvvm.Native {
     public static class GuardHelper {
@@ -33,6 +34,14 @@ namespace DevExpress.Mvvm.Native {
         public static void ArgumentIsNotNullOrEmpty(string value, string name) {
             if (string.IsNullOrEmpty(value))
                 ThrowArgumentException(name, value);
+        }
+        public static void ThereIsInDictionary<TKey, TValue>(IDictionary<TKey, TValue> dictionary, TKey key, string name) {
+            if(!dictionary.ContainsKey(key))
+                ThrowArgumentException(name, key);
+        }
+        public static void ThereIsNoInDictionary<TKey, TValue>(IDictionary<TKey, TValue> dictionary, TKey key, string name) {
+            if(dictionary.ContainsKey(key))
+                ThrowArgumentException(name, key);
         }
         public static TValue ArgumentMatchType<TValue>(object value, string name) {
             try {

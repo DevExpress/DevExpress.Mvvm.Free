@@ -43,7 +43,7 @@ namespace DevExpress.Mvvm.Native {
             return evaluator(input) ? input : null;
         }
         public static TI IfNot<TI>(this TI input, Func<TI, bool> evaluator) where TI : class {
-            if (input == null)
+            if(input == null)
                 return null;
             return evaluator(input) ? null : input;
         }
@@ -88,13 +88,13 @@ namespace DevExpress.Mvvm.Native {
             return source.Any() && !source.Skip(1).Any();
         }
         public static void ForEach<T>(this IEnumerable<T> source, Action<T> action) {
-            if (source == null)
+            if(source == null)
                 return;
-            foreach (T t in source)
+            foreach(T t in source)
                 action(t);
         }
         public static void ForEach<T>(this IEnumerable<T> source, Action<T, int> action) {
-            if (source == null)
+            if(source == null)
                 return;
             int index = 0;
             foreach(T t in source)
@@ -131,8 +131,22 @@ namespace DevExpress.Mvvm.Native {
             if(singleElement != null)
                 yield return singleElement;
         }
+        public static void ForEach<T>(this IEnumerable<T> source, Func<T, int, IEnumerable<T>> getItems, Action<T, int> action) {
+            source.ForEachCore(getItems, action, 0);
+        }
+        static void ForEachCore<T>(this IEnumerable<T> source, Func<T, int, IEnumerable<T>> getItems, Action<T, int> action, int level) {
+            source.ForEach(x => action(x, level));
+            if(source.Any())
+                source.SelectMany(x => getItems(x, level + 1)).ForEachCore(getItems, action, level + 1);
+        }
         public static IEnumerable<T> Flatten<T>(this IEnumerable<T> source, Func<T, IEnumerable<T>> getItems) {
             return source.SelectMany(item => item.Yield().Concat(getItems(item).Flatten(getItems)));
+        }
+        public static IEnumerable<T> Flatten<T>(this IEnumerable<T> source, Func<T, int, IEnumerable<T>> getItems) {
+            return source.FlattenCore(getItems, 0);
+        }
+        static IEnumerable<T> FlattenCore<T>(this IEnumerable<T> source, Func<T, int, IEnumerable<T>> getItems, int level) {
+            return source.SelectMany(item => item.Yield().Concat(getItems(item, level).FlattenCore(getItems, level + 1)));
         }
         public static T MinByLast<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector) where TKey : IComparable {
             var comparer = Comparer<TKey>.Default;
@@ -216,6 +230,11 @@ namespace DevExpress.Mvvm.Native {
             taskSource.SetResultFromTask(task, (ts, taskResult) => ts.SetResultSafe(() => selector(taskResult)));
             return taskSource.Task;
         }
+        public static Task<TR> Select<TI, TR>(this Task<TI> task, Func<TI, TR> selector, Func<TR> ifCanceled) {
+            var taskSource = new TaskCompletionSource<TR>();
+            taskSource.SetResultFromTask(task, (ts, taskResult) => ts.SetResultSafe(() => selector(taskResult)), ts => ts.SetResultSafe(() => ifCanceled()));
+            return taskSource.Task;
+        }
         public static Task<TR> SelectMany<TI, TC, TR>(this Task<TI> task, Func<TI, Task<TC>> selector, Func<TI, TC, TR> projector) {
             var taskSource = new TaskCompletionSource<TR>();
             taskSource.SetResultFromTask(task, (ts, taskResult) => ts.SetResultFromTaskSafe(() => selector(taskResult), (ts_, selectorResult) => ts_.SetResultSafe(() => projector(taskResult, selectorResult))));
@@ -227,13 +246,28 @@ namespace DevExpress.Mvvm.Native {
                 return true;
             }).ContinueWith(_ => { }, TaskContinuationOptions.ExecuteSynchronously);
         }
+        public static Task Execute<T>(this Task<T> task, Action<T> action, Action ifCanceled) {
+            return task.Select(
+                x => {
+                    action(x);
+                    return true;
+                },
+                () => {
+                    ifCanceled();
+                    return true;
+                }
+            ).ContinueWith(_ => { }, TaskContinuationOptions.ExecuteSynchronously);
+        }
         public static void SetResultFromTask<T>(this TaskCompletionSource<T> taskSource, Task<T> task) {
             taskSource.SetResultFromTask(task, (ts, taskResult) => ts.SetResult(taskResult));
         }
         public static void SetResultFromTask<TI, TR>(this TaskCompletionSource<TR> taskSource, Task<TI> task, Action<TaskCompletionSource<TR>, TI> setResultAction) {
+            taskSource.SetResultFromTask(task, setResultAction, x => x.SetCanceled());
+        }
+        public static void SetResultFromTask<TI, TR>(this TaskCompletionSource<TR> taskSource, Task<TI> task, Action<TaskCompletionSource<TR>, TI> setResultAction, Action<TaskCompletionSource<TR>> setCanceledAction) {
             task.ContinueWith(t => {
                 if(t.IsCanceled)
-                    taskSource.SetCanceled();
+                    setCanceledAction(taskSource);
                 else if(t.IsFaulted)
                     taskSource.SetException(t.Exception);
                 else

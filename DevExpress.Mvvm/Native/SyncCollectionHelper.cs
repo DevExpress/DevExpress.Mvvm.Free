@@ -31,12 +31,9 @@ namespace DevExpress.Mvvm.Native {
                     break;
                 case NotifyCollectionChangedAction.Move:
                     object insertItem = target[e.OldStartingIndex];
-                    object insertItemAt = target[e.NewStartingIndex];
 
-                    int deltaItem = e.NewStartingIndex > e.OldStartingIndex ? 1 : 0;
-
-                    target.Remove(insertItem);
-                    target.Insert(target.IndexOf(insertItemAt) + deltaItem, insertItem);
+                    target.RemoveAt(e.OldStartingIndex);
+                    target.Insert(e.NewStartingIndex, insertItem);
                     break;
                 case NotifyCollectionChangedAction.Replace:
                     RemoveItem(e.NewStartingIndex, target, clearItemAction);

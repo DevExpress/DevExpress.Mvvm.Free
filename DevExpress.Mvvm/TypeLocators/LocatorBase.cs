@@ -55,14 +55,15 @@ namespace DevExpress.Mvvm {
         }
         protected virtual IEnumerator<Type> GetTypes() {
             foreach(Assembly asm in Assemblies) {
-                Type[] types;
+                Type[] types = new Type[] { };
                 try {
                     types = asm.GetTypes();
                 } catch(ReflectionTypeLoadException e) {
                     types = e.Types;
                 }
-                foreach(Type type in types) {
-                    yield return type;
+                foreach(var type in types) {
+                    if(type != null)
+                        yield return type;
                 }
             }
         }

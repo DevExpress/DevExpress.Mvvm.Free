@@ -111,6 +111,7 @@ namespace DevExpress.Mvvm {
         internal const string Error_MethodShouldBePublic = "Method should be public: {0}.";
         const string Error_MethodCannotHaveMoreThanOneParameter = "Method cannot have more than one parameter: {0}.";
         const string Error_MethodCannotHaveOutORRefParameters = "Method cannot have out or reference parameter: {0}.";
+        const string Error_MethodCannotShouldNotBeGeneric = "Method should not be generic: {0}.";
         const string Error_CanExecuteMethodHasIncorrectParameters = "Can execute method has incorrect parameters: {0}.";
         const string Error_MethodNotFound = "Method not found: {0}.";
         Dictionary<MethodInfo, CommandProperty> commandProperties;
@@ -124,12 +125,14 @@ namespace DevExpress.Mvvm {
             return MetadataHelper.GetAllAttributes(method).OfType<T>().FirstOrDefault();
         }
 
-        static readonly Dictionary<Type, Dictionary<MethodInfo, CommandProperty>> propertiesCache = new Dictionary<Type, Dictionary<MethodInfo, CommandProperty>>();
+        [ThreadStatic]
+        static Dictionary<Type, Dictionary<MethodInfo, CommandProperty>> propertiesCache;
+        static Dictionary<Type, Dictionary<MethodInfo, CommandProperty>> PropertiesCache { get { return propertiesCache ?? (propertiesCache = new Dictionary<Type, Dictionary<MethodInfo, CommandProperty>>()); } }
         void BuildCommandProperties() {
             commandProperties = IsPOCOViewModel ? new Dictionary<MethodInfo, CommandProperty>() : GetCommandProperties(GetType());
         }
         static Dictionary<MethodInfo, CommandProperty> GetCommandProperties(Type type) {
-            Dictionary<MethodInfo, CommandProperty> result = propertiesCache.GetOrAdd(type, () => CreateCommandProperties(type));
+            Dictionary<MethodInfo, CommandProperty> result = PropertiesCache.GetOrAdd(type, () => CreateCommandProperties(type));
             return result;
         }
         static Dictionary<MethodInfo, CommandProperty> CreateCommandProperties(Type type) {
@@ -158,13 +161,10 @@ namespace DevExpress.Mvvm {
             if(CheckCommandMethodConditionValue(parameters.Length <= 1, method, Error_MethodCannotHaveMoreThanOneParameter, createException))
                 return false;
             bool isValidSingleParameter = (parameters.Length == 1) && (parameters[0].IsOut || parameters[0].ParameterType.IsByRef);
-            if(CheckCommandMethodConditionValue(!isValidSingleParameter, method, Error_MethodCannotHaveOutORRefParameters, createException)) {
+            if(CheckCommandMethodConditionValue(!isValidSingleParameter, method, Error_MethodCannotHaveOutORRefParameters, createException))
                 return false;
-            }
-            bool isSingleGenericParameter = (parameters.Length == 1) && parameters[0].ParameterType.IsGenericParameter;
-            if(isSingleGenericParameter) {
+            if(CheckCommandMethodConditionValue(!method.IsGenericMethodDefinition, method, Error_MethodCannotShouldNotBeGeneric, createException))
                 return false;
-            }
             return true;
         }
         static bool CheckCommandMethodConditionValue(bool value, MethodInfo method, string errorString, Func<string, Exception> createException) {

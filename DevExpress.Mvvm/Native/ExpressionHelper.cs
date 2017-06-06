@@ -100,7 +100,8 @@ namespace DevExpress.Mvvm.Native {
             return memberExpression;
         }
 
-        public static bool PropertyHasImplicitImplementation<TInterface, TPropertyType>(TInterface _interface, Expression<Func<TInterface, TPropertyType>> property, bool tryInvoke = true) {
+        public static bool PropertyHasImplicitImplementation<TInterface, TPropertyType>(TInterface _interface, Expression<Func<TInterface, TPropertyType>> property, bool tryInvoke = true)
+            where TInterface : class {
             if(_interface == null)
                 throw new ArgumentNullException("_interface");
             string propertyName = GetArgumentPropertyStrict(property).Name;

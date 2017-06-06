@@ -95,7 +95,11 @@ namespace DevExpress.Mvvm {
         }
 
         PropertyManager propertyManager;
-        internal PropertyManager PropertyManager { get { return propertyManager ?? (propertyManager = new PropertyManager()); } }
+        internal PropertyManager PropertyManager { get { return propertyManager ?? (propertyManager = CreatePropertyManager()); } }
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        protected virtual PropertyManager CreatePropertyManager() {
+            return new PropertyManager();
+        }
     }
 }
 namespace DevExpress.Mvvm.Native {
@@ -119,7 +123,7 @@ namespace DevExpress.Mvvm.Native {
             }
             return res;
         }
-        bool SetPropertyCore<T>(string propertyName, T value, out T oldValue) {
+        protected virtual bool SetPropertyCore<T>(string propertyName, T value, out T oldValue) {
             oldValue = default(T);
             object val;
             if(propertyBag.TryGetValue(propertyName, out val))
@@ -154,7 +158,7 @@ namespace DevExpress.Mvvm.Native {
             }
             return res;
         }
-        bool SetPropertyCore<T>(ref T storage, T value, string propertyName) {
+        protected virtual bool SetPropertyCore<T>(ref T storage, T value, string propertyName) {
             if(PropertyManager.CompareValues<T>(storage, value))
                 return false;
             storage = value;

@@ -17,6 +17,16 @@ namespace DevExpress.Mvvm.ModuleInjection {
             NewViewModelKey = newVMKey;
         }
     }
+    public class ViewModelCreatedEventArgs : EventArgs {
+        public string RegionName { get; private set; }
+        public object ViewModel { get; private set; }
+        public string ViewModelKey { get; private set; }
+        public ViewModelCreatedEventArgs(string regionName, object viewModel, string viewModelKey) {
+            RegionName = regionName;
+            ViewModel = viewModel;
+            ViewModelKey = viewModelKey;
+        }
+    }
     public class ViewModelRemovedEventArgs : EventArgs {
         public string RegionName { get; private set; }
         public object ViewModel { get; private set; }
@@ -54,6 +64,8 @@ namespace DevExpress.Mvvm.ModuleInjection {
         [WeakEvent]
         event EventHandler<NavigationEventArgs> Navigation;
         [WeakEvent]
+        event EventHandler<ViewModelCreatedEventArgs> ViewModelCreated;
+        [WeakEvent]
         event EventHandler<ViewModelRemovingEventArgs> ViewModelRemoving;
         [WeakEvent]
         event EventHandler<ViewModelRemovedEventArgs> ViewModelRemoved;
@@ -72,6 +84,7 @@ namespace DevExpress.Mvvm.ModuleInjection {
 namespace DevExpress.Mvvm.ModuleInjection.Native {
     public interface IRegionEventManagerImplementation : IRegionEventManager {
         void RaiseNavigation(object sender, NavigationEventArgs e);
+        void RaiseViewModelCreated(object sender, ViewModelCreatedEventArgs e);
         void RaiseViewModelRemoving(object sender, ViewModelRemovingEventArgs e);
         void RaiseViewModelRemoved(object sender, ViewModelRemovedEventArgs e);
     }
@@ -85,14 +98,17 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
 namespace DevExpress.Mvvm.ModuleInjection.Native {
     public class RegionEventManager : IRegionEventManager, IRegionEventManagerImplementation {
         WeakEvent<EventHandler<NavigationEventArgs>, NavigationEventArgs> navigation = new WeakEvent<EventHandler<NavigationEventArgs>, NavigationEventArgs>();
+        WeakEvent<EventHandler<ViewModelCreatedEventArgs>, ViewModelCreatedEventArgs> viewModelCreated = new WeakEvent<EventHandler<ViewModelCreatedEventArgs>, ViewModelCreatedEventArgs>();
         WeakEvent<EventHandler<ViewModelRemovingEventArgs>, ViewModelRemovingEventArgs> viewModelRemoving = new WeakEvent<EventHandler<ViewModelRemovingEventArgs>, ViewModelRemovingEventArgs>();
         WeakEvent<EventHandler<ViewModelRemovedEventArgs>, ViewModelRemovedEventArgs> viewModelRemoved = new WeakEvent<EventHandler<ViewModelRemovedEventArgs>, ViewModelRemovedEventArgs>();
 
         event EventHandler<NavigationEventArgs> IRegionEventManager.Navigation { add { navigation.Add(value); } remove { navigation.Remove(value); } }
+        event EventHandler<ViewModelCreatedEventArgs> IRegionEventManager.ViewModelCreated { add { viewModelCreated.Add(value); } remove { viewModelCreated.Remove(value); } }
         event EventHandler<ViewModelRemovingEventArgs> IRegionEventManager.ViewModelRemoving { add { viewModelRemoving.Add(value); } remove { viewModelRemoving.Remove(value); } }
         event EventHandler<ViewModelRemovedEventArgs> IRegionEventManager.ViewModelRemoved { add { viewModelRemoved.Add(value); } remove { viewModelRemoved.Remove(value); } }
 
         void IRegionEventManagerImplementation.RaiseNavigation(object sender, NavigationEventArgs e) { navigation.Raise(sender, e); }
+        void IRegionEventManagerImplementation.RaiseViewModelCreated(object sender, ViewModelCreatedEventArgs e) { viewModelCreated.Raise(sender, e); }
         void IRegionEventManagerImplementation.RaiseViewModelRemoving(object sender, ViewModelRemovingEventArgs e) { viewModelRemoving.Raise(sender, e); }
         void IRegionEventManagerImplementation.RaiseViewModelRemoved(object sender, ViewModelRemovedEventArgs e) { viewModelRemoved.Raise(sender, e); }
     }

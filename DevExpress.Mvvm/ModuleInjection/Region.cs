@@ -23,9 +23,9 @@ namespace DevExpress.Mvvm.ModuleInjection {
 }
 namespace DevExpress.Mvvm.ModuleInjection.Native {
     public interface IRegionImplementation : IRegion {
+        IEnumerable<IUIRegion> UIRegions { get; }
         void RegisterUIRegion(IUIRegion region);
         void UnregisterUIRegion(IUIRegion region);
-        IUIWindowRegion GetUIWindowRegion();
         void Inject(IModule module, object parameter);
         void Remove(string key);
         bool Contains(string key);
@@ -46,6 +46,8 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
         void Inject(object viewModel, Type viewType);
         void Remove(object viewModel);
         void Clear();
+
+        object GetView(object viewModel);
     }
     public interface IUIWindowRegion : IUIRegion {
         MessageBoxResult? Result { get; }
@@ -97,9 +99,7 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
     public class Region : IRegionImplementation {
         readonly List<RegionItem> items;
         readonly WeakReferenceManager<IUIRegion> serviceManager;
-        readonly IViewModelLocator viewModelLocator;
-        readonly IViewLocator viewLocator;
-        readonly IStateSerializer stateSerializer;
+        readonly IModuleManagerImplementation owner;
         string navigationKey;
         static string navigationKeyNull = "__region_navigationKeyNull__";
 
@@ -109,8 +109,13 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
         public string SelectedKey { get; private set; }
         public object SelectedViewModel { get { return GetViewModel(SelectedKey); } }
 
-        public Region(string regionName, IModuleManagerImplementation owner, bool isTestingMode)
-            : this(regionName, owner.ViewModelLocator, owner.ViewLocator, owner.ViewModelStateSerializer) {
+        public Region(string regionName, IModuleManagerImplementation owner, bool isTestingMode) {
+            LogicalSerializationMode = LogicalSerializationMode.Enabled;
+            this.RegionName = regionName;
+            this.owner = owner;
+            this.serviceManager = new WeakReferenceManager<IUIRegion>();
+            this.items = new List<RegionItem>();
+
             if(isTestingMode) {
                 RegisterUIRegion(new TestUIRegion(regionName, owner));
             } else {
@@ -118,18 +123,9 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
                 foreach(var service in services) RegisterUIRegion(service);
             }
         }
-        Region(string regionName, IViewModelLocator viewModelLocator, IViewLocator viewLocator, IStateSerializer stateSerializer) {
-            LogicalSerializationMode = LogicalSerializationMode.Enabled;
-            this.RegionName = regionName;
-            this.viewModelLocator = viewModelLocator;
-            this.viewLocator = viewLocator;
-            this.stateSerializer = stateSerializer;
-            this.serviceManager = new WeakReferenceManager<IUIRegion>();
-            this.items = new List<RegionItem>();
-        }
         public void RegisterUIRegion(IUIRegion region) {
             if(serviceManager.Contains(region)) return;
-            foreach(var item in items) item.Inject(region);
+            foreach(var item in items) item.Inject(region, OnViewModelCreated);
             serviceManager.Add(region);
             if(!TryNavigate() && SelectedKey != null)
                 region.SelectedViewModel = SelectedViewModel;
@@ -137,9 +133,6 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
         public void UnregisterUIRegion(IUIRegion region) {
             if(!serviceManager.Contains(region)) return;
             serviceManager.Remove(region);
-        }
-        public IUIWindowRegion GetUIWindowRegion() {
-            return UIRegions.OfType<IUIWindowRegion>().LastOrDefault();
         }
         public string GetKey(object viewModel) {
             if(viewModel == null) return null;
@@ -153,9 +146,9 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
         }
 
         public void Inject(IModule module, object parameter) {
-            var item = new RegionItem(viewModelLocator, viewLocator, stateSerializer, module, parameter);
+            var item = new RegionItem(owner.ViewModelLocator, owner.ViewLocator, owner.ViewModelStateSerializer, module, parameter);
             items.Add(item);
-            DoForeachUIRegion(item.Inject);
+            DoForeachUIRegion(x => item.Inject(x, OnViewModelCreated));
             TryNavigate();
         }
         public void Remove(string key) {
@@ -210,6 +203,9 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
         RegionItem GetItem(object viewModel) {
             if(viewModel == null) return null;
             return items.Where(x => x.ViewModel == viewModel).FirstOrDefault();
+        }
+        void OnViewModelCreated(string key, object viewModel) {
+            owner.RaiseViewModelCreated(new ViewModelCreatedEventArgs(RegionName, viewModel, key));
         }
 
         #region Serialization
@@ -277,7 +273,7 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
             if(logicalInfo == null) return;
             foreach(var itemInfo in logicalInfo.Items) {
                 if(GetLogicalSerializationMode(itemInfo.Key) == LogicalSerializationMode.Disabled) continue;
-                items.Add(new RegionItem(viewModelLocator, viewLocator, stateSerializer, itemInfo));
+                items.Add(new RegionItem(owner.ViewModelLocator, owner.ViewLocator, owner.ViewModelStateSerializer, itemInfo));
             }
             restoreSelectedKey = logicalInfo.SelectedViewModelKey;
         }
@@ -285,7 +281,7 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
             if(items.Count == 0) return;
             if(inject) {
                 foreach(var item in items)
-                    DoForeachUIRegion(x => item.Inject(x));
+                    DoForeachUIRegion(x => item.Inject(x, OnViewModelCreated));
             }
             if(navigate) {
                 Navigate(restoreSelectedKey);
@@ -403,10 +399,11 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
                 InitViewName();
                 return ViewName;
             }
-            public void Inject(IUIRegion service) {
+            public void Inject(IUIRegion service, Action<string, object> onViewModelCreated) {
                 if(ViewModel == null) {
                     Init();
                     UpdateViewModelState();
+                    onViewModelCreated(Key, ViewModel);
                 }
                 service.Inject(ViewModel, ViewType);
             }
@@ -483,6 +480,9 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
             }
             void IUIRegion.Clear() {
                 viewModels.Clear();
+            }
+            object IUIRegion.GetView(object viewModel) {
+                return null;
             }
             #endregion
             #region IModuleInjectionWindowService

@@ -94,6 +94,7 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
         void OnNavigation(string regionName, NavigationEventArgs e);
         void OnViewModelRemoving(string regionName, ViewModelRemovingEventArgs e);
         void OnViewModelRemoved(string regionName, ViewModelRemovedEventArgs e);
+        void RaiseViewModelCreated(ViewModelCreatedEventArgs e);
     }
 }
 namespace DevExpress.Mvvm.ModuleInjection {
@@ -194,6 +195,9 @@ namespace DevExpress.Mvvm.ModuleInjection {
                 GetEvents(e.ViewModel, false).Do(x => x.RaiseViewModelRemoved(this, e));
             GetEvents(regionName, false).Do(x => x.RaiseViewModelRemoved(this, e));
         }
+        void RaiseViewModelCreatedEvent(string regionName, ViewModelCreatedEventArgs e) {
+            GetEvents(regionName, false).Do(x => x.RaiseViewModelCreated(this, e));
+        }
         #endregion
         #region IModuleManagerBase
         void IModuleManagerBase.Register(string regionName, IModule module) {
@@ -265,8 +269,10 @@ namespace DevExpress.Mvvm.ModuleInjection {
             regions.ForEach(region => region.SetInfo(
                 getRegionInfo(logicalInfo, region.RegionName),
                 getRegionVisualInfo(visualInfo, region.RegionName)));
-            regions.ForEach(x => x.ApplyInfo(true, false));
-            regions.ForEach(x => x.ApplyInfo(false, true));
+            if(logicalInfo != null) {
+                regions.ForEach(x => x.ApplyInfo(true, false));
+                regions.ForEach(x => x.ApplyInfo(false, true));
+            }
             return logicalInfo != null;
         }
         #endregion
@@ -326,7 +332,7 @@ namespace DevExpress.Mvvm.ModuleInjection {
             }
             void OnWindowClosed(object sender, ViewModelRemovedEventArgs e) {
                 if(e.ViewModelKey != Key) return;
-                var serv = owner.GetRegion(e.RegionName).GetUIWindowRegion();
+                var serv = owner.GetUIWindowRegion(e.RegionName);
                 owner.GetEvents(e.RegionName, true).ViewModelRemoved -= OnWindowClosed;
                 task.SetResult(new WindowInjectionResult(e.RegionName, e.ViewModel, e.ViewModelKey, serv != null ? serv.Result : null));
                 dispose(this);
@@ -352,12 +358,15 @@ namespace DevExpress.Mvvm.ModuleInjection {
             ((IModuleManager)this).Navigate(regionName, key);
         }
         void IModuleWindowManager.Close(string regionName, string key, MessageBoxResult? dialogResult, bool raiseViewModelRemovingEvent) {
-            var serv = GetRegion(regionName).GetUIWindowRegion();
+            var serv = GetUIWindowRegion(regionName);
             if(dialogResult != null && serv != null) serv.SetResult(dialogResult.Value);
             ((IModuleManager)this).Remove(regionName, key, raiseViewModelRemovingEvent);
         }
         void IModuleWindowManager.Clear(string regionName) {
             ((IModuleManager)this).Clear(regionName);
+        }
+        IUIWindowRegion GetUIWindowRegion(string regionName) {
+            return GetRegion(regionName).UIRegions.OfType<IUIWindowRegion>().LastOrDefault();
         }
         #endregion
         #region IModuleManagerImplementation
@@ -383,6 +392,9 @@ namespace DevExpress.Mvvm.ModuleInjection {
             var region = GetRegion(regionName);
             region.Remove(e.ViewModelKey);
             RaiseViewModelRemovedEvent(regionName, e);
+        }
+        void IModuleManagerImplementation.RaiseViewModelCreated(ViewModelCreatedEventArgs e) {
+            RaiseViewModelCreatedEvent(e.RegionName, e);
         }
 
         IRegionImplementation IModuleManagerImplementation.GetRegionImplementation(string regionName) {

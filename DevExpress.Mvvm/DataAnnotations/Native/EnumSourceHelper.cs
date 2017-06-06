@@ -28,7 +28,7 @@ namespace DevExpress.Mvvm.Native {
                     string name = GetEnumName(field, value, nameConverter, splitNames);
 
                     var imageInfo = GetImageInfo(MetadataHelper.GetAttribute<ImageAttribute>(field), MetadataHelper.GetAttribute<DXImageAttribute>(field), null, getKnownImageUriCallback);
-                    ImageSource image = ViewModelBase.IsInDesignMode ? null : (imageInfo.Item1 ?? imageInfo.Item2).With(x => (ImageSource)new ImageSourceConverter().ConvertFrom(x));
+                    ImageSource image = ViewModelBase.IsInDesignMode || !showImage ? null : (imageInfo.Item1 ?? imageInfo.Item2).With(x => (ImageSource)new ImageSourceConverter().ConvertFrom(x));
                     return new EnumMemberInfo(name, DataAnnotationsAttributeHelper.GetFieldDescription(field), useUnderlyingEnumValue ? GetUnderlyingEnumValue(value) : value, image, showImage, showName,
                      DataAnnotationsAttributeHelper.GetFieldOrder(field));
                 });
