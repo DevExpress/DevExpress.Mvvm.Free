@@ -13,6 +13,8 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         internal AttachableCollection() {
             ((INotifyCollectionChanged)this).CollectionChanged += this.OnCollectionChanged;
         }
+
+
         public void Attach(DependencyObject obj) {
             if(obj == this.AssociatedObject) return;
             if(AssociatedObject != null)
@@ -79,7 +81,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             if(snapshot.Contains(item))
                 return;
             ItemAdded(item);
-            snapshot.Insert(IndexOf(item), item);
+            snapshot.Insert(this.IndexOf(item), item);
         }
         void RemoveItem(T item) {
             ItemRemoved(item);
@@ -90,9 +92,11 @@ namespace DevExpress.Mvvm.UI.Interactivity {
                 ItemRemoved(item);
             snapshot.Clear();
         }
+
         void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e) {
             if(e.Action == NotifyCollectionChangedAction.Move)
                 return;
+
             if(e.Action == NotifyCollectionChangedAction.Reset) {
                 ClearItems();
                 foreach(T item in this)

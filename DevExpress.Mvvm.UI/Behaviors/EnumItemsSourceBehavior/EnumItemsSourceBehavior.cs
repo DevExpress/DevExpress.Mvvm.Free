@@ -11,6 +11,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm.UI {
     [TargetType(typeof(ItemsControl))]
@@ -22,24 +23,31 @@ namespace DevExpress.Mvvm.UI {
         #region Dependency Properties
         public static readonly DependencyProperty ItemTemplateProperty =
             DependencyProperty.Register("ItemTemplate", typeof(DataTemplate), typeof(EnumItemsSourceBehavior),
-            new FrameworkPropertyMetadata(null, (d, e) => ((EnumItemsSourceBehavior)d).OnItemTemplateChanged(e)));
+            new FrameworkPropertyMetadata(null, (d, e) => ((EnumItemsSourceBehavior)d).ChangeItemTemplate()));
         public static readonly DependencyProperty EnumTypeProperty =
             DependencyProperty.Register("EnumType", typeof(Type), typeof(EnumItemsSourceBehavior),
-            new FrameworkPropertyMetadata(null, (d, e) => ((EnumItemsSourceBehavior)d).OnEnumTypeChanged(e)));
+            new FrameworkPropertyMetadata(null, (d, e) => ((EnumItemsSourceBehavior)d).ChangeAssociatedObjectItemsSource()));
         public static readonly DependencyProperty UseNumericEnumValueProperty =
             DependencyProperty.Register("UseNumericEnumValue", typeof(bool), typeof(EnumItemsSourceBehavior),
-            new FrameworkPropertyMetadata(false, (d, e) => ((EnumItemsSourceBehavior)d).OnUseNumericEnumValueChanged(e)));
+            new FrameworkPropertyMetadata(false, (d, e) => ((EnumItemsSourceBehavior)d).ChangeAssociatedObjectItemsSource()));
         public static readonly DependencyProperty SplitNamesProperty =
             DependencyProperty.Register("SplitNames", typeof(bool), typeof(EnumItemsSourceBehavior),
-            new FrameworkPropertyMetadata(true, (d, e) => ((EnumItemsSourceBehavior)d).OnSplitNamesChanged(e)));
+            new FrameworkPropertyMetadata(true, (d, e) => ((EnumItemsSourceBehavior)d).ChangeAssociatedObjectItemsSource()));
         public static readonly DependencyProperty NameConverterProperty =
             DependencyProperty.Register("NameConverter", typeof(IValueConverter), typeof(EnumItemsSourceBehavior),
-            new FrameworkPropertyMetadata(null, (d, e) => ((EnumItemsSourceBehavior)d).OnNameConverterChanged(e)));
+            new FrameworkPropertyMetadata(null, (d, e) => ((EnumItemsSourceBehavior)d).ChangeAssociatedObjectItemsSource()));
         public static readonly DependencyProperty SortModeProperty =
             DependencyProperty.Register("SortMode", typeof(EnumMembersSortMode), typeof(EnumItemsSourceBehavior),
-            new FrameworkPropertyMetadata(EnumMembersSortMode.Default, (d, e) => ((EnumItemsSourceBehavior)d).OnSortModeChanged(e)));
+            new FrameworkPropertyMetadata(EnumMembersSortMode.Default, (d, e) => ((EnumItemsSourceBehavior)d).ChangeAssociatedObjectItemsSource()));
+        public static readonly DependencyProperty AllowImagesProperty =
+            DependencyProperty.Register("AllowImages", typeof(bool), typeof(EnumItemsSourceBehavior),
+            new FrameworkPropertyMetadata(true, (d, e) => ((EnumItemsSourceBehavior)d).ChangeAssociatedObjectItemsSource()));
         #endregion
 
+        public bool AllowImages {
+            get { return (bool)GetValue(AllowImagesProperty); }
+            set { SetValue(AllowImagesProperty, value); }
+        }
         public DataTemplate ItemTemplate {
             get { return (DataTemplate)GetValue(ItemTemplateProperty); }
             set { SetValue(ItemTemplateProperty, value); }
@@ -65,31 +73,13 @@ namespace DevExpress.Mvvm.UI {
             set { SetValue(SortModeProperty, value); }
         }
 
-        void OnItemTemplateChanged(DependencyPropertyChangedEventArgs e) {
-            ChangeItemTemplate();
-        }
-        void OnEnumTypeChanged(DependencyPropertyChangedEventArgs e) {
-            ChangeAssociatedObjectItemsSource();
-        }
-        void OnUseNumericEnumValueChanged(DependencyPropertyChangedEventArgs e) {
-            ChangeAssociatedObjectItemsSource();
-        }
-        void OnSplitNamesChanged(DependencyPropertyChangedEventArgs e) {
-            ChangeAssociatedObjectItemsSource();
-        }
-        void OnNameConverterChanged(DependencyPropertyChangedEventArgs e) {
-            ChangeAssociatedObjectItemsSource();
-        }
-        void OnSortModeChanged(DependencyPropertyChangedEventArgs e) {
-            ChangeAssociatedObjectItemsSource();
-        }
         void ChangeAssociatedObjectItemsSource() {
             if(this.AssociatedObject != null) {
                 PropertyDescriptor descriptor = TypeDescriptor.GetProperties(this.AssociatedObject).Find("ItemsSource", true);
                 if (descriptor == null)
                     throw new Exception("ItemsSource dependency property required");
                 else
-                    descriptor.SetValue(this.AssociatedObject, EnumSourceHelper.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter, SplitNames, SortMode));
+                    descriptor.SetValue(this.AssociatedObject, EnumSourceHelperCore.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter, SplitNames, SortMode, null, showImage: AllowImages));
             }
         }
         void ChangeItemTemplate() {

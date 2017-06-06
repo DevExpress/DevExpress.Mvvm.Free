@@ -187,18 +187,19 @@ namespace DevExpress.Mvvm.UI {
 
             Func<object, object> contentCreator = null;
             object contentCreatorParams = null;
+            var ssModel = CreateSplashScreenViewModel();
             IList<object> windowCreatorParams = new List<object>() { SplashScreenWindowStyle, SplashScreenStartupLocation, Owner.With(x => new SplashScreenOwner(x)),
                 SplashScreenClosingMode, FadeInDuration, FadeOutDuration };
             if(SplashScreenType == null) {
                 contentCreator = CreateSplashScreen;
-                contentCreatorParams = new object[] { documentType, ViewLocator, ViewTemplate };
+                contentCreatorParams = new object[] { documentType, ViewLocator, ViewTemplate, ssModel };
             } else {
                 DXSplashScreen.CheckSplashScreenType(SplashScreenType);
                 if(typeof(Window).IsAssignableFrom(SplashScreenType))
                     windowCreatorParams.Add(SplashScreenType);
                 else if(typeof(FrameworkElement).IsAssignableFrom(SplashScreenType)) {
                     contentCreator = DXSplashScreen.DefaultSplashScreenContentCreator;
-                    contentCreatorParams = SplashScreenType;
+                    contentCreatorParams = new object[] { SplashScreenType, ssModel };
                 }
             }
             if(UseIndependentWindow)
@@ -206,12 +207,15 @@ namespace DevExpress.Mvvm.UI {
             else
                 DXSplashScreen.Show(CreateSplashScreenWindow, contentCreator, windowCreatorParams.ToArray(), contentCreatorParams);
             isSplashScreenShown = UseIndependentWindow || DXSplashScreen.IsActive;
+        }
+        SplashScreenViewModel CreateSplashScreenViewModel() {
+            var result = new SplashScreenViewModel() { State = State };
             if(Math.Abs(Progress - SplashScreenViewModel.ProgressDefaultValue) > 0.0001)
-                OnProgressChanged();
+                result.Progress = Progress;
             if(Math.Abs(MaxProgress - SplashScreenViewModel.MaxProgressDefaultValue) > 0.0001)
-                OnMaxProgressChanged();
-            if(!object.Equals(State, SplashScreenViewModel.StateDefaultValue))
-                OnStateChanged();
+                result.MaxProgress = MaxProgress;
+
+            return result;
         }
         void ISplashScreenService.HideSplashScreen() {
             if(!IsSplashScreenActive) {
@@ -267,8 +271,9 @@ namespace DevExpress.Mvvm.UI {
             string documentType = parameters[0] as string;
             IViewLocator viewLocator = parameters[1] as IViewLocator;
             DataTemplate viewTemplate = parameters[2] as DataTemplate;
-            var SplashScreenViewModel = new SplashScreenViewModel();
-            return ViewHelper.CreateAndInitializeView(viewLocator, documentType, SplashScreenViewModel, null, null, viewTemplate, null);
+            var model = SplashScreenHelper.FindParameter<SplashScreenViewModel>(parameter);
+            model = model == null ? new SplashScreenViewModel() : model.Clone();
+            return ViewHelper.CreateAndInitializeView(viewLocator, documentType, model, null, null, viewTemplate, null);
         }
     }
     public enum SplashScreenOwnerSearchMode {

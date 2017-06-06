@@ -39,6 +39,15 @@ public ParserMode Mode { get; set; }
   if(!TokenEquals(pos+1+length, rParen)) return false;
   return true;
  }
+ bool NextIs_AttachedPropExpr(int pos) {
+  if(!TokenEquals(pos, "(")) return false;
+  int length;
+  if(!NextIs_TypeExpr(pos+1, out length)) return false;
+  if(!TokenEquals(pos+1+length, ".")) return false;
+  if(!TokenEquals(pos+2+length, _Ident)) return false;
+  if(!TokenEquals(pos+3+length, ")")) return false;
+  return true;
+ }
  bool NextIs_TypeExpr(int pos) {
   int length; return NextIs_TypeExpr(pos, out length);
  }
@@ -456,7 +465,7 @@ public ParserMode Mode { get; set; }
    IndexExpr(out res);
   } else if (la.kind == 40) {
    Get();
-   if (NextIs_TypeExpr(1)) {
+   if (NextIs_AttachedPropExpr(0)) {
     TypeIdentExpr(out res, false);
     ((NType)res).Kind = NType.NKind.Attached;
    } else if (StartOf(1)) {

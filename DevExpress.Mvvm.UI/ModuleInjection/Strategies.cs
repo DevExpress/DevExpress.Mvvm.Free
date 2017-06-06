@@ -1,6 +1,7 @@
 using DevExpress.Mvvm.Native;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
@@ -40,6 +41,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             SelectedViewModel = viewModel;
         }
         void IStrategy.Clear() {
+            OnClearing();
             ViewModels.Clear();
             OnClear();
         }
@@ -53,6 +55,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         }
         protected virtual void OnInjected(object viewModel) { }
         protected virtual void OnRemoved(object viewModel) { }
+        protected virtual void OnClearing() { }
         protected virtual void OnClear() { }
         protected virtual void OnSelectedViewModelPropertyChanged(object oldValue, object newValue) {
             if(oldValue == newValue) return;
@@ -140,6 +143,17 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             if(viewModel == SelectedViewModel)
                 SelectedViewModel = null;
         }
+        protected override void OnClearing() {
+            base.OnClearing();
+            foreach(var vm in ViewModels) {
+                var child = FindChild(vm);
+                Wrapper.RemoveChild(child);
+            }
+        }
+        protected override void OnClear() {
+            base.OnClear();
+            SelectedViewModel = null;
+        }
         ContentPresenter FindChild(object viewModel) {
             return Wrapper.Children.Cast<ContentPresenter>().FirstOrDefault(x => x.Content == viewModel);
         }
@@ -163,6 +177,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             base.OnRemoved(viewModel);
             if(viewModel == SelectedViewModel)
                 SelectedViewModel = null;
+        }
+        protected override void OnClear() {
+            base.OnClear();
+            SelectedViewModel = null;
         }
         protected override void OnSelectedViewModelChanged(object oldValue, object newValue) {
             base.OnSelectedViewModelChanged(oldValue, newValue);
@@ -189,6 +207,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             base.OnRemoved(viewModel);
             if(viewModel == SelectedViewModel)
                 SelectedViewModel = null;
+        }
+        protected override void OnClear() {
+            base.OnClear();
+            SelectedViewModel = null;
         }
     }
     public class SelectorStrategy<T, TWrapper> : ItemsControlStrategy<T, TWrapper>

@@ -14,8 +14,15 @@ using System.Windows.Input;
 using System.Windows.Markup;
 
 namespace DevExpress.Xpf.DXBinding {
-    public abstract class DXBindingBase : MarkupExtension {
+    public abstract class DXMarkupExtensionBase : MarkupExtension {
         internal static bool? IsInDesingModeCore = null;
+        protected static bool IsInDesignMode() {
+            if(IsInDesingModeCore != null) return IsInDesingModeCore.Value;
+            DependencyPropertyDescriptor property =
+                DependencyPropertyDescriptor.FromProperty(DesignerProperties.IsInDesignModeProperty, typeof(FrameworkElement));
+            return (bool)property.Metadata.DefaultValue;
+        }
+
         protected static string GetTargetPropertyName(object targetProperty) {
             return (targetProperty as DependencyProperty).With(x => x.Name)
                 ?? (targetProperty as PropertyInfo).With(x => x.Name)
@@ -27,19 +34,51 @@ namespace DevExpress.Xpf.DXBinding {
                 ?? (targetProperty as PropertyInfo).With(x => x.PropertyType)
                 ?? (targetProperty as EventInfo).With(x => x.EventHandlerType);
         }
-        protected static bool IsInDesignMode() {
-            if(IsInDesingModeCore != null) return IsInDesingModeCore.Value;
-            DependencyPropertyDescriptor property =
-                DependencyPropertyDescriptor.FromProperty(DesignerProperties.IsInDesignModeProperty, typeof(FrameworkElement));
-            return (bool)property.Metadata.DefaultValue;
-        }
         protected static bool IsInSetter(IProvideValueTarget targetProvider) {
+            if(targetProvider == null) return false;
             return targetProvider.TargetObject is Setter;
         }
         protected static bool IsInTemplate(IProvideValueTarget targetProvider) {
-            var targetObjectType = targetProvider.TargetObject.GetType();
-            return targetObjectType.FullName == "System.Windows.SharedDp";
+            if(targetProvider == null) return false;
+            return targetProvider.TargetObject.GetType().FullName == "System.Windows.SharedDp";
         }
+        protected static bool IsInBinding(IProvideValueTarget targetProvider) {
+            if(targetProvider == null) return false;
+            return targetProvider.TargetObject is BindingBase;
+        }
+
+        IServiceProvider serviceProvider;
+        IProvideValueTarget targetProvider;
+        IXamlTypeResolver xamlTypeResolver;
+        protected IServiceProvider ServiceProvider { get { return serviceProvider; } }
+        protected IProvideValueTarget TargetProvider {
+            get {
+                if(targetProvider != null) return targetProvider;
+                if(serviceProvider == null) return null;
+                return targetProvider = (IProvideValueTarget)serviceProvider.GetService(typeof(IProvideValueTarget));
+            }
+        }
+        protected IXamlTypeResolver XamlTypeResolver {
+            get {
+                if(xamlTypeResolver != null) return xamlTypeResolver;
+                if(serviceProvider == null) return null;
+                return xamlTypeResolver = (IXamlTypeResolver)serviceProvider.GetService(typeof(IXamlTypeResolver));
+            }
+        }
+
+        public sealed override object ProvideValue(IServiceProvider serviceProvider) {
+            try {
+                this.serviceProvider = serviceProvider;
+                return ProvideValueCore();
+            } finally {
+                this.serviceProvider = null;
+                this.targetProvider = null;
+                this.xamlTypeResolver = null;
+            }
+        }
+        protected abstract object ProvideValueCore();
+    }
+    public abstract class DXBindingBase : DXMarkupExtensionBase {
         internal static Binding CreateBinding(IServiceProvider serviceProvider, Operand operand, BindingMode mode, bool isRootBinding) {
             var path = operand != null && !string.IsNullOrEmpty(operand.Path) ? operand.Path : ".";
             Binding res = new Binding(path) { Path = new PropertyPath(path), Mode = mode };
@@ -78,24 +117,13 @@ namespace DevExpress.Xpf.DXBinding {
         protected internal string TargetPropertyName { get; private set; }
         protected internal string TargetObjectName { get; private set; }
         protected internal Type TargetPropertyType { get; private set; }
-        protected IServiceProvider ServiceProvider { get; private set; }
-        protected IProvideValueTarget TargetProvider { get; private set; }
-        protected IXamlTypeResolver XamlTypeResolver { get; private set; }
         bool IsInitialized { get; set; }
 
         public DXBindingBase() {
             ErrorHandler = new IErrorHandlerImpl(this);
             TypeResolver = new ITypeResolverImpl(this);
         }
-        public sealed override object ProvideValue(IServiceProvider serviceProvider) {
-            try {
-                InitServices(serviceProvider);
-                return ProvideValueCore();
-            } finally {
-                ReleaseServices();
-            }
-        }
-        protected virtual object ProvideValueCore() {
+        protected override object ProvideValueCore() {
             CheckTargetProvider();
             if(XamlTypeResolver != null && !((ITypeResolverImpl)TypeResolver).IsInitialized) {
                 ((ITypeResolverImpl)TypeResolver).SetXamlTypeResolver(XamlTypeResolver);
@@ -112,16 +140,6 @@ namespace DevExpress.Xpf.DXBinding {
         }
         protected abstract void Init();
         protected abstract object GetProvidedValue();
-        void InitServices(IServiceProvider serviceProvider) {
-            ServiceProvider = serviceProvider;
-            TargetProvider = (IProvideValueTarget)serviceProvider.GetService(typeof(IProvideValueTarget));
-            XamlTypeResolver = (IXamlTypeResolver)serviceProvider.GetService(typeof(IXamlTypeResolver));
-        }
-        void ReleaseServices() {
-            XamlTypeResolver = null;
-            TargetProvider = null;
-            ServiceProvider = null;
-        }
         void InitTargetProperties() {
             if(TargetProvider.TargetObject is Setter) {
                 Setter setter = (Setter)TargetProvider.TargetObject;
@@ -408,7 +426,7 @@ namespace DevExpress.Xpf.DXBinding {
                 if(backConversionType == null)
                     backConversionType = targetType;
                 errorHandler.ClearError();
-                return ObjectToObjectConverter.Coerce(calculator.Resolve(values), targetType, true);
+                return calculator.Resolve(values);
             }
             protected override object[] ConvertBack(object value, Type[] targetTypes) {
                 if(treeInfo.IsEmptyBackExpr() && !treeInfo.IsSimpleExpr())
@@ -433,6 +451,7 @@ namespace DevExpress.Xpf.DXBinding {
                     return externalConverter.Convert(value, targetType, parameter, culture);
                 if(value == DependencyProperty.UnsetValue && targetType == typeof(string))
                     value = null;
+                else value = ObjectToObjectConverter.Coerce(value, targetType, true);
                 return base.CoerceAfterConvert(value, targetType, parameter, culture);
             }
             protected override object CoerceBeforeConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {

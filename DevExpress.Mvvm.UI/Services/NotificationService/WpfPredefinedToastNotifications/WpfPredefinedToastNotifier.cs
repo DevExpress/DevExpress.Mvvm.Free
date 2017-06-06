@@ -1,6 +1,7 @@
 using DevExpress.Internal;
 using System;
 using System.Drawing;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
@@ -90,6 +91,14 @@ namespace DevExpress.Mvvm.UI.Native {
             }
             [SecuritySafeCritical]
             static Icon ExtractAssociatedIcon(string path) {
+                if(string.IsNullOrEmpty(path))
+                    return null;
+                if(!File.Exists(path)) {
+                    path += ".exe";
+                    if(!File.Exists(path)) {
+                        return null;
+                    }
+                }
                 int index = 0;
                 IntPtr handle = ExtractAssociatedIcon(IntPtr.Zero, new StringBuilder(path), ref index);
                 if(handle != IntPtr.Zero)

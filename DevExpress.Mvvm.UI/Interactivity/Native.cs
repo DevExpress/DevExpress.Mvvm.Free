@@ -80,7 +80,6 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
             if(this.subscribedEventHandler == null) return;
             Type type = obj.GetType();
             EventInfo info = type.GetEvent(eventName);
-
             info.RemoveEventHandler(obj, this.subscribedEventHandler);
             this.subscribedEventHandler = null;
         }
@@ -97,7 +96,6 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
             Type handlerType = typeof(EventTriggerGenericHandler<,>).MakeGenericType(parameters[0].ParameterType, parameters[1].ParameterType);
             object instance = Activator.CreateInstance(handlerType, new object[] { EventHandler });
             return Delegate.CreateDelegate(eventHandlerType, instance, instance.GetType().GetMethod("Handler"));
-
         }
         bool IsEventCorrect(Type eventHandlerType) {
             if(!typeof(Delegate).IsAssignableFrom(eventHandlerType)) return false;

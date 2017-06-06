@@ -101,16 +101,23 @@ namespace DevExpress.Mvvm.UI.Native {
             return GetScreenRectCore(Window.GetWindow(element), element);
         }
         static Rect GetScreenRectCore(Window window, FrameworkElement element) {
-            Point leftTop = element.PointToScreen(new Point());
-            if(element.FlowDirection == FlowDirection.RightToLeft && (element is Window))
+            Point leftTop;
+            Point rightBottom;
+            if(element.FlowDirection == FlowDirection.RightToLeft && (element is Window)) {
                 leftTop = element.PointToScreen(new Point(element.ActualWidth, 0));
+                rightBottom = element.PointToScreen(new Point(0, element.ActualHeight));
+            } else {
+                leftTop = element.PointToScreen(new Point());
+                rightBottom = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
+            }
             var presentationSource = window == null ? null : PresentationSource.FromVisual(window);
             if(presentationSource != null) {
-                double dpiX = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M11;
-                double dpiY = 96.0 * presentationSource.CompositionTarget.TransformToDevice.M22;
-                leftTop = new Point(leftTop.X * 96.0 / dpiX, leftTop.Y * 96.0 / dpiY);
+                double dpiX = presentationSource.CompositionTarget.TransformToDevice.M11;
+                double dpiY = presentationSource.CompositionTarget.TransformToDevice.M22;
+                leftTop = new Point(leftTop.X / dpiX, leftTop.Y / dpiY);
+                rightBottom = new Point(rightBottom.X / dpiX, rightBottom.Y / dpiY);
             }
-            return new Rect(leftTop, new Size(element.ActualWidth, element.ActualHeight));
+            return new Rect(leftTop, rightBottom);
         }
 
         static DependencyObject GetParentCore(DependencyObject d, bool useLogicalTree = false) {

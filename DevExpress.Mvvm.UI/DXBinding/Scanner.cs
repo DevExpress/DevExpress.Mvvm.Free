@@ -2,6 +2,8 @@
 using System;
 using System.IO;
 using System.Collections;
+using System.Linq;
+using System.Text;
 namespace DevExpress.DXBinding.Native {
 class Scanner : ScannerBase {
  const int maxT = 71;
@@ -613,8 +615,9 @@ class Scanner : ScannerBase {
     else {t.kind = 66; break;}
 
    }
-   t.val = new String(tval, 0, tlen);
-   return t;
+            var tvalBytes = tval.Select(x => Convert.ToByte(x)).ToArray();
+            t.val = Encoding.UTF8.GetString(tvalBytes, 0, tlen);
+            return t;
  }
 }
 }

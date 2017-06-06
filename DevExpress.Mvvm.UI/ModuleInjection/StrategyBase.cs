@@ -21,6 +21,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         bool IsInitialized { get; }
         void Initialize(IStrategyOwner owner);
         void Uninitialize();
+        object GetView(object viewModel);
     }
     public interface IStrategy : IBaseStrategy {
         object SelectedViewModel { get; }
@@ -48,6 +49,9 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         }
         protected virtual void InitializeCore() { }
         protected virtual void UninitializeCore() { }
+        protected virtual object GetView(object viewModel) {
+            return Target;
+        }
         void IBaseStrategy.Initialize(IStrategyOwner owner) {
             if(IsInitialized) return;
             IsInitialized = true;
@@ -58,6 +62,9 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             if(!IsInitialized) return;
             UninitializeCore();
             IsInitialized = false;
+        }
+        object IBaseStrategy.GetView(object viewModel) {
+            return GetView(viewModel);
         }
     }
     public class ViewDataTemplateSelector : DataTemplateSelector {

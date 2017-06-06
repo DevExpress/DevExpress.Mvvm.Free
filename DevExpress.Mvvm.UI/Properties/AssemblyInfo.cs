@@ -26,8 +26,6 @@ using DevExpress.Mvvm.Native;
 [assembly: ComVisible(false)]
 [assembly: NeutralResourcesLanguage("en-US")]
 
-[assembly: XmlnsDefinition(XmlNamespaceConstants.PresentationNamespaceDefinition, XmlNamespaceConstants.DXBindingNamespace)]
-[assembly: XmlnsDefinition(XmlNamespaceConstants.MvvmNamespaceDefinition, XmlNamespaceConstants.ModuleInjectionNamespace)]
 [assembly: XmlnsPrefix(XmlNamespaceConstants.MvvmNamespaceDefinition, XmlNamespaceConstants.MvvmPrefix)]
 [assembly: XmlnsDefinition(XmlNamespaceConstants.MvvmNamespaceDefinition, XmlNamespaceConstants.MvvmUINamespace)]
 [assembly: XmlnsDefinition(XmlNamespaceConstants.MvvmNamespaceDefinition, XmlNamespaceConstants.MvvmInteractivityNamespace)]

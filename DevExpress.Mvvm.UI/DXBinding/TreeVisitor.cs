@@ -672,7 +672,7 @@ namespace DevExpress.DXBinding.Native {
                 .Where(x => x.GetIndexParameters().Any())
                 .Select(x => x.GetGetMethod())
                 .ToArray();
-            return GetInvocationExpression(from, allMethods, n.Name, indexArgs);
+            return GetInvocationExpression(from, from.Type, allMethods, n.Name, indexArgs);
         }
         protected override Expression Relative(Expression from, NRelative n) {
             switch(n.Kind) {
@@ -695,11 +695,11 @@ namespace DevExpress.DXBinding.Native {
             }
             return Expression.Property(from, prop);
         }
-        Expression GetInvocationExpression(Expression from, MethodInfo[] possibleMethods, string methodName, IEnumerable<Expression> methodArgs) {
+        Expression GetInvocationExpression(Expression from, Type fromType, MethodInfo[] possibleMethods, string methodName, IEnumerable<Expression> methodArgs) {
             Type[] args;
             var method = MemberSearcher.FindMethod(possibleMethods, methodArgs.Select(x => x.Type).ToArray(), out args);
             if(method == null) {
-                errorHandler.Report(ErrorHelper.Report001(methodName, from.Type), true);
+                errorHandler.Report(ErrorHelper.Report002(methodName, methodArgs.Select(x => x.Type).ToArray(), fromType), true);
                 return null;
             }
             var _methodArgs = new List<Expression>();
@@ -726,7 +726,7 @@ namespace DevExpress.DXBinding.Native {
             var allMethods = from.Type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
                     .Where(x => x.Name == n.Name)
                     .ToArray();
-            return GetInvocationExpression(from, allMethods, n.Name, methodArgs);
+            return GetInvocationExpression(from, from.Type, allMethods, n.Name, methodArgs);
         }
         protected override Expression Type_Type(Expression from, NType n) {
             throw new NotImplementedException();
@@ -741,14 +741,10 @@ namespace DevExpress.DXBinding.Native {
         }
         protected override Expression Type_StaticMethod(Expression from, NType n, IEnumerable<Expression> methodArgs) {
             Type t = typeResolver(n);
-            object member = t.GetMethod(n.Ident.Name, StaticBindingFlags, System.Type.DefaultBinder,
-                methodArgs.Select(x => x.Type).ToArray(), null);
-            if(member is MethodInfo) {
-                return Expression.Call(null, (MethodInfo)member, methodArgs);
-            } else {
-                errorHandler.Throw(ErrorHelper.Report001(n.Ident.Name, t), null);
-                return Expression.Constant(null);
-            }
+            var allMethods = t.GetMethods(StaticBindingFlags)
+                .Where(x => x.Name == n.Ident.Name)
+                .ToArray();
+            return GetInvocationExpression(null, t, allMethods, n.Name, methodArgs);
         }
         Expression Type_StaticIdentCore(Type t, string nName) {
             object member = (object)t.GetProperty(nName, StaticBindingFlags)

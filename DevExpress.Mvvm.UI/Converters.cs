@@ -4,8 +4,8 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
-using System.Reflection;
 using DevExpress.Mvvm.Native;
+using System.Reflection;
 using System.Windows.Data;
 using System.Windows.Markup;
 using System.Collections.Generic;
@@ -308,7 +308,7 @@ namespace DevExpress.Mvvm.UI {
         }
         internal static object Coerce(object value, Type targetType, bool ignoreImplicitXamlConversions = false) {
             if(value == null || targetType == typeof(object) || value.GetType() == targetType) return value;
-            if(value.GetType().IsAssignableFrom(targetType)) return value;
+            if(targetType.IsAssignableFrom(value.GetType())) return value;
             var nullableType = Nullable.GetUnderlyingType(targetType);
             var coerced = CoerceNonNullable(value, nullableType ?? targetType, ignoreImplicitXamlConversions);
             if(nullableType != null) {
@@ -380,7 +380,7 @@ namespace DevExpress.Mvvm.UI {
     public class BooleanToVisibilityConverter : IValueConverter {
         bool hiddenInsteadOfCollapsed;
         public bool Inverse { get; set; }
-        [Obsolete, Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
+        [Obsolete("Use the HiddenInsteadOfCollapsed property instead."), Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public bool HiddenInsteadCollapsed { get { return hiddenInsteadOfCollapsed; } set { hiddenInsteadOfCollapsed = value; } }
         public bool HiddenInsteadOfCollapsed { get { return hiddenInsteadOfCollapsed; } set { hiddenInsteadOfCollapsed = value; } }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
@@ -495,6 +495,44 @@ namespace DevExpress.Mvvm.UI {
         }
     }
 
+    public class EnumToStringConverter : IValueConverter {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+            if(value == null)
+                return null;
+            return value.ToString();
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+            if(value == null || !targetType.IsEnum)
+                return value;
+            return Enum.Parse(targetType, value.ToString());
+        }
+    }
+
+    public class ColorToBrushConverter : IValueConverter {
+        public byte? CustomA { get; set; }
+        public static SolidColorBrush Convert(object value, byte? customA = null) {
+            if(value == null) return null;
+            Color color;
+            if(value is System.Drawing.Color) {
+                var mColor = (System.Drawing.Color)value;
+                color = Color.FromArgb(mColor.A, mColor.R, mColor.G, mColor.B);
+            } else
+                color = (Color)value;
+            if(customA != null)
+                color.A = customA.Value;
+            return BrushesCache.GetBrush(color);
+        }
+        public static Color ConvertBack(object value) {
+            return value != null ? ((SolidColorBrush)value).Color : default(Color);
+        }
+        object IValueConverter.Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+            return Convert(value, CustomA);
+        }
+        object IValueConverter.ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+            return ConvertBack(value);
+        }
+    }
+
     static class ConverterHelper {
         public static string[] GetParameters(object parameter) {
             string param = parameter as string;
@@ -536,6 +574,42 @@ namespace DevExpress.Mvvm.UI {
             return (booleanValue ^ inverse) ?
                 Visibility.Visible :
  (hiddenInsteadOfCollapsed ? Visibility.Hidden : Visibility.Collapsed);
+        }
+    }
+}
+namespace DevExpress.Mvvm.UI.Native {
+    public static class BrushesCache {
+        public static SolidColorBrush GetBrush(Color color) {
+            WeakReference r;
+            cache.TryGetValue(color, out r);
+            if(r != null && r.IsAlive)
+                return (SolidColorBrush)r.Target;
+            SolidColorBrush res = new SolidColorBrush(color);
+            res.Freeze();
+            if(r != null)
+                lock(cache) cache[color] = new WeakReference(res);
+            else
+                lock(cache) cache.Add(color, new WeakReference(res));
+            return res;
+        }
+
+        readonly static Dictionary<Color, WeakReference> cache;
+        static BrushesCache() {
+            cache = new Dictionary<Color, WeakReference>();
+            AddDefaultBrushes();
+        }
+        static void AddDefaultBrushes() {
+            var props =
+                typeof(Brushes)
+                .GetProperties(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public)
+                .AsEnumerable();
+            props.Where(x => x.PropertyType == typeof(SolidColorBrush));
+            foreach(var prop in props) {
+                var brush = (SolidColorBrush)prop.GetValue(null, null);
+                var color = brush.Color;
+                if(cache.ContainsKey(color)) continue;
+                cache.Add(color, new WeakReference(brush));
+            }
         }
     }
 }

@@ -97,4 +97,15 @@ namespace DevExpress.Mvvm.UI {
             return new BooleanToObjectConverter() { TrueValue = this.TrueValue, FalseValue = this.FalseValue, NullValue = this.NullValue };
         }
     }
+    public class EnumToStringConverterExtension : MarkupExtension {
+        public override object ProvideValue(IServiceProvider serviceProvider) {
+            return new EnumToStringConverter();
+        }
+    }
+    public class ColorToBrushConverterExtension : MarkupExtension {
+        public byte? CustomA { get; set; }
+        public override object ProvideValue(System.IServiceProvider serviceProvider) {
+            return new ColorToBrushConverter() { CustomA = CustomA };
+        }
+    }
 }

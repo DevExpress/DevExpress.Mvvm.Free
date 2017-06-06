@@ -16,7 +16,7 @@ namespace DevExpress.Mvvm.UI {
         public string Name { get { return (string)GetValue(NameProperty); } set { SetValue(NameProperty, value); } }
         [IgnoreDependencyPropertiesConsistencyCheckerAttribute]
         static readonly DependencyProperty ServicesClientInternalProperty = DependencyProperty.Register("ServicesClientInternal", typeof(object), typeof(ServiceBaseGeneric<T>),
-            new PropertyMetadata(null, (d, e) => ((ServiceBaseGeneric<T>)d).OnServicesClientInternalChanged(e.OldValue as ISupportServices, e.NewValue as ISupportServices)));
+            new PropertyMetadata(null, (d, e) => ((ServiceBaseGeneric<T>)d).OnServicesClientChanged(e.OldValue as ISupportServices, e.NewValue as ISupportServices)));
         public bool YieldToParent { get; set; }
         internal bool ShouldInject { get; set; }
 
@@ -43,7 +43,7 @@ namespace DevExpress.Mvvm.UI {
             if(baseUri != null || AssociatedObject == null) return baseUri;
             return BaseUriHelper.GetBaseUri(AssociatedObject);
         }
-        void OnServicesClientInternalChanged(ISupportServices oldServiceClient, ISupportServices newServiceClient) {
+        protected virtual void OnServicesClientChanged(ISupportServices oldServiceClient, ISupportServices newServiceClient) {
             oldServiceClient.Do(x => x.ServiceContainer.UnregisterService(this));
             newServiceClient.Do(x => x.ServiceContainer.RegisterService(Name, this, YieldToParent));
         }

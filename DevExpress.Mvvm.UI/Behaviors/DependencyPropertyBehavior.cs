@@ -3,6 +3,7 @@ using DevExpress.Mvvm.UI.Interactivity.Internal;
 using System;
 using System.Linq;
 using System.Reflection;
+using DevExpress.Mvvm.Native;
 using System.Windows;
 
 namespace DevExpress.Mvvm.UI {

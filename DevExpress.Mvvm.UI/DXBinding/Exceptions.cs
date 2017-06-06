@@ -57,9 +57,14 @@ namespace DevExpress.DXBinding.Native {
             return string.Format(err104, NameDXBinding);
         }
 
-        const string report001 = "The '{0}' property or method is not found on object '{1}'.";
-        public static string Report001(string propertyOrMethod, Type objectType) {
-            return string.Format(report001, propertyOrMethod, objectType.Name);
+        const string report001 = "The '{0}' property is not found on object '{1}'.";
+        public static string Report001(string property, Type objectType) {
+            return string.Format(report001, property, objectType.Name);
+        }
+        const string report002 = "The '{0}({1})' method is not found on object '{2}'.";
+        public static string Report002(string method, Type[] methodArgs, Type objectType) {
+            var methodArgsStr = methodArgs == null || !methodArgs.Any() ? string.Empty : methodArgs.Select(x => x.Name).Aggregate((x, y) => x + ", " + y);
+            return string.Format(report002, method, methodArgsStr, objectType.Name);
         }
 
         public static string ReportBindingError(string baseMessage, string expr, string backExpr) {

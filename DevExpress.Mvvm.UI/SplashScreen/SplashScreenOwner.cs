@@ -128,7 +128,7 @@ namespace DevExpress.Mvvm.UI {
             if(lockMode == SplashScreenLock.None)
                 return;
 
-            lock (locker) {
+            lock(locker) {
                 ContainerLockInfo lockInfo;
                 if(lockMode == SplashScreenLock.LoadingContent) {
                     if(!lockedContainerDict.TryGetValue(container.WindowObject, out lockInfo))
@@ -146,7 +146,7 @@ namespace DevExpress.Mvvm.UI {
             if(container == null || container.Handle == IntPtr.Zero)
                 return;
 
-            lock (locker) {
+            lock(locker) {
                 ContainerLockInfo lockInfo;
                 if(!infosFromContainer.TryGetValue(container, out lockInfo))
                     return;
@@ -417,11 +417,11 @@ namespace DevExpress.Mvvm.UI {
         }
         protected WindowRelationInfo() { }
 
-        public void AttachChild(Window child) {
+        public void AttachChild(Window child, bool isChildHandleRequired) {
             if(Child != null)
                 throw new ArgumentException("Child property is already set");
 
-            Child = new WindowContainer(child);
+            Child = new WindowContainer(child, isChildHandleRequired);
             ChildAttachedOverride();
             CompleteContainerInitialization(Child);
         }
@@ -476,7 +476,7 @@ namespace DevExpress.Mvvm.UI {
             CompleteInitialization();
         }
         void CompleteInitialization() {
-            if(IsReleased || IsInitialized || Child == null || Child.Handle == IntPtr.Zero || Parent.Handle == IntPtr.Zero)
+            if(IsReleased || IsInitialized || Child == null || !Child.IsInitialized || Parent.Handle == IntPtr.Zero)
                 return;
 
             CompleteInitializationOverride();
@@ -572,11 +572,14 @@ namespace DevExpress.Mvvm.UI {
         public bool IsWindowClosedBeforeInit { get; private set; }
         public int ManagedThreadId { get; private set; }
         protected FrameworkElement FrameworkObject { get; private set; }
+        bool isHandleRequired;
 
-        public WindowContainer(DependencyObject windowObject) {
+        public WindowContainer(DependencyObject windowObject) : this(windowObject, true) { }
+        public WindowContainer(DependencyObject windowObject, bool isHandleRequired) {
             if(windowObject == null)
                 throw new ArgumentNullException("WindowObject");
 
+            this.isHandleRequired = isHandleRequired;
             WindowObject = windowObject;
             FrameworkObject = WindowObject as FrameworkElement;
             Initialize();
@@ -629,9 +632,14 @@ namespace DevExpress.Mvvm.UI {
             if(Window == null)
                 return;
 
-            IntPtr handle;
-            if(EnsureWindowHandle(out handle)) {
-                Handle = handle;
+            if(isHandleRequired) {
+                IntPtr handle;
+                if(EnsureWindowHandle(out handle)) {
+                    Handle = handle;
+                    ManagedThreadId = Window.Dispatcher.Thread.ManagedThreadId;
+                    CompleteInitialization();
+                }
+            } else if(Window.Dispatcher != null) {
                 ManagedThreadId = Window.Dispatcher.Thread.ManagedThreadId;
                 CompleteInitialization();
             }
@@ -702,7 +710,7 @@ namespace DevExpress.Mvvm.UI {
         internal const int WS_EX_TOOLWINDOW = 0x00000080;
         const int GWL_EXSTYLE = (-20);
         const int GWL_HWNDPARENT = -8;
-#if DEBUGTEST || DEBUG
+#if DEBUG
         internal static int Test_WindowStyleModifier { get; set; }
 #endif
         public static void InvokeAsync(WindowContainer container, Action action, DispatcherPriority priority = DispatcherPriority.Normal, AsyncInvokeMode mode = AsyncInvokeMode.AsyncOnly) {
@@ -759,6 +767,9 @@ namespace DevExpress.Mvvm.UI {
         }
         [SecuritySafeCritical]
         public static void SetParent(Window window, IntPtr parentHandle) {
+            if(!HasAccess(window))
+                return;
+
             if(window.IsVisible) {
                 SetWindowLong(new WindowInteropHelper(window).Handle, GWL_HWNDPARENT, parentHandle);
             } else {
@@ -789,6 +800,9 @@ namespace DevExpress.Mvvm.UI {
         }
         [SecuritySafeCritical]
         public static bool PatchWindowStyle(Window window, bool hasOwner) {
+            if(!HasAccess(window))
+                return false;
+
             var wndHelper = new WindowInteropHelper(window);
             if(wndHelper.Handle == IntPtr.Zero)
                 return false;
@@ -796,7 +810,7 @@ namespace DevExpress.Mvvm.UI {
             int styleModifier = hasOwner
                 ? WS_EX_TRANSPARENT
                 : GetToolWindowStyle(window);
-#if DEBUGTEST || DEBUG
+#if DEBUG
             Test_WindowStyleModifier = styleModifier;
 #endif
             SetWindowLong(wndHelper.Handle, GWL_EXSTYLE, exStyle | styleModifier);
@@ -806,6 +820,9 @@ namespace DevExpress.Mvvm.UI {
             return !DXSplashScreen.UseDefaultAltTabBehavior && window.WindowStyle == WindowStyle.None && window is DXSplashScreen.SplashScreenWindow
                 ? WS_EX_TOOLWINDOW
                 : 0;
+        }
+        internal static bool HasAccess(Window window) {
+            return !DXSplashScreen.DisableThreadingProblemsDetection || (window != null && window.Dispatcher != null && window.Dispatcher.CheckAccess());
         }
     }
 }

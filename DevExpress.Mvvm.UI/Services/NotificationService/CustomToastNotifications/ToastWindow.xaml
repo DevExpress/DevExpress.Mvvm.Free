@@ -12,7 +12,9 @@
         Topmost="True">
     <Window.Template>
         <ControlTemplate TargetType="Window">
-            <ContentPresenter/>
+            <AdornerDecorator>
+                <ContentPresenter/>
+            </AdornerDecorator>
         </ControlTemplate>
     </Window.Template>
 </Window>

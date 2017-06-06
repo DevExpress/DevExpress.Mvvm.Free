@@ -143,6 +143,11 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             SelectedViewModel = null;
         }
         readonly ObservableCollection<object> viewModels;
+
+        object IUIRegion.GetView(object viewModel) {
+            return GetView(viewModel);
+        }
+        protected abstract object GetView(object viewModel);
         #endregion
         #region StrategyOwner
         protected class StrategyOwnerBase : IStrategyOwner {
@@ -223,6 +228,9 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             Strategy.Uninitialize();
             base.OnUninitializing();
         }
+        protected override object GetView(object viewModel) {
+            return Strategy.GetView(viewModel);
+        }
         protected override void DoInject(object vm, Type viewType) {
             Strategy.Inject(vm, viewType);
         }
@@ -282,6 +290,9 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         public bool SetWindowOwner { get { return (bool)GetValue(SetWindowOwnerProperty); } set { SetValue(SetWindowOwnerProperty, value); } }
         public bool IsMainWindow { get { return (bool)GetValue(IsMainWindowProperty); } set { SetValue(IsMainWindowProperty, value); } }
 
+        protected override object GetView(object viewModel) {
+            return GetStrategy(viewModel).With(x => x.GetView(viewModel));
+        }
         protected override void DoInject(object vm, Type viewType) {
             var strategy = CreateStrategy(vm);
             if(WindowShowMode == WindowShowMode.Default)

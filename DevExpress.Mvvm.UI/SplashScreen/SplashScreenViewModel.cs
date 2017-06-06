@@ -36,9 +36,21 @@ namespace DevExpress.Mvvm.UI {
             allowDisableMarquee = true;
         }
         void DisableMarquee() {
-            if(!allowDisableMarquee) return;
+            if(!allowDisableMarquee)
+                return;
             IsIndeterminate = false;
         }
         bool allowDisableMarquee = false;
+
+        public SplashScreenViewModel Clone() {
+            var result = new SplashScreenViewModel();
+            result.allowDisableMarquee = false;
+            result.MaxProgress = MaxProgress;
+            result.Progress = Progress;
+            result.State = State;
+            result.IsIndeterminate = IsIndeterminate;
+            result.allowDisableMarquee = true;
+            return result;
+        }
     }
 }

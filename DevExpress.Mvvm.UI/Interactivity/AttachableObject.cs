@@ -82,10 +82,8 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         protected override bool FreezeCore(bool isChecking) {
             return false;
         }
-        protected virtual void OnAttached() {
-        }
-        protected virtual void OnDetaching() {
-        }
+        protected virtual void OnAttached() { }
+        protected virtual void OnDetaching() { }
 
         protected void VerifyRead() {
             ReadPreamble();

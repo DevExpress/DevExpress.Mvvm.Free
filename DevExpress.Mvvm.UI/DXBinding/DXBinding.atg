@@ -22,6 +22,15 @@ COMPILER DXBinding
 		if(!TokenEquals(pos+1+length, rParen)) return false;
 		return true;
 	}
+	bool NextIs_AttachedPropExpr(int pos) {
+		if(!TokenEquals(pos, "(")) return false;
+		int length;
+		if(!NextIs_TypeExpr(pos+1, out length)) return false;
+		if(!TokenEquals(pos+1+length, ".")) return false;
+		if(!TokenEquals(pos+2+length, _Ident)) return false;
+		if(!TokenEquals(pos+3+length, ")")) return false;
+		return true;
+	}
 	bool NextIs_TypeExpr(int pos) { 
 		int length; return NextIs_TypeExpr(pos, out length); 
 	}
@@ -173,7 +182,7 @@ AtomExpr<out NBase res>						(. res = null; .)
 	| IdentExpr<out res>
 	| IndexExpr<out res>
 	| "("
-	  (IF(NextIs_TypeExpr(1))
+	  (IF(NextIs_AttachedPropExpr(0))
 	    TypeIdentExpr<out res, false>		(. ((NType)res).Kind = NType.NKind.Attached; .)
 	  | Expr<out res>)
 	  ")"
