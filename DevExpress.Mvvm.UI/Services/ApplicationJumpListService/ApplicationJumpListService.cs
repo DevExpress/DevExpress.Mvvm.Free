@@ -214,7 +214,7 @@ namespace DevExpress.Mvvm.UI {
             Stream stream = AssemblyHelper.GetEmbeddedResourceStream(typeof(JumpActionsManager).Assembly, "DevExpress.Mvvm.UI.ApplicationJumpTaskLauncher.exe", true);
             try {
                 File.WriteAllBytes(filePath, StreamHelper.CopyAllBytes(stream));
-            } catch(IOException) { }
+            } catch(IOException) { } catch(UnauthorizedAccessException) { }
             return filePath;
         }
         JumpItem PrepareItem(ApplicationJumpItemInfo item, JumpItem itemToReplace) {

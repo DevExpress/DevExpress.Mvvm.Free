@@ -1,5 +1,6 @@
 using DevExpress.Mvvm.Native;
 using System.Windows;
+using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Data;
 
@@ -40,9 +41,12 @@ namespace DevExpress.Mvvm.UI {
         }
         [System.Security.SecuritySafeCritical]
         internal static void UpdateWindowOwner(Window w, FrameworkElement ownerObject) {
-            if(!ViewModelBase.IsInDesignMode)
-                w.Owner = Window.GetWindow(ownerObject);
-            else {
+            if (ownerObject == null)
+                return;
+            if (!ViewModelBase.IsInDesignMode) {
+                w.Owner = LayoutTreeHelper.GetVisualParents(ownerObject).OfType<Window>().FirstOrDefault()
+                    ?? Window.GetWindow(ownerObject);
+            } else {
                 System.Windows.Interop.WindowInteropHelper windowInteropHelper = new System.Windows.Interop.WindowInteropHelper(w);
                 windowInteropHelper.Owner = GetActiveWindow();
             }

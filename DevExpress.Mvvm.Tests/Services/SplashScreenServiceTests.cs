@@ -23,6 +23,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public double Progress { get; private set; }
         public bool IsIndeterminate { get; private set; }
         public string TextProp { get; private set; }
+        public bool CloseRequested { get; private set; }
         public void Text(string value) {
             TextProp = value;
         }
@@ -41,6 +42,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
         void ISplashScreen.CloseSplashScreen() {
             Close();
+            CloseRequested = true;
         }
         void ISplashScreen.SetProgressState(bool isIndeterminate) {
             IsIndeterminate = isIndeterminate;
@@ -85,6 +87,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             ((DispatcherFrame)f).Continue = false;
             return null;
         }
+
         public SplashScreenTestUserControl() {
             Instance = this;
             if(TemplateCreator != null)
@@ -93,12 +96,23 @@ namespace DevExpress.Mvvm.UI.Tests {
     }
 
     public class DXSplashScreenBaseTestFixture : BaseWpfFixture {
+        protected override void SetUpCore() {
+            base.SetUpCore();
+            DXSplashScreen.UIThreadDelay = 700;
+            DXSplashScreen.NotInitializedStateMethodCallPolicy = NotInitializedStateMethodCallPolicy.CallWhenReady;
+        }
         protected override void TearDownCore() {
             SplashScreenTestUserControl.Window = null;
             SplashScreenTestUserControl.ViewModel = null;
             SplashScreenTestUserControl.Instance = null;
             SplashScreenTestUserControl.TemplateCreator = null;
             SplashScreenTestWindow.Instance = null;
+            var info = DXSplashScreen.SplashContainer.ActiveInfo;
+            var oldInfo = DXSplashScreen.SplashContainer.ActiveInfo;
+            if(info != null && info.WaitEvent != null)
+                info.WaitEvent.Set();
+            if(oldInfo != null && oldInfo.WaitEvent != null)
+                oldInfo.WaitEvent.Set();
             CloseDXSplashScreen();
             base.TearDownCore();
         }
@@ -127,20 +141,20 @@ namespace DevExpress.Mvvm.UI.Tests {
     }
     [TestFixture]
     public class DXSplashScreenTests : DXSplashScreenBaseTestFixture {
-        [Test]
+        [Test, Order(1)]
         public void InvalidUsage_Test01() {
             Assert.Throws<InvalidOperationException>(() => {
                 DXSplashScreen.Show<SplashScreenTestWindow>();
                 DXSplashScreen.Show<SplashScreenTestWindow>();
             });
         }
-        [Test]
+        [Test, Order(2)]
         public void InvalidUsage_Test02() {
             Assert.Throws<InvalidOperationException>(() => {
                 DXSplashScreen.Close();
             });
         }
-        [Test]
+        [Test, Order(3)]
         public void InvalidUsage_Test03() {
             Assert.Throws<InvalidOperationException>(() => {
                 DXSplashScreen.Progress(0);
@@ -162,7 +176,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsNull(DXSplashScreen.SplashContainer.OldInfo.InternalThread);
             Assert.IsNull(DXSplashScreen.SplashContainer.OldInfo.SplashScreen);
         }
-        [Test]
+        [Test, Order(4)]
         public void Complex_Test() {
             DXSplashScreen.Show<SplashScreenTestWindow>();
             Assert.IsNotNull(DXSplashScreen.SplashContainer.ActiveInfo.InternalThread);
@@ -181,7 +195,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsNull(DXSplashScreen.SplashContainer.OldInfo.InternalThread);
             Assert.IsNull(DXSplashScreen.SplashContainer.OldInfo.SplashScreen);
         }
-        [Test]
+        [Test, Order(5)]
         public void IsActive_Test() {
             Assert.IsFalse(DXSplashScreen.IsActive);
             DXSplashScreen.Show<SplashScreenTestWindow>();
@@ -190,7 +204,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(DXSplashScreen.IsActive);
         }
 
-        [Test]
+        [Test, Order(6)]
         public void CustomSplashScreen_Test() {
             Func<object, Window> windowCreator = (p) => {
                 Assert.AreEqual(1, p);
@@ -208,7 +222,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsNull(DXSplashScreen.SplashContainer.OldInfo.SplashScreen);
         }
 
-        [Test]
+        [Test, Order(7)]
         public void ShowWindowISplashScreen_Test() {
             DXSplashScreen.Show<SplashScreenTestWindow>();
             SplashScreenTestWindow.DoEvents();
@@ -230,13 +244,13 @@ namespace DevExpress.Mvvm.UI.Tests {
             DXSplashScreen.SetState("test");
             SplashScreenTestWindow.DoEvents();
         }
-        [Test]
+        [Test, Order(8)]
         public void ShowWindowNotISplashScreen_Test() {
             Assert.Throws<InvalidOperationException>(() => {
                 DXSplashScreen.Show<Window>();
             });
         }
-        [Test]
+        [Test, Order(9)]
         public void ShowUserControl_Test() {
             DXSplashScreen.Show<SplashScreenTestUserControl>();
             SplashScreenTestUserControl.DoEvents();
@@ -263,7 +277,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual("Test", SplashScreenTestUserControl.ViewModel.State);
             Assert.AreEqual(false, SplashScreenTestUserControl.ViewModel.IsIndeterminate);
         }
-        [Test]
+        [Test, Order(10)]
         public void ShowUserControlAndCheckWindowProperties_Test() {
             DXSplashScreen.Show<SplashScreenTestUserControl>();
             SplashScreenTestUserControl.DoEvents();
@@ -290,7 +304,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             CloseDXSplashScreen();
         }
 
-        [Test]
+        [Test, Order(11)]
         public void TestQ338517_1() {
             DXSplashScreen.Show<SplashScreenTestWindow>();
             Assert.IsNotNull(DXSplashScreen.SplashContainer.ActiveInfo.InternalThread);
@@ -306,14 +320,14 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsNull(DXSplashScreen.SplashContainer.OldInfo.InternalThread);
             Assert.IsNull(DXSplashScreen.SplashContainer.OldInfo.SplashScreen);
         }
-        [Test]
+        [Test, Order(12)]
         public void TestQ338517_2() {
             DXSplashScreen.Show<SplashScreenTestWindow>();
             Assert.Throws<InvalidOperationException>(() => {
                 DXSplashScreen.CallSplashScreenMethod<UserControl>(x => x.Tag = "Test");
             });
         }
-        [Test]
+        [Test, Order(13)]
         public void SplashScreenOwner_Test00() {
             var owner = new SplashScreenOwner(new Border());
             DXSplashScreen.Show<SplashScreenTestUserControl>(WindowStartupLocation.CenterScreen, owner);
@@ -323,7 +337,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(info.Owner.IsInitialized);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(14)]
         public void SplashScreenOwner_Test01() {
             DXSplashScreen.Show<SplashScreenTestUserControl>();
             var info = DXSplashScreen.SplashContainer.ActiveInfo;
@@ -332,7 +346,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsNull(info.RelationInfo);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(15)]
         public void SplashScreenOwner_Test02() {
             var owner = new SplashScreenOwner(new Border());
             DXSplashScreen.Show(CreateDefaultWindow, CreateDefaultContent, new object[] { owner }, null);
@@ -342,7 +356,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(info.Owner.IsInitialized);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(16)]
         public void SplashScreenOwner_Test03() {
             var owner = new WindowContainer(new Border());
             DXSplashScreen.Show(CreateDefaultWindow, CreateDefaultContent, new object[] { owner }, null);
@@ -352,7 +366,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(info.Owner.IsInitialized);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(17)]
         public void SplashScreenOwner_Test04() {
             var owner = new WindowContainer(new Border());
             DXSplashScreen.Show(CreateDefaultWindow, CreateDefaultContent, new object[] { owner.CreateOwnerContainer() }, null);
@@ -362,7 +376,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(info.Owner.IsInitialized);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(18)]
         public void SplashScreenOwner_Test05() {
             DXSplashScreen.Show(CreateDefaultWindow, CreateDefaultContent, null, null);
             var info = DXSplashScreen.SplashContainer.ActiveInfo;
@@ -371,7 +385,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsNull(info.RelationInfo);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(19)]
         public void NotShowIfOwnerClosedTest00_T268403() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -386,7 +400,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsTrue(DXSplashScreen.SplashContainer.Test_SkipWindowOpen);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(20)]
         public void NotShowIfOwnerClosedTest01_T268403() {
             RealWindow.Show();
             RealWindow.Close();
@@ -404,7 +418,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(DXSplashScreen.SplashContainer.Test_SkipWindowOpen, "skipOpen");
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(21)]
         public void SplashScreenStartupLocation_Test00() {
             var owner = new SplashScreenOwner(RealWindow);
             RealWindow.WindowStartupLocation = WindowStartupLocation.Manual;
@@ -421,7 +435,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(new Point(290, 150), pos.TopLeft);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(22)]
         public void SplashScreenStartupLocation_Test01() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -430,7 +444,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(WindowStartupLocation.CenterOwner, GetSplashScreenStartupLocation().Value);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(23)]
         public void SplashScreenStartupLocation_Test02() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -439,7 +453,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(WindowStartupLocation.CenterScreen, GetSplashScreenStartupLocation().Value);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(24)]
         public void SplashScreenStartupLocation_Test03() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -448,7 +462,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(WindowStartupLocation.Manual, GetSplashScreenStartupLocation().Value);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(25)]
         public void SplashScreenStartupLocation_Test04() {
             var owner = new SplashScreenOwner(RealWindow);
             RealWindow.WindowStartupLocation = WindowStartupLocation.Manual;
@@ -464,7 +478,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(new Point(270, 130), pos.TopLeft);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(26)]
         public void SplashScreenStartupLocation_Test05() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -492,7 +506,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsTrue(Math.Abs(expectedPos.Y - pos.Top) < 2);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(27)]
         public void SplashScreenClosingMode_Test00() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -503,7 +517,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             DispatcherHelper.DoEvents();
             Assert.IsFalse(DXSplashScreen.IsActive);
         }
-        [Test]
+        [Test, Order(28)]
         public void SplashScreenClosingMode_Test01() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -515,7 +529,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsTrue(DXSplashScreen.IsActive);
             CloseDXSplashScreen();
         }
-        [Test]
+        [Test, Order(29)]
         public void SplashScreenClosingMode_Test02() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -526,7 +540,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             DispatcherHelper.DoEvents();
             Assert.IsFalse(DXSplashScreen.IsActive);
         }
-        [Test]
+        [Test, Order(30)]
         public void SplashScreenClosingMode_Test03() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -537,7 +551,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(DXSplashScreen.IsActive);
             RealWindow.Close();
         }
-        [Test]
+        [Test, Order(31)]
         public void SplashScreenClosingMode_Test04() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -548,7 +562,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             DispatcherHelper.DoEvents();
             Assert.IsFalse(DXSplashScreen.IsActive);
         }
-        [Test]
+        [Test, Order(32)]
         public void SplashScreenClosingMode_Test05() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -561,7 +575,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             CloseDXSplashScreen();
             Assert.IsFalse(DXSplashScreen.IsActive);
         }
-        [Test]
+        [Test, Order(33)]
         public void SplashScreenClosingMode_Test06() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -572,7 +586,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             DispatcherHelper.DoEvents();
             Assert.IsFalse(DXSplashScreen.IsActive);
         }
-        [Test]
+        [Test, Order(34)]
         public void SplashScreenClosingMode_Test07() {
             RealWindow.Show();
             DispatcherHelper.DoEvents();
@@ -583,12 +597,210 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(DXSplashScreen.IsActive);
             RealWindow.Close();
         }
+        [Test, Order(35)]
+        public void NonInitializedCallbacks_Test00() {
+            EnsureSplashScreenContainer(true);
+            DXSplashScreen.UIThreadDelay = 0;
+            DXSplashScreen.Show<SplashScreenTestUserControl>();
+            DXSplashScreen.SetState("init");
+            DXSplashScreen.Progress(1, 2);
+            Assert.IsNull(SplashScreenTestUserControl.Instance);
+            var info = DXSplashScreen.SplashContainer.ActiveInfo;
+            info.WaitEvent.Set();
+            EnqueueWait(() => SplashScreenTestUserControl.Instance != null);
+            SplashScreenTestUserControl.DoEvents();
+            Assert.IsNotNull(SplashScreenTestUserControl.Instance);
+            Assert.IsNotNull(SplashScreenTestUserControl.ViewModel);
+            Assert.AreEqual("init", SplashScreenTestUserControl.ViewModel.State);
+            Assert.AreEqual(1, SplashScreenTestUserControl.ViewModel.Progress);
+            Assert.AreEqual(2, SplashScreenTestUserControl.ViewModel.MaxProgress);
+            DispatcherHelper.DoEvents();
+        }
+        [Test, Order(36)]
+        public void NonInitializedCallbacks_Test01() {
+            EnsureSplashScreenContainer(true);
+            DXSplashScreen.UIThreadDelay = 0;
+            DXSplashScreen.Show<SplashScreenTestUserControl>();
+            Assert.IsTrue(DXSplashScreen.IsActive);
+            var info = DXSplashScreen.SplashContainer.ActiveInfo;
+            DXSplashScreen.Close();
+            Assert.IsFalse(DXSplashScreen.IsActive);
+            Assert.IsTrue(info.IsActive);
+            info.WaitEvent.Set();
+            EnqueueWait(() => !info.IsActive);
+        }
+        [Test, Order(37)]
+        public void NonInitializedCallbacks_Test02() {
+            EnsureSplashScreenContainer(true);
+            DXSplashScreen.NotInitializedStateMethodCallPolicy = NotInitializedStateMethodCallPolicy.Discard;
+            DXSplashScreen.UIThreadDelay = 0;
+            DXSplashScreen.Show<SplashScreenTestUserControl>();
+            DXSplashScreen.SetState("init");
+            DXSplashScreen.Progress(1, 2);
+            Assert.IsNull(SplashScreenTestUserControl.Instance);
+            var info = DXSplashScreen.SplashContainer.ActiveInfo;
+            info.WaitEvent.Set();
+            EnqueueWait(() => SplashScreenTestUserControl.Instance != null);
+            SplashScreenTestUserControl.DoEvents();
+            Assert.IsNotNull(SplashScreenTestUserControl.Instance);
+            Assert.IsNotNull(SplashScreenTestUserControl.ViewModel);
+            Assert.AreEqual(SplashScreenViewModel.StateDefaultValue, SplashScreenTestUserControl.ViewModel.State);
+            Assert.AreEqual(SplashScreenViewModel.ProgressDefaultValue, SplashScreenTestUserControl.ViewModel.Progress);
+            Assert.AreEqual(SplashScreenViewModel.MaxProgressDefaultValue, SplashScreenTestUserControl.ViewModel.MaxProgress);
+            DispatcherHelper.DoEvents();
+        }
+        [Test, Order(38)]
+        public void NonInitializedCallbacks_Test03() {
+            EnsureSplashScreenContainer(true);
+            DXSplashScreen.NotInitializedStateMethodCallPolicy = NotInitializedStateMethodCallPolicy.Discard;
+            DXSplashScreen.UIThreadDelay = 0;
+            DXSplashScreen.Show<SplashScreenTestUserControl>();
+            var info = DXSplashScreen.SplashContainer.ActiveInfo;
+            Assert.IsTrue(DXSplashScreen.IsActive);
+            DXSplashScreen.Close();
+            Assert.IsFalse(DXSplashScreen.IsActive);
+            Assert.IsTrue(info.IsActive);
+            info.WaitEvent.Set();
+            EnqueueWait(() => SplashScreenTestUserControl.Instance != null);
+            SplashScreenTestUserControl.DoEvents();
+            DispatcherHelper.DoEvents();
+            EnqueueDelay(2000);
+            Assert.IsTrue(info.IsActive);
+            info.Dispatcher.Invoke(DispatcherPriority.Normal, new Action(info.SplashScreen.Close));
+            SplashScreenTestsHelper.JoinThread(info);
+        }
+        [Test, Order(39)]
+        public void NonInitializedCallbacks_Test04() {
+            EnsureSplashScreenContainer(true);
+            DXSplashScreen.NotInitializedStateMethodCallPolicy = NotInitializedStateMethodCallPolicy.Exception;
+            DXSplashScreen.UIThreadDelay = 0;
+            DXSplashScreen.Show<SplashScreenTestUserControl>();
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.SetState("state");
+            });
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.Progress(1, 2);
+            });
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.Close();
+            });
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.CallSplashScreenMethod<Window>(x => { });
+            });
+
+            var info = DXSplashScreen.SplashContainer.ActiveInfo;
+            info.WaitEvent.Set();
+            EnqueueWait(() => SplashScreenTestUserControl.Instance != null);
+        }
+        [Test, Order(40)]
+        public void NonInitializedCallbacks_Test05() {
+            EnsureSplashScreenContainer(true);
+            DXSplashScreen.UIThreadDelay = 0;
+            DXSplashScreen.Show<SplashScreenTestWindow>();
+            Assert.IsNull(SplashScreenTestWindow.Instance);
+            DXSplashScreen.SetState("init");
+            DXSplashScreen.Progress(2, 3);
+            DXSplashScreen.CallSplashScreenMethod<SplashScreenTestWindow>(x => x.Text("init"));
+            var info = DXSplashScreen.SplashContainer.ActiveInfo;
+            info.WaitEvent.Set();
+            EnqueueWait(() => SplashScreenTestWindow.Instance != null);
+            SplashScreenTestWindow.DoEvents();
+            Assert.IsNotNull(SplashScreenTestWindow.Instance);
+            Assert.AreEqual("init", SplashScreenTestWindow.Instance.TextProp);
+            Assert.AreEqual(2, SplashScreenTestWindow.Instance.Progress);
+            DispatcherHelper.DoEvents();
+        }
+        [Test, Order(41)]
+        public void NonInitializedCallbacks_Test06() {
+            EnsureSplashScreenContainer(true);
+            DXSplashScreen.UIThreadDelay = 0;
+            DXSplashScreen.Show<SplashScreenTestWindow>();
+            Assert.IsTrue(DXSplashScreen.IsActive);
+            Assert.IsNull(SplashScreenTestWindow.Instance);
+            var info = DXSplashScreen.SplashContainer.ActiveInfo;
+            DXSplashScreen.Close();
+            Assert.IsFalse(DXSplashScreen.IsActive);
+            Assert.IsTrue(info.IsActive);
+            info.WaitEvent.Set();
+            EnqueueWait(() => SplashScreenTestWindow.Instance != null && SplashScreenTestWindow.Instance.CloseRequested);
+        }
+        [Test, Order(43)]
+        public void NonInitializedCallbacks_Test07() {
+            EnsureSplashScreenContainer(true);
+            DXSplashScreen.UIThreadDelay = 0;
+            DXSplashScreen.NotInitializedStateMethodCallPolicy = NotInitializedStateMethodCallPolicy.Discard;
+            DXSplashScreen.Show<SplashScreenTestWindow>();
+            Assert.IsNull(SplashScreenTestWindow.Instance);
+            DXSplashScreen.SetState("init");
+            DXSplashScreen.Progress(2, 3);
+            DXSplashScreen.CallSplashScreenMethod<SplashScreenTestWindow>(x => x.Text("init"));
+            var info = DXSplashScreen.SplashContainer.ActiveInfo;
+            info.WaitEvent.Set();
+            EnqueueWait(() => SplashScreenTestWindow.Instance != null);
+            SplashScreenTestWindow.DoEvents();
+            Assert.IsNotNull(SplashScreenTestWindow.Instance);
+            Assert.IsNull(SplashScreenTestWindow.Instance.TextProp);
+            Assert.AreEqual(double.NaN, SplashScreenTestWindow.Instance.Progress);
+            DispatcherHelper.DoEvents();
+        }
+        [Test, Order(44)]
+        public void NonInitializedCallbacks_Test08() {
+            EnsureSplashScreenContainer(true);
+            DXSplashScreen.UIThreadDelay = 0;
+            DXSplashScreen.NotInitializedStateMethodCallPolicy = NotInitializedStateMethodCallPolicy.Discard;
+            DXSplashScreen.Show<SplashScreenTestWindow>();
+            Assert.IsNull(SplashScreenTestWindow.Instance);
+            var info = DXSplashScreen.SplashContainer.ActiveInfo;
+            Assert.IsTrue(DXSplashScreen.IsActive);
+            DXSplashScreen.Close();
+            Assert.IsFalse(DXSplashScreen.IsActive);
+            Assert.IsTrue(info.IsActive);
+            info.WaitEvent.Set();
+            EnqueueWait(() => SplashScreenTestWindow.Instance != null);
+            SplashScreenTestWindow.DoEvents();
+            DispatcherHelper.DoEvents();
+            EnqueueDelay(2000);
+            Assert.IsTrue(info.IsActive);
+            Assert.IsFalse(SplashScreenTestWindow.Instance.CloseRequested);
+            info.Dispatcher.Invoke(DispatcherPriority.Normal, new Action(info.SplashScreen.Close));
+            SplashScreenTestsHelper.JoinThread(info);
+        }
+        [Test, Order(45)]
+        public void NonInitializedCallbacks_Test09() {
+            EnsureSplashScreenContainer(true);
+            DXSplashScreen.NotInitializedStateMethodCallPolicy = NotInitializedStateMethodCallPolicy.Exception;
+            DXSplashScreen.UIThreadDelay = 0;
+            DXSplashScreen.Show<SplashScreenTestWindow>();
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.SetState("state");
+            });
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.Progress(1, 2);
+            });
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.Close();
+            });
+            Assert.Throws<InvalidOperationException>(() => {
+                DXSplashScreen.CallSplashScreenMethod<Window>(x => { });
+            });
+
+            var info = DXSplashScreen.SplashContainer.ActiveInfo;
+            info.WaitEvent.Set();
+            EnqueueWait(() => SplashScreenTestWindow.Instance != null);
+            SplashScreenTestWindow.DoEvents();
+        }
 
         static Window CreateDefaultWindow(object parameter) {
             return new Window() { Width = 160, Height = 180 };
         }
         static object CreateDefaultContent(object parameter) {
             return new SplashScreenTestUserControl();
+        }
+        void EnsureSplashScreenContainer(bool waitForMainThread) {
+            if(DXSplashScreen.SplashContainer == null)
+                DXSplashScreen.SplashContainer = new DXSplashScreen.SplashScreenContainer();
+            if(waitForMainThread)
+                DXSplashScreen.SplashContainer.ActiveInfo.WaitEvent = new AutoResetEvent(false);
         }
     }
     [TestFixture]
@@ -1351,7 +1563,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             service.HideSplashScreen();
             JoinThread(container.OldInfo);
         }
-        static void JoinThread(DXSplashScreen.SplashScreenContainer.SplashScreenInfo info) {
+        internal static void JoinThread(DXSplashScreen.SplashScreenContainer.SplashScreenInfo info) {
             if(info == null)
                 return;
             var t = info.InternalThread;

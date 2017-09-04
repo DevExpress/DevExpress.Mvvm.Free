@@ -46,12 +46,16 @@ namespace DevExpress.Mvvm.UI {
             base.OnSourceChanged(oldSource, newSource);
             UpdateIsEnabled();
         }
-        protected override void OnCommandChanged() {
-            base.OnCommandChanged();
+        protected override void OnCommandChanged(ICommand oldValue, ICommand newValue) {
+            base.OnCommandChanged(oldValue, newValue);
+            if (oldValue != null)
+                oldValue.CanExecuteChanged -= OnCommandCanExecuteChanged;
+            if (newValue != null)
+                newValue.CanExecuteChanged += OnCommandCanExecuteChanged;
             UpdateIsEnabled();
         }
-        protected override void OnCommandParameterChanged() {
-            base.OnCommandParameterChanged();
+        protected override void OnCommandParameterChanged(object oldValue, object newValue) {
+            base.OnCommandParameterChanged(oldValue, newValue);
             UpdateIsEnabled();
         }
         protected override void Invoke(object sender, object eventArgs) {
@@ -76,6 +80,9 @@ namespace DevExpress.Mvvm.UI {
             if(AllowChangingEventOwnerIsEnabled && associatedFrameworkObject != null) {
                 associatedFrameworkObject.IsEnabled = Command.CanExecute(CommandParameter);
             }
+        }
+        void OnCommandCanExecuteChanged(object sender, EventArgs e) {
+            UpdateIsEnabled();
         }
     }
 }

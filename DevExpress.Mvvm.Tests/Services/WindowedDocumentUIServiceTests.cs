@@ -173,7 +173,50 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueTestComplete();
         }
 
-        
+        [Test, Asynchronous]
+        public void ActivateDocumentsWhenClosed() {
+            EnqueueShowWindow();
+            List<IDocument> documents = new List<IDocument>();
+            WindowedDocumentUIService service = CreateService();
+            Interaction.GetBehaviors(Window).Add(service);
+            IDocumentManagerService iService = service;
+            int counter = 0;
+            EnqueueCallback(() => {
+                service.ActiveDocumentChanged += (s, e) => counter++;
+                for(int i = 0; i < 4; i++) {
+                    documents.Add(iService.CreateDocument("View" + i,
+                    ViewModelSource.Create(() => new UITestViewModel() { Title = "Title" + i, Parameter = i })));
+                    documents[i].Show();
+                }
+                iService.ActiveDocument = documents[1];
+
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(() => {
+                counter = 0;
+                documents[1].Close();
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(() => {
+                Assert.AreEqual(2, counter);
+                Assert.AreEqual(iService.ActiveDocument, documents[3]);
+                iService.ActiveDocument = documents[3];
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(() => {
+                counter = 0;
+                documents[3].Close();
+            });
+            EnqueueWindowUpdateLayout();
+            EnqueueCallback(() => {
+                Assert.AreEqual(iService.ActiveDocument, documents[2]);
+                Assert.AreEqual(2, counter);
+                documents[0].Close();
+                documents[2].Close();
+            });
+            EnqueueTestComplete();
+        }
+
 
         public class BindingTestClass : DependencyObject {
             public static readonly DependencyProperty ActiveDocumentProperty =

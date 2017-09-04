@@ -39,6 +39,11 @@ namespace DevExpress.Mvvm.UI {
         ArrangeOnStartupOnly,
         Skip
     }
+    public enum NotInitializedStateMethodCallPolicy {
+        CallWhenReady,
+        Discard,
+        Exception
+    }
 
     public class SplashScreenOwner {
         public static readonly DependencyProperty PreferVisualTreeForOwnerSearchProperty =
@@ -710,7 +715,7 @@ namespace DevExpress.Mvvm.UI {
         internal const int WS_EX_TOOLWINDOW = 0x00000080;
         const int GWL_EXSTYLE = (-20);
         const int GWL_HWNDPARENT = -8;
-#if DEBUG
+#if DEBUGTEST || DEBUG
         internal static int Test_WindowStyleModifier { get; set; }
 #endif
         public static void InvokeAsync(WindowContainer container, Action action, DispatcherPriority priority = DispatcherPriority.Normal, AsyncInvokeMode mode = AsyncInvokeMode.AsyncOnly) {
@@ -810,7 +815,7 @@ namespace DevExpress.Mvvm.UI {
             int styleModifier = hasOwner
                 ? WS_EX_TRANSPARENT
                 : GetToolWindowStyle(window);
-#if DEBUG
+#if DEBUGTEST || DEBUG
             Test_WindowStyleModifier = styleModifier;
 #endif
             SetWindowLong(wndHelper.Handle, GWL_EXSTYLE, exStyle | styleModifier);

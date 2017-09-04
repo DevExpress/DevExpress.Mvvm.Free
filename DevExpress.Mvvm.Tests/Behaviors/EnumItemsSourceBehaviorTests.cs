@@ -37,11 +37,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             DeleteItem,
             CutItem
         }
-        enum TestEnum3 {
-            [Image(UriPrefix + "CustomCut.png")]
-            [Display(Description = "CustomCutDescription")]
-            CutItem
-        }
         bool EnumMemberInfoComparer(EnumMemberInfo enumMemberInfo, string description, string id, string imageName, string name) {
             return description == enumMemberInfo.Description
                 && (enumMemberInfo.Id == null) ? (id == null) : id == enumMemberInfo.Id.ToString()
@@ -67,7 +62,6 @@ namespace DevExpress.Mvvm.UI.Tests {
                 throw new NotImplementedException();
             }
         }
-
         [Test]
         public void DefalutValues() {
             EnumItemsSourceBehavior behavior = new EnumItemsSourceBehavior();
@@ -190,12 +184,23 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(((EnumMemberInfo)listBox.Items.GetItemAt(0)).ShowImage);
             Assert.IsFalse(((EnumMemberInfo)comboBox.Items.GetItemAt(0)).ShowImage);
             Assert.IsFalse(((EnumMemberInfo)itemsControl.Items.GetItemAt(0)).ShowImage);
-
-            listBox = new ListBox();
-            listBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum3), AllowImages = false };
+        }
+        [Test, NUnit.Framework.Description("T521914")]
+        public void BehaviorImageCreationTest() {
+            var listBox = new ListBox();
+            var listBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum1), AllowImages = false };
             Interaction.GetBehaviors(listBox).Add(listBoxBehavior);
-            Assert.AreEqual(1, listBox.Items.Count);
-            Assert.IsNull(((EnumMemberInfo)listBox.Items.GetItemAt(0)).Image);
+            Window.Content = listBox;
+            Action<bool, bool> itemTest = (showImage, valueCreated) => {
+                var item = (EnumMemberInfo)listBox.Items.GetItemAt(0);
+                Assert.AreEqual(showImage, item.ShowImage);
+                Assert.AreEqual(valueCreated, Mvvm.Tests.EnumHelperTests.GetLazyImageSource(item).IsValueCreated);
+            };
+            Window.Show();
+            itemTest(false, false);
+            listBoxBehavior.AllowImages = true;
+            Window.UpdateLayout();
+            itemTest(true, true);
         }
         [Test]
         public void BehaviorSortModeChanged() {

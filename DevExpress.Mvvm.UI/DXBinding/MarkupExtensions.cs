@@ -455,8 +455,10 @@ namespace DevExpress.Xpf.DXBinding {
                 return base.CoerceAfterConvert(value, targetType, parameter, culture);
             }
             protected override object CoerceBeforeConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
-                if(externalConverter != null)
-                    return externalConverter.ConvertBack(value, backConversionType, parameter, culture);
+                if(externalConverter != null) {
+                    var t = targetTypes != null && targetTypes.Count() == 1 ? targetTypes[0] : backConversionType;
+                    return externalConverter.ConvertBack(value, t, parameter, culture);
+                }
                 return base.CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
             }
         }
@@ -608,11 +610,6 @@ namespace DevExpress.Xpf.DXBinding {
             if(!(TargetProvider.TargetObject is DependencyObject))
                 ErrorHandler.Throw(ErrorHelper.Err002(this), null);
             if(TargetProvider.TargetProperty is EventInfo) return;
-            if(TargetProvider.TargetProperty is MethodInfo) {
-                MethodInfo m = (MethodInfo)TargetProvider.TargetProperty;
-                if(m.Name.StartsWith("Add") && m.Name.EndsWith("Handler"))
-                    return;
-            }
             ErrorHandler.Throw(ErrorHelper.Err002(this), null);
         }
         protected override void Init() {

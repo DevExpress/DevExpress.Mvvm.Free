@@ -361,6 +361,7 @@ namespace DevExpress.Internal {
         DXTabWpfVisualization = "DX." + VersionShort + ": Visualization",
         DXTabWpfCommon = "DX." + VersionShort + ": Common Controls",
         DXTabWpfScheduling = "DX." + VersionShort + ": Scheduling",
+        DXTabWpfSchedulingNew = "DX." + VersionShort + ": Scheduling (new)",
         DXTabWpfRichEdit = "DX." + VersionShort + ": Rich Text Editor",
         DXTabWpfSpreadsheet = "DX." + VersionShort + ": Spreadsheet";
 

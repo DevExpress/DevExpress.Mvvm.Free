@@ -28,9 +28,9 @@ namespace DevExpress.Mvvm.Native {
                     string name = GetEnumName(field, value, nameConverter, splitNames);
 
                     var imageInfo = GetImageInfo(MetadataHelper.GetAttribute<ImageAttribute>(field), MetadataHelper.GetAttribute<DXImageAttribute>(field), null, getKnownImageUriCallback);
-                    ImageSource image = ViewModelBase.IsInDesignMode || !showImage ? null : (imageInfo.Item1 ?? imageInfo.Item2).With(x => (ImageSource)new ImageSourceConverter().ConvertFrom(x));
-                    return new EnumMemberInfo(name, DataAnnotationsAttributeHelper.GetFieldDescription(field), useUnderlyingEnumValue ? GetUnderlyingEnumValue(value) : value, image, showImage, showName,
-                     DataAnnotationsAttributeHelper.GetFieldOrder(field));
+                    Func<ImageSource> getImage = () => ViewModelBase.IsInDesignMode ? null : (imageInfo.Item1 ?? imageInfo.Item2).With(x => (ImageSource)new ImageSourceConverter().ConvertFrom(x));
+                    return new EnumMemberInfo(name, DataAnnotationsAttributeHelper.GetFieldDescription(field), useUnderlyingEnumValue ? GetUnderlyingEnumValue(value) : value,
+                        showImage, showName, getImage, DataAnnotationsAttributeHelper.GetFieldOrder(field));
                 });
             switch(sortMode) {
                 case EnumMembersSortMode.DisplayName:
@@ -84,25 +84,26 @@ namespace DevExpress.Mvvm {
     public class EnumMemberInfo {
         public EnumMemberInfo(string value, string description, object id, ImageSource image)
             : this(value, description, id, image, true, true) {
-            this.Name = value;
-            this.Description = description;
-            this.Id = id;
-            this.Image = image;
         }
-        public EnumMemberInfo(string value, string description, object id, ImageSource image, bool showImage, bool showName, int? order = null) {
+        public EnumMemberInfo(string value, string description, object id, ImageSource image, bool showImage, bool showName, int? order = null)
+            : this(value, description, id, showImage, showName, () => image, order) {
+        }
+        public EnumMemberInfo(string value, string description, object id, bool showImage, bool showName, Func<ImageSource> getImage, int? order = null) {
             this.Name = value;
             this.Description = description;
             this.Id = id;
-            this.Image = image;
+            this.image = new Lazy<ImageSource>(getImage);
             this.ShowImage = showImage;
             this.ShowName = showName;
             this.Order = order;
         }
+        Lazy<ImageSource> image;
+
         public string Name { get; private set; }
         public bool ShowName { get; private set; }
         public object Id { get; private set; }
         public string Description { get; private set; }
-        public ImageSource Image { get; private set; }
+        public ImageSource Image { get { return image.Value; } }
         public bool ShowImage { get; private set; }
         public int? Order { get; private set; }
         public override string ToString() {

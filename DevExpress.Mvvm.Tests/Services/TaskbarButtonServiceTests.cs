@@ -99,6 +99,43 @@ namespace DevExpress.Mvvm.UI.Tests {
             vm.ProgressValue = 1.0;
             Assert.AreEqual(1, RealWindow.TaskbarItemInfo.ProgressValue);
         }
+
+        [Test]
+        public void TestTaskbarListTestHelper() {
+            TaskbarListTestHelper.DoWithNotImplementedHrInit(() => {
+                var testWindow = new Window();
+                testWindow.Show();
+                try {
+                    Assert.IsNull(testWindow.TaskbarItemInfo);
+                    Assert.Throws<NotImplementedException>(() => testWindow.TaskbarItemInfo = new TaskbarItemInfo());
+                } finally {
+                    testWindow.Close();
+                }
+            });
+        }
+        [Test(Description = "T528105")]
+        public void DoNotThrowsExceptionIfUserIsNotLoggedInAndThusThereIsNoAnyTaskbarButton() {
+            var testWindow = new Window();
+            var service = new TaskbarButtonService();
+            try {
+                TaskbarListTestHelper.DoWithNotImplementedHrInit(() => {
+                    testWindow.Show();
+                    EnqueueConditional(() => testWindow.IsLoaded);
+                    Assert.IsNull(testWindow.TaskbarItemInfo);
+                    Assert.DoesNotThrow(() => {
+                        Interaction.GetBehaviors(testWindow).Add(service);
+                        service.Description = "descr";
+                    });
+                    Assert.IsNotNull(testWindow.TaskbarItemInfo);
+                });
+                Assert.IsNull(testWindow.GetType().GetField("_taskbarList", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(testWindow));
+                TaskbarListTestHelper.SendTaskBarButtonCreated(testWindow);
+                Assert.IsNotNull(testWindow.GetType().GetField("_taskbarList", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(testWindow));
+            } finally {
+                testWindow.Close();
+            }
+        }
+
         [Test]
         public void AttachToWindowChild() {
             Grid grid = new Grid();

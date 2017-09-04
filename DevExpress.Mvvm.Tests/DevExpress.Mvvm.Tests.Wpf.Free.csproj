@@ -107,6 +107,7 @@
     <Compile Include="Services\DispatcherServiceTests.cs" />
     <Compile Include="Services\SplashScreenServiceTests.cs" />
     <Compile Include="Services\TaskbarButtonServiceTests.cs" />
+    <Compile Include="Services\TaskbarListTestHelper.cs" />
     <Compile Include="Services\ViewHelperTests.cs" />
     <Compile Include="Mvvm.UI\ConvertersTests.cs" />
     <Compile Include="Mvvm.UI\EventToCommandTests.cs" />

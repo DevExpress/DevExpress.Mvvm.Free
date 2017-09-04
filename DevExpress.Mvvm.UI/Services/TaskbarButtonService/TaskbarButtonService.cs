@@ -212,7 +212,7 @@ namespace DevExpress.Mvvm.UI {
                 return;
             }
             if(window.TaskbarItemInfo == null) {
-                window.TaskbarItemInfo = ItemInfo;
+                SetTaskbarItemInfo(window, ItemInfo);
             } else {
                 window.TaskbarItemInfo.ProgressState = ItemInfo.ProgressState;
                 window.TaskbarItemInfo.ProgressValue = ItemInfo.ProgressValue;
@@ -227,12 +227,17 @@ namespace DevExpress.Mvvm.UI {
             window.SizeChanged += OnWindowSizeChanged;
             OnWindowSizeChanged(window, null);
         }
+        void SetTaskbarItemInfo(Window window, TaskbarItemInfo itemInfo) {
+            try {
+                window.TaskbarItemInfo = itemInfo;
+            } catch(NotImplementedException) { }
+        }
         void OnWindowItemInfoChanged(DependencyPropertyChangedEventArgs e) {
             if(ActualWindow == null) return;
             TaskbarItemInfo itemInfo = (TaskbarItemInfo)e.NewValue;
             if(itemInfo == null) {
                 itemInfo = new TaskbarItemInfo();
-                ActualWindow.TaskbarItemInfo = itemInfo;
+                SetTaskbarItemInfo(ActualWindow, itemInfo);
             }
             ItemInfo = itemInfo;
         }

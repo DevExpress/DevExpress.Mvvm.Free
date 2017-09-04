@@ -8,10 +8,10 @@ namespace DevExpress.Mvvm.UI {
     public abstract class EventToCommandBase : DevExpress.Mvvm.UI.Interactivity.EventTrigger {
         public static readonly DependencyProperty CommandProperty =
            DependencyProperty.Register("Command", typeof(ICommand), typeof(EventToCommandBase),
-           new PropertyMetadata(null, (d, e) => ((EventToCommandBase)d).OnCommandChanged()));
+           new PropertyMetadata(null, (d, e) => ((EventToCommandBase)d).OnCommandChanged((ICommand)e.OldValue, (ICommand)e.NewValue)));
         public static readonly DependencyProperty CommandParameterProperty =
            DependencyProperty.Register("CommandParameter", typeof(object), typeof(EventToCommandBase),
-           new PropertyMetadata(null, (d, e) => ((EventToCommandBase)d).OnCommandParameterChanged()));
+           new PropertyMetadata(null, (d, e) => ((EventToCommandBase)d).OnCommandParameterChanged(e.OldValue, e.NewValue)));
         public static readonly DependencyProperty ProcessEventsFromDisabledEventOwnerProperty =
             DependencyProperty.Register("ProcessEventsFromDisabledEventOwner", typeof(bool), typeof(EventToCommandBase),
             new PropertyMetadata(true));
@@ -91,6 +91,12 @@ namespace DevExpress.Mvvm.UI {
         protected virtual bool CanInvoke(object sender, object eventArgs) {
             FrameworkElement associatedFrameworkObject = Source as FrameworkElement;
             return ProcessEventsFromDisabledEventOwner || associatedFrameworkObject == null || associatedFrameworkObject.IsEnabled;
+        }
+        protected virtual void OnCommandChanged(ICommand oldValue, ICommand newValue) {
+            OnCommandChanged();
+        }
+        protected virtual void OnCommandParameterChanged(object oldValue, object newValue) {
+            OnCommandParameterChanged();
         }
         protected virtual void OnCommandChanged() { }
         protected virtual void OnCommandParameterChanged() { }

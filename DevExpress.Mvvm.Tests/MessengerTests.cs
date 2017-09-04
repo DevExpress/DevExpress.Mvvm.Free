@@ -161,15 +161,15 @@ namespace DevExpress.Mvvm.Tests {
             Messenger.Default.Register<string>(recipient3, x => message3 = x);
 
             Messenger.Default.Send<string, TestRecipient>("test1");
-            Assert.AreEqual("test1", message1);
-            Assert.AreEqual("test1", message2);
-            Assert.AreEqual("test1", message3);
+            Assert.AreEqual("test1", message1, "message1");
+            Assert.AreEqual("test1", message2, "message2");
+            Assert.AreEqual("test1", message3, "message3");
             Assert.IsNull(message4);
 
             Messenger.Default.Send<string, TestRecipient2>("test2");
-            Assert.AreEqual("test1", message1);
-            Assert.AreEqual("test1", message2);
-            Assert.AreEqual("test2", message3);
+            Assert.AreEqual("test1", message1, "message1");
+            Assert.AreEqual("test1", message2, "message2");
+            Assert.AreEqual("test2", message3, "message3");
             Assert.IsNull(message4);
         }
         [Test]

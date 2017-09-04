@@ -61,7 +61,8 @@ namespace DevExpress.Mvvm {
         }
         protected virtual object GetServiceCore(Type type, string key, ServiceSearchMode searchMode, out bool serviceHasKey) {
             CheckServiceType(type);
-            ServiceInfo serviceInfo = FindService(type, key, searchMode);
+            ServiceInfo serviceInfo;
+            lock(services) serviceInfo = FindService(type, key, searchMode);
             if(serviceInfo == null) {
                 serviceHasKey = false;
                 return null;

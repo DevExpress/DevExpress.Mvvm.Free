@@ -52,7 +52,7 @@ namespace DevExpress.Mvvm {
                     sourceNotify.CollectionChanged += OnSourceCollectionChanged;
             }
             public void Dispose() {
-                var source = GetSource() as INotifyCollectionChanged;
+                var source = (useStrongReferences ? sourceRef : ((WeakReference)sourceRef).Target) as INotifyCollectionChanged;
                 if(source != null)
                     source.CollectionChanged -= OnSourceCollectionChanged;
             }

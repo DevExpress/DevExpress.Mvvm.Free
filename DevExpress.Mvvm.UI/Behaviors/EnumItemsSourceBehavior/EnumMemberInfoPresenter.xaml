@@ -9,9 +9,14 @@
             <Setter.Value>
                 <ControlTemplate TargetType="local:EnumMemberInfoPresenter">
                     <StackPanel Orientation="Horizontal" ToolTip="{Binding Path=EnumMemberInfo.Description, RelativeSource={RelativeSource TemplatedParent}}">
-                        <Image RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="None" Source="{Binding Path=EnumMemberInfo.Image, RelativeSource={RelativeSource TemplatedParent}}"/>
+                        <Image x:Name="PART_Image" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="None"/>
                         <TextBlock Text="{Binding Path=EnumMemberInfo.Name, RelativeSource={RelativeSource TemplatedParent}}" VerticalAlignment="Center" Margin="4,0,0,0"/>
                     </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding Path=EnumMemberInfo.ShowImage, RelativeSource={RelativeSource Self}}" Value="True">
+                            <Setter TargetName="PART_Image" Property="Source" Value="{Binding Path=EnumMemberInfo.Image, RelativeSource={RelativeSource TemplatedParent}}"/>
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
