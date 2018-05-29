@@ -18,9 +18,12 @@ namespace DevExpress.Mvvm.Native {
         public static int GetEnumCount(Type enumType) {
             return Enum.GetValues(enumType).Length;
         }
-        public static IEnumerable<EnumMemberInfo> GetEnumSource(Type enumType, bool useUnderlyingEnumValue = true, IValueConverter nameConverter = null, bool splitNames = false, EnumMembersSortMode sortMode = EnumMembersSortMode.Default, Func<string, bool, string> getKnownImageUriCallback = null, bool showImage = true, bool showName = true) {
+        public static IEnumerable<EnumMemberInfo> GetEnumSource(Type enumType, bool useUnderlyingEnumValue = true, IValueConverter nameConverter = null,
+            bool splitNames = false, EnumMembersSortMode sortMode = EnumMembersSortMode.Default, Func<string, bool, string> getKnownImageUriCallback = null,
+            bool showImage = true, bool showName = true, Func<string, ImageSource> getSvgImageSource = null) {
             if(enumType == null || !enumType.IsEnum)
                 return Enumerable.Empty<EnumMemberInfo>();
+            Func<string, ImageSource> getImageSource = uri => (ImageSource)new ImageSourceConverter().ConvertFrom(uri);
             var result = enumType.GetFields(BindingFlags.Static | BindingFlags.Public)
                 .Where(field => DataAnnotationsAttributeHelper.GetAutoGenerateField(field))
                 .Select(field => {
@@ -28,7 +31,8 @@ namespace DevExpress.Mvvm.Native {
                     string name = GetEnumName(field, value, nameConverter, splitNames);
 
                     var imageInfo = GetImageInfo(MetadataHelper.GetAttribute<ImageAttribute>(field), MetadataHelper.GetAttribute<DXImageAttribute>(field), null, getKnownImageUriCallback);
-                    Func<ImageSource> getImage = () => ViewModelBase.IsInDesignMode ? null : (imageInfo.Item1 ?? imageInfo.Item2).With(x => (ImageSource)new ImageSourceConverter().ConvertFrom(x));
+                    string imageUri = ViewModelBase.IsInDesignMode ? null : (imageInfo.Item1 ?? imageInfo.Item2);
+                    Func<ImageSource> getImage = () => imageUri.With(CanCreateSvgImageSource(getSvgImageSource, imageUri) ? getSvgImageSource : getImageSource);
                     return new EnumMemberInfo(name, DataAnnotationsAttributeHelper.GetFieldDescription(field), useUnderlyingEnumValue ? GetUnderlyingEnumValue(value) : value,
                         showImage, showName, getImage, DataAnnotationsAttributeHelper.GetFieldOrder(field));
                 });
@@ -73,12 +77,15 @@ namespace DevExpress.Mvvm.Native {
                 return null;
             return getKnownImageUriCallback(imageName, large);
         }
+        static bool CanCreateSvgImageSource(Func<string, ImageSource> getSvgImageSource, string imageUri) {
+            return getSvgImageSource != null && !string.IsNullOrEmpty(imageUri) && imageUri.EndsWith(".svg", StringComparison.InvariantCultureIgnoreCase);
+        }
     }
 }
 namespace DevExpress.Mvvm {
     public static class EnumSourceHelper {
-        public static IEnumerable<EnumMemberInfo> GetEnumSource(Type enumType, bool useUnderlyingEnumValue = true, IValueConverter nameConverter = null, bool splitNames = false, EnumMembersSortMode sortMode = EnumMembersSortMode.Default) {
-            return EnumSourceHelperCore.GetEnumSource(enumType, useUnderlyingEnumValue, nameConverter, splitNames, sortMode, null);
+        public static IEnumerable<EnumMemberInfo> GetEnumSource(Type enumType, bool useUnderlyingEnumValue = true, IValueConverter nameConverter = null, bool splitNames = false, EnumMembersSortMode sortMode = EnumMembersSortMode.Default, Func<string, ImageSource> getSvgImageSource = null) {
+            return EnumSourceHelperCore.GetEnumSource(enumType, useUnderlyingEnumValue, nameConverter, splitNames, sortMode, null, getSvgImageSource: getSvgImageSource);
         }
     }
     public class EnumMemberInfo {

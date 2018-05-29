@@ -40,7 +40,11 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
         public string ViewModelName { get; set; }
         public string ViewName { get; set; }
         public string ViewModelStateType { get; set; }
+        public bool IsInjected { get; set; }
         public SerializableState ViewModelState { get; set; }
+        public RegionItemInfo() {
+            IsInjected = true;
+        }
     }
     [Serializable]
     public class RegionVisualInfo {

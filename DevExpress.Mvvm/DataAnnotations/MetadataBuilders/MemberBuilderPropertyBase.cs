@@ -30,16 +30,16 @@ namespace DevExpress.Mvvm.DataAnnotations {
         }
         protected TBuilder MatchesRuleCore(Func<TProperty, bool> isValidFunction, Func<TProperty, string> errorMessageAccessor) {
             var _errorMessageAccessor = DXValidationAttribute.ErrorMessageAccessor(errorMessageAccessor);
-            return AddAttribute(new CustomValidationAttribute(x => isValidFunction((TProperty)x), _errorMessageAccessor));
+            return AddAttribute(new CustomValidationAttribute(typeof(TProperty), x => isValidFunction((TProperty)x), _errorMessageAccessor));
         }
         protected TBuilder MatchesInstanceRuleCore(Func<TProperty, T, bool> isValidFunction, Func<TProperty, T, string> errorMessageAccessor) {
             var _errorMessageAccessor = DXValidationAttribute.ErrorMessageAccessor(errorMessageAccessor);
-            return AddAttribute(new CustomInstanceValidationAttribute((value, instance) => isValidFunction((TProperty)value, (T)instance), _errorMessageAccessor));
+            return AddAttribute(new CustomInstanceValidationAttribute(typeof(TProperty), (value, instance) => isValidFunction((TProperty)value, (T)instance), _errorMessageAccessor));
         }
         [Obsolete("Use the MatchesInstanceRule(Func<TProperty, T, bool> isValidFunction, Func<string> errorMessageAccessor = null) method instead.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         protected TBuilder MatchesInstanceRuleCore(Func<T, bool> isValidFunction, Func<string> errorMessageAccessor = null) {
-            return AddOrReplaceAttribute(new CustomInstanceValidationAttribute((value, instance) => isValidFunction((T)instance),
+            return AddOrReplaceAttribute(new CustomInstanceValidationAttribute(typeof(T), (value, instance) => isValidFunction((T)instance),
                 errorMessageAccessor == null ? null : new DXValidationAttribute.ErrorMessageAccessorDelegate((x, y) => errorMessageAccessor()) ));
         }
         protected static Func<TProperty, string> GetErrorMessageAccessor(Func<string> errorMessageAccessor) {

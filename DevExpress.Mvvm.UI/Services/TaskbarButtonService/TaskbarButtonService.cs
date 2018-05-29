@@ -1,18 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Windows.Markup;
-using DevExpress.Mvvm;
-using DevExpress.Mvvm.UI;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Shell;
-using System.Windows.Data;
-using System.Collections.ObjectModel;
 using DevExpress.Mvvm.UI.Interactivity;
-using System.Windows.Controls;
-using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Native;
 
 namespace DevExpress.Mvvm.UI {
@@ -203,8 +198,11 @@ namespace DevExpress.Mvvm.UI {
             ThumbnailClipMargin = (Thickness)e.NewValue;
         }
         protected override void OnActualWindowChanged(Window oldWindow) {
-            if(oldWindow != null)
+            if(oldWindow != null) {
                 oldWindow.SizeChanged -= OnWindowSizeChanged;
+                oldWindow.Loaded -= OnWindowLoaded;
+            }
+            processWindowItemInfoChanged = false;
             Window window = ActualWindow;
             if(window == null) {
                 BindingOperations.ClearBinding(this, WindowItemInfoProperty);
@@ -212,7 +210,7 @@ namespace DevExpress.Mvvm.UI {
                 return;
             }
             if(window.TaskbarItemInfo == null) {
-                SetTaskbarItemInfo(window, ItemInfo);
+                TaskbarInfoApplicator.SetTaskbarItemInfo(window, ItemInfo);
             } else {
                 window.TaskbarItemInfo.ProgressState = ItemInfo.ProgressState;
                 window.TaskbarItemInfo.ProgressValue = ItemInfo.ProgressValue;
@@ -222,22 +220,26 @@ namespace DevExpress.Mvvm.UI {
                 window.TaskbarItemInfo.ThumbnailClipMargin = ItemInfo.ThumbnailClipMargin;
                 ItemInfo = window.TaskbarItemInfo;
             }
-            BindingOperations.SetBinding(this, WindowItemInfoProperty, new Binding("TaskbarItemInfo") { Source = window, Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged });
+            if(window.TaskbarItemInfo != null) {
+                BindingOperations.SetBinding(this, WindowItemInfoProperty, new Binding("TaskbarItemInfo") { Source = window, Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged });
+                processWindowItemInfoChanged = true;
+            }
             window.SizeChanged -= OnWindowSizeChanged;
             window.SizeChanged += OnWindowSizeChanged;
-            OnWindowSizeChanged(window, null);
+            window.Loaded -= OnWindowLoaded;
+            window.Loaded += OnWindowLoaded;
+            OnWindowSizeChanged(Window, null);
         }
-        void SetTaskbarItemInfo(Window window, TaskbarItemInfo itemInfo) {
-            try {
-                window.TaskbarItemInfo = itemInfo;
-            } catch(NotImplementedException) { }
+        void OnWindowLoaded(object sender, EventArgs e) {
+            OnWindowSizeChanged(sender, null);
         }
+        bool processWindowItemInfoChanged = false;
         void OnWindowItemInfoChanged(DependencyPropertyChangedEventArgs e) {
-            if(ActualWindow == null) return;
+            if(!processWindowItemInfoChanged || ActualWindow == null) return;
             TaskbarItemInfo itemInfo = (TaskbarItemInfo)e.NewValue;
             if(itemInfo == null) {
                 itemInfo = new TaskbarItemInfo();
-                SetTaskbarItemInfo(ActualWindow, itemInfo);
+                TaskbarInfoApplicator.SetTaskbarItemInfo(ActualWindow, itemInfo);
             }
             ItemInfo = itemInfo;
         }

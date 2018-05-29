@@ -16,10 +16,11 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             set {
                 object oldValue = selectedViewModel;
                 selectedViewModel = value;
-                OnSelectedViewModelPropertyChanged(oldValue, selectedViewModel);
+                OnSelectedViewModelPropertyChanged(oldValue, selectedViewModel, focusOnSelectedViewModelChanged);
             }
         }
         object selectedViewModel;
+        bool focusOnSelectedViewModelChanged = true;
 
         public StrategyBase() {
             ViewModels = new ObservableCollection<object>();
@@ -37,8 +38,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             ViewModels.Remove(viewModel);
             OnRemoved(viewModel);
         }
-        void IStrategy.Select(object viewModel) {
+        void IStrategy.Select(object viewModel, bool focus) {
+            focusOnSelectedViewModelChanged = focus;
             SelectedViewModel = viewModel;
+            focusOnSelectedViewModelChanged = true;
         }
         void IStrategy.Clear() {
             OnClearing();
@@ -57,7 +60,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         protected virtual void OnRemoved(object viewModel) { }
         protected virtual void OnClearing() { }
         protected virtual void OnClear() { }
-        protected virtual void OnSelectedViewModelPropertyChanged(object oldValue, object newValue) {
+        protected virtual void OnSelectedViewModelPropertyChanged(object oldValue, object newValue, bool focus) {
             if(oldValue == newValue) return;
             OnSelectedViewModelChanged(oldValue, newValue);
         }
@@ -100,7 +103,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         object IStrategy.SelectedViewModel { get { return actualStrategy.SelectedViewModel; } }
         void IStrategy.Inject(object viewModel, Type viewType) { actualStrategy.Inject(viewModel, viewType); }
         void IStrategy.Remove(object viewModel) { actualStrategy.Remove(viewModel); }
-        void IStrategy.Select(object viewModel) { actualStrategy.Select(viewModel); }
+        void IStrategy.Select(object viewModel, bool focus) { actualStrategy.Select(viewModel, focus); }
         void IStrategy.Clear() { actualStrategy.Clear(); }
         object IStrategy.GetParentViewModel() { return actualStrategy.GetParentViewModel(); }
     }

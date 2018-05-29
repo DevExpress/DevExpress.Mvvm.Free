@@ -1,4 +1,5 @@
 using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.UI.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,9 +10,58 @@ using System.Windows.Forms;
 using System.Windows.Input;
 
 namespace DevExpress.Mvvm.UI {
+    public interface IFolderBrowserDialog {
+        event EventHandler HelpRequest;
+
+        bool ShowNewFolderButton { get; set; }
+        string SelectedPath { get; set; }
+        Environment.SpecialFolder RootFolder { get; set; }
+        string Description { get; set; }
+
+        DialogResult ShowDialog();
+        void Reset();
+    }
+}
+
+namespace DevExpress.Mvvm.UI {
     [Browsable(true), EditorBrowsable(EditorBrowsableState.Always)]
     [TargetType(typeof(System.Windows.Controls.UserControl)), TargetType(typeof(Window))]
     public class FolderBrowserDialogService : ServiceBase, IFolderBrowserDialogService {
+        protected class FolderBrowserDialogAdapter : IFolderBrowserDialog {
+            readonly FolderBrowserDialog fileDialog;
+
+            public FolderBrowserDialogAdapter() {
+                this.fileDialog = new FolderBrowserDialog();
+            }
+
+            Environment.SpecialFolder IFolderBrowserDialog.RootFolder {
+                get { return fileDialog.RootFolder; }
+                set { fileDialog.RootFolder = value; }
+            }
+            bool IFolderBrowserDialog.ShowNewFolderButton {
+                get { return fileDialog.ShowNewFolderButton; }
+                set { fileDialog.ShowNewFolderButton = value; }
+            }
+            string IFolderBrowserDialog.SelectedPath {
+                get { return fileDialog.SelectedPath; }
+                set { fileDialog.SelectedPath = value; }
+            }
+            string IFolderBrowserDialog.Description {
+                get { return fileDialog.Description; }
+                set { fileDialog.Description = value; }
+            }
+            void IFolderBrowserDialog.Reset() {
+                fileDialog.Reset();
+            }
+            DialogResult IFolderBrowserDialog.ShowDialog() {
+                return fileDialog.ShowDialog();
+            }
+            event EventHandler IFolderBrowserDialog.HelpRequest {
+                add { fileDialog.HelpRequest += value; }
+                remove { fileDialog.HelpRequest -= value; }
+            }
+        }
+
         public static readonly DependencyProperty DescriptionProperty =
             DependencyProperty.Register("Description", typeof(string), typeof(FolderBrowserDialogService), new PropertyMetadata(string.Empty));
         public static readonly DependencyProperty RootFolderProperty =
@@ -53,13 +103,16 @@ namespace DevExpress.Mvvm.UI {
             remove { Dialog.HelpRequest -= value; }
         }
 
-        FolderBrowserDialog Dialog;
+        IFolderBrowserDialog Dialog;
         public FolderBrowserDialogService() {
-            Dialog = new FolderBrowserDialog();
+            Dialog = CreateFolderBrowserDialog();
             HelpRequest += (d, e) => {
                 if(HelpRequestCommand != null && HelpRequestCommand.CanExecute(e))
                     HelpRequestCommand.Execute(e);
             };
+        }
+        protected virtual IFolderBrowserDialog CreateFolderBrowserDialog() {
+            return new FolderBrowserDialogAdapter();
         }
 
         string resultPath = string.Empty;

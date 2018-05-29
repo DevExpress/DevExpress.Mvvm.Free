@@ -500,6 +500,21 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(null, vm1.GetService<ITestService>());
         }
         [Test]
+        public void UnregisterServiceOnUnloaded() {
+            Button control = new Button();
+            TestVM vm1 = TestVM.Create();
+            TestServiceBase service = new TestServiceBase() { UnregisterOnUnloaded = true };
+            Interaction.GetBehaviors(control).Add(service);
+            control.DataContext = vm1;
+            Assert.AreEqual(service, vm1.GetService<ITestService>());
+            Window.Content = control;
+            Window.Show();
+            Assert.AreEqual(service, vm1.GetService<ITestService>());
+            Window.Content = null;
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(null, vm1.GetService<ITestService>());
+        }
+        [Test]
         public void T250427() {
             Grid mainV = new Grid();
             TestVM mainVM = TestVM.Create();

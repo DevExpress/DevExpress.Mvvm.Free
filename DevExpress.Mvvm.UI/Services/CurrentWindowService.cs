@@ -20,21 +20,26 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty ClosingCommandProperty =
             DependencyProperty.Register("ClosingCommand", typeof(ICommand), typeof(CurrentWindowService), new PropertyMetadata(null));
 
+        Window GetActualWindow() {
+            if (ActualWindow == null)
+                UpdateActualWindow();
+            return ActualWindow;
+        }
 
         void ICurrentWindowService.Close() {
-            ActualWindow.Do(x => x.Close());
+            GetActualWindow().Do(x => x.Close());
         }
         void ICurrentWindowService.Activate() {
-            ActualWindow.Do(x => x.Activate());
+            GetActualWindow().Do(x => x.Activate());
         }
         void ICurrentWindowService.Hide() {
-            ActualWindow.Do(x => x.Hide());
+            GetActualWindow().Do(x => x.Hide());
         }
         void ICurrentWindowService.SetWindowState(WindowState state) {
-            ActualWindow.Do(x => x.WindowState = state);
+            GetActualWindow().Do(x => x.WindowState = state);
         }
         void ICurrentWindowService.Show() {
-            ActualWindow.Do(x => x.Show());
+            GetActualWindow().Do(x => x.Show());
         }
 
         protected override void OnActualWindowChanged(Window oldWindow) {

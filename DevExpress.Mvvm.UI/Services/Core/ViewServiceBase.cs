@@ -40,7 +40,7 @@ namespace DevExpress.Mvvm.UI {
         public static void UpdateThemeName(FrameworkElement target, FrameworkElement associatedObject) {
         }
         [System.Security.SecuritySafeCritical]
-        internal static void UpdateWindowOwner(Window w, FrameworkElement ownerObject) {
+        internal static void UpdateWindowOwner(Window w, DependencyObject ownerObject) {
             if (ownerObject == null)
                 return;
             if (!ViewModelBase.IsInDesignMode) {

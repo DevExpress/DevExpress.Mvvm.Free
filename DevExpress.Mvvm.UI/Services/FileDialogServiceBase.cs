@@ -9,36 +9,56 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using DevExpress.Mvvm.Native;
+using DevExpress.Mvvm.UI.Native;
+using DevExpress.Utils;
+using DevExpress.Internal;
+using DevExpress.Xpf.Core.Native;
+using System.Windows.Interop;
+
+namespace DevExpress.Mvvm.UI.Native {
+    public class Win32WindowWrapper : System.Windows.Forms.IWin32Window {
+        public IntPtr Handle { get; private set; }
+
+        public Win32WindowWrapper(IntPtr handle) {
+            Handle = handle;
+        }
+        public Win32WindowWrapper(Window window) {
+            if(window.IsLoaded)
+                Handle = new WindowInteropHelper(window).Handle;
+        }
+    }
+
+    public interface IFileDialog {
+        event CancelEventHandler FileOk;
+        event EventHandler HelpRequest;
+
+        bool AutoUpgradeEnabled { get; set; }
+        bool CheckFileExists { get; set; }
+        bool CheckPathExists { get; set; }
+        bool AddExtension { get; set; }
+        bool DereferenceLinks { get; set; }
+        string InitialDirectory { get; set; }
+        string DefaultFileName { get; set; }
+        bool RestoreDirectory { get; set; }
+        bool ShowHelp { get; set; }
+        bool SupportMultiDottedExtensions { get; set; }
+        string Title { get; set; }
+        bool ValidateNames { get; set; }
+        string FileName { get; set; }
+
+        string[] FileNames { get; }
+        string Filter { get; set; }
+        int FilterIndex { get; set; }
+        string DefaultExt { get; set; }
+        DialogResult ShowDialog(Window ownerWindow);
+        DialogResult ShowDialog();
+        void Reset();
+    }
+}
 
 namespace DevExpress.Mvvm.UI {
     [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
-    public abstract class FileDialogServiceBase : ServiceBase, IFileDialogServiceBase {
-        protected interface IFileDialog {
-            event CancelEventHandler FileOk;
-            event EventHandler HelpRequest;
-
-            bool AutoUpgradeEnabled { get; set; }
-            bool CheckFileExists { get; set; }
-            bool CheckPathExists { get; set; }
-            bool AddExtension { get; set; }
-            bool DereferenceLinks { get; set; }
-            string InitialDirectory { get; set; }
-            string DefaultFileName { get; set; }
-            bool RestoreDirectory { get; set; }
-            bool ShowHelp { get; set; }
-            bool SupportMultiDottedExtensions { get; set; }
-            string Title { get; set; }
-            bool ValidateNames { get; set; }
-            string FileName { get; set; }
-
-            string[] FileNames { get; }
-            string Filter { get; set; }
-            int FilterIndex { get; set; }
-            string DefaultExt { get; set; }
-            DialogResult ShowDialog();
-            void Reset();
-        }
-
+    public abstract class FileDialogServiceBase : WindowAwareServiceBase, IFileDialogServiceBase {
         protected abstract class FileDialogAdapter<TFileDialog> : IFileDialog where TFileDialog : FileDialog {
             protected readonly TFileDialog fileDialog;
             public event CancelEventHandler FileOk;
@@ -123,6 +143,10 @@ namespace DevExpress.Mvvm.UI {
             public DialogResult ShowDialog() {
                 return fileDialog.ShowDialog();
             }
+            public DialogResult ShowDialog(Window ownerWindow) {
+                return fileDialog.ShowDialog(new Win32WindowWrapper(ownerWindow));
+            }
+
             void OnDialogFileOk(object sender, CancelEventArgs e) {
                 if(FileOk != null)
                     FileOk(sender, e);
@@ -250,7 +274,6 @@ namespace DevExpress.Mvvm.UI {
             HelpRequestCommand.If(x => x.CanExecute(e)).Do(x => x.Execute(e));
         }
 
-        protected abstract object CreateFileDialog();
         protected abstract IFileDialog CreateFileDialogAdapter();
 
         protected abstract void InitFileDialog();
@@ -304,7 +327,7 @@ namespace DevExpress.Mvvm.UI {
             return res;
         }
         bool ShowCore() {
-            DialogResult result = FileDialog.ShowDialog();
+            DialogResult result = ActualWindow == null ? FileDialog.ShowDialog() : FileDialog.ShowDialog(ActualWindow);
             if(result == DialogResult.OK)
                 return true;
             if(result == DialogResult.Cancel)
@@ -314,6 +337,8 @@ namespace DevExpress.Mvvm.UI {
         void IFileDialogServiceBase.Reset() {
             FileDialog.Reset();
         }
+
+        protected override void OnActualWindowChanged(Window oldWindow) { }
     }
     [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
     public class FileInfoWrapper : IFileInfo {

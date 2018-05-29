@@ -381,5 +381,6 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             serviceHelper.Dispose();
             Manager.Clear("region");
         }
+
     }
 }

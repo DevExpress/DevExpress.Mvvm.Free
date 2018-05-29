@@ -1,9 +1,9 @@
-using DevExpress.Mvvm.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
+using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm {
     public class UICommand : BindableBase, IUICommand {
@@ -64,7 +64,7 @@ namespace DevExpress.Mvvm {
         static List<UICommand> GenerateFromMessageButton(MessageButton dialogButtons, bool usePlatformSpecificTag, IMessageButtonLocalizer buttonLocalizer, MessageResult? defaultButton, MessageResult? cancelButton) {
             List<UICommand> commands = new List<UICommand>();
             if(dialogButtons == MessageButton.OK) {
-                UICommand okCommand = CreateDefaultButonCommand(MessageResult.OK, usePlatformSpecificTag, buttonLocalizer.Localize);
+                UICommand okCommand = CreateDefaultButtonCommand(MessageResult.OK, usePlatformSpecificTag, buttonLocalizer.Localize);
                 okCommand.IsDefault = defaultButton == null || defaultButton == MessageResult.OK;
                 okCommand.IsCancel = cancelButton == MessageResult.OK;
 
@@ -72,8 +72,8 @@ namespace DevExpress.Mvvm {
                 return commands;
             }
             if(dialogButtons == MessageButton.OKCancel) {
-                UICommand okCommand = CreateDefaultButonCommand(MessageResult.OK, usePlatformSpecificTag, buttonLocalizer.Localize);
-                UICommand cancelCommand = CreateDefaultButonCommand(MessageResult.Cancel, usePlatformSpecificTag, buttonLocalizer.Localize);
+                UICommand okCommand = CreateDefaultButtonCommand(MessageResult.OK, usePlatformSpecificTag, buttonLocalizer.Localize);
+                UICommand cancelCommand = CreateDefaultButtonCommand(MessageResult.Cancel, usePlatformSpecificTag, buttonLocalizer.Localize);
                 okCommand.IsDefault = defaultButton == null || defaultButton == MessageResult.OK;
                 cancelCommand.IsDefault = defaultButton == MessageResult.Cancel;
                 okCommand.IsCancel = cancelButton == MessageResult.OK;
@@ -84,8 +84,8 @@ namespace DevExpress.Mvvm {
                 return commands;
             }
             if(dialogButtons == MessageButton.YesNo) {
-                UICommand yesCommand = CreateDefaultButonCommand(MessageResult.Yes, usePlatformSpecificTag, buttonLocalizer.Localize);
-                UICommand noCommand = CreateDefaultButonCommand(MessageResult.No, usePlatformSpecificTag, buttonLocalizer.Localize);
+                UICommand yesCommand = CreateDefaultButtonCommand(MessageResult.Yes, usePlatformSpecificTag, buttonLocalizer.Localize);
+                UICommand noCommand = CreateDefaultButtonCommand(MessageResult.No, usePlatformSpecificTag, buttonLocalizer.Localize);
                 yesCommand.IsDefault = defaultButton == null || defaultButton == MessageResult.Yes;
                 noCommand.IsDefault = defaultButton == MessageResult.No;
                 yesCommand.IsCancel = cancelButton == MessageResult.Yes;
@@ -96,9 +96,9 @@ namespace DevExpress.Mvvm {
                 return commands;
             }
             if(dialogButtons == MessageButton.YesNoCancel) {
-                UICommand yesCommand = CreateDefaultButonCommand(MessageResult.Yes, usePlatformSpecificTag, buttonLocalizer.Localize);
-                UICommand noCommand = CreateDefaultButonCommand(MessageResult.No, usePlatformSpecificTag, buttonLocalizer.Localize);
-                UICommand cancelCommand = CreateDefaultButonCommand(MessageResult.Cancel, usePlatformSpecificTag, buttonLocalizer.Localize);
+                UICommand yesCommand = CreateDefaultButtonCommand(MessageResult.Yes, usePlatformSpecificTag, buttonLocalizer.Localize);
+                UICommand noCommand = CreateDefaultButtonCommand(MessageResult.No, usePlatformSpecificTag, buttonLocalizer.Localize);
+                UICommand cancelCommand = CreateDefaultButtonCommand(MessageResult.Cancel, usePlatformSpecificTag, buttonLocalizer.Localize);
                 yesCommand.IsDefault = defaultButton == null || defaultButton == MessageResult.Yes;
                 noCommand.IsDefault = defaultButton == MessageResult.No;
                 cancelCommand.IsDefault = defaultButton == MessageResult.Cancel;
@@ -113,14 +113,9 @@ namespace DevExpress.Mvvm {
             }
             return commands;
         }
-        static UICommand CreateDefaultButonCommand(MessageResult result, bool usePlatformSpecificTag, Func<MessageResult, string> getButtonCaption) {
+        static UICommand CreateDefaultButtonCommand(MessageResult result, bool usePlatformSpecificTag, Func<MessageResult, string> getButtonCaption) {
             object tag = usePlatformSpecificTag ? result.ToMessageBoxResult() : (object)result;
-            return new UICommand() {
-                Id = tag,
-                Caption = getButtonCaption(result),
-                Command = null,
-                Tag = tag,
-            };
+            return new DefaultButtonCommand(tag, getButtonCaption(result), tag);
         }
         #region IUICommand
         EventHandler executed;
@@ -133,5 +128,14 @@ namespace DevExpress.Mvvm {
                 executed(this, EventArgs.Empty);
         }
         #endregion
+        #region DefaultButtonCommand
+        class DefaultButtonCommand : UICommand {
+            public DefaultButtonCommand(object id, string caption, object tag) {
+                this.id = id;
+                this.caption = caption;
+                this.tag = tag;
+            }
+        }
+        #endregion DefaultButtonCommand
     }
 }

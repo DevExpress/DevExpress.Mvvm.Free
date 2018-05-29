@@ -113,8 +113,8 @@ namespace DevExpress.Mvvm.UI.Tests {
                 }
             });
         }
-        [Test(Description = "T528105")]
-        public void DoNotThrowsExceptionIfUserIsNotLoggedInAndThusThereIsNoAnyTaskbarButton() {
+        [Test(Description = "T528105, T617958")]
+        public void DoNotThrowsExceptionIfUserIsNotLoggedIn() {
             var testWindow = new Window();
             var service = new TaskbarButtonService();
             try {
@@ -126,11 +126,8 @@ namespace DevExpress.Mvvm.UI.Tests {
                         Interaction.GetBehaviors(testWindow).Add(service);
                         service.Description = "descr";
                     });
-                    Assert.IsNotNull(testWindow.TaskbarItemInfo);
+                    TaskbarListTestHelper.SendTaskBarButtonCreated(testWindow);
                 });
-                Assert.IsNull(testWindow.GetType().GetField("_taskbarList", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(testWindow));
-                TaskbarListTestHelper.SendTaskBarButtonCreated(testWindow);
-                Assert.IsNotNull(testWindow.GetType().GetField("_taskbarList", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(testWindow));
             } finally {
                 testWindow.Close();
             }

@@ -22,15 +22,32 @@ namespace DevExpress.Mvvm.UI {
         public static IEnumerable<DependencyObject> GetVisualChildren(DependencyObject parent) {
             return GetVisualChildrenCore(parent, false);
         }
+        public static IEnumerable<DependencyObject> GetLogicalChildren(DependencyObject parent) {
+            return GetLogicalChildrenCore(parent, false);
+        }
         internal static IEnumerable<DependencyObject> GetVisualParentsCore(DependencyObject child, DependencyObject stopNode, bool includeStartNode) {
             var result = LinqExtensions.Unfold(child, x => x != stopNode ? GetParent(x) : null, x => x == null);
             return includeStartNode ? result : result.Skip(1);
         }
+
         internal static IEnumerable<DependencyObject> GetVisualChildrenCore(DependencyObject parent, bool includeStartNode, Func<DependencyObject, bool> skipChildren = null) {
+            return GetChildrenCore(
+                parent,
+                includeStartNode,
+                x => Enumerable.Range(0, x != null ? VisualTreeHelper.GetChildrenCount(x) : 0).Select(index => VisualTreeHelper.GetChild(x, index)),
+                skipChildren);
+        }
+        internal static IEnumerable<DependencyObject> GetLogicalChildrenCore(DependencyObject parent, bool includeStartNode, Func<DependencyObject, bool> skipChildren = null) {
+            return GetChildrenCore(
+                parent,
+                includeStartNode,
+                x => LogicalTreeHelper.GetChildren(x).OfType<DependencyObject>(),
+                skipChildren);
+        }
+        static IEnumerable<DependencyObject> GetChildrenCore(DependencyObject parent, bool includeStartNode, Func<DependencyObject, IEnumerable<DependencyObject>> getChildren, Func<DependencyObject, bool> skipChildren = null) {
             var result = parent
                 .Yield()
-                .Flatten(x => skipChildren != null && skipChildren(x) ? Enumerable.Empty<DependencyObject>() :
-                    Enumerable.Range(0, x != null ? VisualTreeHelper.GetChildrenCount(x) : 0).Select(index => VisualTreeHelper.GetChild(x, index)));
+                .Flatten(x => skipChildren != null && skipChildren(x) ? Enumerable.Empty<DependencyObject>() : getChildren(x));
             return includeStartNode ? result : result.Skip(1);
         }
     }

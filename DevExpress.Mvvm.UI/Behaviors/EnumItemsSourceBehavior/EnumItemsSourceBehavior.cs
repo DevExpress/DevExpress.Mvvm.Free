@@ -79,7 +79,9 @@ namespace DevExpress.Mvvm.UI {
                 if (descriptor == null)
                     throw new Exception("ItemsSource dependency property required");
                 else
-                    descriptor.SetValue(this.AssociatedObject, EnumSourceHelperCore.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter, SplitNames, SortMode, null, showImage: AllowImages));
+                    descriptor.SetValue(this.AssociatedObject, EnumSourceHelperCore.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter,
+                        SplitNames, SortMode, null, showImage: AllowImages
+                        ));
             }
         }
         void ChangeItemTemplate() {

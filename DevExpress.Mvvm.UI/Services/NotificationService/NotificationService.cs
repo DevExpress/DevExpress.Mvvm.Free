@@ -217,8 +217,8 @@ namespace DevExpress.Mvvm.UI {
             set { SetValue(CustomNotificationVisibleMaxCountProperty, value); }
         }
         void UpdateCustomNotifierPositioner() {
-            CustomNotifier.UpdatePositioner(CustomNotificationPosition, CustomNotificationVisibleMaxCount);
             PredefinedNotifier.UpdatePositioner(CustomNotificationPosition, CustomNotificationVisibleMaxCount);
+            CustomNotifier.UpdatePositioner(CustomNotificationPosition, CustomNotificationVisibleMaxCount);
         }
         void OnCustomNotificationTemplateChanged() {
             CustomNotifier.ContentTemplate = CustomNotificationTemplate;

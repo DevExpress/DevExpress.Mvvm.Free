@@ -105,14 +105,17 @@ namespace DevExpress.Mvvm.UI {
             if(lockMode == SplashScreenLock.None)
                 return;
 
-            SplashScreenHelper.InvokeAsync(container, () => {
-                bool activateWindow = activateWindowIfNeeded && !SplashScreenHelper.ApplicationHasActiveWindow();
+            if(container.Form != null && container.Form.IsDisposed) {
                 UnlockContainer(container);
-                if(activateWindow)
-                    container.ActivateWindow();
-                else if(Keyboard.FocusedElement == null)
-                    SplashScreenHelper.GetApplicationActiveWindow(false).Do(x => x.Focus());
-            }, DispatcherPriority.Render);
+            } else
+                SplashScreenHelper.InvokeAsync(container, () => {
+                    bool activateWindow = activateWindowIfNeeded && !SplashScreenHelper.ApplicationHasActiveWindow();
+                    UnlockContainer(container);
+                    if(activateWindow)
+                        container.ActivateWindow();
+                    else if(Keyboard.FocusedElement == null)
+                        SplashScreenHelper.GetApplicationActiveWindow(false).Do(x => x.Focus());
+                }, DispatcherPriority.Render);
         }
 
         void OnOwnerInitialized(object sender, EventArgs e) {
@@ -183,7 +186,8 @@ namespace DevExpress.Mvvm.UI {
             } else {
                 UIElement visual = lockMode == SplashScreenLock.InputOnly ? container.Window : container.WindowObject as UIElement;
                 if(visual != null) {
-                    visual.SetCurrentValue(UIElement.IsHitTestVisibleProperty, true);
+                    if(visual.Dispatcher.CheckAccess())
+                        visual.SetCurrentValue(UIElement.IsHitTestVisibleProperty, true);
                     visual.PreviewKeyDown -= OnWindowKeyDown;
                 }
             }

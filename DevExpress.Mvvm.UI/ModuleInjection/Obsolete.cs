@@ -77,7 +77,7 @@ namespace DevExpress.Mvvm.UI {
             AssociatedObject.Unloaded += OnAssociatedObjectUnloaded;
             if(AssociatedObject.IsInitialized) OnAssociatedObjectInitialized(AssociatedObject, EventArgs.Empty);
             AssociatedObject.Initialized += OnAssociatedObjectInitialized;
-            if(SelectedViewModel != null) Strategy.Select(SelectedViewModel);
+            if(SelectedViewModel != null) Strategy.Select(SelectedViewModel, false);
         }
         protected override void OnDetaching() {
             AssociatedObject.Initialized -= OnAssociatedObjectInitialized;
@@ -102,7 +102,7 @@ namespace DevExpress.Mvvm.UI {
             SelectedViewModelChangedCommand.If(x => x.CanExecute(e)).Do(x => x.Execute(e));
             if(e.OldValue != null) ActualViewInjectionManager.RaiseNavigatedAwayEvent(e.OldValue);
             if(e.NewValue != null) ActualViewInjectionManager.RaiseNavigatedEvent(e.NewValue);
-            if(IsAttached) Strategy.Select(e.NewValue);
+            if(IsAttached) Strategy.Select(e.NewValue, true);
         }
 
         Dictionary<object, object> viewModels = new Dictionary<object, object>();

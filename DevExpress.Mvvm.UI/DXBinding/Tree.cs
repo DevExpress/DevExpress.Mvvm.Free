@@ -27,7 +27,7 @@ namespace DevExpress.DXBinding.Native {
         }
     }
     class NUnary : NUnaryBase {
-        public enum NKind { Plus, Minus, Not }
+        public enum NKind { Plus, Minus, Not, NotBitwise }
         public NKind Kind { get; set; }
         public NUnary(NKind kind, NBase value) : base(value) {
             Kind = kind;
@@ -85,7 +85,7 @@ namespace DevExpress.DXBinding.Native {
         public IEnumerable<NIdentBase> Unfold() {
             var res = new List<NIdentBase>();
             NIdentBase n = this;
-            while(n != null) {
+            while (n != null) {
                 res.Add(n);
                 n = n.Next;
             }
@@ -102,9 +102,9 @@ namespace DevExpress.DXBinding.Native {
         public NIdent(string name, NIdentBase next) : base(name, next) { }
     }
     class NMethod : NIdentBase {
-        public List<NBase> Args { get; set; }
-        public NMethod(string name, NIdentBase next, IEnumerable<NBase> args = null) : base(name, next) {
-            Args = new List<NBase>(args ?? new NBase[] { });
+        public NArgs Args { get; set; }
+        public NMethod(string name, NIdentBase next, NArgs args = null) : base(name, next) {
+            Args = args ?? new NArgs();
         }
     }
     class NType : NIdentBase {
@@ -141,16 +141,25 @@ namespace DevExpress.DXBinding.Native {
         public int? AncestorLevel { get; set; }
     }
     class NIndex : NIdentBase {
-        public List<NBase> Args { get; set; }
-        public NIndex(NIdentBase next, IEnumerable<NBase> args = null) : base("Indexer", next) {
-            Args = new List<NBase>(args ?? new NBase[] { });
+        public NArgs Args { get; set; }
+        public NIndex(NIdentBase next, NArgs args = null) : base("Indexer", next) {
+            Args = args ?? new NArgs();
         }
     }
+    class NNew : NIdentBase {
+        public NType Type { get; set; }
+        public NArgs Args { get; set; }
+        public NNew(NType type, NIdentBase next, NArgs args = null) : base(type.Name, next) {
+            Type = type;
+            Args = args ?? new NArgs();
+        }
+    }
+    class NArgs : List<NBase> { }
 
     class NAssign : NBase {
-        public NIdentBase Left { get; set; }
+        public NBase Left { get; set; }
         public NBase Expr { get; set; }
-        public NAssign(NIdentBase left, NBase expr) {
+        public NAssign(NBase left, NBase expr) {
             Left = left;
             Expr = expr;
         }

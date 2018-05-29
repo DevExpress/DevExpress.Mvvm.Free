@@ -35,13 +35,15 @@ namespace DevExpress.Mvvm.UI {
         }
     }
     public class NumericToBooleanConverterExtension : MarkupExtension {
+        public bool Inverse { get; set; }
         public override object ProvideValue(System.IServiceProvider serviceProvider) {
-            return new NumericToBooleanConverter();
+            return new NumericToBooleanConverter() { Inverse = this.Inverse };
         }
     }
     public class StringToBooleanConverterExtension : MarkupExtension {
+        public bool Inverse { get; set; }
         public override object ProvideValue(System.IServiceProvider serviceProvider) {
-            return new StringToBooleanConverter();
+            return new StringToBooleanConverter() { Inverse = this.Inverse };
         }
     }
     public class ObjectToBooleanConverterExtension : MarkupExtension {
@@ -62,6 +64,13 @@ namespace DevExpress.Mvvm.UI {
         public bool HiddenInsteadOfCollapsed { get; set; }
         public override object ProvideValue(System.IServiceProvider serviceProvider) {
             return new NumericToVisibilityConverter() { Inverse = this.Inverse, HiddenInsteadOfCollapsed = this.HiddenInsteadOfCollapsed };
+        }
+    }
+    public class StringToVisibilityConverterExtension : MarkupExtension {
+        public bool Inverse { get; set; }
+        public bool HiddenInsteadOfCollapsed { get; set; }
+        public override object ProvideValue(System.IServiceProvider serviceProvider) {
+            return new StringToVisibilityConverter() { Inverse = this.Inverse, HiddenInsteadOfCollapsed = this.HiddenInsteadOfCollapsed };
         }
     }
     public class DefaultBooleanToBooleanConverterExtension : MarkupExtension {
@@ -106,6 +115,11 @@ namespace DevExpress.Mvvm.UI {
         public byte? CustomA { get; set; }
         public override object ProvideValue(System.IServiceProvider serviceProvider) {
             return new ColorToBrushConverter() { CustomA = CustomA };
+        }
+    }
+    public class BrushToColorConverterExtension : MarkupExtension {
+        public override object ProvideValue(System.IServiceProvider serviceProvider) {
+            return new BrushToColorConverter();
         }
     }
 }

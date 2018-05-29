@@ -131,6 +131,7 @@ namespace DevExpress.Mvvm.Tests {
         #endregion
         #region display name description and image
         const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Icons/";
+        const string SvgUriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Images/";
         public enum EnumWithDisplayName {
             [Display(ShortName = "OneMember")]
             [Image(UriPrefix + "icon1.ico")]
@@ -153,6 +154,14 @@ namespace DevExpress.Mvvm.Tests {
         [EnumMetadataType(typeof(EnumWithDisplayNameMetadata))]
         public enum EnumWithDisplayName_ExternalMetadata2 {
             MemberOne,
+            MemberTwo,
+            MemberThree,
+        }
+        public enum EnumWithSvgImage {
+            [Image(UriPrefix + "icon1.ico")]
+            MemberOne,
+
+            [Image(SvgUriPrefix + "redoTestSvg.sVg")]
             MemberTwo,
             MemberThree,
         }
@@ -232,6 +241,22 @@ namespace DevExpress.Mvvm.Tests {
                 MetadataLocator.Default = null;
             }
         }
+        [Test]
+        public void SvgImageTest() {
+            Func<string, ImageSource> getSvgImageSourceForTest = uri => (ImageSource)new ImageSourceConverter().ConvertFrom(UriPrefix + "icon2.ico");
+            var source = EnumSourceHelperCore.GetEnumSource(typeof(EnumWithSvgImage), true, null, false, EnumMembersSortMode.Default,
+                (x, y) => { throw new InvalidOperationException(); }, getSvgImageSource: getSvgImageSourceForTest);
+            Assert.AreEqual(GetImageUri(source.ElementAt(0).Image).ToString(), UriPrefix + "icon1.ico");
+            Assert.AreEqual(GetImageUri(source.ElementAt(1).Image).ToString(), UriPrefix + "icon2.ico");
+        }
+        [Test]
+        public void SvgImageExceptionTest() {
+            var source = EnumSourceHelperCore.GetEnumSource(typeof(EnumWithSvgImage), true, null, false, EnumMembersSortMode.Default,
+                (x, y) => { throw new InvalidOperationException(); });
+            Assert.AreEqual(GetImageUri(source.ElementAt(0).Image).ToString(), UriPrefix + "icon1.ico");
+            Assert.Throws(typeof(NullReferenceException), () => { var imageSource = source.ElementAt(1).Image; });
+        }
+
         [Test, NUnit.Framework.Description("T521914")]
         public void LazyInitTest() {
             var source = EnumSourceHelperCore.GetEnumSource(typeof(EnumWithDisplayName), true, null, false, EnumMembersSortMode.Default,

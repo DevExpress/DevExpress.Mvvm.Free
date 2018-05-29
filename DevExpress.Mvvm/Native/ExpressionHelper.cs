@@ -33,9 +33,13 @@ namespace DevExpress.Mvvm.Native {
             return (PropertyInfo)memberExpression.Member;
         }
         static void CheckParameterExpression(Expression expression) {
-            var parameterExpression = expression as ParameterExpression;
-            if(parameterExpression == null)
-                throw new ArgumentException("expression");
+            if (expression.NodeType == ExpressionType.Parameter)
+                return;
+            if (expression.NodeType == ExpressionType.Convert) {
+                if (((UnaryExpression)expression).Operand.NodeType == ExpressionType.Parameter)
+                    return;
+            }
+            throw new ArgumentException("expression");
         }
 
         internal static ConstructorInfo GetConstructor<T>(Expression<Func<T>> commandMethodExpression) {

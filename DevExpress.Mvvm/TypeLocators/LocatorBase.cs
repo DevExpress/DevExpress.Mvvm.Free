@@ -39,7 +39,7 @@ namespace DevExpress.Mvvm {
 
             if(enumerator == null) enumerator = GetTypes();
             while(enumerator.MoveNext()) {
-                if(!shortNameToTypeMapping.ContainsKey(enumerator.Current.Name)) {
+                if(!fullNameToTypeMapping.ContainsKey(enumerator.Current.FullName)) {
                     shortNameToTypeMapping[enumerator.Current.Name] = enumerator.Current;
                     fullNameToTypeMapping[enumerator.Current.FullName] = enumerator.Current;
                 }

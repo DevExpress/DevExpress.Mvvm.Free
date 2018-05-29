@@ -33,7 +33,8 @@ namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
         ToastText01 = 4,
         ToastText02 = 5,
         ToastText03 = 6,
-        ToastText04 = 7
+        ToastText04 = 7,
+        ToastGeneric = 8
     }
 
     [ComImport]

@@ -134,7 +134,7 @@ namespace DevExpress.Internal.WinApi {
             return other.Equals((object)this);
         }
         public override int GetHashCode() {
-            return formatId.GetHashCode() ^ propertyId;
+            return unchecked(propertyId * 5381 + formatId.GetHashCode());
         }
         public override bool Equals(object obj) {
             if(obj == null)

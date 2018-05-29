@@ -26,6 +26,16 @@ namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
         void CreateEntityReference();
         int GetElementsByTagName([In, MarshalAs(47)] string tagName, out IXmlNodeList elements);
     }
+    [CLSCompliant(false)]
+    [ComImport]
+    [Guid("6cd0e74e-ee65-4489-9ebf-ca43e87ba637")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    public interface IXmlDocumentIO : IInspectable {
+        void IInspectableStub1();
+        void IInspectableStub2();
+        void IInspectableStub3();
+        void LoadXml([In, MarshalAs(47)]string xml);
+    }
 
     [CLSCompliant(false)]
     [ComImport]

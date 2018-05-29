@@ -22,6 +22,7 @@ namespace DevExpress.Mvvm.UI.Tests {
     public class EnumItemsSourceBehaviorTests : BaseWpfFixture {
 
         const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Behaviors/TestImages/";
+        const string SvgUriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Images/";
 
         enum TestEnum1 {
             [Image(UriPrefix + "Cut.png")]
@@ -36,6 +37,16 @@ namespace DevExpress.Mvvm.UI.Tests {
             [Display(Description = "DeleteDescription", Name = "CustomDeleteItem")]
             DeleteItem,
             CutItem
+        }
+        public enum TestEnum3 {
+            [Image(UriPrefix + "Copy.png")]
+            [Display(Description = "CopyDescription")]
+            CopyItem,
+
+            [Image(SvgUriPrefix + "redoTestSvg.sVg")]
+            [Display(Description = "RedoDescription")]
+            Redo,
+            PasteItem,
         }
         bool EnumMemberInfoComparer(EnumMemberInfo enumMemberInfo, string description, string id, string imageName, string name) {
             return description == enumMemberInfo.Description
@@ -382,6 +393,14 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.Throws<Exception>(() => { Interaction.GetBehaviors(element).Add(behavior); },
                 "ItemsSource dependency property required");
 
+        }
+        [Test]
+        public void SvgImageExceptionTest() {
+            ListBox listBox = new ListBox();
+            EnumItemsSourceBehavior listBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum3) };
+            Interaction.GetBehaviors(listBox).Add(listBoxBehavior);
+            Assert.AreEqual(3, listBox.Items.Count);
+            Assert.Throws(typeof(NullReferenceException), () => { var svgImageSource = ((EnumMemberInfo)listBox.Items.GetItemAt(1)).Image; });
         }
     }
 }

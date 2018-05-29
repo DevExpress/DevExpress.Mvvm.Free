@@ -175,24 +175,32 @@ namespace DevExpress.Mvvm.Native {
     }
     [AttributeUsageAttribute(AttributeTargets.All, Inherited = true, AllowMultiple = true)]
     internal class CustomValidationAttribute : DXValidationAttribute {
-        protected readonly Func<object, bool> isValidFunction;
-        public CustomValidationAttribute(Func<object, bool> isValidFunction, Func<object, string> errorMessageAccessor)
+        readonly Func<object, bool> isValidFunction;
+        readonly Type valueType;
+        public CustomValidationAttribute(Type valueType, Func<object, bool> isValidFunction, Func<object, string> errorMessageAccessor)
             : base(errorMessageAccessor, () => DataAnnotationsResourcesResolver.CustomValidationAttribute_ValidationError) {
+            this.valueType = valueType;
             this.isValidFunction = isValidFunction;
         }
         protected override bool IsValid(object value) {
+            if (valueType.IsValueType && value == null)
+                return true;
             return isValidFunction(value);
         }
     }
     [AttributeUsageAttribute(AttributeTargets.All, Inherited = true, AllowMultiple = true)]
     internal class CustomInstanceValidationAttribute : DXValidationAttribute {
         readonly Func<object, object, bool> isValidFunction;
-        public CustomInstanceValidationAttribute(Func<object, object, bool> isValidFunction, ErrorMessageAccessorDelegate errorMessageAccessor)
+        readonly Type valueType;
+        public CustomInstanceValidationAttribute(Type valueType, Func<object, object, bool> isValidFunction, ErrorMessageAccessorDelegate errorMessageAccessor)
             : base(errorMessageAccessor, () => DataAnnotationsResourcesResolver.CustomValidationAttribute_ValidationError) {
+            this.valueType = valueType;
             this.isValidFunction = isValidFunction;
         }
         protected override bool IsValid(object value) { return true; }
         protected override bool IsInstanceValid(object value, object instance) {
+            if (valueType.IsValueType && value == null)
+                return true;
             return isValidFunction(value, instance);
         }
     }

@@ -7,17 +7,19 @@ using System.Windows;
 using System.Windows.Controls;
 using System.ComponentModel;
 using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.UI.Native;
 
+namespace DevExpress.Mvvm.UI.Native {
+    public interface IOpenFileDialog : IFileDialog {
+        bool Multiselect { get; set; }
+        bool ReadOnlyChecked { get; set; }
+        bool ShowReadOnly { get; set; }
+    }
+}
 namespace DevExpress.Mvvm.UI {
     [Browsable(true), EditorBrowsable(EditorBrowsableState.Always)]
     [TargetType(typeof(System.Windows.Controls.UserControl)), TargetType(typeof(Window))]
     public class OpenFileDialogService : FileDialogServiceBase, IOpenFileDialogService {
-        protected interface IOpenFileDialog : IFileDialog {
-            bool Multiselect { get; set; }
-            bool ReadOnlyChecked { get; set; }
-            bool ShowReadOnly { get; set; }
-        }
-
         protected class OpenFileDialogAdapter : FileDialogAdapter<OpenFileDialog>, IOpenFileDialog {
             public OpenFileDialogAdapter(OpenFileDialog fileDialog) : base(fileDialog) { }
 
@@ -71,11 +73,8 @@ namespace DevExpress.Mvvm.UI {
         public OpenFileDialogService() {
             CheckFileExists = true;
         }
-        protected override object CreateFileDialog() {
-            return new OpenFileDialog();
-        }
         protected override IFileDialog CreateFileDialogAdapter() {
-            return new OpenFileDialogAdapter((OpenFileDialog)CreateFileDialog());
+            return new OpenFileDialogAdapter(new OpenFileDialog());
         }
         protected override void InitFileDialog() {
             OpenFileDialog.Multiselect = Multiselect;

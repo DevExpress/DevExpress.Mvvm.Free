@@ -138,6 +138,15 @@ namespace DevExpress.Mvvm.UI.Tests {
         protected static bool HasFadeAnimation(Window wnd) {
             return Interaction.GetBehaviors(wnd).Any(x => x is WindowFadeAnimationBehavior);
         }
+
+        protected static bool AreRectsClose(Rect rect1, Rect rect2, double accuracy = 5) {
+            return ArePointsClose(rect1.TopLeft, rect2.TopLeft)
+                && rect1.Size == rect2.Size;
+        }
+        protected static bool ArePointsClose(Point point1, Point point2, double accuracy = 5) {
+            return Math.Abs(point1.X - point2.X) < accuracy
+                && Math.Abs(point1.Y - point2.Y) < accuracy;
+        }
     }
     [TestFixture]
     public class DXSplashScreenTests : DXSplashScreenBaseTestFixture {
@@ -432,7 +441,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             DXSplashScreen.Show<SplashScreenTestUserControl>(WindowStartupLocation.CenterOwner, owner);
             SplashScreenTestUserControl.DoEvents();
             Rect pos = GetSplashScreenBounds();
-            Assert.AreEqual(new Point(290, 150), pos.TopLeft);
+            Assert.AreEqual(true, ArePointsClose(new Point(290, 150), pos.TopLeft));
             CloseDXSplashScreen();
         }
         [Test, Order(22)]
@@ -475,7 +484,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             DXSplashScreen.Show(CreateDefaultWindow, CreateDefaultContent, new object[] { owner, WindowStartupLocation.CenterOwner }, null);
             SplashScreenTestUserControl.DoEvents();
             Rect pos = GetSplashScreenBounds();
-            Assert.AreEqual(new Point(270, 130), pos.TopLeft);
+            Assert.AreEqual(true, ArePointsClose(new Point(270, 130), pos.TopLeft));
             CloseDXSplashScreen();
         }
         [Test, Order(26)]
@@ -1183,7 +1192,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             SplashScreenTestUserControl.DoEvents();
             Rect pos = GetSplashScreenBounds();
             SplashScreenTestUserControl.DoEvents();
-            Assert.AreEqual(new Rect(410, 270, 180, 160), pos);
+            Assert.AreEqual(true, AreRectsClose(new Rect(410, 270, 180, 160), pos));
             CloseDXSplashScreen();
         }
         [Test]
@@ -1203,7 +1212,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             SplashScreenTestUserControl.DoEvents();
             Rect pos = GetSplashScreenBounds();
             SplashScreenTestUserControl.DoEvents();
-            Assert.AreEqual(new Rect(290, 150, 120, 140), pos);
+            Assert.AreEqual(true, AreRectsClose(new Rect(290, 150, 120, 140), pos));
             CloseDXSplashScreen();
         }
         [Test]

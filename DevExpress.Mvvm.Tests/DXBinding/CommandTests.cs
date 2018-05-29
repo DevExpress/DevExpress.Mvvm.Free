@@ -4,22 +4,26 @@ using NUnit.Framework;
 using System;
 using System.Linq;
 using System.Windows.Controls;
+using System.ComponentModel;
+using System.Windows;
 
 namespace DevExpress.Xpf.DXBinding.Tests {
     [TestFixture]
     public class CommandTests {
         [SetUp]
-        public void Init() {
+        public virtual void Init() {
             BindingListener.Enable();
             BindingTestHelper.TestsSetUp();
+            BindingTestHelper.SetResolvingMode(DXBindingResolvingMode.LegacyStaticTyping);
         }
         [TearDown]
-        public void TearDown() {
+        public virtual void TearDown() {
             BindingTestHelper.TestsTearDown();
             BindingListener.Disable();
+            BindingTestHelper.ClearResolvingMode();
         }
         [Test]
-        public void OneExecute() {
+        public virtual void OneExecute() {
             var vm = CommandTests_a.Create();
             var bt = BindingTestHelper.BindAssert<Button>("Button", "Command", "{b:DXCommand Do1()}", null, vm);
             BindingTestHelper.DoCommand(bt);
@@ -45,7 +49,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(1, vm.Do1Counter);
         }
         [Test]
-        public void TwoExecute() {
+        public virtual void TwoExecute() {
             var vm = CommandTests_a.Create();
             var bt = BindingTestHelper.BindAssert<Button>("Button", "Command", "{b:DXCommand Execute='Do1(); Do2()'}", null, vm);
             BindingTestHelper.DoCommand(bt);
@@ -73,7 +77,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(1, vm.Do2Counter);
         }
         [Test]
-        public void Arguments() {
+        public virtual void Arguments() {
             var vm = CommandTests_a.Create();
             var bt = BindingTestHelper.BindAssert<Button>("Button", "Command",
                 "{b:DXCommand Execute='Do3(@s.Tag.Parameter, @parameter);', CanExecute='CanDo3(@s.Tag.CanDo)'}", null, vm);
@@ -88,7 +92,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(2, vm.Do3Value);
         }
         [Test]
-        public void CommandInStyleSetter() {
+        public virtual void CommandInStyleSetter() {
             string xaml1 = @"
 <Grid>
     <Grid.Resources>
@@ -130,7 +134,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             test(xaml2);
         }
         [Test]
-        public void CommandInDataTemplate() {
+        public virtual void CommandInDataTemplate() {
             string xaml = @"
 <Grid>
     <Grid.Resources>
@@ -157,7 +161,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             });
         }
         [Test]
-        public void StaticMethod() {
+        public virtual void StaticMethod() {
             CommandTests_a.DoValue = 0;
             var bt = BindingTestHelper.BindAssert<Button>("Button", "Command", "{b:DXCommand '$test:CommandTests_a.DoStatic()'}", null, null);
             BindingTestHelper.DoCommand(bt);
@@ -169,7 +173,148 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(1, CommandTests_a.DoValue);
         }
     }
+    [TestFixture]
+    public class CommandTests_Dynamic : CommandTests {
+        [SetUp]
+        public override void Init() {
+            base.Init();
+            BindingTestHelper.SetResolvingMode(DXBindingResolvingMode.DynamicTyping);
+        }
+        [TearDown]
+        public override void TearDown() {
+            base.TearDown();
+            BindingTestHelper.ClearResolvingMode();
+        }
+        [Test]
+        public override void Arguments() {
+            var vm = CommandTests_a.Create();
+            var bt = BindingTestHelper.BindAssert<Button>("Button", "Command",
+                "{b:DXCommand Execute='Do3(@s.Tag.Parameter, @parameter);', CanExecute='CanDo3(@s.Tag.CanDo)'}", null, vm);
+            Assert.AreEqual(false, BindingTestHelper.CanDoCommand(bt));
+            bt.Tag = new { CanDo = true }; BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt));
+            bt.Tag = new { CanDo = true, Parameter = 1 }; BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt));
+            bt.CommandParameter = 1; BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt));
+            BindingTestHelper.DoCommand(bt);
+            Assert.AreEqual(2, vm.Do3Value);
+        }
+        [Test]
+        public void NewOperator() {
+            var vm = new CommandTests_b();
+            var bt = BindingTestHelper.BindAssert<Button>(
+                "Button", "Command",
+                @"{b:DXCommand 
+                    Execute='Do(@s.Margin);', 
+                    CanExecute='new $Thickness(@s.Margin.Bottom).Left == 1'}",
+                null, vm);
+            Assert.AreEqual(false, BindingTestHelper.CanDoCommand(bt));
+            Assert.AreEqual(0, vm.DoubleProp);
+
+            bt.Margin = new Thickness(1, 0, 0, 0); BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(false, BindingTestHelper.CanDoCommand(bt));
+            Assert.AreEqual(0, vm.DoubleProp);
+
+            bt.Margin = new Thickness(1, 0, 0, 1); BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt));
+            BindingTestHelper.DoCommand(bt); BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(1, vm.DoubleProp);
+        }
+        [Test]
+        public void AssignOperator() {
+            var vm = new CommandTests_b() { IntProp = 0 };
+            var bt = BindingTestHelper.BindAssert<Button>(
+                "Button", "Command",
+                @"{b:DXCommand 
+                    Execute='IntProp = IntProp + 1'}",
+                null, vm);
+            Assert.AreEqual(0, vm.IntProp);
+            BindingTestHelper.DoCommand(bt); BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(1, vm.IntProp);
+
+            vm.IntProp = 0;
+            bt = BindingTestHelper.BindAssert<Button>(
+                "Button", "Command",
+                @"{b:DXCommand 
+                    Execute='IntProp = IntProp + @parameter'}",
+                null, vm);
+            bt.CommandParameter = 1;
+            Assert.AreEqual(0, vm.IntProp);
+            BindingTestHelper.DoCommand(bt); BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(1, vm.IntProp);
+            bt.CommandParameter = 2;
+            BindingTestHelper.DoCommand(bt); BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(3, vm.IntProp);
+
+            bt = BindingTestHelper.BindAssert<Button>(
+             "Button", "Command",
+             @"{b:DXCommand 
+                    Execute='@s.Tag = @parameter'}",
+             null, null);
+            bt.CommandParameter = 1;
+            BindingTestHelper.DoCommand(bt); BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(1, bt.Tag);
+            bt.CommandParameter = 2;
+            BindingTestHelper.DoCommand(bt); BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(2, bt.Tag);
+        }
+        [Test]
+        public void AssignOperator_ElementName() {
+            string xaml = @"
+<Grid x:Name=""panel"" Tag=""{b:DXBinding '1'}"">
+    <Button Command=""{b:DXCommand Execute='@e(panel).Tag = @e(panel).Tag + 1'}""/>
+</Grid>
+";
+            var panel = BindingTestHelper.LoadXaml<Grid>(xaml);
+            var bt = (Button)panel.Children[0];
+            Assert.AreEqual(1, panel.Tag);
+            BindingTestHelper.DoCommand(bt); BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(2, panel.Tag);
+        }
+        [Test]
+        public void AssignOperators() {
+            var vm = new CommandTests_b() { IntProp = 0 };
+            var bt = BindingTestHelper.BindAssert<Button>(
+                "Button", "Command",
+                @"{b:DXCommand 
+                    Execute='IntProp = IntProp + 1; IntProp = IntProp + 1;;'}",
+                null, vm);
+            Assert.AreEqual(0, vm.IntProp);
+            BindingTestHelper.DoCommand(bt); BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(2, vm.IntProp);
+        }
+        [Test]
+        public void AssignOperator_Static() {
+            CommandTests_a.DoValue = 0;
+            var bt = BindingTestHelper.BindAssert<Button>(
+                "Button", "Command",
+                @"{b:DXCommand 
+                    Execute='$test:CommandTests_a.DoValue = $test:CommandTests_a.DoValue + 1'}",
+                null, null);
+            Assert.AreEqual(0, CommandTests_a.DoValue);
+            BindingTestHelper.DoCommand(bt); BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(1, CommandTests_a.DoValue);
+        }
+
+        [Test]
+        public void AttachedPropertyTest() {
+            var bt = BindingTestHelper.BindAssert<Button>(
+               "Button", "Command",
+               @"{b:DXCommand 
+                    Execute='@s.($test:CommandTests_a.AttachedProp) = true'}",
+               null, null, false);
+            Assert.AreEqual(null, CommandTests_a.GetAttachedProp(bt));
+            BindingTestHelper.DoCommand(bt); BindingTestHelper.DoEvents(bt);
+            Assert.AreEqual(true, CommandTests_a.GetAttachedProp(bt));
+        }
+    }
+
     public class CommandTests_a {
+        public static readonly DependencyProperty AttachedPropProperty = DependencyProperty.RegisterAttached("AttachedProp", typeof(object), typeof(CommandTests_a), new PropertyMetadata(null));
+        public static object GetAttachedProp(DependencyObject obj) { return (object)obj.GetValue(AttachedPropProperty); }
+        public static void SetAttachedProp(DependencyObject obj, object value) { obj.SetValue(AttachedPropProperty, value); }
+
         public static int DoValue { get; set; }
         public static void DoStatic() { DoValue++; }
         public static CommandTests_a Create() {
@@ -202,6 +347,49 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         public void Method(int p) {
             MethodValue = p;
             MethodCounter++;
+        }
+    }
+    public class CommandTests_b : INotifyPropertyChanged {
+        public event PropertyChangedEventHandler PropertyChanged;
+        int intProp;
+        public int IntProp {
+            get { return intProp; }
+            set {
+                if (intProp == value) return;
+                intProp = value;
+                if (PropertyChanged != null)
+                    PropertyChanged(this, new PropertyChangedEventArgs("IntProp"));
+            }
+        }
+        double doubleProp;
+        public double DoubleProp {
+            get { return doubleProp; }
+            set {
+                if (doubleProp == value) return;
+                doubleProp = value;
+                if (PropertyChanged != null)
+                    PropertyChanged(this, new PropertyChangedEventArgs("DoubleProp"));
+            }
+        }
+        string stringProp;
+        public string StringProp {
+            get { return stringProp; }
+            set {
+                if (stringProp == value) return;
+                stringProp = value;
+                if (PropertyChanged != null)
+                    PropertyChanged(this, new PropertyChangedEventArgs("StringProp"));
+            }
+        }
+        public CommandTests_b GetSelf() {
+            return this;
+        }
+        public CommandTests_b() { }
+        public CommandTests_b(double v) {
+            DoubleProp = v;
+        }
+        public void Do(Thickness thickness) {
+            DoubleProp = thickness.Left;
         }
     }
 }

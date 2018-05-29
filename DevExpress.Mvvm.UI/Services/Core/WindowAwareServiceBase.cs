@@ -29,6 +29,9 @@ namespace DevExpress.Mvvm.UI {
         }
 
         protected abstract void OnActualWindowChanged(Window oldWindow);
+        protected void UpdateActualWindow() {
+            ActualWindow = Window ?? WindowSource.With(GetWindowEx) ?? AssociatedObject.With(GetWindowEx);
+        }
 
         void OnWindowChanged(DependencyPropertyChangedEventArgs e) {
             UpdateActualWindow();
@@ -36,8 +39,8 @@ namespace DevExpress.Mvvm.UI {
         void OnWindowSourceIsLoadedChanged(object sender, RoutedEventArgs e) {
             UpdateActualWindow();
         }
-        void UpdateActualWindow() {
-            ActualWindow = Window ?? WindowSource.With(Window.GetWindow) ?? AssociatedObject.With(Window.GetWindow);
+        static Window GetWindowEx(DependencyObject d) {
+            return d as Window ?? Window.GetWindow(d);
         }
         void OnWindowSourceChanged(DependencyPropertyChangedEventArgs e) {
             var oldValue = (FrameworkElement)e.OldValue;

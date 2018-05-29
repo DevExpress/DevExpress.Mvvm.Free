@@ -82,7 +82,22 @@ DXBinding
 ExprRoot									(. root = new NRoot(); NBase res; .)
 =	Expr<out res>							(. root.Exprs.Add(res); .)
 .
-Expr<out NBase res>= ConditionExpr<out res>.
+Assign_ExprRoot								(. root = new NRoot(); NBase expr; .)
+=	Assign_Expr<out expr> {";"}				(. root.Exprs.Add(expr); .)
+	{IF(TokenEquals(0, ";") && !TokenEquals(1, _EOF))
+	    Assign_Expr<out expr> {";"}			(. root.Exprs.Add(expr); .)
+	}
+.
+Assign_Expr<out NBase res>					(. res = null; NBase left = null; NBase expr = null;  .)
+=	IF(TokenExists(0, "="))
+		Expr<out left>
+		"="
+		Expr<out expr>						(. res = new NAssign(left, expr); .)
+	| Expr<out res>
+.
+Expr<out NBase res>
+=   ConditionExpr<out res>.
+
 ConditionExpr<out NBase res>				(. res = null; NBase second = null; NBase third = null; .)
 =	NullCoalescingExpr<out res>
 	[ "?" Expr<out second> ":" Expr<out third>
@@ -147,7 +162,7 @@ MulExpr<out NBase res>						(. res = null; NBase right = null; .)
 UnaryExpr<out NBase res>					(. res = null; List<NUnaryBase> ops = new List<NUnaryBase>(); .)
 =	{ "+"									(. ops.Add(new NUnary(NUnary.NKind.Plus, null)); .)
 	| "-"									(. ops.Add(new NUnary(NUnary.NKind.Minus, null)); .)
-	| "~" 									(. ops.Add(new NUnary(NUnary.NKind.Not, null)); .)
+	| "~" 									(. ops.Add(new NUnary(NUnary.NKind.NotBitwise, null)); .)
 	| "!"									(. ops.Add(new NUnary(NUnary.NKind.Not, null)); .)
 	| IF(NextIs_TypeExprWrapped(1, "(", ")"))
 	    "("									(. NBase type; .)
@@ -175,6 +190,7 @@ AtomExpr<out NBase res>						(. res = null; .)
 =	( ConstExpr<out res>
 	| RelativeExpr<out res>
 	| TypeOfExpr<out res>
+	| TypeNewExpr<out res>
 	| IF(NextIs_TypeExpr(1))
 	  TypeIdentExpr<out res, true>
 	| IF(NextIs_MethodExpr(1))
@@ -239,6 +255,10 @@ TypeExpr<out NBase res>						(. res = null; string type = string.Empty; .)
 	["?"									(. ((NType)res).IsNullable = true; .)
 	]
 .
+TypeNewExpr<out NBase res>					(. res = null; NBase type; NArgs args; .)
+=	"new" TypeExpr<out type>
+	MethodArgsExpr<out args>				(. res = new NNew((NType)type, null, args); .)
+.
 
 NextIdentExpr<out NBase res, bool allowMethod>
 											(. res = null; .)
@@ -251,16 +271,19 @@ NextIdentExpr<out NBase res, bool allowMethod>
 IdentExpr<out NBase res>					(. res = null; .)
 =	Ident									(. res = new NIdent(t.val, null); .)
 .
-MethodExpr<out NBase res>					(. res = null; NBase arg; .)
-=	Ident									(. res = new NMethod(t.val, null, null); .)
-	"(" [ Expr<out arg>						(. ((NMethod)res).Args.Add(arg); .)
-		{ "," Expr<out arg>					(. ((NMethod)res).Args.Add(arg); .)
+MethodExpr<out NBase res>					(. res = null; string name; NArgs args; .)
+=	Ident									(. name = t.val; .)
+	MethodArgsExpr<out args>				(. res = new NMethod(name, null, args); .)
+.
+MethodArgsExpr<out NArgs res>				(. res = new NArgs(); NBase arg; .)
+=	"(" [ Expr<out arg>						(. res.Add(arg); .)
+		{ "," Expr<out arg>					(. res.Add(arg); .)
 		} ] ")"
 .
-IndexExpr<out NBase res>					(. res = null; List<NBase> args = new List<NBase>(); NBase arg = null; .)
+IndexExpr<out NBase res>					(. res = null; NArgs args = new NArgs(); NBase arg = null; .)
 =	"[" Expr<out arg>						(. args.Add(arg); .)
 		{ "," Expr<out arg>					(. args.Add(arg); .)
-		} "]"								(. res = new NIndex(null, args.ToArray()); .)
+		} "]"								(. res = new NIndex(null, args); .)
 .
 ConstExpr<out NBase res>					(. res = null; .)
 =	Int										(. res = new NConstant(NConstant.NKind.Integer, ParserHelper.ParseInt(t.val)); .)
@@ -297,6 +320,7 @@ Back_AtomExpr<out NBase res>				(. res = null; .)
 =	( ConstExpr<out res>
 	| Back_RelativeValueExpr<out res>
 	| TypeOfExpr<out res>
+	| TypeNewExpr<out res>
 	| IF(NextIs_TypeExpr(1))
 	  TypeIdentExpr<out res, true>
 	| "(" Expr<out res> ")"
@@ -306,28 +330,12 @@ Back_RelativeValueExpr<out NBase res>		(. res = null; .)
 =	("@v" | "@value")						(. res = new NRelative(t.val, null, NRelative.NKind.Value); .)
 .
 /*###############################################################*/
-Execute_ExprRoot							(. root = new NRoot(); NBase ident; .)
-=	Execute_Ident<out ident> {";"}			(. root.Exprs.Add((NIdentBase)ident); .)
-	{IF(TokenEquals(0, ";") && !TokenEquals(1, _EOF))
-	    Execute_Ident<out ident> {";"}		(. root.Exprs.Add((NIdentBase)ident); .)
-	}
-.
-Execute_Ident<out NBase res>				(. res = null; .)
-=	( RelativeExpr<out res>
-	| IF(NextIs_TypeExpr(1))
-	  TypeIdentExpr<out res, true>
-	| IF(NextIs_MethodExpr(1))
-	  MethodExpr<out res>
-	| IdentExpr<out res>
-	| IndexExpr<out res>
-	| "(" TypeIdentExpr<out res, false>		(. ((NType)res).Kind = NType.NKind.Attached; .)
-	  ")"
-	)  ReadNextIdents<ref res, true>
-.
+Execute_ExprRoot= Assign_ExprRoot.
 Execute_AtomExpr<out NBase res>				(. res = null; .)
 =	( ConstExpr<out res>
 	| Execute_RelativeExpr<out res>
 	| TypeOfExpr<out res>
+	| TypeNewExpr<out res>
 	| IF(NextIs_TypeExpr(1))
 	  TypeIdentExpr<out res, true>
 	| IF(NextIs_MethodExpr(1))
@@ -351,28 +359,12 @@ CanExecute_ExprRoot
 CanExecute_AtomExpr<out NBase res>	
 =	Execute_AtomExpr<out res>.
 /*###############################################################*/
-Event_ExprRoot								(. root = new NRoot(); NBase ident; .)
-=	Event_Ident<out ident> {";"}			(. root.Exprs.Add((NIdentBase)ident); .)
-	{IF(TokenEquals(0, ";") && !TokenEquals(1, _EOF))
-	    Event_Ident<out ident> {";"}		(. root.Exprs.Add((NIdentBase)ident); .)
-	}
-.
-Event_Ident<out NBase res>					(. res = null; .)
-=	( Event_RelativeExpr<out res>
-	| IF(NextIs_TypeExpr(1))
-	  TypeIdentExpr<out res, true>
-	| IF(NextIs_MethodExpr(1))
-	  MethodExpr<out res>
-	| IdentExpr<out res>
-	| IndexExpr<out res>
-	| "(" TypeIdentExpr<out res, false>		(. ((NType)res).Kind = NType.NKind.Attached; .)
-	  ")"
-	)  ReadNextIdents<ref res, true>
-.
+Event_ExprRoot=	Assign_ExprRoot.
 Event_AtomExpr<out NBase res>				(. res = null; .)
 =	( ConstExpr<out res>
 	| Event_RelativeExpr<out res>
 	| TypeOfExpr<out res>
+	| TypeNewExpr<out res>
 	| IF(NextIs_TypeExpr(1))
 	  TypeIdentExpr<out res, true>
 	| IF(NextIs_MethodExpr(1))

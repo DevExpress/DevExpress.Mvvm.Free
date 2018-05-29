@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DevExpress.Data.Controls.WinrtToastNotifier.WinApi;
 using DevExpress.Internal.WinApi;
 using DevExpress.Internal.WinApi.Windows.UI.Notifications;
-using DevExpress.Data.Controls.WinrtToastNotifier.WinApi;
 
 namespace DevExpress.Internal {
     public class WinRTToastNotificationFactory : IPredefinedToastNotificationFactory {
@@ -35,21 +35,13 @@ namespace DevExpress.Internal {
                 return factoryCore;
             }
         }
-
         public double ImageSize {
-            get {
-                if (WindowsVersion.IsWin10AnniversaryOrNewer) {
-                    return 48;
-                } else {
-                    return 90;
-                }
-            }
+            get { return WindowsVersion.IsWin10AnniversaryOrNewer ? 48 : 90; }
         }
-
         public virtual IPredefinedToastNotificationContentFactory CreateContentFactory() {
             return new WinRTToastNotificationContentFactory();
         }
-        class WinRTToastNotificationContentFactory : IPredefinedToastNotificationContentFactory {
+        class WinRTToastNotificationContentFactory : IPredefinedToastNotificationContentFactory, IPredefinedToastNotificationContentFactoryGeneric {
             public IPredefinedToastNotificationContent CreateContent(string bodyText) {
                 return WinRTToastNotificationContent.Create(bodyText);
             }
@@ -61,6 +53,9 @@ namespace DevExpress.Internal {
             }
             public IPredefinedToastNotificationContent CreateOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2) {
                 return WinRTToastNotificationContent.CreateOneLineHeader(headlineText, bodyText1, bodyText2);
+            }
+            public IPredefinedToastNotificationContent CreateToastGeneric(string headlineText, string bodyText1, string bodyText2) {
+                return WinRTToastNotificationContent.CreateToastGeneric(headlineText, bodyText1, bodyText2);
             }
         }
         #endregion IPredefinedToastNotificationContentFactory
@@ -186,7 +181,12 @@ namespace DevExpress.Internal {
                 }
                 else source.SetException(e);
             };
-            Adapter.Show(Notification);
+            ComFunctions.Safe(() => Adapter.Show(Notification),
+                ce =>
+                {
+                    Unsubscribe();
+                    source.SetException(new ToastNotificationFailedException(ce, ce.ErrorCode));
+                });
             return source.Task;
         }
         public void Hide() {

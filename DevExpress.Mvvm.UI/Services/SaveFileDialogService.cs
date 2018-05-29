@@ -7,16 +7,18 @@ using System.Windows;
 using System.Windows.Controls;
 using System.ComponentModel;
 using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.UI.Native;
 
+namespace DevExpress.Mvvm.UI.Native {
+    public interface ISaveFileDialog : IFileDialog {
+        bool CreatePrompt { get; set; }
+        bool OverwritePrompt { get; set; }
+    }
+}
 namespace DevExpress.Mvvm.UI {
     [Browsable(true), EditorBrowsable(EditorBrowsableState.Always)]
     [TargetType(typeof(System.Windows.Controls.UserControl)), TargetType(typeof(Window))]
     public class SaveFileDialogService : FileDialogServiceBase, ISaveFileDialogService {
-        protected interface ISaveFileDialog : IFileDialog {
-            bool CreatePrompt { get; set; }
-            bool OverwritePrompt { get; set; }
-        }
-
         protected class SaveFileDialogAdapter : FileDialogAdapter<SaveFileDialog>, ISaveFileDialog {
             public SaveFileDialogAdapter(SaveFileDialog fileDialog) : base(fileDialog) { }
 
@@ -65,11 +67,8 @@ namespace DevExpress.Mvvm.UI {
         public SaveFileDialogService() {
             CheckFileExists = false;
         }
-        protected override object CreateFileDialog() {
-            return new SaveFileDialog();
-        }
         protected override IFileDialog CreateFileDialogAdapter() {
-            return new SaveFileDialogAdapter((SaveFileDialog)CreateFileDialog());
+            return new SaveFileDialogAdapter(new SaveFileDialog());
         }
         protected override void InitFileDialog() {
             SaveFileDialog.CreatePrompt = CreatePrompt;

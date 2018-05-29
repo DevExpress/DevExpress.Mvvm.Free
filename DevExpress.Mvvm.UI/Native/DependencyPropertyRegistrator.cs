@@ -25,6 +25,9 @@ namespace DevExpress.Mvvm.UI.Native {
         public DependencyPropertyRegistrator<T> AddOwner<TProperty>(Expression<Func<T, TProperty>> property, out DependencyProperty propertyField, DependencyProperty sourceProperty, TProperty defaultValue, Action<T, TProperty, TProperty> changedCallback) {
             return AddOwner(property, out propertyField, sourceProperty, CreateFrameworkMetadata(defaultValue, changedCallback));
         }
+        public DependencyPropertyRegistrator<T> AddOwner<TProperty>(Expression<Func<T, TProperty>> property, out DependencyProperty propertyField, DependencyProperty sourceProperty, TProperty defaultValue, Action<T, TProperty, TProperty> changedCallback, Func<T, TProperty, TProperty> coerceCallback, FrameworkPropertyMetadataOptions frameworkOptions) {
+            return AddOwner(property, out propertyField, sourceProperty, CreateMetadata(defaultValue, changedCallback, coerceCallback, frameworkOptions));
+        }
         public DependencyPropertyRegistrator<T> AddOwner<TProperty>(Expression<Func<T, TProperty>> property, out DependencyProperty propertyField, DependencyProperty sourceProperty, TProperty defaultValue, FrameworkPropertyMetadataOptions frameworkOptions) {
             return AddOwner(property, out propertyField, sourceProperty, CreateMetadata(defaultValue, (Action<T>)null, null, frameworkOptions));
         }
@@ -173,7 +176,11 @@ namespace DevExpress.Mvvm.UI.Native {
             propertyField.OverrideMetadata(typeof(T), new FrameworkPropertyMetadata(ToHandler(changedCallback)));
             return this;
         }
-        public DependencyPropertyRegistrator<T> OverrideMetadata<TProperty>(DependencyProperty propertyField, object defaultValue, Action<T, TProperty, TProperty> changedCallback) {
+        public DependencyPropertyRegistrator<T> OverrideMetadata<TProperty>(Expression<Func<T, TProperty>> getMethodName, DependencyProperty propertyField, Action<T, TProperty, TProperty> changedCallback) {
+            propertyField.OverrideMetadata(typeof(T), new FrameworkPropertyMetadata(ToHandler(changedCallback)));
+            return this;
+        }
+        public DependencyPropertyRegistrator<T> OverrideMetadata<TProperty>(DependencyProperty propertyField, TProperty defaultValue, Action<T, TProperty, TProperty> changedCallback) {
             propertyField.OverrideMetadata(typeof(T), new FrameworkPropertyMetadata(defaultValue, ToHandler(changedCallback)));
             return this;
         }
@@ -240,6 +247,31 @@ namespace DevExpress.Mvvm.UI.Native {
 
         class DefaultStyleKeyHelper : FrameworkElement {
             public static new DependencyProperty DefaultStyleKeyProperty { get { return FrameworkElement.DefaultStyleKeyProperty; } }
+        }
+    }
+    public static class BindableReadOnlyPropertyRegistrator {
+        public static DependencyPropertyRegistrator<T> RegisterBindableReadOnly<T, TProperty>(this DependencyPropertyRegistrator<T> registrator, Expression<Func<T, TProperty>> property, out Action<T, TProperty> propertySeter, out DependencyProperty propertyField, TProperty defaultValue, FrameworkPropertyMetadataOptions frameworkOptions = FrameworkPropertyMetadataOptions.None) where T : DependencyObject {
+            int locked = 0;
+            PropertyChangedCallback changedCallback = (d, e) => {
+                if(locked != 0) return;
+                ++locked;
+                try {
+                    d.SetCurrentValue(e.Property, e.OldValue);
+                } finally {
+                    --locked;
+                }
+            };
+            var registeredProperty = DependencyProperty.Register(DependencyPropertyRegistrator<T>.GetPropertyName(property), typeof(TProperty), typeof(T), new FrameworkPropertyMetadata(defaultValue, frameworkOptions | FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, changedCallback));
+            propertySeter = (d, v) => {
+                ++locked;
+                try {
+                    d.SetCurrentValue(registeredProperty, v);
+                } finally {
+                    --locked;
+                }
+            };
+            propertyField = registeredProperty;
+            return registrator;
         }
     }
 }

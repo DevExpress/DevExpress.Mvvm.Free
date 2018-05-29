@@ -4,7 +4,9 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Security;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DevExpress.Mvvm.Native {
@@ -80,6 +82,8 @@ namespace DevExpress.Mvvm.Native {
         public static readonly TElement[] Instance = new TElement[0];
     }
     public
+    struct UnitT { }
+    public
     static class LinqExtensions {
         public static bool IsEmptyOrSingle<T>(this IEnumerable<T> source) {
             return !source.Any() || !source.Skip(1).Any();
@@ -116,6 +120,13 @@ namespace DevExpress.Mvvm.Native {
             }
             return -1;
         }
+        public static TAccumulate AggregateUntil<T, TAccumulate>(this IEnumerable<T> source, TAccumulate seed, Func<TAccumulate, T, TAccumulate> func, Func<TAccumulate, bool> stop) {
+            foreach(var item in source) {
+                seed = func(seed, item);
+                if(stop(seed)) break;
+            }
+            return seed;
+        }
         public static IEnumerable<T> Unfold<T>(T seed, Func<T, T> next, Func<T, bool> stop) {
             for(var current = seed; !stop(current); current = next(current)) {
                 yield return current;
@@ -124,12 +135,22 @@ namespace DevExpress.Mvvm.Native {
         public static IEnumerable<T> Yield<T>(this T singleElement) {
             yield return singleElement;
         }
-        public static T[] YieldToArray<T>(this T singleElement) {
-            return new[] { singleElement };
-        }
         public static IEnumerable<T> YieldIfNotNull<T>(this T singleElement) {
             if(singleElement != null)
                 yield return singleElement;
+        }
+        public static IEnumerable<string> YieldIfNotEmpty(this string singleElement) {
+            if(!string.IsNullOrEmpty(singleElement))
+                yield return singleElement;
+        }
+        public static T[] YieldToArray<T>(this T singleElement) {
+            return new[] { singleElement };
+        }
+        public static T[] YieldIfNotNullToArray<T>(this T singleElement) {
+            return singleElement == null ? EmptyArray<T>.Instance : new[] { singleElement };
+        }
+        public static string[] YieldIfNotEmptyToArray(this string singleElement) {
+            return string.IsNullOrEmpty(singleElement) ? EmptyArray<string>.Instance : new[] { singleElement };
         }
         public static void ForEach<T>(this IEnumerable<T> source, Func<T, int, IEnumerable<T>> getItems, Action<T, int> action) {
             source.ForEachCore(getItems, action, 0);
@@ -185,6 +206,17 @@ namespace DevExpress.Mvvm.Native {
             var lazy = new Lazy<T>(getValue);
             return () => lazy.Value;
         }
+        public static T Fix<T>(this Func<Func<T>, T> func) {
+            var t = default(T);
+            var tHasValue = false;
+            t = func(() => {
+                if(!tHasValue)
+                    throw new InvalidOperationException("Fix");
+                return t;
+            });
+            tHasValue = true;
+            return t;
+        }
         public static bool AllEqual<T>(this IEnumerable<T> source, Func<T, T, bool> comparer = null) {
             if(!source.Any())
                 return true;
@@ -207,15 +239,210 @@ namespace DevExpress.Mvvm.Native {
     }
 
     public
-    static class TaskExtensions {
-        public static Task<T> Promise<T>(this T value) {
+    sealed class TaskLinq<T> {
+        public TaskLinq(Task<T> task, TaskLinq.Chain chain) {
+            Task = task;
+            Chain = chain;
+        }
+        internal readonly Task<T> Task;
+        internal readonly TaskLinq.Chain Chain;
+    }
+    public
+    static class TaskLinq {
+        public static TaskLinq<T> Linq<T>(this Task<T> task, TaskScheduler scheduler = null) {
+            return task.Linq(new Chain(scheduler));
+        }
+        public static TaskLinq<T> Linq<T>(this Task<T> task, Chain chain) {
+            return new TaskLinq<T>(task, chain);
+        }
+        public sealed class Chain {
+            readonly RunFuture RunFuture = new RunFuture();
+            public readonly SchedulerFuture SchedulerFuture;
+            public Chain(SchedulerFuture schedulerFuture, Action run = null) {
+                SchedulerFuture = schedulerFuture;
+                RunFuture.Continue(run);
+            }
+            public Chain(TaskScheduler scheduler = null, Action run = null) : this(new SchedulerFuture(scheduler), run) { }
+            public void Continue(Chain chain) {
+                SchedulerFuture.Continue(chain.SchedulerFuture.Run);
+                RunFuture.Continue(chain.RunFuture.Run);
+            }
+            public void Run(TaskScheduler scheduler) {
+                if(scheduler == null)
+                    throw new ArgumentNullException("scheduler");
+                SchedulerFuture.Run(scheduler);
+                RunFuture.Run();
+            }
+        }
+        sealed class RunFuture {
+            readonly object sync = new object();
+            Action @continue;
+            bool ran;
+            public void Continue(Action action) {
+                if(!ran) {
+                    lock(sync) {
+                        if(!ran) {
+                            @continue += action;
+                            return;
+                        }
+                    }
+                }
+                if(action != null)
+                    action();
+            }
+            public void Run() {
+                Action action;
+                if(!ran) {
+                    lock(sync) {
+                        if(!ran) {
+                            ran = true;
+                            action = @continue;
+                            @continue = null;
+                        } else {
+                            return;
+                        }
+                    }
+                } else {
+                    return;
+                }
+                if(action != null)
+                    action();
+            }
+        }
+        public sealed class SchedulerFuture {
+            readonly object sync = new object();
+#if DEBUG
+            static int nextId = 0;
+            public readonly int Id = Interlocked.Increment(ref nextId);
+#endif
+            TaskScheduler scheduler;
+            Action<TaskScheduler> @continue;
+            public SchedulerFuture(TaskScheduler scheduler = null) {
+                this.scheduler = scheduler;
+            }
+            public void Continue(Action<TaskScheduler> action) {
+                if(scheduler == null) {
+                    lock(sync) {
+                        if(scheduler == null) {
+                            @continue += action;
+                            return;
+                        }
+                    }
+                }
+                action(scheduler);
+            }
+            public void Run(TaskScheduler scheduler) {
+                if(scheduler == null)
+                    throw new ArgumentNullException("scheduler");
+                Action<TaskScheduler> action;
+                if(this.scheduler == null) {
+                    lock(sync) {
+                        if(this.scheduler == null) {
+                            this.scheduler = scheduler;
+                            action = @continue;
+                            @continue = null;
+                        } else {
+                            CheckScheduler(scheduler);
+                            return;
+                        }
+                    }
+                } else {
+                    CheckScheduler(scheduler);
+                    return;
+                }
+                if(action != null)
+                    action(this.scheduler);
+            }
+            void CheckScheduler(TaskScheduler scheduler) {
+                if((this.scheduler == TaskScheduler.Default) == (scheduler == TaskScheduler.Default)) return;
+                int id;
+#if DEBUG
+                id = Id;
+#else
+                id = 0;
+#endif
+                throw new InvalidOperationException("SchedulerFuture: " + id + " " + this.scheduler.Id + " " + scheduler.Id + " " + TaskScheduler.Default.Id);
+            }
+        }
+        public static SynchronizationContext RethrowAsyncExceptionsContext = null;
+        public static TaskLinq<UnitT> LongRunning() { return StartNew(TaskCreationOptions.LongRunning); }
+        public static TaskLinq<UnitT> ThreadPool() { return StartNew(TaskCreationOptions.None); }
+#if DEBUG
+        internal static int StartNewThreadId;
+#endif
+        static TaskLinq<UnitT> StartNew(TaskCreationOptions creationOptions) {
+            var task = new Task<UnitT>(() => {
+#if DEBUG
+                StartNewThreadId = Thread.CurrentThread.ManagedThreadId;
+#endif
+                return default(UnitT);
+            }, CancellationToken.None, creationOptions);
+            var chain = new Chain(TaskScheduler.Default, () => task.Start(TaskScheduler.Default));
+            return task.Linq(chain);
+        }
+        public static TaskLinq<UnitT> Wait(Func<Action, Action> subscribe, Func<bool> ready, TaskScheduler scheduler = null) {
+            return Wait(subscribe, ready, new Chain(scheduler));
+        }
+        public static TaskLinq<UnitT> Wait(Func<Action, Action> subscribe, Func<bool> ready, Chain chain) {
+            return ready() ? default(UnitT).Promise() : On(subscribe, chain);
+        }
+        public static TaskLinq<UnitT> On(Func<Action, Action> subscribe, TaskScheduler scheduler = null) {
+            return On(subscribe, new Chain(scheduler));
+        }
+        public static TaskLinq<UnitT> On(Func<Action, Action> subscribe, Chain chain) {
+            return On<UnitT>(x => subscribe(() => x(default(UnitT))), chain);
+        }
+        public static TaskLinq<T> On<T>(Func<Action<T>, Action> subscribe, TaskScheduler scheduler = null) {
+            return On<T>(subscribe, new Chain(scheduler));
+        }
+        public static TaskLinq<T> On<T>(Func<Action<T>, Action> subscribe, Chain chain) {
+            var taskSource = new TaskCompletionSource<T>();
+            LinqExtensions.Fix<Action>(unsubscribe => subscribe(x => {
+                unsubscribe()();
+                taskSource.SetResult(x);
+            }));
+            return taskSource.Task.Linq(chain);
+        }
+        static Task<T> Run<T>(this TaskLinq<T> task, Chain chain) {
+            chain.Continue(task.Chain);
+            return task.Task;
+        }
+        static TaskScheduler InvalidScheduler() {
+            throw new InvalidOperationException("TaskScheduler.Current == TaskScheduler.Default && SynchronizationContext.Current == null");
+        }
+        public static Task<T> Schedule<T>(this TaskLinq<T> task, TaskScheduler scheduler = null) {
+            scheduler = scheduler ?? (TaskScheduler.Current != TaskScheduler.Default ? TaskScheduler.Current : SynchronizationContext.Current == null ? InvalidScheduler() : TaskScheduler.FromCurrentSynchronizationContext());
+            return task.Schedule(new SchedulerFuture(scheduler));
+        }
+        public static Task<T> Schedule<T>(this TaskLinq<T> task, SchedulerFuture schedulerFuture) {
+            schedulerFuture.Continue(task.Chain.Run);
+            return task.Task;
+        }
+        public static Task<T> Future<T>(this T value) {
             var taskSource = new TaskCompletionSource<T>();
             taskSource.SetResult(value);
             return taskSource.Task;
         }
-        public static Task<T> Where<T>(this Task<T> task, Func<T, bool> predicate) {
+        public static Task<T> FutureException<T>(this Exception e) {
             var taskSource = new TaskCompletionSource<T>();
-            taskSource.SetResultFromTask(task, (ts, taskResult) => {
+            taskSource.SetException(e);
+            return taskSource.Task;
+        }
+        public static Task<T> FutureCanceled<T>() {
+            var taskSource = new TaskCompletionSource<T>();
+            taskSource.SetCanceled();
+            return taskSource.Task;
+        }
+        public static TaskLinq<T> Promise<T>(this T value, Chain chain) { return value.Future().Linq(chain); }
+        public static TaskLinq<T> PromiseException<T>(this Exception e, Chain chain) { return e.FutureException<T>().Linq(chain); }
+        public static TaskLinq<T> PromiseCanceled<T>(Chain chain) { return FutureCanceled<T>().Linq(chain); }
+        public static TaskLinq<T> Promise<T>(this T value, TaskScheduler scheduler = null) { return value.Promise(new Chain(scheduler)); }
+        public static TaskLinq<T> PromiseException<T>(this Exception e, TaskScheduler scheduler = null) { return e.PromiseException<T>(new Chain(scheduler)); }
+        public static TaskLinq<T> PromiseCanceled<T>(TaskScheduler scheduler = null) { return PromiseCanceled<T>(new Chain(scheduler)); }
+        public static TaskLinq<T> Where<T>(this TaskLinq<T> task, Func<T, bool> predicate) {
+            var chain = task.Chain;
+            var taskSource = new TaskCompletionSource<T>();
+            taskSource.SetResultFromTask(chain.SchedulerFuture, task.Task, (ts, taskResult) => {
                 ts.SetResultSafe(() => predicate(taskResult), (ts_, predicateResult) => {
                     if(predicateResult)
                         ts_.SetResult(taskResult);
@@ -223,61 +450,81 @@ namespace DevExpress.Mvvm.Native {
                         ts_.SetCanceled();
                 });
             });
-            return taskSource.Task;
+            return taskSource.Task.Linq(chain);
         }
-        public static Task<TR> Select<TI, TR>(this Task<TI> task, Func<TI, TR> selector) {
+        public static TaskLinq<UnitT> Where(this TaskLinq<UnitT> task, Func<bool> predicate) {
+            return task.Where(_ => predicate());
+        }
+        public static TaskLinq<TR> Select<TI, TR>(this TaskLinq<TI> task, Func<TI, TR> selector) {
+            var chain = task.Chain;
             var taskSource = new TaskCompletionSource<TR>();
-            taskSource.SetResultFromTask(task, (ts, taskResult) => ts.SetResultSafe(() => selector(taskResult)));
-            return taskSource.Task;
+            taskSource.SetResultFromTask(chain.SchedulerFuture, task.Task, (ts, taskResult) => ts.SetResultSafe(() => selector(taskResult)));
+            return taskSource.Task.Linq(chain);
         }
-        public static Task<TR> Select<TI, TR>(this Task<TI> task, Func<TI, TR> selector, Func<TR> ifCanceled) {
+        public static TaskLinq<UnitT> Select<TI>(this TaskLinq<TI> task, Action<TI> selector) {
+            return task.Select(x => { selector(x); return default(UnitT); });
+        }
+        public static TaskLinq<TR> Select<TR>(this TaskLinq<UnitT> task, Func<TR> selector) {
+            return task.Select(_ => selector());
+        }
+        public static TaskLinq<T> Select<T>(this TaskLinq<T> task, Action selector) {
+            return task.Select(x => { selector(); return x; });
+        }
+        public static TaskLinq<TR> SelectMany<TI, TR>(this TaskLinq<TI> task, Func<TI, TaskLinq<TR>> selector) {
+            return task.SelectMany(selector, (_, x) => x);
+        }
+        public static TaskLinq<TR> SelectMany<TR>(this TaskLinq<UnitT> task, Func<TaskLinq<TR>> selector) {
+            return task.SelectMany(_ => selector());
+        }
+        public static TaskLinq<T> SelectUnit<T>(this TaskLinq<T> task, Func<TaskLinq<UnitT>> selector) {
+            return task.SelectMany(x => selector().Select(() => x));
+        }
+        public static TaskLinq<TR> SelectMany<TI, TC, TR>(this TaskLinq<TI> task, Func<TI, TaskLinq<TC>> selector, Func<TI, TC, TR> projector) {
+            var chain = task.Chain;
             var taskSource = new TaskCompletionSource<TR>();
-            taskSource.SetResultFromTask(task, (ts, taskResult) => ts.SetResultSafe(() => selector(taskResult)), ts => ts.SetResultSafe(() => ifCanceled()));
-            return taskSource.Task;
+            taskSource.SetResultFromTask(chain.SchedulerFuture, task.Task, (ts, taskResult) => ts.SetResultFromTaskSafe(chain.SchedulerFuture, () => selector(taskResult).Run(chain), (ts_, selectorResult) => ts_.SetResultSafe(() => projector(taskResult, selectorResult))));
+            return taskSource.Task.Linq(chain);
         }
-        public static Task<TR> SelectMany<TI, TC, TR>(this Task<TI> task, Func<TI, Task<TC>> selector, Func<TI, TC, TR> projector) {
-            var taskSource = new TaskCompletionSource<TR>();
-            taskSource.SetResultFromTask(task, (ts, taskResult) => ts.SetResultFromTaskSafe(() => selector(taskResult), (ts_, selectorResult) => ts_.SetResultSafe(() => projector(taskResult, selectorResult))));
-            return taskSource.Task;
-        }
-        public static Task Execute<T>(this Task<T> task, Action<T> action) {
-            return task.Select(x => {
-                action(x);
-                return true;
-            }).ContinueWith(_ => { }, TaskContinuationOptions.ExecuteSynchronously);
-        }
-        public static Task Execute<T>(this Task<T> task, Action<T> action, Action ifCanceled) {
-            return task.Select(
-                x => {
-                    action(x);
-                    return true;
-                },
-                () => {
-                    ifCanceled();
-                    return true;
-                }
-            ).ContinueWith(_ => { }, TaskContinuationOptions.ExecuteSynchronously);
-        }
-        public static void SetResultFromTask<T>(this TaskCompletionSource<T> taskSource, Task<T> task) {
-            taskSource.SetResultFromTask(task, (ts, taskResult) => ts.SetResult(taskResult));
-        }
-        public static void SetResultFromTask<TI, TR>(this TaskCompletionSource<TR> taskSource, Task<TI> task, Action<TaskCompletionSource<TR>, TI> setResultAction) {
-            taskSource.SetResultFromTask(task, setResultAction, x => x.SetCanceled());
-        }
-        public static void SetResultFromTask<TI, TR>(this TaskCompletionSource<TR> taskSource, Task<TI> task, Action<TaskCompletionSource<TR>, TI> setResultAction, Action<TaskCompletionSource<TR>> setCanceledAction) {
-            task.ContinueWith(t => {
-                if(t.IsCanceled)
-                    setCanceledAction(taskSource);
-                else if(t.IsFaulted)
-                    taskSource.SetException(t.Exception);
-                else
-                    setResultAction(taskSource, t.Result);
+        public static Task Finish<T>(this Task<T> task) {
+            return task.ContinueWith(t => {
+                if(t.IsFaulted)
+                    RethrowAsyncExceptionsContext.Do(x => x.Post(_ => { throw new AggregateException(t.Exception.InnerExceptions); }, default(UnitT)));
+                return default(UnitT);
             }, TaskContinuationOptions.ExecuteSynchronously);
         }
-        public static void SetResultFromTaskSafe<T>(this TaskCompletionSource<T> taskSource, Func<Task<T>> getTask) {
-            taskSource.SetResultFromTaskSafe(getTask, (ts, taskResult) => ts.SetResult(taskResult));
+        public static Task Execute(this TaskLinq<UnitT> task, Action action, TaskScheduler scheduler = null) {
+            return task.Execute(_ => action(), scheduler);
         }
-        public static void SetResultFromTaskSafe<TI, TR>(this TaskCompletionSource<TR> taskSource, Func<Task<TI>> getTask, Action<TaskCompletionSource<TR>, TI> setResultAction) {
+        public static Task Execute(this TaskLinq<UnitT> task, Action action, SchedulerFuture schedulerFuture) {
+            return task.Execute(_ => action(), schedulerFuture);
+        }
+        public static Task Execute<T>(this TaskLinq<T> task, Action<T> action, TaskScheduler scheduler = null) {
+            return task.Select(r => { action(r); return r; }).Schedule(scheduler).Finish();
+        }
+        public static Task Execute<T>(this TaskLinq<T> task, Action<T> action, SchedulerFuture schedulerFuture) {
+            return task.Select(r => { action(r); return r; }).Schedule(schedulerFuture).Finish();
+        }
+        static void SetResultFromTask<T>(this TaskCompletionSource<T> taskSource, SchedulerFuture continueWithScheduler, Task<T> task, Action<TaskCompletionSource<T>> setCanceledAction = null, Action<TaskCompletionSource<T>, Exception> setExceptionAction = null) {
+            taskSource.SetResultFromTask(continueWithScheduler, task, (ts, taskResult) => ts.SetResult(taskResult), setCanceledAction, setExceptionAction);
+        }
+        static void SetResultFromTask<TI, TR>(this TaskCompletionSource<TR> taskSource, SchedulerFuture continueWithScheduler, Task<TI> task, Action<TaskCompletionSource<TR>, TI> setResultAction, Action<TaskCompletionSource<TR>> setCanceledAction = null, Action<TaskCompletionSource<TR>, Exception> setExceptionAction = null) {
+            setCanceledAction = setCanceledAction ?? (t => t.SetCanceled());
+            setExceptionAction = setExceptionAction ?? ((t, e) => t.SetException(e));
+            continueWithScheduler.Continue(scheduler => {
+                task.ContinueWith(t => {
+                    if(t.IsCanceled)
+                        setCanceledAction(taskSource);
+                    else if(t.IsFaulted)
+                        setExceptionAction(taskSource, t.Exception.InnerException);
+                    else
+                        setResultAction(taskSource, t.Result);
+                }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, scheduler);
+            });
+        }
+        static void SetResultFromTaskSafe<T>(this TaskCompletionSource<T> taskSource, SchedulerFuture continueWithScheduler, Func<Task<T>> getTask, Action<TaskCompletionSource<T>> setCanceledAction = null, Action<TaskCompletionSource<T>, Exception> setExceptionAction = null) {
+            taskSource.SetResultFromTaskSafe(continueWithScheduler, getTask, (ts, taskResult) => ts.SetResult(taskResult), setCanceledAction, setExceptionAction);
+        }
+        static void SetResultFromTaskSafe<TI, TR>(this TaskCompletionSource<TR> taskSource, SchedulerFuture continueWithScheduler, Func<Task<TI>> getTask, Action<TaskCompletionSource<TR>, TI> setResultAction, Action<TaskCompletionSource<TR>> setCanceledAction = null, Action<TaskCompletionSource<TR>, Exception> setExceptionAction = null) {
             Task<TI> task;
             try {
                 task = getTask();
@@ -285,12 +532,50 @@ namespace DevExpress.Mvvm.Native {
                 taskSource.SetException(e);
                 return;
             }
-            taskSource.SetResultFromTask(task, setResultAction);
+            taskSource.SetResultFromTask(continueWithScheduler, task, setResultAction, setCanceledAction, setExceptionAction);
         }
-        public static void SetResultSafe<T>(this TaskCompletionSource<T> taskSource, Func<T> getResult) {
+        public static TaskLinq<T> IfException<T>(this TaskLinq<T> task, Func<Exception, TaskLinq<T>> handler) {
+            var chain = task.Chain;
+            var result = new TaskCompletionSource<T>();
+            result.SetResultFromTask(chain.SchedulerFuture, task.Task, setExceptionAction: (r, e) => r.SetResultFromTaskSafe(chain.SchedulerFuture, () => handler(e).Run(chain)));
+            return result.Task.Linq(chain);
+        }
+        public static TaskLinq<T> IfException<T>(this TaskLinq<T> task, Func<Exception, T> handler) {
+            var chain = task.Chain;
+            var result = new TaskCompletionSource<T>();
+            result.SetResultFromTask(chain.SchedulerFuture, task.Task, setExceptionAction: (r, e) => r.SetResultSafe(() => handler(e)));
+            return result.Task.Linq(chain);
+        }
+        public static TaskLinq<T> MapException<T>(this TaskLinq<T> task, Func<Exception, Exception> transform) {
+            var chain = task.Chain;
+            var result = new TaskCompletionSource<T>();
+            result.SetResultFromTask(chain.SchedulerFuture, task.Task, setExceptionAction: (r, e) => r.SetExceptionSafe(() => transform(e)));
+            return result.Task.Linq(chain);
+        }
+        public static TaskLinq<T> IfCanceled<T>(this TaskLinq<T> task, Func<Task<T>> handler) {
+            var chain = task.Chain;
+            var result = new TaskCompletionSource<T>();
+            result.SetResultFromTask(chain.SchedulerFuture, task.Task, setCanceledAction: r => r.SetResultFromTaskSafe(chain.SchedulerFuture, handler));
+            return result.Task.Linq(chain);
+        }
+        public static TaskLinq<T> IfCanceled<T>(this TaskLinq<T> task, Func<T> handler) {
+            var chain = task.Chain;
+            var result = new TaskCompletionSource<T>();
+            result.SetResultFromTask(chain.SchedulerFuture, task.Task, setCanceledAction: r => r.SetResultSafe(handler));
+            return result.Task.Linq(chain);
+        }
+        static void SetExceptionSafe<T>(this TaskCompletionSource<T> taskSource, Func<Exception> getException) {
+            taskSource.SetResultSafe(() => {
+                var e = getException();
+                if(e == null)
+                    throw new InvalidOperationException("getException() == null");
+                return e;
+            }, (ts, result) => ts.SetException(result));
+        }
+        static void SetResultSafe<T>(this TaskCompletionSource<T> taskSource, Func<T> getResult) {
             taskSource.SetResultSafe(getResult, (ts, result) => ts.SetResult(result));
         }
-        public static void SetResultSafe<TI, TR>(this TaskCompletionSource<TR> taskSource, Func<TI> getResult, Action<TaskCompletionSource<TR>, TI> setResultAction) {
+        static void SetResultSafe<TI, TR>(this TaskCompletionSource<TR> taskSource, Func<TI> getResult, Action<TaskCompletionSource<TR>, TI> setResultAction) {
             TI result;
             Exception exception;
             try {
@@ -304,6 +589,25 @@ namespace DevExpress.Mvvm.Native {
                 taskSource.SetException(exception);
             else
                 setResultAction(taskSource, result);
+        }
+        public static TaskLinq<T> WithDefaultScheduler<T>(Func<TaskLinq<T>> action) {
+            if(TaskScheduler.Current == TaskScheduler.Default)
+                return action();
+            var synchronizationContext = SynchronizationContext.Current;
+            if(synchronizationContext == null)
+                throw new InvalidOperationException("SynchronizationContext.Current == null");
+            var linqScheduler = TaskScheduler.FromCurrentSynchronizationContext();
+            var threadId = Thread.CurrentThread.ManagedThreadId;
+            var continueTask = new TaskCompletionSource<TaskLinq<T>>();
+            var startTask = new TaskCompletionSource<UnitT>();
+            startTask.SetResult(default(UnitT));
+            startTask.Task.ContinueWith(_ => {
+                if(Thread.CurrentThread.ManagedThreadId == threadId)
+                    SetResultSafe(continueTask, action);
+                else
+                    synchronizationContext.Post(__ => SetResultSafe(continueTask, action), default(UnitT));
+            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            return continueTask.Task.Linq(linqScheduler).SelectMany(x => x);
         }
     }
 }

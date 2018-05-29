@@ -15,6 +15,7 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace DevExpress.Xpf.DXBinding.Tests {
     static class BindingTestHelper {
@@ -102,8 +103,14 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             DXBindingExtension.DefaultUpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
         }
         public static void TestsTearDown() {
-            DXBindingExtension.DefaultUpdateSourceTrigger = UpdateSourceTrigger.Default;
+            DXBindingExtension.DefaultUpdateSourceTrigger = null;
             DXBindingExtension.IsInDesingModeCore = null;
+        }
+        public static void SetResolvingMode(DXBindingResolvingMode mode) {
+            DXBindingBase.DefaultResolvingMode = mode;
+        }
+        public static void ClearResolvingMode() {
+            DXBindingBase.DefaultResolvingMode = DXBindingResolvingMode.DynamicTyping;
         }
 
         public static void DoCommand(Button bt) {
@@ -150,19 +157,29 @@ namespace DevExpress.Xpf.DXBinding.Tests {
     }
 
     [TestFixture]
+    public class BindingDefaultMode {
+         [Test]
+         public void BindingDefaultModeTest() {
+            Assert.That(new DXBindingExtension().ResolvingMode == null);
+        }
+    }
+
+    [TestFixture]
     public class BindingTests {
         [SetUp]
-        public void Init() {
+        public virtual void Init() {
             BindingListener.Enable();
             BindingTestHelper.TestsSetUp();
+            BindingTestHelper.SetResolvingMode(DXBindingResolvingMode.LegacyStaticTyping);
         }
         [TearDown]
-        public void TearDown() {
+        public virtual void TearDown() {
             BindingTestHelper.TestsTearDown();
             BindingListener.Disable();
+            BindingTestHelper.ClearResolvingMode();
         }
         [Test]
-        public void ErrorBasic() {
+        public virtual void ErrorBasic() {
             AssertHelper.AssertThrows<XamlParseException>(() => {
                 BindingTestHelper.BindAssert<TextBox>("TextBox", "SelectedText", "{b:DXBinding}");
             }, x => BindingTestHelper.AssertException(x, "", null,
@@ -178,7 +195,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             });
         }
         [Test]
-        public void NoOperandsSimple() {
+        public virtual void NoOperandsSimple() {
             BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding 1}");
             AssertHelper.AssertThrows<Exception>(() => {
                 BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding 1, Mode=TwoWay}");
@@ -219,7 +236,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             "The DXBinding.BackExpr property is specified in the short form, but the DXBinding.Expr expression contains no binding operands."));
         }
         [Test]
-        public void NoOperandsComplex() {
+        public virtual void NoOperandsComplex() {
                 BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding 1+2}");
             AssertHelper.AssertThrows<Exception>(() => {
                 BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding 1+2, Mode=TwoWay}");
@@ -246,7 +263,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             "The TwoWay or OneWayToSource binding mode requires the DXBinding.BackExpr property to be set in complex DXBindings."));
         }
         [Test]
-        public void NoOperandWithBackConversion() {
+        public virtual void NoOperandWithBackConversion() {
             var vm = BindingTests_a.Create(stringV: "1");
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding 2, BackExpr='StringProp=@value'}", "2", vm);
             Assert.AreEqual("1", vm.StringProp);
@@ -258,7 +275,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual("1", vm.StringProp);
         }
         [Test]
-        public void NoOperandIncorrectExpr() {
+        public virtual void NoOperandIncorrectExpr() {
             AssertHelper.AssertThrows<XamlParseException>(() => {
                 BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding Expr='1+'}");
             }, x => BindingTestHelper.AssertException(x,
@@ -270,7 +287,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             "DXBinding error (position 5): \")\" expected."));
         }
         [Test]
-        public void Operators() {
+        public virtual void Operators() {
             BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding true &amp;&amp; true}");
             BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding true || true}");
             BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding true and true}");
@@ -290,7 +307,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
 
         [Test]
-        public void OneOperand() {
+        public virtual void OneOperand() {
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding}", "1", 1);
             tb.DataContext = 2;
             Assert.AreEqual("2", tb.Text);
@@ -305,7 +322,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(Visibility.Collapsed, tb.Visibility);
         }
         [Test]
-        public void OneOperandSimple() {
+        public virtual void OneOperandSimple() {
             var tb = BindingTestHelper.BindAssert<TextBlock>("TextBlock", "Width", "{b:DXBinding 1+IntProp}", double.NaN);
             var vm = BindingTests_a.Create(intV: 2);
 
@@ -324,7 +341,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             BindingTestHelper.BindAssert<TextBlock>("TextBlock", "Text", "{b:DXBinding IntProp+IntProp}", "6", vm);
         }
         [Test]
-        public void OneOperandTwoWay() {
+        public virtual void OneOperandTwoWay() {
             var vm = BindingTests_a.Create(intV: 2);
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding IntProp}", "2", vm);
             tb.Text = "3";
@@ -340,7 +357,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual("2", tb.Text);
         }
         [Test]
-        public void OneOperandTwoWay2() {
+        public virtual void OneOperandTwoWay2() {
             var vm = BindingTests_a.Create();
             vm.IntProp = 1;
             var tb = BindingTestHelper.BindAssert("Width", "{b:DXBinding 1+IntProp, BackExpr=@v-1, Mode=TwoWay}", 2d, vm);
@@ -358,7 +375,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(1, vm.IntProp);
         }
         [Test]
-        public void OneOperandOneWayToSource() {
+        public virtual void OneOperandOneWayToSource() {
             var vm = BindingTests_a.Create(intV: 2);
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding IntProp, Mode=OneWayToSource}", string.Empty, vm);
             vm.IntProp = 3;
@@ -368,7 +385,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
 
         [Test]
-        public void TwoOperands() {
+        public virtual void TwoOperands() {
             var tb = BindingTestHelper.BindAssert<TextBlock>("TextBlock", "Width", "{b:DXBinding DoubleProp+IntProp}", double.NaN);
             var vm = BindingTests_a.Create(intV: 2, doubleV: 2.1);
             BindingTestHelper.SetDataContextAssert(tb, "Width", vm, 4.1d);
@@ -388,7 +405,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             BindingTestHelper.BindAssert<TextBlock>("TextBlock", "Text", "{b:DXBinding DoubleProp+IntProp+1}", "7.1", vm);
         }
         [Test]
-        public void TwoOperandsTwoWay() {
+        public virtual void TwoOperandsTwoWay() {
             var vm = BindingTests_a.Create(intV: 1, doubleV: 2);
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding DoubleProp+IntProp, BackExpr='DoubleProp=double.Parse(@value);'}", "3", vm);
             vm.DoubleProp = 3;
@@ -418,7 +435,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
 
         [Test]
-        public void PropertyAndMethod() {
+        public virtual void PropertyAndMethod() {
             BindingTestHelper.BindAssert("Text", "{b:DXBinding GetSelf(GetSelf()).IntProp}", "1", new BindingTests_a(intV: 1));
             BindingTestHelper.BindAssert("Text", "{b:DXBinding GetSelf().IntProp}", "1", new BindingTests_a(intV: 1));
             BindingTestHelper.BindAssert("Text", "{b:DXBinding GetSelf().IntField}", "1", new BindingTests_a(intV: 1));
@@ -434,7 +451,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             BindingTestHelper.BindAssert("Text", @"{b:DXBinding Expr='GetObject(`a`)'}", "a", new BindingTests_a());
         }
         [Test]
-        public void Type() {
+        public virtual void Type() {
             BindingTests_a.Static(1);
             BindingTestHelper.BindAssert("Text", "{b:DXBinding $test:BindingTests_a.StaticIntProp}", "1");
             BindingTestHelper.BindAssert("Text", "{b:DXBinding $test:BindingTests_a.StaticIntProp + $test:BindingTests_a.StaticIntField}", "2");
@@ -442,12 +459,12 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             BindingTestHelper.BindAssert("Text", "{b:DXBinding $test:BindingTests_a.StaticSelf.IntProp + $test:BindingTests_a.StaticGetInt()}", "2");
         }
         [Test]
-        public void Attached() {
+        public virtual void Attached() {
             BindingTestHelper.BindAssert("Text", "{b:DXBinding ($test:BindingTests_a.AttachedProperty)}", "1", new BindingTests_visual(1));
         }
 
         [Test]
-        public void RelativeSourceSelf() {
+        public virtual void RelativeSourceSelf() {
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding @s.Tag}", null, null);
             tb.Tag = 1;
             Assert.AreEqual("1", tb.Text);
@@ -455,7 +472,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual("2", tb.Tag);
         }
         [Test]
-        public void RelativeSourceElementName() {
+        public virtual void RelativeSourceElementName() {
             string xaml = @"
 <Grid x:Name=""panel"" Tag=""1"">
     <TextBox Text=""{b:DXBinding @e(panel).Tag}""/>
@@ -467,8 +484,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             tb.Text = "2";
             Assert.AreEqual("2", panel.Tag);
         }
-        [Test, Category("T491236")]
-        public void RelativeSourceElementName2() {
+        [Test]
+        public virtual void RelativeSourceElementName2_T491236() {
             string xaml = @"
 <Grid x:Name=""panel"" Tag=""1"">
     <CheckBox x:Name=""cb"" IsChecked=""True""/>
@@ -487,7 +504,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual("text2", tb.Text);
         }
         [Test]
-        public void RelativeSourceStaticResource() {
+        public virtual void RelativeSourceStaticResource() {
             string xaml = @"
 <Grid x:Name=""panel"" Tag=""1"">
     <Grid.Resources>
@@ -503,14 +520,14 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
 
         [Test]
-        public void NullOperand() {
+        public virtual void NullOperand() {
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding IntPropB}",
                 null, null);
             Assert.IsEmpty(BindingListener.GetError());
             Assert.AreEqual(string.Empty, tb.Text);
         }
         [Test]
-        public void FallbackValue() {
+        public virtual void FallbackValue() {
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding IntPropB, FallbackValue=fail}",
                 null, null);
             Assert.IsEmpty(BindingListener.GetError());
@@ -528,7 +545,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual("0", tb.Text);
         }
         [Test]
-        public void FallbackValue2() {
+        public virtual void FallbackValue2() {
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding IntPropB}", null, null);
             Assert.IsEmpty(BindingListener.GetError());
             Assert.AreEqual(string.Empty, tb.Text);
@@ -549,7 +566,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(string.Empty, tb.Text);
         }
         [Test]
-        public void FallbackValue3() {
+        public virtual void FallbackValue3() {
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Width", "{b:DXBinding IntPropB}", null, null);
             Assert.IsEmpty(BindingListener.GetError());
             Assert.AreEqual(double.NaN, tb.Width);
@@ -569,76 +586,14 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(double.NaN, tb.Width);
         }
         [Test]
-        public void TargetNullValue() {
+        public virtual void TargetNullValue() {
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding StringProp, TargetNullValue='test'}",
                 null, BindingTests_a.Create(stringV: null));
             Assert.AreEqual("test", tb.Text);
         }
 
-        [Test, Ignore("Ignore")]
-        public void PerformanceTest() {
-#region xamls
-            string standardXaml = @"
-<TextBox>
-    <TextBox.DataContext>
-        <test:BindingTests_a IntProp=""1"" DoubleProp=""2.2"" StringProp=""test""/>
-    </TextBox.DataContext>
-    <TextBox.Text>
-        <MultiBinding Converter=""{test:PerformanceTests_StandardConverter}"" Mode=""OneWay"">
-            <MultiBinding.Bindings>
-                <Binding Path=""IntProp""/>
-                <Binding Path=""DoubleProp""/>
-                <Binding Path=""StringProp""/>  
-            </MultiBinding.Bindings>
-        </MultiBinding>
-    </TextBox.Text>
-</TextBox>
-";
-            string dxXaml = @"
-<TextBox>
-    <TextBox.DataContext>
-        <test:BindingTests_a IntProp=""1"" DoubleProp=""2.2"" StringProp=""test""/>
-    </TextBox.DataContext>
-    <TextBox.Text>
-        <b:DXBinding Expr=""(IntProp + @c.GetSelf().DoubleProp).ToString() + GetSelf().StringProp"" Mode=""OneWay""/>
-    </TextBox.Text>
-</TextBox>
-";
-#endregion
-            long standardTime;
-            long dxTime;
-            Stopwatch w = new Stopwatch();
-            Action standardTest = () => {
-                var tb = BindingTestHelper.LoadXaml<TextBox>(standardXaml);
-                Assert.AreEqual("3.2test", tb.Text);
-            };
-            Action dxTest = () => {
-                var tb = BindingTestHelper.LoadXaml<TextBox>(dxXaml);
-                Assert.AreEqual("3.2test", tb.Text);
-            };
-
-            standardTest();
-            w.Start();
-            for(int i = 0; i < 500; i++) {
-                standardTest();
-            }
-            w.Stop();
-            standardTime = w.ElapsedMilliseconds;
-            w.Reset();
-
-            dxTest();
-            w.Start();
-            for(int i = 0; i < 500; i++) {
-                dxTest();
-            }
-            w.Stop();
-            dxTime = w.ElapsedMilliseconds;
-            Assert.LessOrEqual(dxTime - standardTime, standardTime);
-            return;
-        }
-
         [Test]
-        public void BindingInDataTemplate() {
+        public virtual void BindingInDataTemplate() {
             string xaml = @"
 <Grid>
     <Grid.Resources>
@@ -668,7 +623,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             });
         }
         [Test]
-        public void BindingInStyleSetter() {
+        public virtual void BindingInStyleSetter() {
             string xaml1 = @"
 <Grid>
     <Grid.Resources>
@@ -716,7 +671,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             test(xaml2);
         }
         [Test]
-        public void BindingInItemContainerStyle() {
+        public virtual void BindingInItemContainerStyle() {
             string xaml = @"
 <TabControl ItemsSource=""{b:DXBinding}"">
     <TabControl.ItemContainerStyle>
@@ -736,7 +691,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             });
         }
         [Test]
-        public void BindingInDataTrigger() {
+        public virtual void BindingInDataTrigger() {
             string xaml = @"
     <Grid>
         <Grid.Resources>
@@ -759,7 +714,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(Brushes.Red.Color, ((SolidColorBrush)tb1.Background).Color);
         }
         [Test]
-        public void BindingInDataTrigger2() {
+        public virtual void BindingInDataTrigger2() {
             string xaml = @"
     <Grid>
         <Grid.Resources>
@@ -779,7 +734,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             }, x => BindingTestHelper.AssertException(x, "The DXBinding can only be set on a DependencyProperty of a DependencyObject."));
         }
         [Test]
-        public void BindingInDataTrigger3() {
+        public virtual void BindingInDataTrigger3() {
             string xaml = @"
     <Grid>
         <Grid.Resources>
@@ -811,7 +766,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
 
         [Test]
-        public void CoerceEnums() {
+        public virtual void CoerceEnums() {
             var vm = BindingTests_a.Create(intV: 2);
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Visibility",
                 "{b:DXBinding Expr='IntProp == 1 ? `Visible` : `Collapsed`', BackExpr='IntProp = @v == $Visibility.Collapsed ? 10 : 20', Mode=TwoWay}",
@@ -820,7 +775,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(20, vm.IntProp);
         }
         [Test]
-        public void CoerceBrush() {
+        public virtual void CoerceBrush() {
             var vm = BindingTests_a.Create(intV: 2);
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Foreground",
                 "{b:DXBinding Expr='IntProp == 1 ? `#ff00ff` : `#ff0000`'}",
@@ -829,7 +784,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(Colors.Red, brush.Color);
         }
         [Test]
-        public void CoerceBrushWithoutProperty() {
+        public virtual void CoerceBrushWithoutProperty() {
             var vm = BindingTests_a.Create(intV: 2);
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Foreground",
                 "{b:DXBinding '`#ff0000`'}",
@@ -838,7 +793,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(Colors.Red, brush.Color);
         }
         [Test]
-        public void CoerceBrushInMultibinding() {
+        public virtual void CoerceBrushInMultiBinding() {
             var vm = BindingTests_a.Create(intV: 2);
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Foreground",
                 "{b:DXBinding Expr='IntProp == 1 or StringProp == `abc` ? `#ff00ff` : `#ff0000`'}",
@@ -847,7 +802,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(Colors.Red, brush.Color);
         }
         [Test]
-        public void CoerceBrushInMultibinding2() {
+        public virtual void CoerceBrushInMultiBinding2() {
             var vm = BindingTests_a.Create(intV: 2);
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Foreground",
                 "{b:DXBinding Expr='IntProp == 1 or StringProp == `abc` ? `Yellow` : `Red`'}",
@@ -856,14 +811,14 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(Colors.Red, brush.Color);
         }
         [Test]
-        public void GetPropertyValueOfStringLiteral() {
+        public virtual void GetPropertyValueOfStringLiteral() {
             var vm = BindingTests_a.Create();
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text",
                 "{b:DXBinding '`abc`.Length', Mode=OneWay}",
                 "3", vm);
         }
         [Test]
-        public void BinaryStringConcat() {
+        public virtual void BinaryStringConcat() {
             var vm = BindingTests_a.Create();
             vm.IntProp = 5;
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text",
@@ -887,7 +842,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 "5abc", vm);
         }
         [Test]
-        public void TernaryOperator() {
+        public virtual void TernaryOperator() {
             var vm = BindingTests_a.Create();
             vm.IntProp = 2;
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text",
@@ -901,13 +856,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 "2", vm);
         }
         [Test]
-        public void MethodOverloadingResolutionTests() {
-            Action<string, string> assert = (expr, expected) => {
-                var vm = new SharpSpecOverloadExamples();
-                var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text",
-                    string.Format("{{b:DXBinding '{0}', Mode=OneWay}}", expr),
-                    expected, vm);
-            };
+        public virtual void MethodOverloadingResolutionTests() {
+            Action<string, string> assert = MethodOverloadingResolutionTests_Assert;
 
             assert("@c[``]", "this[string]");
             assert("@c[1]", "this[int:1]");
@@ -920,13 +870,23 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             assert("F(1.0)", "F(double)");
             assert("F(`abc`)", "F(object)");
             assert("F((double)1)", "F(double)");
-            assert("F((object)1)", "F(object)");
             assert("F(1, 1)", "F(double, double)");
             assert("F(1, 1, 1)", "F(params double[] ds)");
             assert("F(`a`[0])", "F(int)");
             assert("F(true)", "F(bool, string)");
         }
-        class SharpSpecOverloadExamplesBase {
+        [Test]
+        public virtual void MethodOverloadingResolutionTests2() {
+            Action<string, string> assert = MethodOverloadingResolutionTests_Assert;
+            assert("F((object)1)", "F(object)");
+        }
+        protected void MethodOverloadingResolutionTests_Assert(string expr, string expected) {
+            var vm = new SharpSpecOverloadExamples();
+            var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text",
+                string.Format("{{b:DXBinding '{0}', Mode=OneWay}}", expr),
+                expected, vm);
+        }
+        protected class SharpSpecOverloadExamplesBase {
             public string F(char x) {
                 return "F(char) base";
             }
@@ -934,7 +894,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 return "F(double, double, double) base";
             }
         }
-        class SharpSpecOverloadExamples {
+        protected class SharpSpecOverloadExamples {
             public string this[int index] { get { return string.Format("this[int:{0}]", index); } }
             public string this[string index] { get { return "this[string]"; } }
             public string this[string index, int index2 = 0] { get { return "this[string, int]"; } }
@@ -963,8 +923,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 return "F(bool, string)";
             }
         }
-        [Test, Category("T360515")]
-        public void DontThrowWhenStaticPropertyNotFound_01() {
+        [Test]
+        public virtual void DontThrowWhenStaticPropertyNotFound_01_T360515() {
             try {
                 var vm = BindingTests_a.Create();
                 var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text",
@@ -975,8 +935,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 Assert.IsTrue(e.Message.Contains("Grey") && e.Message.Contains("Brushes"));
             }
         }
-        [Test, Category("T360515")]
-        public void DontThrowWhenStaticPropertyNotFound() {
+        [Test]
+        public virtual void DontThrowWhenStaticPropertyNotFound_T360515() {
             try {
                 var vm = BindingTests_a.Create();
                 var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text",
@@ -989,11 +949,447 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
 
         [Test]
-        public void NotRaiseExceptionInDesingMode1() {
+        public virtual void NotRaiseExceptionInDesingMode1() {
             DXBindingBase.IsInDesingModeCore = true;
             var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{b:DXBinding '@a($FrameworkElement).DataContext', BackExpr='@value'}");
         }
+
+        [Test]
+        public virtual void EqualityTest() {
+            var vm = new BindingTests_a() { Visibility1 = Visibility.Visible };
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                "{b:DXBinding 'Visibility1 == $Visibility.Visible'}", true, vm);
+            vm = new BindingTests_a() { Visibility1 = Visibility.Collapsed };
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                "{b:DXBinding 'Visibility1 == $Visibility.Visible'}", false, vm);
+            vm = new BindingTests_a() { Visibility2 = Visibility.Visible };
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                "{b:DXBinding 'Visibility2 == $Visibility.Visible'}", true, vm);
+            vm = new BindingTests_a() { Visibility2 = Visibility.Collapsed };
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                "{b:DXBinding 'Visibility2 == $Visibility.Visible'}", false, vm);
+
+            vm = new BindingTests_a() { Obj = new BindingTests_a.SubObj() { Enum1 = BindingTests_a_Enum.Enum1 } };
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                "{b:DXBinding 'Obj.Enum1 == $test:BindingTests_a_Enum.Enum1'}", true, vm);
+            vm = new BindingTests_a() { Obj = new BindingTests_a.SubObj() { Enum1 = BindingTests_a_Enum.Enum2 } };
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                "{b:DXBinding 'Obj.Enum1 == $test:BindingTests_a_Enum.Enum1'}", false, vm);
+            vm = new BindingTests_a() { Obj = new BindingTests_a.SubObj() { Enum2 = BindingTests_a_Enum.Enum1 } };
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                "{b:DXBinding 'Obj.Enum2 == $test:BindingTests_a_Enum.Enum1'}", true, vm);
+            vm = new BindingTests_a() { Obj = new BindingTests_a.SubObj() { Enum2 = BindingTests_a_Enum.Enum2 } };
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                "{b:DXBinding 'Obj.Enum2 == $test:BindingTests_a_Enum.Enum1'}", false, vm);
+
+        }
+
+        [Test]
+        public virtual void NullableTest1() {
+            string xaml = @"
+<Grid>
+    <CheckBox x:Name=""checkBox"" IsThreeState=""True"" IsChecked=""True""/>
+    <TextBox Text=""{b:DXBinding '@e(checkBox).IsChecked.ToString()', Mode=OneWay}""/>
+</Grid>
+";
+            var panel = BindingTestHelper.LoadXaml<Grid>(xaml);
+            BindingTestHelper.DoEvents(panel);
+            CheckBox cb = (CheckBox)panel.Children[0];
+            TextBox tb = (TextBox)panel.Children[1];
+            Assert.AreEqual("True", tb.Text);
+            cb.IsChecked = false;
+            Assert.AreEqual("False", tb.Text);
+            cb.IsChecked = null;
+            Assert.AreEqual("", tb.Text);
+        }
+
+        [Test]
+        public virtual void NullableTest2() {
+            var vm = new BindingTests_a() { NullableBoolean = true };
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                    "{b:DXBinding 'GetSelf2().NullableBoolean.Value'}", true, vm);
+            vm.NullableBoolean = false;
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                    "{b:DXBinding 'GetSelf2().NullableBoolean.Value'}", false, vm);
+            vm.NullableBoolean = null;
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                    "{b:DXBinding 'GetSelf2().NullableBoolean.Value'}", true, vm);
+        }
     }
+    [TestFixture]
+    public class BindingTests_Dynamics : BindingTests {
+        [SetUp]
+        public override void Init() {
+            base.Init();
+            BindingTestHelper.SetResolvingMode(DXBindingResolvingMode.DynamicTyping);
+        }
+        [TearDown]
+        public override void TearDown() {
+            base.TearDown();
+            BindingTestHelper.ClearResolvingMode();
+        }
+        [Test]
+        public override void MethodOverloadingResolutionTests2() {
+            Action<string, string> assert = MethodOverloadingResolutionTests_Assert;
+            assert("F((object)1)", "F(int)");
+        }
+        [Test]
+        public void MethodNotFound() {
+            var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding Get()}", null, 1);
+            var res = BindingListener.GetError();
+            Assert.That(res.Contains("The 'Get()' method is not found on object 'Int32'."));
+        }
+        [Test]
+        public void MethodNotFound2() {
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding '$int.Get()'}", null, null);
+            var res = BindingListener.GetError();
+            Assert.That(res.Contains("The 'Get()' method is not found on object 'Int32'."));
+        }
+        [Test]
+        public void PropertyNotFound() {
+            var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding GetSelf().NotFoundProperty}", null, new ParserTests_a());
+            var res = BindingListener.GetError();
+            Assert.That(res.Contains("The 'NotFoundProperty' property is not found on object 'ParserTests_a'"));
+        }
+        [Test]
+        public void PropertyNotFound2() {
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding '$int.Get'}", null, null);
+            var res = BindingListener.GetError();
+            Assert.That(res.Contains("The 'Get' property is not found on object 'Int32'."));
+        }
+        [Test]
+        public void IndexerNotFound() {
+            var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'GetSelf()[`test`]'}", null, new ParserTests_a());
+            var res = BindingListener.GetError();
+            Assert.That(res.Contains("The 'Indexer(String)' method is not found on object 'ParserTests_a'."));
+        }
+        [Test]
+        public void DynamicTernary_T491236() {
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'Trigger ? Value1.Prop : Value2.Prop'}", "Prop1",
+                new DynamicTernary_T491236_0() { Trigger = true });
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'Trigger ? Value1.Prop : Value2.Prop'}", "Prop2",
+                new DynamicTernary_T491236_0() { Trigger = false });
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding '(Trigger ? Value1 : Value2).Prop'}", "Prop1",
+               new DynamicTernary_T491236_0() { Trigger = true });
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding '(Trigger ? Value1 : Value2).Prop'}", "Prop2",
+                new DynamicTernary_T491236_0() { Trigger = false });
+        }
+        class DynamicTernary_T491236_0 {
+            public bool Trigger { get; set; }
+            public DynamicTernary_T491236_1 Value1 { get; set; }
+            public DynamicTernary_T491236_2 Value2 { get; set; }
+            public DynamicTernary_T491236_0() {
+                Value1 = new DynamicTernary_T491236_1();
+                Value2 = new DynamicTernary_T491236_2();
+            }
+        }
+        class DynamicTernary_T491236_1 {
+            public string Prop { get { return "Prop1"; } }
+        }
+        class DynamicTernary_T491236_2 {
+            public string Prop { get { return "Prop2"; } }
+        }
+
+        [Test]
+        public void MemberSearcher_T495631() {
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding '$sys:String.IsNullOrEmpty(null)'}", true,
+               new ParserTests_a());
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding '$sys:String.IsNullOrEmpty(GetObject(null))'}", true,
+                new ParserTests_a());
+
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding '$sys:String.IsNullOrEmpty(1)'}", null, null);
+            Assert.That(BindingListener.GetError().Contains("The 'IsNullOrEmpty(Int32)' method is not found on object 'String'."));
+            BindingListener.Reset();
+
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'Method1(1)'}", "int", new MemberSearcher_T495631_a());
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'Method1($string.Empty)'}", "string", new MemberSearcher_T495631_a());
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'Method1(null)'}", "string", new MemberSearcher_T495631_a());
+
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'Method2(1)'}", "int", new MemberSearcher_T495631_a());
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'Method2($string.Empty)'}", "string", new MemberSearcher_T495631_a());
+
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'Method2(null)'}", null, new MemberSearcher_T495631_a());
+            Assert.That(BindingListener.GetError().Contains("The 'Method2(null)' method is not found on object 'MemberSearcher_T495631_a'"));
+        }
+        class MemberSearcher_T495631_a {
+            public string Method1(string @string) {
+                return "string";
+            }
+            public string Method1(int @int) {
+                return "int";
+            }
+            public string Method2(string @string) {
+                return "string";
+            }
+            public string Method2(int @int) {
+                return "int";
+            }
+            public string Method2(object @object) {
+                return "@object";
+            }
+        }
+
+        [Test]
+        public void T497255() {
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'GetObject(1) > 0.2'}", true, new ParserTests_a());
+        }
+
+        [Test]
+        public void IncorrectOperation() {
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding '1 * `str`'}", null, null);
+            var res = BindingListener.GetError();
+            Assert.That(res.Contains("Operator '*' cannot be applied to operands of type 'int' and 'string'"));
+        }
+
+        [Test]
+        public void ExecutingOptimization() {
+            var vm = new ParserTests_a();
+            Assert.That(vm.Count == 0);
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'false and IncreaseCount() == 1'}", false, vm);
+            Assert.That(vm.Count == 0);
+        }
+
+        [Test]
+        public void NewOperator() {
+            var vm = new PerformanceTests_a() { DoubleProp = 2 };
+            var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Margin",
+                "{b:DXBinding Expr='new $Thickness(DoubleProp, 0, 0, 0)', BackExpr='DoubleProp=@v.Left', Mode=TwoWay}", null, vm);
+            Assert.That(tb.Margin == new Thickness(2, 0, 0, 0));
+            tb.Margin = new Thickness(3); BindingTestHelper.DoEvents(tb);
+            Assert.That(vm.DoubleProp == 3);
+
+            vm = new PerformanceTests_a() { DoubleProp = 2 };
+            tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Margin",
+                @"{b:DXBinding 
+                    Expr='new $Thickness(DoubleProp, 0, 0, 0)', 
+                    BackExpr='DoubleProp=new $test:PerformanceTests_a(@v.Left).DoubleProp', 
+                    Mode=TwoWay}", null, vm);
+            Assert.That(tb.Margin == new Thickness(2, 0, 0, 0));
+            tb.Margin = new Thickness(3); BindingTestHelper.DoEvents(tb);
+            Assert.That(vm.DoubleProp == 3);
+        }
+
+        [Test]
+        public override void NullableTest2() {
+            var vm = new BindingTests_a() { NullableBoolean = true };
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                    "{b:DXBinding 'GetSelf2().NullableBoolean'}", true, vm);
+            vm.NullableBoolean = false;
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                    "{b:DXBinding 'GetSelf2().NullableBoolean'}", false, vm);
+            vm.NullableBoolean = null;
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                    "{b:DXBinding 'GetSelf2().NullableBoolean'}", true, vm);
+
+            vm = new BindingTests_a() { NullableBoolean = true };
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                    "{b:DXBinding 'GetSelf().NullableBoolean'}", true, vm);
+            vm.NullableBoolean = false;
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                    "{b:DXBinding 'GetSelf().NullableBoolean'}", false, vm);
+            vm.NullableBoolean = null;
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
+                    "{b:DXBinding 'GetSelf().NullableBoolean'}", true, vm);
+        }
+    }
+    [TestFixture]
+    public class BindingTests_Performance {
+        [SetUp]
+        public virtual void Init() {
+            BindingListener.Enable();
+            BindingTestHelper.TestsSetUp();
+        }
+        [TearDown]
+        public virtual void TearDown() {
+            BindingTestHelper.TestsTearDown();
+            BindingListener.Disable();
+        }
+
+#region xamls
+        string standardXaml = @"
+<TextBox>
+    <TextBox.DataContext>
+        <test:PerformanceTests_a IntProp=""1"" DoubleProp=""2.2"" StringProp=""test""/>
+    </TextBox.DataContext>
+    <TextBox.Text>
+        <MultiBinding Converter=""{test:PerformanceTests_StandardConverter}"" Mode=""OneWay"">
+            <MultiBinding.Bindings>
+                <Binding Path=""IntProp""/>
+                <Binding Path=""DoubleProp""/>
+                <Binding Path=""StringProp""/>  
+            </MultiBinding.Bindings>
+        </MultiBinding>
+    </TextBox.Text>
+</TextBox>
+";
+        string dxXaml = @"
+<TextBox>
+    <TextBox.DataContext>
+        <test:PerformanceTests_a IntProp=""1"" DoubleProp=""2.2"" StringProp=""test""/>
+    </TextBox.DataContext>
+    <TextBox.Text>
+        <b:DXBinding Expr=""(IntProp + @c.GetSelf().DoubleProp).ToString() + GetSelf().StringProp"" Mode=""OneWay""/>
+    </TextBox.Text>
+</TextBox>
+";
+        string dxXaml_simple = @"
+<TextBox>
+    <TextBox.DataContext>
+        <test:PerformanceTests_a IntProp=""1"" DoubleProp=""2.2"" StringProp=""test""/>
+    </TextBox.DataContext>
+    <TextBox.Text>
+        <b:DXBinding Expr=""(IntProp + DoubleProp).ToString() + StringProp"" Mode=""OneWay""/>
+    </TextBox.Text>
+</TextBox>
+";
+#endregion
+        void OnePerformanceTestCore(out long dxTime, out long standardTime) {
+            Stopwatch w = new Stopwatch();
+            Action standardTest = () => {
+                var tb = BindingTestHelper.LoadXaml<TextBox>(standardXaml);
+                Assert.AreEqual("3.2test", tb.Text);
+            };
+            Action dxTest = () => {
+                var tb = BindingTestHelper.LoadXaml<TextBox>(dxXaml);
+                Assert.AreEqual("3.2test", tb.Text);
+            };
+
+            standardTest();
+            w.Start();
+            for (int i = 0; i < 500; i++) {
+                standardTest();
+            }
+            w.Stop();
+            standardTime = w.ElapsedMilliseconds;
+            w.Reset();
+
+            dxTest();
+            w.Start();
+            for (int i = 0; i < 500; i++) {
+                dxTest();
+            }
+            w.Stop();
+            dxTime = w.ElapsedMilliseconds;
+        }
+        void PerformanceTestCore(out long dxTime, out long standardTime) {
+            List<Tuple<long, long>> results = new List<Tuple<long, long>>();
+            for (int i = 0; i < 10; i++) {
+                long standardTimeLocal;
+                long dxTimeLocal;
+                OnePerformanceTestCore(out dxTimeLocal, out standardTimeLocal);
+                results.Add(new Tuple<long, long>(dxTimeLocal, standardTimeLocal));
+            }
+            results.RemoveAt(results.IndexOf(x => x.Item1 == results.Min(y => y.Item1)));
+            results.RemoveAt(results.IndexOf(x => x.Item2 == results.Min(y => y.Item2)));
+            results.RemoveAt(results.IndexOf(x => x.Item1 == results.Max(y => y.Item1)));
+            results.RemoveAt(results.IndexOf(x => x.Item2 == results.Max(y => y.Item2)));
+            dxTime = results.Sum(x => x.Item1) / results.Count;
+            standardTime = results.Sum(x => x.Item2) / results.Count;
+        }
+        [Ignore("Performance Test")]
+        [Test]
+        public virtual void PerformanceTest_Start() {
+            long standardTime = 0;
+            long dxTime = 0;
+            try {
+                BindingTestHelper.SetResolvingMode(DXBindingResolvingMode.LegacyStaticTyping);
+                PerformanceTestCore(out dxTime, out standardTime);
+            } finally {
+                BindingTestHelper.ClearResolvingMode();
+            }
+
+            long standardTime2 = 0;
+            long dxTime2 = 0;
+            try {
+                BindingTestHelper.SetResolvingMode(DXBindingResolvingMode.DynamicTyping);
+                PerformanceTestCore(out dxTime2, out standardTime2);
+            } finally {
+                BindingTestHelper.ClearResolvingMode();
+            }
+
+            Assert.LessOrEqual(dxTime / 3, standardTime);
+            Assert.LessOrEqual(dxTime2 / 2, standardTime2);
+        }
+
+        void OnePerformanceTestUpdateCore(out long dxTime, out long standardTime) {
+            Stopwatch w = new Stopwatch();
+            dxTime = 0;
+            standardTime = 0;
+            var tb = BindingTestHelper.LoadXaml<TextBox>(standardXaml);
+            var vm = (PerformanceTests_a)tb.DataContext;
+
+            Action<TextBox, PerformanceTests_a> test = (_tb, _vm) => {
+                Assert.AreEqual("3.2test", _tb.Text);
+                _vm.IntProp = 2; BindingTestHelper.DoEvents(_tb);
+                Assert.AreEqual("4.2test", _tb.Text);
+                _vm.DoubleProp = 2.3; BindingTestHelper.DoEvents(_tb);
+                Assert.AreEqual("4.3test", _tb.Text);
+                _vm.StringProp = "new"; BindingTestHelper.DoEvents(_tb);
+                Assert.AreEqual("4.3new", _tb.Text);
+
+                _vm.StringProp = "test"; BindingTestHelper.DoEvents(_tb);
+                Assert.AreEqual("4.3test", _tb.Text);
+                _vm.DoubleProp = 2.2; BindingTestHelper.DoEvents(_tb);
+                Assert.AreEqual("4.2test", _tb.Text);
+                _vm.IntProp = 1; BindingTestHelper.DoEvents(_tb);
+            };
+
+            w.Start();
+            for (int i = 0; i < 500; i++)
+                test(tb, vm);
+            w.Stop();
+            standardTime = w.ElapsedMilliseconds;
+            w.Reset();
+
+            tb = BindingTestHelper.LoadXaml<TextBox>(dxXaml_simple);
+            vm = (PerformanceTests_a)tb.DataContext;
+            w.Start();
+            for (int i = 0; i < 500; i++)
+                test(tb, vm);
+            w.Stop();
+            dxTime = w.ElapsedMilliseconds;
+            w.Reset();
+        }
+        void PerformanceTestUpdateCore(out long dxTime, out long standardTime) {
+            List<Tuple<long, long>> results = new List<Tuple<long, long>>();
+            for (int i = 0; i < 10; i++) {
+                long standardTimeLocal;
+                long dxTimeLocal;
+                OnePerformanceTestUpdateCore(out dxTimeLocal, out standardTimeLocal);
+                results.Add(new Tuple<long, long>(dxTimeLocal, standardTimeLocal));
+            }
+            results.RemoveAt(results.IndexOf(x => x.Item1 == results.Min(y => y.Item1)));
+            results.RemoveAt(results.IndexOf(x => x.Item2 == results.Min(y => y.Item2)));
+            results.RemoveAt(results.IndexOf(x => x.Item1 == results.Max(y => y.Item1)));
+            results.RemoveAt(results.IndexOf(x => x.Item2 == results.Max(y => y.Item2)));
+            dxTime = results.Sum(x => x.Item1) / results.Count;
+            standardTime = results.Sum(x => x.Item2) / results.Count;
+        }
+        [Ignore("Performance Test")]
+        [Test]
+        public virtual void PerformanceTest_Update() {
+            long standardTime = 0;
+            long dxTime = 0;
+            try {
+                BindingTestHelper.SetResolvingMode(DXBindingResolvingMode.LegacyStaticTyping);
+                PerformanceTestUpdateCore(out dxTime, out standardTime);
+            } finally {
+                BindingTestHelper.ClearResolvingMode();
+            }
+
+            long standardTime2 = 0;
+            long dxTime2 = 0;
+            try {
+                BindingTestHelper.SetResolvingMode(DXBindingResolvingMode.DynamicTyping);
+                PerformanceTestUpdateCore(out dxTime2, out standardTime2);
+            } finally {
+                BindingTestHelper.ClearResolvingMode();
+            }
+            Assert.LessOrEqual(dxTime / 3, standardTime);
+            Assert.LessOrEqual(dxTime2 / 2, standardTime2);
+        }
+    }
+
     public class ParserTests_a {
         public static int StaticIntProp { get; set; }
         public static int StaticIntField { get; set; }
@@ -1054,7 +1450,14 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         protected virtual ParserTests_a CreateInstance() {
             return new ParserTests_a();
         }
+
+        public int Count { get; set; }
+        public int IncreaseCount() {
+            return Count++;
+        }
     }
+
+    public enum BindingTests_a_Enum { Enum1, Enum2 }
     public class BindingTests_a : ParserTests_a {
         public static readonly DependencyProperty AttachedPropertyProperty = DependencyProperty.RegisterAttached("AttachedProperty", typeof(int), typeof(BindingTests_a), new PropertyMetadata(null));
         public static int GetAttachedProperty(DependencyObject obj) { return (int)obj.GetValue(AttachedPropertyProperty); }
@@ -1067,6 +1470,20 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         public BindingTests_a(int intV = 0, double doubleV = 0, string stringV = "") : base(intV, doubleV, stringV) { }
         protected override ParserTests_a CreateInstance() {
             return Create();
+        }
+
+        public Visibility Visibility1 { get; set; }
+        public object Visibility2 { get; set; }
+        public bool? NullableBoolean { get;set; }
+
+        public BindingTests_a GetSelf2() {
+            return this;
+        }
+
+        public SubObj Obj { get; set; }
+        public class SubObj {
+            public BindingTests_a_Enum Enum1 { get; set; }
+            public object Enum2 { get; set; }
         }
     }
     public class BindingTests_visual : Control {
@@ -1115,6 +1532,46 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
     }
 
+    public class PerformanceTests_a : INotifyPropertyChanged {
+        public event PropertyChangedEventHandler PropertyChanged;
+        int intProp;
+        public int IntProp {
+            get { return intProp; }
+            set {
+                if (intProp == value) return;
+                intProp = value;
+                if (PropertyChanged != null)
+                    PropertyChanged(this, new PropertyChangedEventArgs("IntProp"));
+            }
+        }
+        double doubleProp;
+        public double DoubleProp {
+            get { return doubleProp; }
+            set {
+                if (doubleProp == value) return;
+                doubleProp = value;
+                if (PropertyChanged != null)
+                    PropertyChanged(this, new PropertyChangedEventArgs("DoubleProp"));
+            }
+        }
+        string stringProp;
+        public string StringProp {
+            get { return stringProp; }
+            set {
+                if (stringProp == value) return;
+                stringProp = value;
+                if (PropertyChanged != null)
+                    PropertyChanged(this, new PropertyChangedEventArgs("StringProp"));
+            }
+        }
+        public PerformanceTests_a GetSelf() {
+            return this;
+        }
+        public PerformanceTests_a() { }
+        public PerformanceTests_a(double v) {
+            DoubleProp = v;
+        }
+    }
     public class PerformanceTests_StandardConverter : MarkupExtension, IMultiValueConverter {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture) {
             return ((int)values[0] + (double)values[1]).ToString() + values[2].ToString();

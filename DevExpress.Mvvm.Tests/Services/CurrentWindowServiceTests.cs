@@ -10,6 +10,20 @@ using System.Windows;
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
     public class CurrentWindowServiceTests : BaseWpfFixture {
+        [Test(Description = "T486009"), Asynchronous]
+        public void ActualWindow_HiddenWindow() {
+            CurrentWindowService service = new CurrentWindowService();
+            ICurrentWindowService iService = service;
+            Interactivity.Interaction.GetBehaviors(RealWindow).Add(service);
+            try {
+                EnqueueCallback(() => {
+                    Assert.AreSame(RealWindow, service.ActualWindow);
+                });
+                EnqueueTestComplete();
+            } finally {
+                Interactivity.Interaction.GetBehaviors(RealWindow).Remove(service);
+            }
+        }
         [Test, Asynchronous]
         public void ActualWindow() {
             CurrentWindowService service = new CurrentWindowService();

@@ -12,14 +12,10 @@
     <AssemblyName>DevExpress.Mvvm.UI</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <SccProjectName>
-    </SccProjectName>
-    <SccLocalPath>
-    </SccLocalPath>
-    <SccAuxPath>
-    </SccAuxPath>
-    <SccProvider>
-    </SccProvider>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <BaseIntermediateOutputPath>obj.Wpf.Free</BaseIntermediateOutputPath>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -86,6 +82,7 @@
     <Compile Include="Behaviors\WindowFadeAnimationBehavior.cs" />
     <Compile Include="Converters.cs" />
     <Compile Include="ConvertersExtensions.cs" />
+    <Compile Include="DXDataTemplateSelector.cs" />
     <Compile Include="Interactivity\AttachableCollection.cs" />
     <Compile Include="Interactivity\AttachableObject.cs" />
     <Compile Include="Interactivity\Behavior.cs" />
@@ -186,12 +183,14 @@
     <Compile Include="Services\SaveFileDialogService.cs" />
     <Compile Include="Services\SplashScreenService.cs" />
     <Compile Include="Services\TaskbarButtonService\Native\Container.cs" />
+    <Compile Include="Services\TaskbarButtonService\Native\TaskbarInfoApplicator.cs" />
     <Compile Include="Services\TaskbarButtonService\Native\TaskbarThumbButtonInfoWrapper.cs" />
     <Compile Include="Services\TaskbarButtonService\TaskbarButtonService.cs" />
     <Compile Include="Services\TaskbarButtonService\TaskbarThumbButtonInfoCollection.cs" />
     <Compile Include="Services\WindowDocumentManagerService.cs" />
     <Compile Include="Native\WindowSurrogate.cs" />
     <Compile Include="Services\WindowService.cs" />
+    <Compile Include="Services\WindowsVersionProvider.cs" />
     <Compile Include="SplashScreen\DXSplashScreen.cs" />
     <Compile Include="SplashScreen\DXSplashScreenExceptions.cs" />
     <Compile Include="SplashScreen\ISplashScreen.cs" />
@@ -257,4 +256,7 @@
     <Compile Include="DXBinding\TreeVisitor.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup Condition="'$(VisualStudioVersion)' != '' And $(VisualStudioVersion) &gt; 11.0">
+    <LangVersion>4</LangVersion>
+  </PropertyGroup>
 </Project>

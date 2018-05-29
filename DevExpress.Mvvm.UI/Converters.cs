@@ -242,16 +242,16 @@ namespace DevExpress.Mvvm.UI {
         }
     }
     public class NumericToBooleanConverter : IValueConverter {
+        public bool Inverse { get; set; }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            return ConverterHelper.NumericToBoolean(value);
+            return ConverterHelper.NumericToBoolean(value, Inverse);
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) { return null; }
     }
     public class StringToBooleanConverter : IValueConverter {
+        public bool Inverse { get; set; }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            if(!(value is string))
-                return false;
-            return !String.IsNullOrEmpty((string)value);
+            return ConverterHelper.StringToBoolean(value, Inverse);
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) { return null; }
     }
@@ -385,7 +385,7 @@ namespace DevExpress.Mvvm.UI {
         public bool HiddenInsteadOfCollapsed { get { return hiddenInsteadOfCollapsed; } set { hiddenInsteadOfCollapsed = value; } }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             bool booleanValue = ConverterHelper.GetBooleanValue(value);
-            return ConverterHelper.BooleanToVisibility(booleanValue, Inverse, HiddenInsteadOfCollapsed);
+            return ConverterHelper.BooleanToVisibility(booleanValue ^ Inverse, HiddenInsteadOfCollapsed);
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             bool booleanValue = (value is Visibility && (Visibility)value == Visibility.Visible) ^ Inverse;
@@ -397,8 +397,18 @@ namespace DevExpress.Mvvm.UI {
         public bool Inverse { get; set; }
         public bool HiddenInsteadOfCollapsed { get { return hiddenInsteadOfCollapsed; } set { hiddenInsteadOfCollapsed = value; } }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            bool boolean = ConverterHelper.NumericToBoolean(value);
-            return ConverterHelper.BooleanToVisibility(boolean, Inverse, HiddenInsteadOfCollapsed);
+            bool boolean = ConverterHelper.NumericToBoolean(value, Inverse);
+            return ConverterHelper.BooleanToVisibility(boolean, HiddenInsteadOfCollapsed);
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) { return null; }
+    }
+    public class StringToVisibilityConverter : IValueConverter {
+        bool hiddenInsteadOfCollapsed;
+        public bool Inverse { get; set; }
+        public bool HiddenInsteadOfCollapsed { get { return hiddenInsteadOfCollapsed; } set { hiddenInsteadOfCollapsed = value; } }
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+            bool boolean = ConverterHelper.StringToBoolean(value, Inverse);
+            return ConverterHelper.BooleanToVisibility(boolean, HiddenInsteadOfCollapsed);
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) { return null; }
     }
@@ -532,6 +542,22 @@ namespace DevExpress.Mvvm.UI {
             return ConvertBack(value);
         }
     }
+    public class BrushToColorConverter : IValueConverter {
+        public static Color Convert(object value) {
+            return ColorToBrushConverter.ConvertBack(value);
+        }
+        public static SolidColorBrush ConvertBack(object value) {
+            return ColorToBrushConverter.Convert(value);
+        }
+        object IValueConverter.Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+            if (!(value is SolidColorBrush))
+                return Colors.Black;
+            return Convert(value);
+        }
+        object IValueConverter.ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+            return ConvertBack(value);
+        }
+    }
 
     static class ConverterHelper {
         public static string[] GetParameters(object parameter) {
@@ -561,19 +587,27 @@ namespace DevExpress.Mvvm.UI {
             if(value is bool?) return (bool?)value;
             return null;
         }
-        public static bool NumericToBoolean(object value) {
-            if(value == null)
-                return false;
+        public static bool NumericToBoolean(object value, bool inverse) {
+            if (value == null)
+                return CorrectBoolean(false, inverse);
             try {
                 var d = (double)System.Convert.ChangeType(value, typeof(double), null);
-                return d != 0d;
-            } catch(Exception) { }
-            return false;
+                return CorrectBoolean(d != 0d, inverse);
+            } catch (Exception) { }
+            return CorrectBoolean(false, inverse);
         }
-        public static Visibility BooleanToVisibility(bool booleanValue, bool inverse, bool hiddenInsteadOfCollapsed) {
-            return (booleanValue ^ inverse) ?
+        public static bool StringToBoolean(object value, bool inverse) {
+            if (!(value is string))
+                return CorrectBoolean(false, inverse);
+            return CorrectBoolean(!String.IsNullOrEmpty((string)value), inverse);
+        }
+        public static Visibility BooleanToVisibility(bool booleanValue, bool hiddenInsteadOfCollapsed) {
+            return booleanValue ?
                 Visibility.Visible :
  (hiddenInsteadOfCollapsed ? Visibility.Hidden : Visibility.Collapsed);
+        }
+        static bool CorrectBoolean(bool value, bool inverse) {
+            return value ^ inverse;
         }
     }
 }
@@ -582,14 +616,11 @@ namespace DevExpress.Mvvm.UI.Native {
         public static SolidColorBrush GetBrush(Color color) {
             WeakReference r;
             cache.TryGetValue(color, out r);
-            if(r != null && r.IsAlive)
+            if (r != null && r.IsAlive)
                 return (SolidColorBrush)r.Target;
             SolidColorBrush res = new SolidColorBrush(color);
             res.Freeze();
-            if(r != null)
-                lock(cache) cache[color] = new WeakReference(res);
-            else
-                lock(cache) cache.Add(color, new WeakReference(res));
+            lock (cache) cache[color] = new WeakReference(res);
             return res;
         }
 

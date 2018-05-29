@@ -38,8 +38,8 @@ namespace DevExpress.Mvvm.UI.Native {
         }
 
         public Point GetItemPosition(T item) {
-            ItemInfo info = items.FirstOrDefault(i => i.value == item);
-            if(info == null)
+            ItemInfo info = items.FirstOrDefault(i => i != null && i.value == item);
+            if (info == null)
                 return new Point(-1, -1);
             int index = items.IndexOf(info);
             double y = 0;

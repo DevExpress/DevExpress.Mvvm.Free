@@ -1,5 +1,6 @@
 using System;
 using System.Security;
+using DevExpress.Utils;
 using DevExpress.Internal.WinApi.Windows.UI.Notifications;
 
 namespace DevExpress.Internal.WinApi {
@@ -18,6 +19,9 @@ namespace DevExpress.Internal.WinApi {
                 return (OS.Platform == PlatformID.Win32NT) && (OS.Version >= Win8Version);
             }
         }
+        public static bool IsGenericTemplateSupported {
+            get { return WindowsVersionProvider.IsWin10AnniversaryUpdateOrHigher; }
+        }
         public static bool AreToastNotificationsSupported {
             get { return IsWin8OrHigher; }
         }
@@ -34,9 +38,15 @@ namespace DevExpress.Internal.WinApi {
             return WinRTToastNotificationContent.GetDocument(manager, info);
         }
         internal static string GetXml(IPredefinedToastNotificationInfo info) {
+            return GetXml((Window.Data.Xml.Dom.IXmlNodeSerializer)GetDocument(info));
+        }
+        internal static string GetXml(Window.Data.Xml.Dom.IXmlNodeSerializer content) {
             string xml;
-            ((Window.Data.Xml.Dom.IXmlNodeSerializer)GetDocument(info)).GetXml(out xml);
+            content.GetXml(out xml);
             return xml;
+        }
+        internal static void LoadXml(Window.Data.Xml.Dom.IXmlDocumentIO content, string xml) {
+            content.LoadXml(xml);
         }
         internal static IToastNotificationAdapter CreateToastNotificationAdapter(string appID) {
             return AreToastNotificationsSupported ?

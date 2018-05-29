@@ -248,6 +248,7 @@ namespace DevExpress.Mvvm.UI {
             return new object[] { UseFadeEffect, new WindowArrangerContainer(this, SplashScreenLocation), OwnerLock,
                 FadeInDuration, FadeOutDuration, FlowDirection, SplashScreenWindowStyle };
         }
+        internal virtual SplashScreenArrangeMode ArrangeMode() { return SplashScreenArrangeMode.Default; }
         static Window CreateSplashScreenWindow(object parameter) {
             object[] parameters = (object[])parameter;
             bool useFadeEffect = (bool)parameters[0];

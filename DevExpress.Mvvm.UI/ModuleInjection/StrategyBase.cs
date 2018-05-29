@@ -27,7 +27,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         object SelectedViewModel { get; }
         void Inject(object viewModel, Type viewType);
         void Remove(object viewModel);
-        void Select(object viewModel);
+        void Select(object viewModel, bool focus);
         void Clear();
         object GetParentViewModel();
     }

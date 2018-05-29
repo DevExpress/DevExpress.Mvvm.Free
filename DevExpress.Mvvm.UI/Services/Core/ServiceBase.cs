@@ -25,15 +25,11 @@ namespace DevExpress.Mvvm.UI {
         }
         protected override void OnAttached() {
             base.OnAttached();
-            SetInjectBinding();
+            ServiceInjectionHelper.SetInjectBinding(this);
         }
         protected override void OnDetaching() {
-            BindingOperations.ClearBinding(this, ServicesClientInternalProperty);
+            ServiceInjectionHelper.ClearInjectBinding(this);
             base.OnDetaching();
-        }
-        void SetInjectBinding() {
-            if(ShouldInject)
-                BindingOperations.SetBinding(this, ServicesClientInternalProperty, new Binding() { Path = new PropertyPath("DataContext"), Source = AssociatedObject });
         }
         protected ISupportServices GetServicesClient() {
             return GetValue(ServicesClientInternalProperty) as ISupportServices;
@@ -47,6 +43,62 @@ namespace DevExpress.Mvvm.UI {
             oldServiceClient.Do(x => x.ServiceContainer.UnregisterService(this));
             newServiceClient.Do(x => x.ServiceContainer.RegisterService(Name, this, YieldToParent));
         }
+
+        internal static class ServiceInjectionHelper {
+            public static void SetInjectBinding(ServiceBaseGeneric<T> service) {
+                if (service.ShouldInject)
+                    BindingOperations.SetBinding(service, ServicesClientInternalProperty, new Binding() { Path = new PropertyPath("DataContext"), Source = service.AssociatedObject });
+            }
+            public static void ClearInjectBinding(ServiceBaseGeneric<T> service) {
+                BindingOperations.ClearBinding(service, ServicesClientInternalProperty);
+            }
+            public static bool IsInjectBindingSet(ServiceBaseGeneric<T> service) {
+                return BindingOperations.IsDataBound(service, ServicesClientInternalProperty);
+            }
+        }
     }
-    public abstract class ServiceBase : ServiceBaseGeneric<FrameworkElement> { }
+    public abstract class ServiceBase : ServiceBaseGeneric<FrameworkElement> {
+        public static readonly DependencyProperty UnregisterOnUnloadedProperty =
+            DependencyProperty.Register("UnregisterOnUnloaded", typeof(bool), typeof(ServiceBase), new PropertyMetadata(false, (d, e) => ((ServiceBase)d).OnUnregisterOnUnloadedChanged()));
+        public bool UnregisterOnUnloaded { get { return (bool)GetValue(UnregisterOnUnloadedProperty); } set { SetValue(UnregisterOnUnloadedProperty, value); } }
+
+        protected override void OnAttached() {
+            base.OnAttached();
+            if (UnregisterOnUnloaded)
+                Subscribe();
+        }
+        protected override void OnDetaching() {
+            Unsubscribe();
+            base.OnDetaching();
+        }
+        void OnUnregisterOnUnloadedChanged() {
+            if (!IsAttached) return;
+            if (UnregisterOnUnloaded)
+                Subscribe();
+            else Unsubscribe();
+        }
+        void Subscribe() {
+            if (AssociatedObject == null) return;
+            AssociatedObject.Loaded += OnLoaded;
+            AssociatedObject.Unloaded += OnUnloaded;
+        }
+        void Unsubscribe() {
+            if (AssociatedObject == null) return;
+            AssociatedObject.Loaded -= OnLoaded;
+            AssociatedObject.Unloaded -= OnUnloaded;
+        }
+
+        bool isLoaded = false;
+        void OnLoaded(object sender, RoutedEventArgs e) {
+            if (isLoaded) return;
+            isLoaded = true;
+            if(!ServiceInjectionHelper.IsInjectBindingSet(this))
+                ServiceInjectionHelper.SetInjectBinding(this);
+        }
+        void OnUnloaded(object sender, RoutedEventArgs e) {
+            if (!isLoaded) return;
+            isLoaded = false;
+            ServiceInjectionHelper.ClearInjectBinding(this);
+        }
+    }
 }

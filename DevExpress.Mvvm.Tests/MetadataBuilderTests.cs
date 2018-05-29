@@ -233,6 +233,19 @@ namespace DevExpress.Mvvm.Tests {
                 MetadataHelper.ClearMetadata();
             }
         }
+        [Test]
+        public void MatchesRuleTest_Null() {
+            try {
+                MetadataLocator.Default = MetadataLocator.Create().AddMetadata<ValidationEntity, ValidationEntityMetadata>();
+                var entity = new ValidationEntity();
+                var v = CreateValidator<ValidationEntity, int>(x => x.MatchesRulePropery);
+                Assert.AreEqual(string.Empty, v.GetErrorText(null, entity));
+            } finally {
+                MetadataLocator.Default = null;
+                ValidationEntityMetadata.IncludeValueToError = false;
+                MetadataHelper.ClearMetadata();
+            }
+        }
         void ValidationCore(Func<object, object, string, string> getError) {
             var entity = new ValidationEntity();
 

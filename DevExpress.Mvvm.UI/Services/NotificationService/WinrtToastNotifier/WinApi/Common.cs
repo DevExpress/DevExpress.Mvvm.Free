@@ -45,6 +45,14 @@ namespace DevExpress.Internal.WinApi {
         public static void CheckHRESULT(int hResult) {
             if(hResult < 0) throw new Exception("Failed with HRESULT: " + hResult.ToString("X"));
         }
+        public static void Safe(Action action, Action<System.Runtime.InteropServices.COMException> onError = null) {
+            try {
+                action();
+            }
+            catch(System.Runtime.InteropServices.COMException ce) {
+                if(onError != null) onError(ce);
+            }
+        }
         public static T RoGetActivationFactory<T>() {
             Tuple<string, Guid> tuple = knownTypes[typeof(T)];
             object iface;

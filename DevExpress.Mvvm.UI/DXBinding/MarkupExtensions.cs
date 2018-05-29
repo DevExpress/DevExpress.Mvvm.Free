@@ -1,6 +1,7 @@
 using DevExpress.DXBinding.Native;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
+using DevExpress.Xpf.Core.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -78,6 +79,11 @@ namespace DevExpress.Xpf.DXBinding {
         }
         protected abstract object ProvideValueCore();
     }
+
+    public enum DXBindingResolvingMode {
+        LegacyStaticTyping,
+        DynamicTyping
+    }
     public abstract class DXBindingBase : DXMarkupExtensionBase {
         internal static Binding CreateBinding(IServiceProvider serviceProvider, Operand operand, BindingMode mode, bool isRootBinding) {
             var path = operand != null && !string.IsNullOrEmpty(operand.Path) ? operand.Path : ".";
@@ -119,6 +125,15 @@ namespace DevExpress.Xpf.DXBinding {
         protected internal Type TargetPropertyType { get; private set; }
         bool IsInitialized { get; set; }
 
+        public static DXBindingResolvingMode DefaultResolvingMode { get; set; }
+        public DXBindingResolvingMode? ResolvingMode { get; set; }
+        protected DXBindingResolvingMode ActualResolvingMode {
+            get { return ResolvingMode ?? DefaultResolvingMode; }
+        }
+
+        static DXBindingBase() {
+            DefaultResolvingMode = DXBindingResolvingMode.DynamicTyping;
+        }
         public DXBindingBase() {
             ErrorHandler = new IErrorHandlerImpl(this);
             TypeResolver = new ITypeResolverImpl(this);
@@ -164,6 +179,7 @@ namespace DevExpress.Xpf.DXBinding {
         protected virtual void CheckTargetObject() {
             if(IsInSetter(TargetProvider)) return;
             if(TargetPropertyType == typeof(BindingBase)) return;
+            if(TargetProvider.TargetObject is Style && TargetProvider.TargetObject is ITypedStyle) return;
             if(!(TargetProvider.TargetObject is DependencyObject) || !(TargetProvider.TargetProperty is DependencyProperty))
                 ErrorHandler.Throw(ErrorHelper.Err002(this), null);
         }
@@ -268,12 +284,12 @@ namespace DevExpress.Xpf.DXBinding {
     }
 
     public sealed class DXBindingExtension : DXBindingBase {
-        internal static UpdateSourceTrigger DefaultUpdateSourceTrigger = UpdateSourceTrigger.Default;
         public string BindingGroupName { get; set; }
         public object TargetNullValue { get; set; }
         public bool NotifyOnSourceUpdated { get; set; }
         public bool NotifyOnTargetUpdated { get; set; }
         public bool NotifyOnValidationError { get; set; }
+        internal static UpdateSourceTrigger? DefaultUpdateSourceTrigger = null;
         public UpdateSourceTrigger UpdateSourceTrigger { get; set; }
         public bool ValidatesOnDataErrors { get; set; }
         public bool ValidatesOnExceptions { get; set; }
@@ -294,12 +310,12 @@ namespace DevExpress.Xpf.DXBinding {
 
         BindingMode ActualMode { get; set; }
         BindingTreeInfo TreeInfo { get; set; }
-        BindingCalculator Calculator { get; set; }
+        IBindingCalculator Calculator { get; set; }
 
         public DXBindingExtension() : this(string.Empty) { }
         public DXBindingExtension(string expr) {
             Expr = expr;
-            UpdateSourceTrigger = DefaultUpdateSourceTrigger;
+            UpdateSourceTrigger = DefaultUpdateSourceTrigger ?? UpdateSourceTrigger.Default;
             Mode = BindingMode.Default;
             BindingGroupName = string.Empty;
         }
@@ -327,7 +343,9 @@ namespace DevExpress.Xpf.DXBinding {
         }
         protected override void Init() {
             TreeInfo = new BindingTreeInfo(Expr, BackExpr, ErrorHandler);
-            Calculator = new BindingCalculator(TreeInfo, FallbackValue);
+            if(ActualResolvingMode == DXBindingResolvingMode.LegacyStaticTyping)
+                Calculator = new BindingCalculator(TreeInfo, FallbackValue);
+            else Calculator = new BindingCalculatorDynamic(TreeInfo, FallbackValue);
             Calculator.Init(TypeResolver);
         }
         protected override object GetProvidedValue() {
@@ -406,8 +424,10 @@ namespace DevExpress.Xpf.DXBinding {
                 b.ValidatesOnExceptions = ValidatesOnExceptions;
             }
         }
-        DXBindingConverter CreateConverter() {
-            return new DXBindingConverter(this);
+        DXBindingConverterBase CreateConverter() {
+            if(ActualResolvingMode == DXBindingResolvingMode.LegacyStaticTyping)
+                return new DXBindingConverter(this, (BindingCalculator)Calculator);
+            return new DXBindingConverterDynamic(this, (BindingCalculatorDynamic)Calculator);
         }
 
         class DXBindingConverter : DXBindingConverterBase {
@@ -415,10 +435,10 @@ namespace DevExpress.Xpf.DXBinding {
             readonly BindingCalculator calculator;
             readonly IValueConverter externalConverter;
             Type backConversionType;
-            bool isBackConvesionInitialized = false;
-            public DXBindingConverter(DXBindingExtension owner) : base(owner) {
+            bool isBackConversionInitialized = false;
+            public DXBindingConverter(DXBindingExtension owner, BindingCalculator calculator) : base(owner) {
                 this.treeInfo = owner.TreeInfo;
-                this.calculator = owner.Calculator;
+                this.calculator = calculator;
                 this.backConversionType = owner.TargetPropertyType;
                 this.externalConverter = owner.Converter;
             }
@@ -431,13 +451,13 @@ namespace DevExpress.Xpf.DXBinding {
             protected override object[] ConvertBack(object value, Type[] targetTypes) {
                 if(treeInfo.IsEmptyBackExpr() && !treeInfo.IsSimpleExpr())
                     errorHandler.Throw(ErrorHelper.Err101_TwoWay(), null);
-                if(!isBackConvesionInitialized) {
+                if(!isBackConversionInitialized) {
                     Type valueType = value.Return(x => x.GetType(), () => null);
                     var backExprType = valueType ?? backConversionType;
                     if(backExprType == null)
                         errorHandler.Throw(ErrorHelper.Err104(), null);
                     calculator.InitBack(valueType ?? backConversionType);
-                    isBackConvesionInitialized = true;
+                    isBackConversionInitialized = true;
                 }
                 List<object> res = new List<object>();
                 foreach(var op in calculator.Operands) {
@@ -462,13 +482,51 @@ namespace DevExpress.Xpf.DXBinding {
                 return base.CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
             }
         }
+        class DXBindingConverterDynamic : DXBindingConverterBase {
+            readonly BindingTreeInfo treeInfo;
+            readonly BindingCalculatorDynamic calculator;
+            readonly IValueConverter externalConverter;
+            public DXBindingConverterDynamic(DXBindingExtension owner, BindingCalculatorDynamic calculator) : base(owner) {
+                this.treeInfo = owner.TreeInfo;
+                this.calculator = calculator;
+                this.externalConverter = owner.Converter;
+            }
+            object[] values;
+            protected override object Convert(object[] values, Type targetType) {
+                errorHandler.ClearError();
+                this.values = values;
+                return calculator.Resolve(values);
+            }
+            protected override object[] ConvertBack(object value, Type[] targetTypes) {
+                if (treeInfo.IsEmptyBackExpr() && !treeInfo.IsSimpleExpr())
+                    errorHandler.Throw(ErrorHelper.Err101_TwoWay(), null);
+                if (treeInfo.IsEmptyBackExpr())
+                    return Enumerable.Range(0, calculator.Operands.Count()).Select(x => value).ToArray();
+                return calculator.ResolveBack(values, value).ToArray();
+            }
+            protected override object CoerceAfterConvert(object value, Type targetType, object parameter, CultureInfo culture) {
+                if (externalConverter != null)
+                    return externalConverter.Convert(value, targetType, parameter, culture);
+                if (value == DependencyProperty.UnsetValue && targetType == typeof(string))
+                    value = null;
+                else value = ObjectToObjectConverter.Coerce(value, targetType, true);
+                return base.CoerceAfterConvert(value, targetType, parameter, culture);
+            }
+            protected override object CoerceBeforeConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
+                if (externalConverter != null) {
+                    var t = targetTypes != null && targetTypes.Count() == 1 ? targetTypes[0] : null;
+                    return externalConverter.ConvertBack(value, t, parameter, culture);
+                }
+                return base.CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
+            }
+        }
     }
     public sealed class DXCommandExtension : DXBindingBase {
         public string Execute { get; set; }
         public string CanExecute { get; set; }
         public bool FallbackCanExecute { get; set; }
         CommandTreeInfo TreeInfo { get; set; }
-        CommandCalculator Calculator { get; set; }
+        ICommandCalculator Calculator { get; set; }
 
         public DXCommandExtension() : this(string.Empty) { }
         public DXCommandExtension(string execute) {
@@ -482,7 +540,9 @@ namespace DevExpress.Xpf.DXBinding {
         }
         protected override void Init() {
             TreeInfo = new CommandTreeInfo(Execute, CanExecute, ErrorHandler);
-            Calculator = new CommandCalculator(TreeInfo, FallbackCanExecute);
+            if (ActualResolvingMode == DXBindingResolvingMode.LegacyStaticTyping)
+                Calculator = new CommandCalculator(TreeInfo, FallbackCanExecute);
+            else Calculator = new CommandCalculatorDynamic(TreeInfo, FallbackCanExecute);
             Calculator.Init(TypeResolver);
         }
         protected override object GetProvidedValue() {
@@ -530,7 +590,7 @@ namespace DevExpress.Xpf.DXBinding {
         }
 
         class DXCommandConverter : DXBindingConverterBase {
-            readonly CommandCalculator calculator;
+            readonly ICommandCalculator calculator;
             readonly bool fallbackCanExecute;
             readonly bool isEmpty;
             public DXCommandConverter(DXCommandExtension owner, bool isEmpty) : base(owner) {
@@ -552,7 +612,7 @@ namespace DevExpress.Xpf.DXBinding {
             readonly bool fallbackCanExecute;
             readonly bool isEmpty;
             IErrorHandler ErrorHandler { get { return (IErrorHandler)errorHandler.Target; } }
-            CommandCalculator Calculator { get { return (CommandCalculator)calculator.Target; } }
+            ICommandCalculator Calculator { get { return (ICommandCalculator)calculator.Target; } }
             object[] Values { get { return isEmpty ? null : values.Select(x => x.Target).ToArray(); } }
             bool IsAlive {
                 get {
@@ -561,7 +621,7 @@ namespace DevExpress.Xpf.DXBinding {
                     return res && !values.Any(x => !x.IsAlive);
                 }
             }
-            public Command(IErrorHandler errorHandler, CommandCalculator calculator, bool fallbackCanExecute, bool isEmpty, object[] values) {
+            public Command(IErrorHandler errorHandler, ICommandCalculator calculator, bool fallbackCanExecute, bool isEmpty, object[] values) {
                 this.errorHandler = new WeakReference(errorHandler);
                 this.calculator = new WeakReference(calculator);
                 this.fallbackCanExecute = fallbackCanExecute;
@@ -589,7 +649,7 @@ namespace DevExpress.Xpf.DXBinding {
     public sealed class DXEventExtension : DXBindingBase {
         public string Handler { get; set; }
         EventTreeInfo TreeInfo { get; set; }
-        EventCalculator Calculator { get; set; }
+        IEventCalculator Calculator { get; set; }
 
         public DXEventExtension() : this(string.Empty) { }
         public DXEventExtension(string expr) {
@@ -610,11 +670,18 @@ namespace DevExpress.Xpf.DXBinding {
             if(!(TargetProvider.TargetObject is DependencyObject))
                 ErrorHandler.Throw(ErrorHelper.Err002(this), null);
             if(TargetProvider.TargetProperty is EventInfo) return;
+            if(TargetProvider.TargetProperty is MethodInfo) {
+                MethodInfo m = (MethodInfo)TargetProvider.TargetProperty;
+                if(m.Name.StartsWith("Add") && m.Name.EndsWith("Handler"))
+                    return;
+            }
             ErrorHandler.Throw(ErrorHelper.Err002(this), null);
         }
         protected override void Init() {
             TreeInfo = new EventTreeInfo(Handler, ErrorHandler);
-            Calculator = new EventCalculator(TreeInfo);
+            if(ActualResolvingMode == DXBindingResolvingMode.LegacyStaticTyping)
+                Calculator = new EventCalculator(TreeInfo);
+            else Calculator = new EventCalculatorDynamic(TreeInfo);
             Calculator.Init(TypeResolver);
         }
         protected override object GetProvidedValue() {
@@ -665,21 +732,41 @@ namespace DevExpress.Xpf.DXBinding {
 
         class EventBinder {
             readonly IErrorHandler errorHandler;
-            readonly EventCalculator calculator;
+            readonly IEventCalculator calculator;
             readonly WeakReference targetObject;
             readonly Type eventHandlerType;
             DependencyProperty dataProperty;
+            static object locker = new object();
+            static long dataPropertyIndex = 0;
+            static Dictionary<Tuple<Type, string>, DependencyProperty> propertiesCache = new Dictionary<Tuple<Type, string>, DependencyProperty>();
+
             DependencyObject TargetObject { get { return (DependencyObject)targetObject.Target; } }
             bool IsAlive { get { return targetObject.IsAlive; } }
             public EventBinder(DXEventExtension owner, Type eventHandlerType, BindingBase binding) {
-                this.errorHandler = owner.ErrorHandler;
-                this.calculator = owner.Calculator;
-                var target = (DependencyObject)owner.TargetProvider.TargetObject;
-                this.targetObject = new WeakReference(target);
-                this.eventHandlerType = eventHandlerType;
-                dataProperty = DependencyProperty.RegisterAttached(
-                    owner.TargetPropertyName + Guid.NewGuid().ToString(), typeof(object), typeof(EventBinder), null);
-                BindingOperations.SetBinding(target, dataProperty, binding);
+                lock (locker) {
+                    this.errorHandler = owner.ErrorHandler;
+                    this.calculator = owner.Calculator;
+                    var target = (DependencyObject)owner.TargetProvider.TargetObject;
+                    this.targetObject = new WeakReference(target);
+                    this.eventHandlerType = eventHandlerType;
+                    var dataPropertyInfo = Tuple.Create(target.GetType(), owner.Handler);
+                    if (!propertiesCache.TryGetValue(dataPropertyInfo, out dataProperty)) {
+                        dataProperty = DependencyProperty.Register(
+                            "Tag" + dataPropertyIndex++.ToString(), typeof(object), dataPropertyInfo.Item1);
+                        propertiesCache[dataPropertyInfo] = dataProperty;
+                    }
+                    try {
+                        BindingOperations.SetBinding(target, dataProperty, binding);
+                    } catch(Exception e) {
+                        string message = "DXEvent cannot set binding on data property. " + Environment.NewLine
+                            + "Expr: " + owner.Handler + Environment.NewLine
+                            + "TargetProperty: " + owner.TargetPropertyName + Environment.NewLine
+                            + "TargetPropertyType: " + owner.TargetPropertyType.ToString() + Environment.NewLine
+                            + "TargetObjectType: " + target.GetType() + Environment.NewLine
+                            + "DataProperty: " + dataProperty.Name;
+                        throw new DXEventException(owner, message, e);
+                    }
+                }
             }
             public Delegate GetEventHandler() {
                 var eventSubscriber = new DevExpress.Mvvm.UI.Interactivity.Internal.EventTriggerEventSubscriber(OnEvent);
@@ -752,4 +839,7 @@ namespace DevExpress.Xpf.DXBinding {
             return ErrorHelper.ReportEventError(message, Handler);
         }
     }
+}
+namespace DevExpress.Xpf.Core.Native {
+    public interface ITypedStyle { }
 }

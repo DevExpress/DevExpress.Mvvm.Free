@@ -4,10 +4,13 @@ using System;
 using System.Linq;
 using System.ComponentModel;
 using System.Collections.Generic;
+using DevExpress.Mvvm.UI.Native;
+using System.Windows;
 
 namespace DevExpress.Mvvm.UI.Tests {
+    public abstract class FileDialogServiceBaseTests { }
     [TestFixture]
-    public class SaveFileDialogServiceTests {
+    public class SaveFileDialogServiceTests : FileDialogServiceBaseTests {
         [Test]
         public void DefaultValues() {
             SaveFileDialogService service = new SaveFileDialogService();
@@ -36,7 +39,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 
     }
     [TestFixture]
-    public class OpenFileDialogServiceTests {
+    public class OpenFileDialogServiceTests : FileDialogServiceBaseTests {
         [Test]
         public void DefaultValues() {
             OpenFileDialogService service = new OpenFileDialogService();
@@ -113,6 +116,9 @@ namespace DevExpress.Mvvm.UI.Tests {
                         break;
                 }
                 return DialogResult.OK;
+            }
+            public DialogResult ShowDialog(Window ownerWindow) {
+                return ShowDialog();
             }
         }
 

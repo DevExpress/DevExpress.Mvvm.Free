@@ -263,6 +263,8 @@ namespace DevExpress.Mvvm.ModuleInjection {
             Func<VisualInfo, string, RegionVisualInfo> getRegionVisualInfo = (info, regionName) =>
                 info != null ? info.Regions.FirstOrDefault(x => x.RegionName == regionName) : null;
             regions.ForEach(region => {
+                if (region.LogicalSerializationMode == LogicalSerializationMode.Disabled)
+                    return;
                 if(getRegionInfo(logicalInfo, region.RegionName) != null)
                     ((IModuleManager)this).Clear(region.RegionName);
             });

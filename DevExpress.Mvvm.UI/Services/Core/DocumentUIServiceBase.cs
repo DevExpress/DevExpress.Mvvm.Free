@@ -35,6 +35,10 @@ namespace DevExpress.Mvvm.UI {
                 new TitleUpdater(convertToString, viewModel, target, property).Update(target, viewModel);
             }
         }
+        public static void ClearTitleBinding(DependencyProperty property, DependencyObject target) {
+            BindingOperations.ClearBinding(target, TitleListenProperty);
+            BindingOperations.ClearBinding(target, property);
+        }
         public static void CloseDocument(IDocumentManagerService documentManagerService, IDocumentContent documentContent, bool force) {
             IDocument document = documentManagerService.FindDocument(documentContent);
             if(document != null)

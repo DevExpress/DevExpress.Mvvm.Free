@@ -35,14 +35,14 @@ namespace DevExpress.Mvvm.Native {
             if (string.IsNullOrEmpty(value))
                 ThrowArgumentException(name, value);
         }
-        public static void ThereIsInDictionary<TKey, TValue>(IDictionary<TKey, TValue> dictionary, TKey key, string name) {
-            if(!dictionary.ContainsKey(key))
-                ThrowArgumentException(name, key);
+        public static void ArgumentIsInRange<T>(IList<T> list, int index, string name) {
+            ArgumentIsInRange(0, list.Count - 1, index, name);
         }
-        public static void ThereIsNoInDictionary<TKey, TValue>(IDictionary<TKey, TValue> dictionary, TKey key, string name) {
-            if(dictionary.ContainsKey(key))
-                ThrowArgumentException(name, key);
+        public static void ArgumentIsInRange(int minValue, int maxValue, int value, string name) {
+            if(value < minValue || value > maxValue)
+                ThrowArgumentException(name, value);
         }
+
         public static TValue ArgumentMatchType<TValue>(object value, string name) {
             try {
                 return (TValue)value;

@@ -15,6 +15,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         }
         protected abstract void ShowCore();
         protected abstract MessageBoxResult ShowDialogCore();
+        protected abstract void AfterShowDialogCore();
         protected abstract void ActivateCore();
         protected abstract void CloseCore();
         void BeforeShow(object viewModel, Type viewType) {
@@ -29,6 +30,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         void IWindowStrategy.ShowDialog(object viewModel, Type viewType) {
             BeforeShow(viewModel, viewType);
             Result = ShowDialogCore();
+            AfterShowDialogCore();
         }
         void IWindowStrategy.Activate() {
             ActivateCore();
@@ -61,7 +63,13 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         }
         protected override MessageBoxResult ShowDialogCore() {
             ConfigureWrapper();
-            return Wrapper.ShowDialog();
+            suppressClosed = true;
+            var res = Wrapper.ShowDialog();
+            suppressClosed = false;
+            return res;
+        }
+        protected override void AfterShowDialogCore() {
+            OnWindowClosed(null, EventArgs.Empty);
         }
         protected override void ActivateCore() {
             Wrapper.Activate();
@@ -97,7 +105,9 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             if(!Owner.CanRemoveViewModel(ViewModel))
                 e.Cancel = true;
         }
+        bool suppressClosed = false;
         void OnWindowClosed(object sender, EventArgs e) {
+            if (suppressClosed) return;
             Owner.RemoveViewModel(ViewModel);
         }
         void OnWindowActivated(object sender, EventArgs e) {
@@ -151,10 +161,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         public virtual MessageBoxResult ShowDialog() {
             return ConvertDialogResult(Target.ShowDialog());
         }
-        public void Activate() {
+        public virtual void Activate() {
             Target.Activate();
         }
-        public void Close() {
+        public virtual void Close() {
             Target.Close();
         }
     }

@@ -10,6 +10,10 @@ using System.Windows.Controls.Primitives;
 
 namespace DevExpress.Mvvm.UI {
     public class ItemsControlMouseEventArgsConverter : EventArgsConverterBase<MouseEventArgs> {
+        public static object GetDataRow(ItemsControl sender, MouseEventArgs args) {
+            var converter = new ItemsControlMouseEventArgsConverter();
+            return converter.Convert(sender, args);
+        }
         protected static Dictionary<Type, Type> itemsTypes = new Dictionary<Type, Type>() {
             { typeof(ListBox), typeof(ListBoxItem) },
             { typeof(ListView), typeof(ListViewItem) },
@@ -33,10 +37,9 @@ namespace DevExpress.Mvvm.UI {
             return element != null ? element.DataContext : null;
         }
         protected virtual FrameworkElement FindParent(object sender, DependencyObject originalSource) {
-            return LayoutTreeHelper.GetVisualParents(originalSource, (DependencyObject)sender).Where(CheckItemType(sender)).FirstOrDefault() as FrameworkElement;
-        }
-        protected Func<DependencyObject, bool> CheckItemType(object sender) {
-            return d => d.GetType() == GetItemType(sender);
+            return LayoutTreeHelper.GetVisualParents(originalSource, (DependencyObject)sender)
+                .Where(d => d.GetType() == GetItemType(sender))
+                .FirstOrDefault() as FrameworkElement;
         }
         protected virtual Type GetItemType(object sender) {
             Type itemType = ItemType;

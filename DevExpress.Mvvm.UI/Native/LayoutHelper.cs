@@ -80,18 +80,20 @@ namespace DevExpress.Mvvm.UI.Native {
                 if(elementWindow.WindowStyle == WindowStyle.None)
                     return GetScreenRectCore(elementWindow, elementWindow);
                 else {
-                    if(elementWindow.WindowState == WindowState.Maximized) {
+                    if (elementWindow.WindowState == WindowState.Maximized) {
                         var screen = System.Windows.Forms.Screen.FromHandle(new System.Windows.Interop.WindowInteropHelper(elementWindow).Handle);
                         var workingArea = screen.WorkingArea;
                         var leftTop = new Point(workingArea.Location.X, workingArea.Location.Y);
                         var size = new Size(workingArea.Size.Width, workingArea.Size.Height);
                         var presentationSource = PresentationSource.FromVisual(elementWindow);
-                        if(presentationSource != null) {
+                        if (presentationSource != null) {
                             leftTop = new Point(leftTop.X / presentationSource.CompositionTarget.TransformToDevice.M11, leftTop.Y / presentationSource.CompositionTarget.TransformToDevice.M22);
                             size = new Size(size.Width / presentationSource.CompositionTarget.TransformToDevice.M11, size.Height / presentationSource.CompositionTarget.TransformToDevice.M22);
                         }
                         return new Rect(leftTop, size);
-                    } else return new Rect(new Point(elementWindow.Left, elementWindow.Top), new Size(elementWindow.Width, elementWindow.Height));
+                    } else {
+                        return new Rect(new Point(elementWindow.Left, elementWindow.Top), new Size(elementWindow.Width, elementWindow.Height));
+                    }
                 }
             }
             if(element == null) {
@@ -119,6 +121,7 @@ namespace DevExpress.Mvvm.UI.Native {
             }
             return new Rect(leftTop, rightBottom);
         }
+
 
         static DependencyObject GetParentCore(DependencyObject d, bool useLogicalTree = false) {
             DependencyObject parent = LogicalTreeHelper.GetParent(d);
