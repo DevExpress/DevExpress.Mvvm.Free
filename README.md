@@ -11,6 +11,7 @@ There are two versions of the DevExpress MVVM Framework:
 
 Although DevExpress provides [documentation](https://documentation.devexpress.com/#WPF/CustomDocument15112) for the first version only, you can use this documentation even if you use the free version.
 
+The free DevExpress MVVM version is a separate assembly that is not compatible with the version included in the DevExpress WPF component suite.
 
 NuGet
 ====================
