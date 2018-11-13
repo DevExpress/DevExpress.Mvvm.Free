@@ -6,9 +6,18 @@ using System.Collections.Specialized;
 using System.Windows;
 using System.Linq;
 
+#if NETFX_CORE
+using Windows.UI.Xaml;
+using System.Reflection;
+using Windows.Foundation.Collections;
+#endif
 
 namespace DevExpress.Mvvm.UI.Interactivity {
+#if !NETFX_CORE
     public abstract class AttachableCollection<T> : FreezableCollection<T>, IAttachableObject where T : DependencyObject, IAttachableObject {
+#else
+    public abstract class AttachableCollection<T> : DependencyObjectCollection<T>, IAttachableObject where T : DependencyObject, IAttachableObject {
+#endif
 
         internal AttachableCollection() {
             ((INotifyCollectionChanged)this).CollectionChanged += this.OnCollectionChanged;
@@ -52,20 +61,28 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         }
 
         bool ShouldAttachItem(T item) {
+#if !NETFX_CORE
             if(InteractionHelper.GetEnableBehaviorsInDesignTime(AssociatedObject))
                 return true;
+#endif
             if(!InteractionHelper.IsInDesignMode(AssociatedObject))
                 return true;
             return !InteractionHelper.IsInDesignMode(item);
         }
         void VerifyRead() {
+#if !NETFX_CORE
             ReadPreamble();
+#endif
         }
         void VerifyWrite() {
+#if !NETFX_CORE
             WritePreamble();
+#endif
         }
         void NotifyChanged() {
+#if !NETFX_CORE
             WritePostscript();
+#endif
         }
 
         internal virtual void ItemAdded(T item) {
@@ -113,9 +130,11 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             }
         }
 
+#if !NETFX_CORE
         protected override sealed Freezable CreateInstanceCore() {
             return (Freezable)Activator.CreateInstance(GetType());
         }
+#endif
     }
 
     public sealed class BehaviorCollection : AttachableCollection<Behavior> {
@@ -127,7 +146,11 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             var itemType = UniqueBehaviorTypeAttribute.GetDeclaredType(item.GetType());
             if(itemType != null) {
                 var existBehaviorName =
+#if NETFX_CORE
+                this.FirstOrDefault(x => x != item && itemType.GetTypeInfo().IsAssignableFrom(x.GetType().GetTypeInfo())).With(x => x.GetType().Name);
+#else
                 this.FirstOrDefault(x => x != item && itemType.IsAssignableFrom(x.GetType())).With(x => x.GetType().Name);
+#endif
                 if(!string.IsNullOrEmpty(existBehaviorName)) {
                     throw new InvalidOperationException(string.Format("A behavior of the {0} base type already exists.", existBehaviorName));
                 }

@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.Native;
+﻿using DevExpress.Mvvm.Native;
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -9,13 +9,21 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Windows.Interop;
 
+#if !FREE
+using DevExpress.Mvvm.UI;
+using DevExpress.Mvvm;
+
+namespace DevExpress.Xpf.Core {
+#else
 namespace DevExpress.Mvvm.UI {
+#endif
     public static class DXSplashScreen {
         public static bool UseLegacyLocationLogic { get; set; }
         public static bool UseDefaultAltTabBehavior { get; set; }
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static bool DisableThreadingProblemsDetection { get; set; }
         public static NotInitializedStateMethodCallPolicy NotInitializedStateMethodCallPolicy { get; set; }
+        //There are several solutions, that used reflection to access MainThreadDelay property. So public wrapper required to prevent BC.
         public static int UIThreadDelay {
             get { return MainThreadDelay; }
             set { MainThreadDelay = value; }
@@ -150,7 +158,6 @@ namespace DevExpress.Mvvm.UI {
             static SplashScreenContainer() {
                 instanceLocker = new object();
                 instances = new List<SplashScreenContainer>();
-                Application.Current.Do(x => x.DispatcherUnhandledException += OnAppUnhandledException);
             }
             static void OnAppUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e) {
                 SplashScreenContainer[] instancesCopy;
@@ -167,6 +174,7 @@ namespace DevExpress.Mvvm.UI {
                 }
             }
 
+            static bool hasUnhandledExceptionSubscriver = false;
             internal volatile AutoResetEvent SyncEvent = new AutoResetEvent(false);
             internal SplashScreenInfo ActiveInfo = null;
             object internalLocker = new object();
@@ -194,10 +202,15 @@ namespace DevExpress.Mvvm.UI {
                     throw new InvalidOperationException(DXSplashScreenExceptions.Exception1);
                 lock(instanceLocker) {
                     instances.Add(this);
+                    if(!hasUnhandledExceptionSubscriver) {
+                        hasUnhandledExceptionSubscriver = true;
+                        Application.Current.Do(x => x.DispatcherUnhandledException += OnAppUnhandledException);
+                    }
                 }
                 ActiveInfo.EnsureCallbacksContainer();
                 ActiveInfo.InternalThread = new Thread(InternalThreadEntryPoint);
                 ActiveInfo.InternalThread.SetApartmentState(ApartmentState.STA);
+                //Owner container should be initialized in this thread
                 ActiveInfo.InternalThread.Start(new object[] { windowCreator, splashScreenCreator, windowCreatorParameter, splashScreenCreatorParameter, GetOwnerContainer(windowCreatorParameter), ActiveInfo });
                 if(MainThreadDelay > 0)
                     SyncEvent.WaitOne(MainThreadDelay);
@@ -306,6 +319,8 @@ namespace DevExpress.Mvvm.UI {
             void ReleaseResources(SplashScreenInfo container) {
                 lock(instanceLocker) {
                     instances.Remove(this);
+                    if(instances.Count == 0 && hasUnhandledExceptionSubscriver)
+                        SplashScreenHelper.InvokeAsync(Application.Current, UnsubscribeUnhandledException, DispatcherPriority.Send, AsyncInvokeMode.AsyncOnly);
                 }
                 container.RelationInfo.Do(x => x.ParentClosed -= OnSplashScreenOwnerClosed);
                 container.ReleaseResources();
@@ -314,12 +329,21 @@ namespace DevExpress.Mvvm.UI {
                 }
                 Dispatcher.CurrentDispatcher.InvokeShutdown();
             }
+            void UnsubscribeUnhandledException() {
+                lock(instanceLocker) {
+                    if(instances.Count == 0 && hasUnhandledExceptionSubscriver) {
+                        Application.Current.Do(x => x.DispatcherUnhandledException -= OnAppUnhandledException);
+                        hasUnhandledExceptionSubscriver = false;
+                    }
+                }
+            }
             void SubscribeParentEvents(object parameter) {
                 SplashScreenClosingMode closingMode = SplashScreenHelper.FindParameter(parameter, SplashScreenClosingMode.Default);
                 ActiveInfo.CloseWithParent = closingMode == SplashScreenClosingMode.Default || closingMode == SplashScreenClosingMode.OnParentClosed;
                 if(ActiveInfo.CloseWithParent)
                     ActiveInfo.RelationInfo.Do(x => x.ParentClosed += OnSplashScreenOwnerClosed);
             }
+            //Prevents hanging if main thread is busy
             void PatchSplashScreenWindowStyle(Window splashScreen, bool hasOwner) {
                 if(!SplashScreenHelper.PatchWindowStyle(splashScreen, hasOwner))
                     splashScreen.SourceInitialized += OnSplashScreenSourceInitialized;
@@ -463,6 +487,8 @@ namespace DevExpress.Mvvm.UI {
                 IsActiveOnClosing = IsActive;
                 base.OnClosing(e);
             }
+
+            //handle alt + f4
             IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) {
                 if(msg == WM_SYSCOMMAND) {
                     int cmd = (wParam.ToInt32() & 0xfff0);
@@ -473,6 +499,7 @@ namespace DevExpress.Mvvm.UI {
             }
             void OnWindowLoaded(object sender, RoutedEventArgs e) {
                 Loaded -= OnWindowLoaded;
+                //SizeToContent.Width works incorrectly, Width of window always will be at least 140px
                 if(SizeToContent != SizeToContent.Manual) {
                     SizeToContent oldValue = SizeToContent;
                     SizeToContent = SizeToContent.Manual;
@@ -517,8 +544,7 @@ namespace DevExpress.Mvvm.UI {
                         } else if(Policy == NotInitializedStateMethodCallPolicy.Discard) {
                             callback.Dispose();
                             result = true;
-                        }
-                        else
+                        } else
                             throw new InvalidOperationException("The SplashScreen has not been initialized yet.");
                     } else {
                         callback.Dispose();

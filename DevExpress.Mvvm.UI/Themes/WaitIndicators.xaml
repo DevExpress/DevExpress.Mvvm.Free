@@ -53,9 +53,11 @@
                                     </DiscreteObjectKeyFrame.Value>
                                 </DiscreteObjectKeyFrame>
                             </ObjectAnimationUsingKeyFrames>
+                            <!--BEGIN WPF-->
                             <BooleanAnimationUsingKeyFrames Storyboard.TargetName="progressBar" Storyboard.TargetProperty="IsIndeterminate">
                                 <DiscreteBooleanKeyFrame KeyTime="0:0:0.1" Value="True" />
                             </BooleanAnimationUsingKeyFrames>
+                            <!--END WPF-->
                         </Storyboard>
                     </VisualState>
                     <VisualState x:Name="Collapsed">
@@ -68,9 +70,11 @@
                                     </DiscreteObjectKeyFrame.Value>
                                 </DiscreteObjectKeyFrame>
                             </ObjectAnimationUsingKeyFrames>
+                            <!--BEGIN WPF-->
                             <BooleanAnimationUsingKeyFrames Storyboard.TargetName="progressBar" Storyboard.TargetProperty="IsIndeterminate">
                                 <DiscreteBooleanKeyFrame KeyTime="0:0:0.1" Value="False" />
                             </BooleanAnimationUsingKeyFrames>
+                            <!--END WPF-->
                         </Storyboard>
                     </VisualState>
                 </VisualStateGroup>

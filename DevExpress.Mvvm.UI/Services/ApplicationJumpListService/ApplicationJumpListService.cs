@@ -1,3 +1,7 @@
+﻿#if !FREE
+using DevExpress.Xpf.Core.Native;
+using DevExpress.Xpf.Utils;
+#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -133,7 +137,8 @@ namespace DevExpress.Mvvm.UI {
             return true;
         }
         protected override void OnAttached() {
-            Apply();
+            if(Items.SourceItems.Any())
+                Apply();
             base.OnAttached();
             AssociatedObject.SetValue(InternalItemsProperty, Items.SourceItems);
         }

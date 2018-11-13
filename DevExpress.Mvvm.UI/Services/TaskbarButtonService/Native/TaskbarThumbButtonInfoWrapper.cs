@@ -1,10 +1,13 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Shell;
 using DevExpress.Mvvm.Native;
+#if !MVVM
+using DevExpress.Xpf.Core.Native;
+#endif
 
 namespace DevExpress.Mvvm.UI.Native {
     public class TaskbarThumbButtonInfoWrapper {

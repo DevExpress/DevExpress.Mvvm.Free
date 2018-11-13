@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 
@@ -38,7 +38,7 @@ namespace DevExpress.Mvvm.UI.Native {
         }
 
         public Point GetItemPosition(T item) {
-            ItemInfo info = items.FirstOrDefault(i => i != null && i.value == item);
+            ItemInfo info = items.FirstOrDefault(i => i != null && i.value == item); // T572410
             if (info == null)
                 return new Point(-1, -1);
             int index = items.IndexOf(info);

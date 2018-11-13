@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows.Shell;
 using DevExpress.Mvvm.Native;
 using DevExpress.Utils;

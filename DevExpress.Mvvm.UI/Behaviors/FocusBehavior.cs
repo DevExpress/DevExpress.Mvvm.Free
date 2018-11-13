@@ -1,4 +1,8 @@
+﻿#if !FREE
+using DevExpress.Xpf.Core.Native;
+#else 
 using DevExpress.Mvvm.UI.Native;
+#endif
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.Native;
 using System;
@@ -8,9 +12,15 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Threading;
+#else
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Data;
+#endif
 
 namespace DevExpress.Mvvm.UI {
     [TargetType(typeof(Control))]
@@ -26,6 +36,14 @@ namespace DevExpress.Mvvm.UI {
         static readonly DependencyProperty PropertyValueProperty =
             DependencyProperty.Register("PropertyValue", typeof(object), typeof(FocusBehavior),
             new PropertyMetadata(null, (d, e) => ((FocusBehavior)d).OnPropertyValueChanged()));
+#if NETFX_CORE
+        public FocusState FocusState {
+            get { return (FocusState)GetValue(FocusStateProperty); }
+            set { SetValue(FocusStateProperty, value); }
+        }
+        public static readonly DependencyProperty FocusStateProperty =
+            DependencyProperty.Register("FocusState", typeof(FocusState), typeof(FocusBehavior), new PropertyMetadata(FocusState.Programmatic));
+#endif
         public TimeSpan? FocusDelay {
             get { return (TimeSpan?)GetValue(FocusDelayProperty); }
             set { SetValue(FocusDelayProperty, value); }
@@ -64,6 +82,7 @@ namespace DevExpress.Mvvm.UI {
                 return FocusDelay ?? TimeSpan.FromMilliseconds(0);
         }
         void AssociatedObjectFocus() {
+#if !NETFX_CORE
             if(AssociatedObject.Focusable && AssociatedObject.IsTabStop)
                 AssociatedObject.Focus();
             else {
@@ -71,6 +90,9 @@ namespace DevExpress.Mvvm.UI {
                 var controlToFocus = children.OfType<Control>().Where(x => x.Focusable && x.IsTabStop).FirstOrDefault();
                 controlToFocus.Do(x => x.Focus());
             }
+#else
+            AssociatedObject.Focus(FocusState);
+#endif
         }
         void DoFocus() {
             if(!IsAttached) return;
@@ -85,7 +107,11 @@ namespace DevExpress.Mvvm.UI {
             timer.Tick += OnTimerTick;
             timer.Start();
         }
+#if NETFX_CORE
+        void OnTimerTick(object sender, object e) {
+#else
         void OnTimerTick(object sender, EventArgs e) {
+#endif
             DispatcherTimer timer = (DispatcherTimer)sender;
             timer.Tick -= OnTimerTick;
             timer.Stop();

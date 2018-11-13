@@ -1,4 +1,4 @@
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,13 +9,20 @@ using System.ComponentModel;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Native;
 
+#if !FREE
+using DevExpress.Utils.CommonDialogs;
+#else
 namespace DevExpress.Mvvm.UI.Native {
     public interface IOpenFileDialog : IFileDialog {
         bool Multiselect { get; set; }
-        bool ReadOnlyChecked { get; set; }
+        string SafeFileName { get; }
+        string[] SafeFileNames { get; }
         bool ShowReadOnly { get; set; }
+        bool ReadOnlyChecked { get; set; }
     }
 }
+#endif
+
 namespace DevExpress.Mvvm.UI {
     [Browsable(true), EditorBrowsable(EditorBrowsableState.Always)]
     [TargetType(typeof(System.Windows.Controls.UserControl)), TargetType(typeof(Window))]
@@ -36,6 +43,8 @@ namespace DevExpress.Mvvm.UI {
                 get { return fileDialog.ShowReadOnly; }
                 set { fileDialog.ShowReadOnly = value; }
             }
+            string IOpenFileDialog.SafeFileName { get { return fileDialog.SafeFileName; } }
+            string[] IOpenFileDialog.SafeFileNames { get { return fileDialog.SafeFileNames; } }
         }
 
         public static readonly DependencyProperty MultiselectProperty =

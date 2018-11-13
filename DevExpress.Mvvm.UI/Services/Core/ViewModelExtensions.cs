@@ -1,7 +1,10 @@
-using DevExpress.Mvvm.Native;
+﻿using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
 using System.Linq;
 using System.Windows;
+#if NETFX_CORE
+using Windows.UI.Xaml;
+#endif
 
 namespace DevExpress.Mvvm.UI {
     public static class ViewModelExtensions {
@@ -10,13 +13,15 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.RegisterAttached("Parameter", typeof(object), typeof(ViewModelExtensions),
             new PropertyMetadata(NotSetParameter, (d, e) => OnParameterChanged(d, e.NewValue)));
         public static readonly DependencyProperty ParentViewModelProperty =
-            DependencyProperty.RegisterAttached("ParentViewModel", typeof(object), typeof(ViewModelExtensions),
+            DependencyProperty.RegisterAttached("ParentViewModel", typeof(object), typeof(ViewModelExtensions), 
             new PropertyMetadata(null, (d,e) => OnParentViewModelChanged(d, e.NewValue)));
         public static readonly DependencyProperty DocumentOwnerProperty =
             DependencyProperty.RegisterAttached("DocumentOwner", typeof(IDocumentOwner), typeof(ViewModelExtensions),
             new PropertyMetadata(null, (d, e) => OnDocumentOwnerChanged(d, e.NewValue as IDocumentOwner)));
+#if !NETFX_CORE
         public static readonly DependencyProperty DocumentTitleProperty =
             DependencyProperty.RegisterAttached("DocumentTitle", typeof(object), typeof(ViewModelExtensions), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits));
+#endif
 
         public static object GetParameter(DependencyObject obj) {
             return obj.GetValue(ParameterProperty) ??
@@ -40,8 +45,10 @@ namespace DevExpress.Mvvm.UI {
             obj.SetValue(DocumentOwnerProperty, value);
         }
 
+#if !NETFX_CORE
         public static object GetDocumentTitle(DependencyObject d) { return d.GetValue(DocumentTitleProperty); }
         public static void SetDocumentTitle(DependencyObject d, object value) { d.SetValue(DocumentTitleProperty, value); }
+#endif
 
         static void OnParameterChanged(DependencyObject d, object newValue) {
             if(NotSetParameter == newValue) return;
@@ -56,12 +63,16 @@ namespace DevExpress.Mvvm.UI {
             ViewModelInitializer.SetViewModelDocumentOwner(d, newValue);
             ParameterAndParentViewModelSyncBehavior.AttachTo(d);
         }
-
+        
         class ParameterAndParentViewModelSyncBehavior : Behavior<DependencyObject> {
             public static void AttachTo(DependencyObject obj) {
+#if !NETFX_CORE
                 if(!(obj is FrameworkElement || obj is FrameworkContentElement)) return;
+#else
+                if(!(obj is FrameworkElement)) return;
+#endif
                 BehaviorCollection bCol = Interaction.GetBehaviors(obj);
-                ParameterAndParentViewModelSyncBehavior b =
+                ParameterAndParentViewModelSyncBehavior b = 
                     (ParameterAndParentViewModelSyncBehavior)bCol.FirstOrDefault(x => x is ParameterAndParentViewModelSyncBehavior);
                 if(b != null) return;
                 bCol.Add(new ParameterAndParentViewModelSyncBehavior());
@@ -79,19 +90,27 @@ namespace DevExpress.Mvvm.UI {
                 Unsubscribe();
                 (AssociatedObject as FrameworkElement).Do(x => x.Unloaded += OnAssociatedObjectUnloaded);
                 (AssociatedObject as FrameworkElement).Do(x => x.DataContextChanged += OnAssociatedObjectDataContextChanged);
+#if !NETFX_CORE
                 (AssociatedObject as FrameworkContentElement).Do(x => x.Unloaded += OnAssociatedObjectUnloaded);
                 (AssociatedObject as FrameworkContentElement).Do(x => x.DataContextChanged += OnAssociatedObjectDataContextChanged);
+#endif
             }
             void Unsubscribe() {
                 (AssociatedObject as FrameworkElement).Do(x => x.Unloaded -= OnAssociatedObjectUnloaded);
                 (AssociatedObject as FrameworkElement).Do(x => x.DataContextChanged -= OnAssociatedObjectDataContextChanged);
+#if !NETFX_CORE
                 (AssociatedObject as FrameworkContentElement).Do(x => x.Unloaded -= OnAssociatedObjectUnloaded);
                 (AssociatedObject as FrameworkContentElement).Do(x => x.DataContextChanged -= OnAssociatedObjectDataContextChanged);
+#endif
             }
             void OnAssociatedObjectUnloaded(object sender, RoutedEventArgs e) {
                 Unsubscribe();
             }
+#if NETFX_CORE
+            void OnAssociatedObjectDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs e) {
+#else
             void OnAssociatedObjectDataContextChanged(object sender, DependencyPropertyChangedEventArgs e) {
+#endif
                 ViewModelInitializer.SetViewModelParameter(AssociatedObject, GetParameter(AssociatedObject));
                 ViewModelInitializer.SetViewModelParentViewModel(AssociatedObject, GetParentViewModel(AssociatedObject));
                 ViewModelInitializer.SetViewModelDocumentOwner(AssociatedObject, GetDocumentOwner(AssociatedObject));

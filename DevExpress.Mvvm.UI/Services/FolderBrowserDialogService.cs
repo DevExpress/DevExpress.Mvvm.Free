@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.UI.Interactivity;
+﻿using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Native;
 using System;
 using System.Collections.Generic;
@@ -9,19 +9,18 @@ using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
 
-namespace DevExpress.Mvvm.UI {
-    public interface IFolderBrowserDialog {
-        event EventHandler HelpRequest;
-
+#if !FREE
+using DevExpress.Utils.CommonDialogs;
+#else
+namespace DevExpress.Mvvm.UI.Native {
+    public interface IFolderBrowserDialog : ICommonDialog {
+        string Description { get; set; }
+        Environment.SpecialFolder RootFolder { get; set; }
         bool ShowNewFolderButton { get; set; }
         string SelectedPath { get; set; }
-        Environment.SpecialFolder RootFolder { get; set; }
-        string Description { get; set; }
-
-        DialogResult ShowDialog();
-        void Reset();
     }
 }
+#endif
 
 namespace DevExpress.Mvvm.UI {
     [Browsable(true), EditorBrowsable(EditorBrowsableState.Always)]
@@ -50,15 +49,23 @@ namespace DevExpress.Mvvm.UI {
                 get { return fileDialog.Description; }
                 set { fileDialog.Description = value; }
             }
-            void IFolderBrowserDialog.Reset() {
+            void ICommonDialog.Reset() {
                 fileDialog.Reset();
             }
-            DialogResult IFolderBrowserDialog.ShowDialog() {
+            DialogResult ICommonDialog.ShowDialog() {
                 return fileDialog.ShowDialog();
             }
-            event EventHandler IFolderBrowserDialog.HelpRequest {
+            DialogResult ICommonDialog.ShowDialog(object ownerWindow) {
+                var window = ownerWindow as Window;
+                return window == null ? fileDialog.ShowDialog() : fileDialog.ShowDialog(new Win32WindowWrapper(window));
+            }
+            event EventHandler ICommonDialog.HelpRequest {
                 add { fileDialog.HelpRequest += value; }
                 remove { fileDialog.HelpRequest -= value; }
+            }
+
+            void IDisposable.Dispose() {
+                fileDialog.Dispose();
             }
         }
 

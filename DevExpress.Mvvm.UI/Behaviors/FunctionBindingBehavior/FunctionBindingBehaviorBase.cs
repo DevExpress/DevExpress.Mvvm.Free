@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.UI.Interactivity;
+﻿using DevExpress.Mvvm.UI.Interactivity;
 using System;
 using System.Linq;
 using System.Windows;
@@ -18,55 +18,55 @@ namespace DevExpress.Mvvm.UI {
         protected const string Error_SourceMethodReturnVoid = "The return value of the '{0}.{1}' function can't be void.";
         #endregion
         #region Dependency Properties
-        public static readonly DependencyProperty SourceProperty =
+        public static readonly DependencyProperty SourceProperty = 
             DependencyProperty.Register("Source", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnSourceChanged()));
-        public static readonly DependencyProperty TargetProperty =
+        public static readonly DependencyProperty TargetProperty = 
             DependencyProperty.Register("Target", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnTargetChanged(e)));
-        public static readonly DependencyProperty Arg1Property =
+        public static readonly DependencyProperty Arg1Property = 
             DependencyProperty.Register("Arg1", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg2Property =
+        public static readonly DependencyProperty Arg2Property = 
             DependencyProperty.Register("Arg2", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg3Property =
+        public static readonly DependencyProperty Arg3Property = 
             DependencyProperty.Register("Arg3", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg4Property =
+        public static readonly DependencyProperty Arg4Property = 
             DependencyProperty.Register("Arg4", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg5Property =
+        public static readonly DependencyProperty Arg5Property = 
             DependencyProperty.Register("Arg5", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg6Property =
+        public static readonly DependencyProperty Arg6Property = 
             DependencyProperty.Register("Arg6", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg7Property =
+        public static readonly DependencyProperty Arg7Property = 
             DependencyProperty.Register("Arg7", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg8Property =
+        public static readonly DependencyProperty Arg8Property = 
             DependencyProperty.Register("Arg8", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg9Property =
+        public static readonly DependencyProperty Arg9Property = 
             DependencyProperty.Register("Arg9", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg10Property =
+        public static readonly DependencyProperty Arg10Property = 
             DependencyProperty.Register("Arg10", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg11Property =
+        public static readonly DependencyProperty Arg11Property = 
             DependencyProperty.Register("Arg11", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg12Property =
+        public static readonly DependencyProperty Arg12Property = 
             DependencyProperty.Register("Arg12", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg13Property =
+        public static readonly DependencyProperty Arg13Property = 
             DependencyProperty.Register("Arg13", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg14Property =
+        public static readonly DependencyProperty Arg14Property = 
             DependencyProperty.Register("Arg14", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty Arg15Property =
+        public static readonly DependencyProperty Arg15Property = 
             DependencyProperty.Register("Arg15", typeof(object), typeof(FunctionBindingBehaviorBase),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehaviorBase)d).OnResultAffectedPropertyChanged()));
 
@@ -220,6 +220,7 @@ namespace DevExpress.Mvvm.UI {
             while(argsInfo.Count < 15)
                 argsInfo.Add(new ArgInfo(DependencyProperty.UnsetValue));
             int argsCount = argsInfo.FindLastIndex(x => !x.IsUnsetValue) + 1;
+            //check for static class
             Type targetType = (source as Type).Return(x => x.IsAbstract && x.IsSealed, () => false) ? source as Type : source.GetType();
             MethodInfo info = GetMethodInfo(targetType, functionName, argsCount, argsInfo.Take(argsCount).Select(x => x.Type).ToArray());
             if(!functionChecker.Invoke(info, targetType, functionName))

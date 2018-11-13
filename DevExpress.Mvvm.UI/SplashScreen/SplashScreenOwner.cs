@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -11,8 +11,14 @@ using System.Windows.Input;
 using System.Threading;
 using DevExpress.Mvvm.UI.Native;
 
+#if !FREE
+using DevExpress.Xpf.Core.Native;
+
+namespace DevExpress.Xpf.Core {
+#else
 
 namespace DevExpress.Mvvm.UI {
+#endif
 
     public enum SplashScreenLocation {
         CenterContainer,
@@ -83,6 +89,16 @@ namespace DevExpress.Mvvm.UI {
         static Dictionary<IntPtr, ContainerLockInfo> lockedWindowsDict = new Dictionary<IntPtr, ContainerLockInfo>();
         static Dictionary<DependencyObject, ContainerLockInfo> lockedContainerDict = new Dictionary<DependencyObject, ContainerLockInfo>();
         static Dictionary<WindowContainer, ContainerLockInfo> infosFromContainer = new Dictionary<WindowContainer, ContainerLockInfo>();
+#if DEBUGTEST
+        public bool Test_IsLockerReleased { get { return Container == null; } }
+        public static bool Test_IsWindowLocked(IntPtr handle) {
+            ContainerLockInfo lockInfo;
+            return handle != IntPtr.Zero && lockedWindowsDict.TryGetValue(handle, out lockInfo) && lockInfo.Return(x => x.LockCounter > 0, () => false);
+        }
+        public static bool Test_IsContainerLocked(DependencyObject container) {
+            return container != null && lockedContainerDict.ContainsKey(container);
+        }
+#endif
         readonly SplashScreenLock lockMode;
         WindowContainer Container { get; set; }
 
@@ -332,6 +348,9 @@ namespace DevExpress.Mvvm.UI {
         }
     }
     internal abstract class WindowArrangerBase : WindowRelationInfo {
+#if DEBUGTEST
+        public Rect Test_LastChildPosition { get { return lastChildPos; } }
+#endif
         protected FrameworkElement ParentContainer { get { return Parent.WindowObject as FrameworkElement; } }
         protected Rect lastChildPos = Rect.Empty;
         protected Rect lastParentPos = Rect.Empty;
@@ -367,6 +386,11 @@ namespace DevExpress.Mvvm.UI {
             }
         }
         protected void UpdateParentLocation() {
+            if(Parent == null) {
+                nextParentPos = Rect.Empty;
+                return;
+            }
+
             switch(childLocation) {
                 case SplashScreenLocation.CenterContainer:
                     nextParentPos = ActualIsParentClosed ? Rect.Empty : ((WindowArrangerContainer)Parent).GetControlRect();
@@ -562,6 +586,7 @@ namespace DevExpress.Mvvm.UI {
             return GetRealRect(FrameworkObject);
         }
         static Rect GetRealRect(FrameworkElement element) {
+            //Check for InvalidOperationException: Visual is not connected to a PresentationSource
             if(element == null || !element.IsLoaded || PresentationSource.FromDependencyObject(element) == null)
                 return Rect.Empty;
             return LayoutHelper.GetScreenRect(element);
@@ -581,6 +606,9 @@ namespace DevExpress.Mvvm.UI {
         public bool IsWindowClosedBeforeInit { get; private set; }
         public int ManagedThreadId { get; private set; }
         protected FrameworkElement FrameworkObject { get; private set; }
+#if DEBUGTEST
+        internal bool Test_IsVisualTreeSearch { get; set; }
+#endif
         bool isHandleRequired;
 
         public WindowContainer(DependencyObject windowObject) : this(windowObject, true) { }
@@ -603,6 +631,7 @@ namespace DevExpress.Mvvm.UI {
         protected virtual void CompleteInitializationOverride() { }
 
         void ActivateWindowCore() {
+            //the !ownerWindow.IsActive check is needed because of Q519508
             if(Window != null && !Window.IsActive && Window.IsVisible && !SplashScreenHelper.ApplicationHasActiveWindow())
                 Window.Activate();
         }
@@ -671,12 +700,22 @@ namespace DevExpress.Mvvm.UI {
                 if(newWindow != null)
                     result = newWindow;
             }
+#if DEBUGTEST
+            Test_IsVisualTreeSearch = visualTreeSearch;
+#endif
             return result;
         }
         bool EnsureWindowHandle(out IntPtr handle) {
             handle = IntPtr.Zero;
             WindowInteropHelper helper = new WindowInteropHelper(Window);
             if(helper.Handle == IntPtr.Zero) {
+#if !FREE
+                //T292215, T291855, T330012, T681316
+                if(Window is DXWindow || Window is ThemedWindow) {
+                    Window.SourceInitialized += OnWindowSourceInitialized;
+                    return false;
+                }
+#endif
                 try {
                     helper.EnsureHandle();
                 } catch(InvalidOperationException) {
@@ -702,6 +741,24 @@ namespace DevExpress.Mvvm.UI {
             FrameworkObject.Loaded -= OnControlLoaded;
             Initialize();
         }
+        //#if DEBUGTEST
+        //        static internal bool? Test_IsNormalDPI = null;
+        //        static bool IsNormalDPI(Visual visual) {
+        //            if(Test_IsNormalDPI.HasValue)
+        //                return Test_IsNormalDPI.Value;
+        //#else
+        //        static bool IsNormalDPI(Visual visual) {
+        //#endif
+        //            var pSource = PresentationSource.FromVisual(visual);
+        //            if(pSource != null)
+        //                return pSource.CompositionTarget.TransformToDevice.M11 == 1;
+        //            using(var source = new HwndSource(new HwndSourceParameters())) {
+        //                if(source != null)
+        //                    return source.CompositionTarget.TransformToDevice.M11 == 1;
+        //            }
+
+        //            return true;
+        //        }
 
         public event EventHandler Initialized;
     }

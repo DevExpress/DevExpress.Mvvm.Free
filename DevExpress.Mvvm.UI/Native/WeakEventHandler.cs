@@ -1,10 +1,15 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
 using System.Collections.Specialized;
+#if MVVM
 namespace DevExpress.Mvvm.UI.Native {
+#else
+using DevExpress.Compatibility.System.ComponentModel;
+namespace DevExpress.Data.Utils {
+#endif
     #region WeakEventHandler
     public interface IWeakEventHandler<THandler> {
         THandler Handler { get; }
@@ -36,5 +41,21 @@ namespace DevExpress.Mvvm.UI.Native {
             : base(owner, onEventAction, action, create) {
         }
     }
+#if !MVVM
+    public class CollectionChangedWeakEventHandler<TOwner> : WeakEventHandler<TOwner, NotifyCollectionChangedEventArgs, NotifyCollectionChangedEventHandler> where TOwner : class {
+		 static Action<WeakEventHandler<TOwner, NotifyCollectionChangedEventArgs, NotifyCollectionChangedEventHandler>, object> action = (h, o) => ((INotifyCollectionChanged)o).CollectionChanged -= h.Handler;
+		 static Func<WeakEventHandler<TOwner, NotifyCollectionChangedEventArgs, NotifyCollectionChangedEventHandler>, NotifyCollectionChangedEventHandler> create = h => new NotifyCollectionChangedEventHandler(h.OnEvent);
+        public CollectionChangedWeakEventHandler(TOwner owner, Action<TOwner, object, NotifyCollectionChangedEventArgs> onEventAction)
+            : base(owner, onEventAction, action, create) {
+        }
+    }
+    public class ListChangedWeakEventHandler<TOwner> : WeakEventHandler<TOwner, ListChangedEventArgs, ListChangedEventHandler> where TOwner : class {
+	static Action<WeakEventHandler<TOwner, ListChangedEventArgs, ListChangedEventHandler>, object> action = (h, o) => ((IBindingList)o).ListChanged -= h.Handler;
+	static Func<WeakEventHandler<TOwner, ListChangedEventArgs, ListChangedEventHandler>, ListChangedEventHandler> create = h => new ListChangedEventHandler(h.OnEvent);
+        public ListChangedWeakEventHandler(TOwner owner, Action<TOwner, object, ListChangedEventArgs> onEventAction)
+            : base(owner, onEventAction, action, create) {
+        }
+    }
+#endif
     #endregion
 }

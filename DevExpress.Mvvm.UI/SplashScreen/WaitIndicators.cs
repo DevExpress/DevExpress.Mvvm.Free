@@ -1,10 +1,21 @@
-using System;
+﻿using System;
 using System.Windows.Controls;
 using System.Windows;
 
+#if !FREE
+using DevExpress.Xpf.Utils.Themes;
+using DevExpress.Xpf.Editors;
+using DevExpress.Data.Utils;
+
+namespace DevExpress.Xpf.Core {
+#else
 
 namespace DevExpress.Mvvm.UI {
+#endif
     public class WaitIndicator : ContentControl {
+#if DEBUGTEST && !FREE //DEMO_REMOVE
+        [FxCopSpellCheckingIgnore] //DEMO_REMOVE
+#endif //DEMO_REMOVE
         public static readonly DependencyProperty DeferedVisibilityProperty;
         public static readonly DependencyProperty ActualContentProperty;
         public static readonly DependencyProperty ShowShadowProperty;
@@ -31,14 +42,22 @@ namespace DevExpress.Mvvm.UI {
         }
 
         public WaitIndicator() {
+#if !FREE
+            this.SetDefaultStyleKey(typeof(WaitIndicator));
+#else
             DefaultStyleKey = typeof(WaitIndicator);
+#endif
         }
         protected override void OnContentChanged(object oldContent, object newContent) {
             base.OnContentChanged(oldContent, newContent);
             ChangeContentIfNeed(newContent);
         }
         void ChangeContentIfNeed(object newContent) {
+#if !FREE
+            ActualContent = newContent ?? EditorLocalizer.Active.GetLocalizedString(EditorStringId.WaitIndicatorText);
+#else
             ActualContent = newContent ?? "Loading...";
+#endif
         }
 
         void OnDeferedVisibilityChanged() {
@@ -48,6 +67,9 @@ namespace DevExpress.Mvvm.UI {
                 VisualStateManager.GoToState(this, "Collapsed", true);
         }
 
+#if DEBUGTEST && !FREE //DEMO_REMOVE
+        [FxCopSpellCheckingIgnore] //DEMO_REMOVE
+#endif //DEMO_REMOVE
         public bool DeferedVisibility {
             get { return (bool)GetValue(DeferedVisibilityProperty); }
             set { SetValue(DeferedVisibilityProperty, value); }
@@ -68,7 +90,28 @@ namespace DevExpress.Mvvm.UI {
 
     public class WaitIndicatorContainer : ContentControl {
         public WaitIndicatorContainer() {
+#if FREE
             DefaultStyleKey = typeof(WaitIndicatorContainer);
         }
     }
+#else
+            this.SetDefaultStyleKey(typeof(WaitIndicatorContainer));
+        }
+    }
+
+    public class ColumnWaitIndicator : ProgressBar {
+        public ColumnWaitIndicator() {
+            this.SetDefaultStyleKey(typeof(ColumnWaitIndicator));
+        }
+    }
+
+    public enum WaitIndicatorThemeKeys {
+        WaitIndicatorTemplate,
+        WaitIndicatorContentTemplate,
+        WaitIndicatorContainerTemplate
+    }
+
+    public class WaitIndicatorThemeKeyExtension : ThemeKeyExtensionBase<WaitIndicatorThemeKeys> {
+    }
+#endif
 }

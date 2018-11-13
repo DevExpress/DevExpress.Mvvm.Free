@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +6,9 @@ using System.ComponentModel;
 using DevExpress.Mvvm.Native;
 using WindowBase = System.Windows.Window;
 using System.Windows;
+#if !FREE
+using DevExpress.Xpf.Core.Native;
+#endif
 
 namespace DevExpress.Mvvm.UI.Native {
     public interface IWindowSurrogate {
@@ -33,7 +36,7 @@ namespace DevExpress.Mvvm.UI.Native {
 
         public static IWindowSurrogate GetWindowSurrogate(object window) {
             IWindowSurrogate res = (window as DependencyObject).With(x => GetActualWindowSurrogate(x));
-            if(res != null)
+            if(res != null) 
                 return res;
             res = window as IWindowSurrogate ?? new WindowProxy((WindowBase)window);
             (window as DependencyObject).Do(x => SetActualWindowSurrogate(x, res));

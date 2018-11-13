@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.Native;
+﻿using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
 using System;
 using System.Linq;
@@ -11,7 +11,7 @@ namespace DevExpress.Mvvm.UI {
         #region Dependency Properties
         static MessageBoxButton DefaultMessageBoxButton = MessageBoxButton.YesNo;
         public static readonly DependencyProperty EnableConfirmationMessageProperty =
-            DependencyProperty.Register("EnableConfirmationMessage", typeof(bool), typeof(ConfirmationBehavior),
+            DependencyProperty.Register("EnableConfirmationMessage", typeof(bool), typeof(ConfirmationBehavior), 
             new PropertyMetadata(true));
         public static readonly DependencyProperty CommandProperty =
             DependencyProperty.Register("Command", typeof(ICommand), typeof(ConfirmationBehavior),
@@ -147,7 +147,11 @@ namespace DevExpress.Mvvm.UI {
             if(viewModel != null)
                 res = viewModel.ServiceContainer.GetService<IMessageBoxService>();
             if(res != null) return res;
+#if !FREE
+            res = new DevExpress.Xpf.Core.DXMessageBoxService();
+#else
             res = new MessageBoxService();
+#endif
             return res;
         }
         bool ShowConfirmation() {

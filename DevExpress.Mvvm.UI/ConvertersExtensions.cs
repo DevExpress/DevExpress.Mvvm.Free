@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows.Data;
 using System.Windows.Markup;
 
@@ -29,6 +29,18 @@ namespace DevExpress.Mvvm.UI {
             return new EnumerableConverter() { ItemConverter = ItemConverter, TargetItemType = TargetItemType };
         }
     }
+#if !FREE
+    public class CriteriaOperatorConverterExtension : MarkupExtension {
+        public string Expression { get; set; }
+        public CriteriaOperatorConverterExtension() { }
+        public CriteriaOperatorConverterExtension(string expression) {
+            this.Expression = expression;
+        }
+        public override object ProvideValue(System.IServiceProvider serviceProvider) {
+            return new CriteriaOperatorConverter() { Expression = Expression };
+        }
+    }
+#endif
     public class TypeCastConverterExtension : MarkupExtension {
         public override object ProvideValue(System.IServiceProvider serviceProvider) {
             return new TypeCastConverter();
@@ -51,7 +63,7 @@ namespace DevExpress.Mvvm.UI {
             return new ObjectToBooleanConverter() { Inverse = this.Inverse };
         }
         public bool Inverse { get; set; }
-    }
+    }    
     public class BooleanToVisibilityConverterExtension : MarkupExtension {
         public bool Inverse { get; set; }
         public bool HiddenInsteadOfCollapsed { get; set; }
@@ -106,6 +118,7 @@ namespace DevExpress.Mvvm.UI {
             return new BooleanToObjectConverter() { TrueValue = this.TrueValue, FalseValue = this.FalseValue, NullValue = this.NullValue };
         }
     }
+#if !NETFX_CORE
     public class EnumToStringConverterExtension : MarkupExtension {
         public override object ProvideValue(IServiceProvider serviceProvider) {
             return new EnumToStringConverter();
@@ -122,4 +135,5 @@ namespace DevExpress.Mvvm.UI {
             return new BrushToColorConverter();
         }
     }
+#endif
 }

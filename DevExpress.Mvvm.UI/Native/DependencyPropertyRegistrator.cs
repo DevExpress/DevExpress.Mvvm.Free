@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
@@ -163,8 +163,8 @@ namespace DevExpress.Mvvm.UI.Native {
             propertyField.OverrideMetadata(typeof(T), new FrameworkPropertyMetadata(ToHandler(changedCallback)));
             return this;
         }
-        public DependencyPropertyRegistrator<T> OverrideMetadata(DependencyProperty propertyField, object defaultValue, Action<T> changedCallback = null) {
-            propertyField.OverrideMetadata(typeof(T), new FrameworkPropertyMetadata(defaultValue, ToHandler(changedCallback)));
+        public DependencyPropertyRegistrator<T> OverrideMetadata(DependencyProperty propertyField, object defaultValue, Action<T> changedCallback = null, FrameworkPropertyMetadataOptions frameworkOptions = FrameworkPropertyMetadataOptions.None) {
+            propertyField.OverrideMetadata(typeof(T), new FrameworkPropertyMetadata(defaultValue, frameworkOptions, ToHandler(changedCallback)));
             return this;
         }
         public DependencyPropertyRegistrator<T> OverrideMetadata<TProperty>(DependencyProperty propertyField, Action<T> changedCallback, Func<T, TProperty, TProperty> coerceCallback) {
@@ -180,8 +180,8 @@ namespace DevExpress.Mvvm.UI.Native {
             propertyField.OverrideMetadata(typeof(T), new FrameworkPropertyMetadata(ToHandler(changedCallback)));
             return this;
         }
-        public DependencyPropertyRegistrator<T> OverrideMetadata<TProperty>(DependencyProperty propertyField, TProperty defaultValue, Action<T, TProperty, TProperty> changedCallback) {
-            propertyField.OverrideMetadata(typeof(T), new FrameworkPropertyMetadata(defaultValue, ToHandler(changedCallback)));
+        public DependencyPropertyRegistrator<T> OverrideMetadata<TProperty>(DependencyProperty propertyField, TProperty defaultValue, Action<T, TProperty, TProperty> changedCallback, FrameworkPropertyMetadataOptions frameworkOptions = FrameworkPropertyMetadataOptions.None) {
+            propertyField.OverrideMetadata(typeof(T), new FrameworkPropertyMetadata(defaultValue, frameworkOptions, ToHandler(changedCallback)));
             return this;
         }
         public DependencyPropertyRegistrator<T> OverrideMetadata<TProperty>(DependencyProperty propertyField, Action<T, TProperty, TProperty> changedCallback, Func<T, TProperty, TProperty> coerceCallback) {
@@ -274,4 +274,47 @@ namespace DevExpress.Mvvm.UI.Native {
             return registrator;
         }
     }
+#if !FREE
+    public static class ServiceTemplatePropertyRegistrator {
+        public static DependencyPropertyRegistrator<T> RegisterServiceTemplateProperty<T, TService>(this DependencyPropertyRegistrator<T> registrator, Expression<Func<T, DataTemplate>> property, out DependencyProperty propertyField, out Action<T, Action<TService>> serviceActionExecutor, Action<T> changedCallback = null) where TService : class {
+            Action<T, Func<T, T>, Action<TService>> serviceActionExecutorCore;
+            registrator.RegisterServiceTemplateProperty(property, out propertyField, out serviceActionExecutorCore, changedCallback);
+            serviceActionExecutor = (owner, serviceAction) => serviceActionExecutorCore(owner, x => x, serviceAction);
+            return registrator;
+        }
+        public static DependencyPropertyRegistrator<T> RegisterServiceTemplateProperty<T, TServiceOwner, TService>(this DependencyPropertyRegistrator<T> registrator, Expression<Func<T, DataTemplate>> property, out DependencyProperty propertyField, out Action<T, Func<T, TServiceOwner>, Action<TService>> serviceActionExecutor, Action<T> changedCallback = null) where TService : class {
+            propertyField = AssignableServiceHelper2<T, TService>.RegisterServiceTemplateProperty(DependencyPropertyRegistrator<T>.GetPropertyName(property), changedCallback);
+            var propertyFieldRef = propertyField;
+            serviceActionExecutor = (owner, getServiceOwner, serviceAction) => {
+                var propertyOwner = (DependencyObject)(object)owner;
+                if(!IsInitialized(propertyOwner)) {
+                    var element = (ISupportInitialize)propertyOwner;
+                    element.BeginInit();
+                    element.EndInit();
+                }
+                AssignableServiceHelper2<T, TService>.DoServiceAction((DependencyObject)(object)getServiceOwner(owner), (DataTemplate)propertyOwner.GetValue(propertyFieldRef), serviceAction);
+            };
+            return registrator;
+        }
+        static bool IsInitialized(DependencyObject d) {
+            var fe = d as FrameworkElement;
+            if(fe != null) return fe.IsInitialized;
+            var fce = d as FrameworkContentElement;
+            if(fce != null) return fce.IsInitialized;
+            return true;
+        }
+    }
+    public abstract class Control<TControl> : Control where TControl : Control<TControl> {
+        static Control() {
+            DependencyPropertyRegistrator<TControl>.New()
+                .OverrideDefaultStyleKey()
+            ;
+        }
+    }
+    public abstract class Freezable<TFreezable> : Freezable where TFreezable : Freezable<TFreezable>, new() {
+        protected override Freezable CreateInstanceCore() {
+            return new TFreezable();
+        }
+    }
+#endif
 }

@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.UI.Interactivity;
+﻿using DevExpress.Mvvm.UI.Interactivity;
 using System;
 using System.ComponentModel;
 using System.Windows;
@@ -7,7 +7,14 @@ using System.Linq;
 using System.Collections.Generic;
 using DevExpress.Mvvm.Native;
 
+#if !FREE
+using DevExpress.Mvvm;
+using DevExpress.Mvvm.UI;
+
+namespace DevExpress.Xpf.Core {
+#else
 namespace DevExpress.Mvvm.UI {
+#endif
     [TargetTypeAttribute(typeof(UserControl))]
     [TargetTypeAttribute(typeof(Window))]
     public class DXSplashScreenService : ViewServiceBase, ISplashScreenService {
@@ -31,18 +38,18 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty StateProperty =
             DependencyProperty.Register("State", typeof(object), typeof(DXSplashScreenService),
             new PropertyMetadata(SplashScreenViewModel.StateDefaultValue, (d, e) => ((DXSplashScreenService)d).OnStateChanged()));
-        public static readonly DependencyProperty SplashScreenOwnerProperty =
+        public static readonly DependencyProperty SplashScreenOwnerProperty = 
             DependencyProperty.Register("SplashScreenOwner", typeof(FrameworkElement), typeof(DXSplashScreenService));
         public static readonly DependencyProperty SplashScreenClosingModeProperty =
             DependencyProperty.Register("SplashScreenClosingMode", typeof(SplashScreenClosingMode), typeof(DXSplashScreenService), new PropertyMetadata(SplashScreenClosingMode.OnParentClosed));
         public static readonly DependencyProperty OwnerSearchModeProperty =
             DependencyProperty.Register("OwnerSearchMode", typeof(SplashScreenOwnerSearchMode), typeof(DXSplashScreenService), new PropertyMetadata(SplashScreenOwnerSearchMode.Full));
-        public static readonly DependencyProperty FadeInDurationProperty =
+        public static readonly DependencyProperty FadeInDurationProperty = 
             DependencyProperty.Register("FadeInDuration", typeof(TimeSpan), typeof(DXSplashScreenService), new PropertyMetadata(TimeSpan.FromSeconds(0.2)));
-        public static readonly DependencyProperty FadeOutDurationProperty =
+        public static readonly DependencyProperty FadeOutDurationProperty = 
             DependencyProperty.Register("FadeOutDuration", typeof(TimeSpan), typeof(DXSplashScreenService), new PropertyMetadata(TimeSpan.FromSeconds(0.2)));
         public static readonly DependencyProperty UseIndependentWindowProperty =
-            DependencyProperty.Register("UseIndependentWindow", typeof(bool), typeof(DXSplashScreenService),
+            DependencyProperty.Register("UseIndependentWindow", typeof(bool), typeof(DXSplashScreenService), 
             new PropertyMetadata(false, (d, e) => ((DXSplashScreenService)d).OnUseIndependentWindowChanged()));
 
         public Type SplashScreenType {
@@ -188,7 +195,7 @@ namespace DevExpress.Mvvm.UI {
             Func<object, object> contentCreator = null;
             object contentCreatorParams = null;
             var ssModel = CreateSplashScreenViewModel();
-            IList<object> windowCreatorParams = new List<object>() { SplashScreenWindowStyle, SplashScreenStartupLocation, Owner.With(x => new SplashScreenOwner(x)),
+            IList<object> windowCreatorParams = new List<object>() { SplashScreenWindowStyle, SplashScreenStartupLocation, Owner.With(x => new SplashScreenOwner(x)), 
                 SplashScreenClosingMode, FadeInDuration, FadeOutDuration };
             if(SplashScreenType == null) {
                 contentCreator = CreateSplashScreen;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 
 namespace DevExpress.Internal {
@@ -36,6 +36,7 @@ namespace DevExpress.Internal {
         ApplicationHidden = 1,
         TimedOut = 2
     }
+    //http://msdn.microsoft.com/en-us/library/windows/apps/hh761492.aspx
     [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
     public enum PredefinedSound {
         Notification_Default,

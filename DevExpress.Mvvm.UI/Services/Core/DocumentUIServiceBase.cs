@@ -1,15 +1,31 @@
-using DevExpress.Mvvm.Native;
+﻿using DevExpress.Mvvm.Native;
 using System;
 using System.Globalization;
 using System.Windows;
 using System.ComponentModel;
+#if !NETFX_CORE
 using DevExpress.Mvvm.UI.Native;
 using System.Windows.Data;
+#else
+#if FREE
+using DevExpress.Mvvm.UI.Native;
+#endif
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Data;
+#endif
+#if !MVVM
+using DevExpress.Data.Utils;
+#endif
 
 namespace DevExpress.Mvvm.UI {
     public abstract class DocumentUIServiceBase : ViewServiceBase {
+#if !NETFX_CORE
+#if !FREE
+        [DevExpress.Xpf.Core.Native.IgnoreDependencyPropertiesConsistencyChecker]
+#endif
         static readonly DependencyProperty TitleListenProperty =
             DependencyProperty.RegisterAttached("DocumentTitleListen", typeof(object), typeof(DocumentUIServiceBase), new PropertyMetadata(null, (d, e) => ViewModelExtensions.SetDocumentTitle(d, e.NewValue)));
+#endif
         public static readonly DependencyProperty DocumentProperty =
             DependencyProperty.RegisterAttached("Document", typeof(IDocument), typeof(DocumentUIServiceBase), new PropertyMetadata(null));
         public static IDocument GetDocument(DependencyObject obj) {
@@ -23,21 +39,28 @@ namespace DevExpress.Mvvm.UI {
                 throw new InvalidOperationException("Cannot access the destroyed document.");
         }
         public static void SetTitleBinding(object documentContentView, DependencyProperty property, DependencyObject target, bool convertToString = false) {
+#if !NETFX_CORE
             BindingOperations.SetBinding(target, TitleListenProperty, new Binding() { Source = target, Path = new PropertyPath(property), Mode = BindingMode.OneWay });
+            //target.SetBinding(TitleListenProperty, new Binding() { Source = target, Path = new PropertyPath(property), Mode = BindingMode.OneWay });
+#endif
             object viewModel = ViewHelper.GetViewModelFromView(documentContentView);
             if(!DocumentViewModelHelper.IsDocumentContentOrDocumentViewModel(viewModel)) return;
             if(DocumentViewModelHelper.TitlePropertyHasImplicitImplementation(viewModel)) {
                 Binding binding = new Binding() { Path = new PropertyPath("Title"), Source = viewModel };
+#if !NETFX_CORE
                 if(convertToString)
                     binding.Converter = new ObjectToStringConverter();
+#endif
                 BindingOperations.SetBinding(target, property, binding);
             } else {
                 new TitleUpdater(convertToString, viewModel, target, property).Update(target, viewModel);
             }
         }
         public static void ClearTitleBinding(DependencyProperty property, DependencyObject target) {
+#if !NETFX_CORE
             BindingOperations.ClearBinding(target, TitleListenProperty);
             BindingOperations.ClearBinding(target, property);
+#endif
         }
         public static void CloseDocument(IDocumentManagerService documentManagerService, IDocumentContent documentContent, bool force) {
             IDocument document = documentManagerService.FindDocument(documentContent);
@@ -76,8 +99,10 @@ namespace DevExpress.Mvvm.UI {
             }
             public void Update(DependencyObject target, object documentContentOrDocumentViewModel) {
                 object title = DocumentViewModelHelper.GetTitle(documentContentOrDocumentViewModel);
+#if !NETFX_CORE
                 if(convertToString)
                     title = title == null ? string.Empty : title.ToString();
+#endif
                 target.SetValue(targetProperty, title);
             }
             INotifyPropertyChanged DocumentContent {
@@ -90,6 +115,7 @@ namespace DevExpress.Mvvm.UI {
                 updater.Update(target, sender);
             }
         }
+#if !NETFX_CORE
         class ObjectToStringConverter : IValueConverter {
             public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
                 return value == null ? string.Empty : value.ToString();
@@ -98,5 +124,6 @@ namespace DevExpress.Mvvm.UI {
                 throw new NotSupportedException();
             }
         }
+#endif
     }
 }

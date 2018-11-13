@@ -1,4 +1,4 @@
-using DevExpress.Internal;
+﻿using DevExpress.Internal;
 using System;
 using System.Drawing;
 using System.IO;
@@ -93,7 +93,7 @@ namespace DevExpress.Mvvm.UI.Native {
             static Icon ExtractAssociatedIcon(string path) {
                 if(string.IsNullOrEmpty(path))
                     return null;
-                if(!File.Exists(path)) {
+                if(!File.Exists(path)) { // T470541
                     path += ".exe";
                     if(!File.Exists(path)) {
                         return null;

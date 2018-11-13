@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DevExpress.Data.Controls.WinrtToastNotifier.WinApi;
@@ -60,6 +60,7 @@ namespace DevExpress.Internal {
         }
         #endregion IPredefinedToastNotificationContentFactory
     }
+    //
     public class WinRTToastNotification : IPredefinedToastNotification {
         ToastNotificationHandlerInfo<HandlerDismissed> handlerDismissed;
         ToastNotificationHandlerInfo<HandlerActivated> handlerActivated;
@@ -87,7 +88,7 @@ namespace DevExpress.Internal {
             add { handlerDismissed.Handler.Subscribe(value); }
             remove { handlerDismissed.Handler.Unsubscribe(value); }
         }
-        internal event TypedEventHandler<IPredefinedToastNotification, object> Activated {
+        internal event TypedEventHandler<IPredefinedToastNotification, string> Activated {
             add { handlerActivated.Handler.Subscribe(value); }
             remove { handlerActivated.Handler.Unsubscribe(value); }
         }
@@ -133,10 +134,16 @@ namespace DevExpress.Internal {
                 return InvokeCore(sender, args, (h, s, a) => h(s, a.Reason));
             }
         }
-        sealed class HandlerActivated : ToastNotificationHandler<TypedEventHandler<IPredefinedToastNotification, object>>, ITypedEventHandler_IToastNotification_Activated {
+        sealed class HandlerActivated : ToastNotificationHandler<TypedEventHandler<IPredefinedToastNotification, string>>, ITypedEventHandler_IToastNotification_Activated {
             public HandlerActivated(WinRTToastNotification sender) : base(sender) { }
             public int Invoke(IToastNotification sender, IInspectable args) {
-                return InvokeCore(sender, args, (h, s, a) => h(s, null));
+                return InvokeCore(sender, GetActivationString(args as IToastActivatedEventArgs), (h, s, a) => h(s, a));
+            }
+            string GetActivationString(IToastActivatedEventArgs args) {
+                string activationString = null;
+                if(args != null)
+                    args.GetArguments(out activationString);
+                return activationString;
             }
         }
         sealed class HandlerFailed : ToastNotificationHandler<TypedEventHandler<IPredefinedToastNotification, ToastNotificationFailedException>>, ITypedEventHandler_IToastNotification_Failed {
@@ -152,16 +159,16 @@ namespace DevExpress.Internal {
             if(Notification == null)
                 Notification = Adapter.Create(Content.Info);
             Subscribe();
-            var source = new TaskCompletionSource<ToastNotificationResultInternal>();
-            Activated += (s, e) =>
-            {
+            var state = ToastActivationAsyncState.Create();
+            var source = new TaskCompletionSource<ToastNotificationResultInternal>(state);
+            Activated += (s, args) => {
                 Unsubscribe();
+                source.Task.SetActivationArgs(args);
                 source.SetResult(ToastNotificationResultInternal.Activated);
             };
-            Dismissed += (s, e) =>
-            {
+            Dismissed += (s, reason) => {
                 Unsubscribe();
-                switch(e) {
+                switch(reason) {
                     case ToastDismissalReason.ApplicationHidden:
                         source.SetResult(ToastNotificationResultInternal.ApplicationHidden);
                         break;
@@ -173,17 +180,15 @@ namespace DevExpress.Internal {
                         break;
                 }
             };
-            Failed += (s, e) =>
-            {
+            Failed += (s, exception) => {
                 Unsubscribe();
-                if((UInt32)e.ErrorCode == WPN_E_TOAST_NOTIFICATION_DROPPED) {
+                if((UInt32)exception.ErrorCode == WPN_E_TOAST_NOTIFICATION_DROPPED) {
                     source.SetResult(ToastNotificationResultInternal.Dropped);
                 }
-                else source.SetException(e);
+                else source.SetException(exception);
             };
             ComFunctions.Safe(() => Adapter.Show(Notification),
-                ce =>
-                {
+                ce => {
                     Unsubscribe();
                     source.SetException(new ToastNotificationFailedException(ce, ce.ErrorCode));
                 });
@@ -206,4 +211,20 @@ namespace DevExpress.Internal {
             Notification.RemoveFailed(handlerFailed.Token);
         }
     }
+    #region State
+    public static class ToastActivationAsyncState {
+        sealed class State {
+            public string Arguments;
+        }
+        public static object Create() {
+            return new State();
+        }
+        public static string ActivationArgs(this Task<ToastNotificationResultInternal> task) {
+            return ((State)task.AsyncState).Arguments;
+        }
+        public static void SetActivationArgs(this Task<ToastNotificationResultInternal> task, string args) {
+            ((State)task.AsyncState).Arguments = args;
+        }
+    }
+    #endregion State
 }

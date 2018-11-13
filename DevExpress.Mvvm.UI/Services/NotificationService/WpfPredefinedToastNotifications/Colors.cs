@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Linq;
 namespace DevExpress.Mvvm.UI.Native {
     class BackgroundCalculator {
         static Color[][] colorTable = new Color[][] {
+            //new Color[] { Color.FromArgb(76, 76, 76), Color.FromArgb(89, 89, 89) },
             new Color[] { Color.FromArgb(76, 153, 255), Color.FromArgb(9, 74, 178) },
             new Color[] { Color.FromArgb(76, 0, 76), Color.FromArgb(140, 0, 149) },
             new Color[] { Color.FromArgb(76, 0, 153), Color.FromArgb(81, 51, 171) },
@@ -20,13 +21,18 @@ namespace DevExpress.Mvvm.UI.Native {
             new Color[] { Color.FromArgb(153, 76, 153), Color.FromArgb(140, 0, 149) },
             new Color[] { Color.FromArgb(153, 76, 0), Color.FromArgb(210, 71, 38) },
             new Color[] { Color.FromArgb(153, 76, 255), Color.FromArgb(81, 51, 171) },
+            //new Color[] { Color.FromArgb(153, 153, 76), Color.FromArgb(89, 89, 89) },
+            //new Color[] { Color.FromArgb(153, 153, 153), Color.FromArgb(89, 89, 89) },
+            //new Color[] { Color.FromArgb(153, 153, 0), Color.FromArgb(89, 89, 89) },
             new Color[] { Color.FromArgb(153, 153, 255), Color.FromArgb(81, 51, 171) },
             new Color[] { Color.FromArgb(153, 0, 76), Color.FromArgb(172, 25, 61) },
             new Color[] { Color.FromArgb(153, 0, 153), Color.FromArgb(140, 0, 149) },
             new Color[] { Color.FromArgb(153, 0, 0), Color.FromArgb(123, 0, 0) },
+            //new Color[] { Color.FromArgb(76, 76, 0), Color.FromArgb(89, 89, 89) },
             new Color[] { Color.FromArgb(153, 0, 255), Color.FromArgb(140, 0, 149) },
             new Color[] { Color.FromArgb(153, 255, 76), Color.FromArgb(0, 138, 0) },
             new Color[] { Color.FromArgb(153, 255, 153), Color.FromArgb(0, 138, 0) },
+            //new Color[] { Color.FromArgb(153, 255, 0), Color.FromArgb(89, 89, 89) },
             new Color[] { Color.FromArgb(153, 255, 255), Color.FromArgb(0, 130, 153) },
             new Color[] { Color.FromArgb(0, 76, 76), Color.FromArgb(0, 130, 153) },
             new Color[] { Color.FromArgb(0, 76, 153), Color.FromArgb(9, 74, 178) },
@@ -39,6 +45,7 @@ namespace DevExpress.Mvvm.UI.Native {
             new Color[] { Color.FromArgb(0, 153, 255), Color.FromArgb(9, 74, 178) },
             new Color[] { Color.FromArgb(0, 0, 76), Color.FromArgb(81, 51, 171) },
             new Color[] { Color.FromArgb(0, 0, 153), Color.FromArgb(81, 51, 171) },
+            //new Color[] { Color.FromArgb(0, 0, 0), Color.FromArgb(89, 89, 89) },
             new Color[] { Color.FromArgb(0, 0, 255), Color.FromArgb(81, 51, 171) },
             new Color[] { Color.FromArgb(0, 255, 76), Color.FromArgb(18, 128, 35) },
             new Color[] { Color.FromArgb(0, 255, 153), Color.FromArgb(18, 128, 35) },
@@ -59,6 +66,7 @@ namespace DevExpress.Mvvm.UI.Native {
             new Color[] { Color.FromArgb(255, 255, 76), Color.FromArgb(89, 89, 89) },
             new Color[] { Color.FromArgb(255, 255, 153), Color.FromArgb(89, 89, 89) },
             new Color[] { Color.FromArgb(255, 255, 0), Color.FromArgb(89, 89, 89) },
+            //new Color[] { Color.FromArgb(0, 0, 0), Color.FromArgb(89, 89, 89) },
             new Color[] { Color.FromArgb(76, 153, 76), Color.FromArgb(0, 138, 0) },
             new Color[] { Color.FromArgb(76, 153, 153), Color.FromArgb(0, 130, 153) },
             new Color[] { Color.FromArgb(76, 153, 0), Color.FromArgb(0, 138, 0) },

@@ -1,4 +1,4 @@
-using DevExpress.Mvvm;
+﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
 using DevExpress.Mvvm.UI.Native;
@@ -18,7 +18,43 @@ using System.Windows.Input;
 namespace DevExpress.Mvvm.UI {
     public enum WindowShowMode { Dialog, Default }
     public class WindowService : ViewServiceBase, IWindowService, IDocumentOwner {
-        static Type DefaultWindowType = typeof(Window);
+        internal static Type GetDefaultWindowType(Style windowStyle) {
+#if !FREE
+            if (DevExpress.Xpf.Core.CompatibilitySettings.UseThemedWindowInServices)
+                return GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.ThemedWindow))
+                    ?? GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.DXWindow));
+            else return GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.DXWindow))
+                    ?? GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.ThemedWindow));
+#else
+            return typeof(Window);
+#endif
+        }
+#if !FREE
+        internal static Type GetDefaultDialogWindowType(Style windowStyle) {
+            if (DevExpress.Xpf.Core.CompatibilitySettings.UseThemedWindowInServices)
+                return GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.ThemedWindow))
+                    ?? GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.DXDialogWindow));
+            else return GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.DXDialogWindow))
+                    ?? GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.ThemedWindow));
+        }
+        internal static Type GetDefaultTabbedWindowType(Style windowStyle) {
+            if (DevExpress.Xpf.Core.CompatibilitySettings.UseThemedWindowInServices)
+                return GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.ThemedWindow))
+                    ?? GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.DXTabbedWindow));
+            else return GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.DXTabbedWindow))
+                    ?? GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.ThemedWindow));
+        }
+#endif
+        static Type GetWindowType(Style windowStyle, Type expectedType) {
+            if (windowStyle == null || windowStyle.TargetType == expectedType)
+                return expectedType;
+            if (expectedType.IsAssignableFrom(windowStyle.TargetType))
+                return windowStyle.TargetType;
+            if (windowStyle.TargetType.IsAssignableFrom(expectedType))
+                return expectedType;
+            return null;
+        }
+
         const string WindowTypeException = "WindowType show be derived from the Window type";
 
         public static readonly DependencyProperty WindowStartupLocationProperty =
@@ -30,7 +66,7 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("WindowStyle", typeof(Style), typeof(WindowService), new PropertyMetadata(null));
         public static readonly DependencyProperty WindowTypeProperty =
             DependencyProperty.Register("WindowType", typeof(Type), typeof(WindowService),
-            new PropertyMetadata(DefaultWindowType, (d, e) => ((WindowService)d).OnWindowTypeChanged()));
+            new PropertyMetadata(null, (d, e) => ((WindowService)d).OnWindowTypeChanged()));
         public static readonly DependencyProperty TitleProperty =
             DependencyProperty.Register("Title", typeof(string), typeof(WindowService),
             new PropertyMetadata(string.Empty, (d, e) => ((WindowService)d).OnTitleChanged()));
@@ -62,8 +98,10 @@ namespace DevExpress.Mvvm.UI {
             get { return (WindowShowMode)GetValue(WindowShowModeProperty); }
             set { SetValue(WindowShowModeProperty, value); }
         }
+        Type ActualWindowType { get { return WindowType ?? GetDefaultWindowType(WindowStyle); } }
+
         protected virtual IWindowSurrogate CreateWindow(object view) {
-            IWindowSurrogate window = WindowProxy.GetWindowSurrogate(Activator.CreateInstance(WindowType ?? DefaultWindowType));
+            IWindowSurrogate window = WindowProxy.GetWindowSurrogate(Activator.CreateInstance(ActualWindowType));
             UpdateThemeName(window.RealWindow);
             window.RealWindow.Content = view;
             InitializeDocumentContainer(window.RealWindow, Window.ContentProperty, WindowStyle);
@@ -84,6 +122,9 @@ namespace DevExpress.Mvvm.UI {
         void SetTitleBinding() {
             if(string.IsNullOrEmpty(Title))
                 DocumentUIServiceBase.SetTitleBinding(window.RealWindow.Content, WindowBase.TitleProperty, window.RealWindow, true);
+            else {
+                window.RealWindow.Title = Title;
+            }
         }
         void OnWindowClosing(object sender, CancelEventArgs e) {
             DocumentViewModelHelper.OnClose(GetViewModel(window.RealWindow), e);
@@ -109,7 +150,6 @@ namespace DevExpress.Mvvm.UI {
             }
             object view = CreateAndInitializeView(documentType, viewModel, parameter, parentViewModel, this);
             window = CreateWindow(view);
-            window.RealWindow.Title = Title ?? string.Empty;
             SetTitleBinding();
             window.Closing += OnWindowClosing;
             window.Closed += OnWindowClosed;

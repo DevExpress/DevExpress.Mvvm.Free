@@ -1,16 +1,23 @@
-using DevExpress.Mvvm.Native;
+﻿using DevExpress.Mvvm.Native;
 using System;
 using System.ComponentModel;
 using System.Windows;
+#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Data;
 using System.Globalization;
+#else
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media;
+#endif
 
 namespace DevExpress.Mvvm.UI {
     public static class ViewHelper {
         internal const string Error_CreateViewMissArguments = "It is impossible to create a view based on passed parameters. ViewTemplate/ViewTemplateSelector or DocumentType should be set.";
         internal const string HelpLink_CreateViewMissArguments = "https://documentation.devexpress.com/#WPF/CustomDocument17469";
+#if !NETFX_CORE
         [Obsolete("This method is obsolete. Use other method overloads.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static object CreateAndInitializeView(IViewLocator viewLocator, string documentType, object parameter, object parentViewModel = null, bool useParameterAsViewModel = false, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {
@@ -19,6 +26,7 @@ namespace DevExpress.Mvvm.UI {
             else
                 return CreateAndInitializeView(viewLocator, documentType, null, parameter, parentViewModel, viewTemplate, viewTemplateSelector);
         }
+#endif
         public static object CreateAndInitializeView(IViewLocator viewLocator, string documentType, object viewModel, object parameter, object parentViewModel, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {
             return CreateAndInitializeView(viewLocator, documentType, viewModel, parameter, parentViewModel, null, viewTemplate, viewTemplateSelector);
         }
@@ -33,7 +41,9 @@ namespace DevExpress.Mvvm.UI {
             if(viewModel != null) {
                 ViewModelInitializer.SetViewModelProperties(viewModel, parameter, parentViewModel, documentOwner);
                 view.With(x => x as FrameworkElement).Do(x => x.DataContext = viewModel);
+#if !NETFX_CORE
                 view.With(x => x as FrameworkContentElement).Do(x => x.DataContext = viewModel);
+#endif
                 view.With(x => x as ContentPresenter).Do(x => x.Content = viewModel);
                 return;
             }
@@ -53,13 +63,21 @@ namespace DevExpress.Mvvm.UI {
             return actualLocator.ResolveView(documentType);
         }
         public static object GetViewModelFromView(object view) {
+#if !NETFX_CORE
             return (view as FrameworkElement).Return(x => x.DataContext, null)
                 ?? (view as FrameworkContentElement).Return(x => x.DataContext, null);
+#else
+            return (view as FrameworkElement).Return(x => x.DataContext, null);
+#endif
         }
+#if !NETFX_CORE
         public static void SetBindingToViewModel(DependencyObject target, DependencyProperty targetProperty, PropertyPath viewPropertyPath) {
             BindingOperations.SetBinding(target, ViewProperty, new Binding() { Path = viewPropertyPath, Source = target, Mode = BindingMode.OneWay, Converter = new AsFrameworkElementConverter() });
             BindingOperations.SetBinding(target, targetProperty, new Binding() { Path = new PropertyPath("(0).(1)", ViewProperty, FrameworkElement.DataContextProperty), Source = target, Mode = BindingMode.OneWay });
         }
+#if !FREE
+        [DevExpress.Xpf.Core.Native.IgnoreDependencyPropertiesConsistencyChecker]
+#endif
         static readonly DependencyProperty ViewProperty = DependencyProperty.RegisterAttached("View", typeof(FrameworkElement), typeof(ViewHelper), new PropertyMetadata(null));
 
         class AsFrameworkElementConverter : IValueConverter {
@@ -70,6 +88,7 @@ namespace DevExpress.Mvvm.UI {
                 throw new NotSupportedException();
             }
         }
+#endif
 
         class ViewPresenter : ContentPresenter {
             public ViewPresenter(DataTemplate viewTemplate, DataTemplateSelector viewTemplateSelector) {

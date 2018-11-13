@@ -1,3 +1,7 @@
+﻿#if !FREE
+using DevExpress.Utils;
+using DevExpress.Data.Helpers;
+#endif
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -5,6 +9,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows;
 using DevExpress.Mvvm.Native;
+#if !NETFX_CORE
 using System.Reflection;
 using System.Windows.Data;
 using System.Windows.Markup;
@@ -13,8 +18,22 @@ using DevExpress.Mvvm.UI.Native;
 using System.Collections;
 using System.Windows.Media;
 using System.Text.RegularExpressions;
+#else
+using Windows.UI.Xaml.Data;
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Markup;
+using CultureInfo = System.String;
+using Windows.UI;
+using System.Text.RegularExpressions;
+using Windows.UI.Xaml.Media;
+#endif
 
+#if BINDINGDEV
+namespace DevExpressDev.Mvvm.UI {
+#else
 namespace DevExpress.Mvvm.UI {
+#endif
+#if !NETFX_CORE
     public class ReflectionConverter : IValueConverter {
         class TypeUnsetValue { }
         Type convertBackMethodOwner = typeof(TypeUnsetValue);
@@ -233,6 +252,21 @@ namespace DevExpress.Mvvm.UI {
         }
         public Type CollectionType { get; private set; }
     }
+#endif
+#if !NETFX_CORE && !FREE
+    public class CriteriaOperatorConverter : IValueConverter {
+        public string Expression { get; set; }
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+            if(value == null) return null;
+            var criteriaOperator = DevExpress.Data.Filtering.CriteriaOperator.Parse(Expression);
+            var evaluator = new DevExpress.Data.Filtering.Helpers.ExpressionEvaluator(TypeDescriptor.GetProperties(value), criteriaOperator);
+            return evaluator.Evaluate(value);
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+            throw new NotSupportedException();
+        }
+    }
+#endif
     public class TypeCastConverter : IValueConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             return TypeCastHelper.TryCast(value, targetType);
@@ -271,7 +305,11 @@ namespace DevExpress.Mvvm.UI {
         public object Source { get; set; }
         public object Target { get; set; }
     }
+#if !NETFX_CORE
     [ContentProperty("Map")]
+#else
+    [ContentProperty(Name="Map")]
+#endif
     public class ObjectToObjectConverter : IValueConverter {
         public object DefaultSource { get; set; }
         public object DefaultTarget { get; set; }
@@ -308,7 +346,9 @@ namespace DevExpress.Mvvm.UI {
         }
         internal static object Coerce(object value, Type targetType, bool ignoreImplicitXamlConversions = false) {
             if(value == null || targetType == typeof(object) || value.GetType() == targetType) return value;
+#if !NETFX_CORE
             if(targetType.IsAssignableFrom(value.GetType())) return value;
+#endif
             var nullableType = Nullable.GetUnderlyingType(targetType);
             var coerced = CoerceNonNullable(value, nullableType ?? targetType, ignoreImplicitXamlConversions);
             if(nullableType != null) {
@@ -343,7 +383,11 @@ namespace DevExpress.Mvvm.UI {
             if(targetType == typeof(string)) {
                 return value.ToString();
             }
+#if !NETFX_CORE
             if(targetType.IsEnum && value is string) {
+#else
+            if(targetType.IsEnum && value is string) {
+#endif
                 return Enum.Parse(targetType, (string)value, false);
             }
             if(!ignoreImplicitXamlConversions && IsImplicitXamlConvertion(value.GetType(), targetType))
@@ -380,8 +424,10 @@ namespace DevExpress.Mvvm.UI {
     public class BooleanToVisibilityConverter : IValueConverter {
         bool hiddenInsteadOfCollapsed;
         public bool Inverse { get; set; }
+#if !NETFX_CORE
         [Obsolete("Use the HiddenInsteadOfCollapsed property instead."), Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public bool HiddenInsteadCollapsed { get { return hiddenInsteadOfCollapsed; } set { hiddenInsteadOfCollapsed = value; } }
+#endif
         public bool HiddenInsteadOfCollapsed { get { return hiddenInsteadOfCollapsed; } set { hiddenInsteadOfCollapsed = value; } }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             bool booleanValue = ConverterHelper.GetBooleanValue(value);
@@ -389,6 +435,10 @@ namespace DevExpress.Mvvm.UI {
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             bool booleanValue = (value is Visibility && (Visibility)value == Visibility.Visible) ^ Inverse;
+#if !FREE
+            if(targetType == typeof(DefaultBoolean))
+                return ConverterHelper.ToDefaultBoolean(booleanValue);
+#endif
             return booleanValue;
         }
     }
@@ -417,12 +467,20 @@ namespace DevExpress.Mvvm.UI {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             bool? booleanValue = ConverterHelper.GetNullableBooleanValue(value);
             if(targetType == typeof(bool)) return booleanValue ?? false;
+#if !FREE
+            if(targetType == typeof(DefaultBoolean)) return ConverterHelper.ToDefaultBoolean(booleanValue);
+#endif
             return booleanValue;
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             bool? booleanValue = ConverterHelper.GetNullableBooleanValue(value);
             if(targetType == typeof(bool)) return booleanValue ?? false;
+#if FREE
             return booleanValue;
+#else
+            if(targetType == typeof(bool?)) return booleanValue;
+            return ConverterHelper.ToDefaultBoolean(booleanValue);
+#endif
         }
     }
     public class BooleanNegationConverter : IValueConverter {
@@ -431,6 +489,9 @@ namespace DevExpress.Mvvm.UI {
             if(booleanValue != null)
                 booleanValue = !booleanValue.Value;
             if(targetType == typeof(bool)) return booleanValue ?? true;
+#if !FREE
+            if(targetType == typeof(DefaultBoolean)) return ConverterHelper.ToDefaultBoolean(booleanValue);
+#endif
             return booleanValue;
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
@@ -489,6 +550,18 @@ namespace DevExpress.Mvvm.UI {
         public object FalseValue { get; set; }
         public object NullValue { get; set; }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+#if !FREE
+            if(value is DefaultBoolean) {
+                var asDefaultBoolean = (DefaultBoolean)value;
+                if(asDefaultBoolean == DefaultBoolean.True) {
+                    value = true;
+                } else if(asDefaultBoolean == DefaultBoolean.False) {
+                    value = false;
+                } else {
+                    value = null;
+                }
+            }
+#endif
             if(value is bool?) {
                 value = (bool?)value == true;
             }
@@ -505,6 +578,7 @@ namespace DevExpress.Mvvm.UI {
         }
     }
 
+#if !NETFX_CORE
     public class EnumToStringConverter : IValueConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             if(value == null)
@@ -558,6 +632,7 @@ namespace DevExpress.Mvvm.UI {
             return ConvertBack(value);
         }
     }
+#endif
 
     static class ConverterHelper {
         public static string[] GetParameters(object parameter) {
@@ -580,13 +655,28 @@ namespace DevExpress.Mvvm.UI {
                 bool? nullable = (bool?)value;
                 return nullable.HasValue ? nullable.Value : false;
             }
+#if !FREE
+            if(value is DefaultBoolean)
+                return (DefaultBoolean)value == DefaultBoolean.True;
+#endif
             return false;
         }
         public static bool? GetNullableBooleanValue(object value) {
             if(value is bool) return (bool)value;
             if(value is bool?) return (bool?)value;
+#if !FREE
+            if(value is DefaultBoolean) {
+                DefaultBoolean defaultBoolean = (DefaultBoolean)value;
+                return defaultBoolean == DefaultBoolean.Default ? (bool?)null : defaultBoolean == DefaultBoolean.True;
+            }
+#endif
             return null;
         }
+#if !FREE
+        public static DefaultBoolean ToDefaultBoolean(bool? booleanValue) {
+            return booleanValue == null ? DefaultBoolean.Default : booleanValue.Value ? DefaultBoolean.True : DefaultBoolean.False;
+        }
+#endif
         public static bool NumericToBoolean(object value, bool inverse) {
             if (value == null)
                 return CorrectBoolean(false, inverse);
@@ -604,13 +694,18 @@ namespace DevExpress.Mvvm.UI {
         public static Visibility BooleanToVisibility(bool booleanValue, bool hiddenInsteadOfCollapsed) {
             return booleanValue ?
                 Visibility.Visible :
+#if !NETFX_CORE
  (hiddenInsteadOfCollapsed ? Visibility.Hidden : Visibility.Collapsed);
+#else
+                Visibility.Collapsed;
+#endif
         }
         static bool CorrectBoolean(bool value, bool inverse) {
             return value ^ inverse;
         }
     }
 }
+#if !NETFX_CORE
 namespace DevExpress.Mvvm.UI.Native {
     public static class BrushesCache {
         public static SolidColorBrush GetBrush(Color color) {
@@ -644,3 +739,4 @@ namespace DevExpress.Mvvm.UI.Native {
         }
     }
 }
+#endif

@@ -1,4 +1,4 @@
-using DevExpress.Internal;
+﻿using DevExpress.Internal;
 using System.Threading.Tasks;
 
 namespace DevExpress.Mvvm.UI.Native {

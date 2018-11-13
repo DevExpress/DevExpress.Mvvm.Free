@@ -1,3 +1,6 @@
+﻿#if !FREE
+using DevExpress.Xpf.Core.Native;
+#endif
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Native;
@@ -8,12 +11,38 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Markup;
+using System.Linq;
 
 namespace DevExpress.Mvvm.UI {
     [ContentProperty("Commands")]
     public class CompositeCommandBehavior : Behavior<DependencyObject> {
+        #region Inner classes
+
+        class CompositeCommandCanExecuteConverter : IMultiValueConverter {
+            readonly CompositeCommandExecuteCondition canExecuteCondition;
+
+            public CompositeCommandCanExecuteConverter(CompositeCommandExecuteCondition canExecuteCondition) {
+                this.canExecuteCondition = canExecuteCondition;
+            }
+
+            public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture) {
+                if(values == null || values.Length == 0)
+                    return false;
+                if(canExecuteCondition == CompositeCommandExecuteCondition.AllCommandsCanBeExecuted)
+                    return values.Cast<bool>().All(x => x);
+                if(canExecuteCondition == CompositeCommandExecuteCondition.AnyCommandCanBeExecuted)
+                    return values.Cast<bool>().Any(x => x);
+                throw new InvalidOperationException();
+            }
+            public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture) {
+                throw new NotImplementedException();
+            }
+        }
+
+        #endregion
         #region Static
         public static readonly DependencyProperty CommandPropertyNameProperty;
+        public static readonly DependencyProperty CanExecuteConditionProperty;
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Code Defects", "DXCA001")]
         [IgnoreDependencyPropertiesConsistencyChecker]
         static readonly DependencyProperty CanExecuteProperty;
@@ -28,6 +57,8 @@ namespace DevExpress.Mvvm.UI {
                 new PropertyMetadata(false, (d, e) => ((CompositeCommandBehavior)d).OnCanExecuteChanged(e)));
             InternalItemsProperty = DependencyProperty.RegisterAttached("InternalItems", typeof(CommandsCollection), owner,
                 new PropertyMetadata(null));
+            CanExecuteConditionProperty = DependencyProperty.Register("CanExecuteCondition", typeof(CompositeCommandExecuteCondition), owner,
+                new PropertyMetadata(CompositeCommandExecuteCondition.AllCommandsCanBeExecuted, (d, e) => ((CompositeCommandBehavior)d).UpdateCanExecuteBinding()));
         }
         #endregion
 
@@ -40,6 +71,11 @@ namespace DevExpress.Mvvm.UI {
             get { return (bool)GetValue(CanExecuteProperty); }
             set { SetValue(CanExecuteProperty, value); }
         }
+        public CompositeCommandExecuteCondition CanExecuteCondition {
+            get { return (CompositeCommandExecuteCondition)GetValue(CanExecuteConditionProperty); }
+            set { SetValue(CanExecuteConditionProperty, value); }
+        }
+
         #endregion
 
         #region Props
@@ -57,12 +93,9 @@ namespace DevExpress.Mvvm.UI {
         void OnCommandsChanged(object sender, NotifyCollectionChangedEventArgs e) {
             UpdateCanExecuteBinding();
         }
-        void OnCommandsSourceItemsChanged(object sender, NotifyCollectionChangedEventArgs e) {
-            UpdateCanExecuteBinding();
-        }
         void UpdateCanExecuteBinding() {
             MultiBinding multiBinding = new MultiBinding() {
-                Converter = new BooleanMultiValueConverter()
+                Converter = new CompositeCommandCanExecuteConverter(CanExecuteCondition)
             };
 
             for(int i = 0; i < Commands.Count; i++) {
@@ -181,6 +214,12 @@ namespace DevExpress.Mvvm.UI {
         }
         #endregion
 
+        CanExecuteChangedEventHandler<CommandItem> commandCanExecuteChangedHandler;
+
+        public CommandItem() {
+            this.commandCanExecuteChangedHandler = new CanExecuteChangedEventHandler<CommandItem>(this, (owner, o, e) => owner.OnCommandCanExecuteChanged(o, e));
+        }
+
         public bool ExecuteCommand() {
             if(!CanExecute)
                 return false;
@@ -189,8 +228,8 @@ namespace DevExpress.Mvvm.UI {
             return true;
         }
         void OnCommandChanged(DependencyPropertyChangedEventArgs e) {
-            e.OldValue.With(x => x as ICommand).Do(o => o.CanExecuteChanged -= OnCommandCanExecuteChanged);
-            e.NewValue.With(x => x as ICommand).Do(o => o.CanExecuteChanged += OnCommandCanExecuteChanged);
+            e.OldValue.With(x => x as ICommand).Do(o => o.CanExecuteChanged -= this.commandCanExecuteChangedHandler.Handler);
+            e.NewValue.With(x => x as ICommand).Do(o => o.CanExecuteChanged += this.commandCanExecuteChangedHandler.Handler);
             UpdateCanExecute();
         }
         void OnCommandCanExecuteChanged(object sender, EventArgs e) {
@@ -200,20 +239,5 @@ namespace DevExpress.Mvvm.UI {
             CanExecute = Command != null && (!CheckCanExecute || Command.CanExecute(CommandParameter));
         }
     }
-
-    class BooleanMultiValueConverter : IMultiValueConverter {
-        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture) {
-            if(values == null || values.Length == 0)
-                return false;
-
-            foreach(bool value in values)
-                if(!value)
-                    return false;
-
-            return true;
-        }
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture) {
-            throw new NotImplementedException();
-        }
-    }
+    public enum CompositeCommandExecuteCondition { AllCommandsCanBeExecuted, AnyCommandCanBeExecuted }
 }

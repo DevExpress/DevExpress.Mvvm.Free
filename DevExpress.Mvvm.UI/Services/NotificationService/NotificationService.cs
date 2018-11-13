@@ -1,4 +1,4 @@
-using DevExpress.Internal;
+﻿using DevExpress.Internal;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Native;
 using System;
@@ -21,6 +21,8 @@ namespace DevExpress.Mvvm.UI {
         ApplicationHidden = 1,
         TimedOut = 2
     }
+
+    //http://msdn.microsoft.com/en-us/library/windows/apps/hh761492.aspx
     public enum PredefinedSound {
         Notification_Default,
         NoSound,
@@ -218,6 +220,9 @@ namespace DevExpress.Mvvm.UI {
         }
         void UpdateCustomNotifierPositioner() {
             PredefinedNotifier.UpdatePositioner(CustomNotificationPosition, CustomNotificationVisibleMaxCount);
+            // CustomNotifier can override the active screen, while PredefinedNotifier never does this
+            // hence CustomNotifier must be given higher priority
+            // T582177
             CustomNotifier.UpdatePositioner(CustomNotificationPosition, CustomNotificationVisibleMaxCount);
         }
         void OnCustomNotificationTemplateChanged() {

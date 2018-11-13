@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 
 namespace DevExpress.DXBinding.Native {
@@ -24,18 +24,30 @@ namespace DevExpress.DXBinding.Native {
 
     public interface IErrorHandler {
         bool HasError { get; }
+        bool CatchAllExceptions { get; set; }
         void ClearError();
         void SetError();
+        void ReportOrThrow(Exception e);
         void Report(string msg, bool critical);
         void Throw(string msg, Exception innerException);
     }
     public abstract class ErrorHandlerBase : IErrorHandler {
+        public bool CatchAllExceptions { get; set; }
         public bool HasError { get; protected set; }
+
+        public ErrorHandlerBase() {
+            CatchAllExceptions = true;
+        }
         public void ClearError() {
             HasError = false;
         }
         public void SetError() {
             HasError = true;
+        }
+        public void ReportOrThrow(Exception e) {
+            if (CatchAllExceptions)
+                Report(e.Message, true);
+            else throw e;
         }
         public void Report(string msg, bool critical) {
             if(critical) SetError();

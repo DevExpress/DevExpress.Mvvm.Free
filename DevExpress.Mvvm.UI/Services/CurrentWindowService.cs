@@ -1,4 +1,8 @@
+﻿#if !FREE
+using DevExpress.Xpf.Core.Native;
+#else
 using DevExpress.Mvvm.UI.Native;
+#endif
 using DevExpress.Mvvm.UI.Interactivity;
 using System.Windows;
 using System.Windows.Controls;

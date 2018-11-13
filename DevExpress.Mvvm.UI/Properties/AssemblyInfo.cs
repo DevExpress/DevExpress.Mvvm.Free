@@ -1,4 +1,4 @@
-using System.Windows.Markup;
+﻿using System.Windows.Markup;
 using System.Resources;
 using System.Reflection;
 using System.Runtime.CompilerServices;

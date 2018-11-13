@@ -1,4 +1,4 @@
-using System.Windows.Media;
+﻿using System.Windows.Media;
 
 namespace DevExpress.Mvvm.UI.Native {
     public class PredefinedToastNotificationVewModel {

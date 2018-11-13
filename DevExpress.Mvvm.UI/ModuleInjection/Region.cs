@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.ModuleInjection;
+﻿using DevExpress.Mvvm.ModuleInjection;
 using DevExpress.Mvvm.ModuleInjection.Native;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
@@ -6,6 +6,7 @@ using DevExpress.Mvvm.UI.Native;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -64,6 +65,13 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         protected virtual void InitViewModel(object vm) {
             var iSupportPVM = vm as ISupportParentViewModel;
             if(!SetParentViewModel || iSupportPVM == null) return;
+            if (iSupportPVM == ActualParentViewModel) {
+                Trace.WriteLine(
+                    "MIF: UIRegion (" + RegionName + ") " + 
+                    "failed to set ParentViewModel. " +
+                    "Bind the UIRegion.ParentViewModel property manually.");
+                return;
+            }
             iSupportPVM.ParentViewModel = ActualParentViewModel;
         }
         protected virtual void ClearViewModel(object vm) {
@@ -108,7 +116,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         void OnTargetDataContextChanged(object sender, DependencyPropertyChangedEventArgs e) {
             InitViewModels();
         }
-
+        
         #region IUIRegion
         IEnumerable<object> IUIRegion.ViewModels { get { return viewModels; } }
         object IUIRegion.SelectedViewModel {
@@ -122,7 +130,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             }
         }
         bool focusOnSelectedViewModelChanged = true;
-
+        
         void IUIRegion.Inject(object viewModel, Type viewType) {
             if(viewModel == null) return;
             viewModels.Add(viewModel);
@@ -155,7 +163,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         }
         protected abstract object GetView(object viewModel);
         #endregion
-        #region StrategyOwner
+        #region StrategyOwner 
         protected class StrategyOwnerBase : IStrategyOwner {
             public UIRegionBase Owner { get; private set; }
             public DependencyObject Target { get; private set; }
@@ -198,12 +206,11 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         public static void SetRegion(DependencyObject obj, string value) { obj.SetValue(RegionProperty, value); }
         static void OnRegionChanged(DependencyObject obj, string oldValue, string newValue) {
             BehaviorCollection bCol = Interaction.GetBehaviors(obj);
-            UIRegion serv = bCol.OfType<UIRegion>().FirstOrDefault();
-            if(serv != null) {
-                serv.RegionName = newValue;
-                return;
-            }
-            bCol.Add(new UIRegion() { RegionName = newValue });
+            UIRegion oldUIRegion = bCol.OfType<UIRegion>().FirstOrDefault();
+            if(oldUIRegion != null)
+                bCol.Remove(oldUIRegion);
+            if(!string.IsNullOrEmpty(newValue))
+                bCol.Add(new UIRegion() { RegionName = newValue });
         }
         static UIRegion() {
             RegionProperty =
@@ -254,14 +261,14 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
                 OnSelectedViewModelChanged(SelectedViewModel, SelectedViewModel, false);
             else SelectedViewModel = Strategy.SelectedViewModel;
         }
-
-        #region StrategyOwner
+        
+        #region StrategyOwner 
         class StrategyOwner : StrategyOwnerBase {
             protected new UIRegion Owner { get { return (UIRegion)base.Owner; } }
-            public StrategyOwner(UIRegion owner)
+            public StrategyOwner(UIRegion owner) 
                 : base(owner, owner.AssociatedObject) { }
             public override void SelectViewModel(object viewModel) {
-                if(Owner.Target.IsLoaded)
+                if(Owner.Target != null && Owner.Target.IsLoaded)
                     base.SelectViewModel(viewModel);
             }
         }
@@ -322,7 +329,11 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             if(WindowFactory != null) {
                 w = (Window)WindowFactory.LoadContent();
             } else {
+#if !FREE
+                w = new DevExpress.Xpf.Core.DXWindow();
+#else 
                 w = new Window();
+#endif
             }
             w.WindowStartupLocation = WindowStartupLocation;
             if(WindowStyle != null) w.Style = WindowStyle;
@@ -353,6 +364,8 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             if(strategy == null) return;
             result = strategy.Result;
             strategies.Remove(vm);
+            if (SelectedViewModel == vm)
+                SelectedViewModel = null;
         }
         void ClearStrategies() {
             foreach(var strategy in strategies.Values)
@@ -373,7 +386,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             setResult = result;
         }
         #endregion
-        #region StrategyOwner
+        #region StrategyOwner 
         class StrategyOwner : StrategyOwnerBase {
             public new UIWindowRegion Owner { get { return (UIWindowRegion)base.Owner; } }
             public StrategyOwner(UIWindowRegion owner, FrameworkElement window)
@@ -384,8 +397,45 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             }
             public override void ConfigureChild(DependencyObject child) {
                 base.ConfigureChild(child);
+#if !FREE
+                Interaction.GetBehaviors(child).Add(new EnforceSaveLayoutOnThemeChangingBehavior());
+#endif
             }
         }
         #endregion
+#if !FREE
+        #region TouchSaveLayoutPulseWhenThemeChangingBehavior
+        class EnforceSaveLayoutOnThemeChangingBehavior : Behavior<FrameworkElement> {
+            protected override void OnAttached() {
+                base.OnAttached();
+                AssociatedObject.Loaded += OnAssociatedObjectLoaded;
+                AssociatedObject.Unloaded += OnAssociatedObjectUnloaded;
+                SubscribeThemeChanging();
+            }
+            protected override void OnDetaching() {
+                UnsubscribeThemeChanging();
+                AssociatedObject.Loaded -= OnAssociatedObjectLoaded;
+                AssociatedObject.Unloaded -= OnAssociatedObjectUnloaded;
+                base.OnDetaching();
+            }
+            void OnAssociatedObjectLoaded(object sender, RoutedEventArgs e) {
+                SubscribeThemeChanging();
+            }
+            void OnAssociatedObjectUnloaded(object sender, RoutedEventArgs e) {
+                UnsubscribeThemeChanging();
+            }
+            void SubscribeThemeChanging() {
+                UnsubscribeThemeChanging();
+                DevExpress.Xpf.Core.ThemeManager.AddThemeChangingHandler(AssociatedObject, OnAssociatedObjectThemeChanging);
+            }
+            void UnsubscribeThemeChanging() {
+                DevExpress.Xpf.Core.ThemeManager.RemoveThemeChangingHandler(AssociatedObject, OnAssociatedObjectThemeChanging);
+            }
+            void OnAssociatedObjectThemeChanging(DependencyObject sender, DevExpress.Xpf.Core.ThemeChangingRoutedEventArgs e) {
+                EnforceSaveLayout(AssociatedObject.DataContext);
+            }
+        }
+        #endregion
+#endif
     }
 }

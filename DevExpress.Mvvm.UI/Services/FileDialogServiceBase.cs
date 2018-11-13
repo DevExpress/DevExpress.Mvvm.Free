@@ -1,4 +1,4 @@
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,6 +14,9 @@ using DevExpress.Utils;
 using DevExpress.Internal;
 using DevExpress.Xpf.Core.Native;
 using System.Windows.Interop;
+#if !FREE
+using DevExpress.Utils.CommonDialogs;
+#endif
 
 namespace DevExpress.Mvvm.UI.Native {
     public class Win32WindowWrapper : System.Windows.Forms.IWin32Window {
@@ -27,33 +30,34 @@ namespace DevExpress.Mvvm.UI.Native {
                 Handle = new WindowInteropHelper(window).Handle;
         }
     }
-
-    public interface IFileDialog {
-        event CancelEventHandler FileOk;
+#if FREE
+    public interface ICommonDialog : IDisposable {
         event EventHandler HelpRequest;
+        DialogResult ShowDialog();
+        DialogResult ShowDialog(object owner);
 
-        bool AutoUpgradeEnabled { get; set; }
+        void Reset();
+    }
+    public interface IFileDialog : ICommonDialog {
+        bool AddExtension { get; set; }
         bool CheckFileExists { get; set; }
         bool CheckPathExists { get; set; }
-        bool AddExtension { get; set; }
+        FileDialogCustomPlacesCollection CustomPlaces { get; }
+        string DefaultExt { get; set; }
         bool DereferenceLinks { get; set; }
+        string FileName { get; set; }
+        string[] FileNames { get; }
+        string Filter { get; set; }
+        int FilterIndex { get; set; }
         string InitialDirectory { get; set; }
-        string DefaultFileName { get; set; }
         bool RestoreDirectory { get; set; }
         bool ShowHelp { get; set; }
         bool SupportMultiDottedExtensions { get; set; }
         string Title { get; set; }
         bool ValidateNames { get; set; }
-        string FileName { get; set; }
-
-        string[] FileNames { get; }
-        string Filter { get; set; }
-        int FilterIndex { get; set; }
-        string DefaultExt { get; set; }
-        DialogResult ShowDialog(Window ownerWindow);
-        DialogResult ShowDialog();
-        void Reset();
+        event CancelEventHandler FileOk;
     }
+#endif
 }
 
 namespace DevExpress.Mvvm.UI {
@@ -82,10 +86,6 @@ namespace DevExpress.Mvvm.UI {
                 get { return fileDialog.AddExtension; }
                 set { fileDialog.AddExtension = value; }
             }
-            bool IFileDialog.AutoUpgradeEnabled {
-                get { return fileDialog.AutoUpgradeEnabled; }
-                set { fileDialog.AutoUpgradeEnabled = value; }
-            }
             bool IFileDialog.DereferenceLinks {
                 get { return fileDialog.DereferenceLinks; }
                 set { fileDialog.DereferenceLinks = value; }
@@ -110,10 +110,6 @@ namespace DevExpress.Mvvm.UI {
                 get { return fileDialog.InitialDirectory; }
                 set { fileDialog.InitialDirectory = value; }
             }
-            string IFileDialog.DefaultFileName {
-                get { return fileDialog.FileName; }
-                set { fileDialog.FileName = value; }
-            }
             string IFileDialog.Title {
                 get { return fileDialog.Title; }
                 set { fileDialog.Title = value; }
@@ -136,7 +132,9 @@ namespace DevExpress.Mvvm.UI {
                 get { return fileDialog.DefaultExt; }
                 set { fileDialog.DefaultExt = value; }
             }
-            void IFileDialog.Reset() {
+            FileDialogCustomPlacesCollection IFileDialog.CustomPlaces { get { return fileDialog.CustomPlaces; } }
+
+            void ICommonDialog.Reset() {
                 fileDialog.Reset();
             }
 
@@ -146,6 +144,10 @@ namespace DevExpress.Mvvm.UI {
             public DialogResult ShowDialog(Window ownerWindow) {
                 return fileDialog.ShowDialog(new Win32WindowWrapper(ownerWindow));
             }
+            DialogResult ICommonDialog.ShowDialog(object ownerWindow) {
+                var window = ownerWindow as Window;
+                return window == null ? ShowDialog() : ShowDialog(window);
+            }
 
             void OnDialogFileOk(object sender, CancelEventArgs e) {
                 if(FileOk != null)
@@ -154,6 +156,10 @@ namespace DevExpress.Mvvm.UI {
             void OnDialogHelpRequest(object sender, EventArgs e) {
                 if(HelpRequest != null)
                     HelpRequest(sender, e);
+            }
+
+            void IDisposable.Dispose() {
+                fileDialog.Dispose();
             }
         }
 
@@ -281,11 +287,10 @@ namespace DevExpress.Mvvm.UI {
         void InitFileDialogCore() {
             FileDialog.CheckFileExists = CheckFileExists;
             FileDialog.AddExtension = AddExtension;
-            FileDialog.AutoUpgradeEnabled = AutoUpgradeEnabled;
             FileDialog.CheckPathExists = CheckPathExists;
             FileDialog.DereferenceLinks = DereferenceLinks;
             FileDialog.InitialDirectory = InitialDirectory;
-            FileDialog.DefaultFileName = DefaultFileName;
+            FileDialog.FileName = DefaultFileName;
             FileDialog.RestoreDirectory = RestoreDirectory;
             FileDialog.ShowHelp = ShowHelp;
             FileDialog.SupportMultiDottedExtensions = SupportMultiDottedExtensions;
@@ -327,7 +332,7 @@ namespace DevExpress.Mvvm.UI {
             return res;
         }
         bool ShowCore() {
-            DialogResult result = ActualWindow == null ? FileDialog.ShowDialog() : FileDialog.ShowDialog(ActualWindow);
+            DialogResult result = ActualWindow == null ? FileDialog.ShowDialog() : FileDialog.ShowDialog(new Win32WindowWrapper(ActualWindow));
             if(result == DialogResult.OK)
                 return true;
             if(result == DialogResult.Cancel)

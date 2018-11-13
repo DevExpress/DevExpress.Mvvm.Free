@@ -1,9 +1,23 @@
+#if !MVVM
+using DevExpress.Xpf.Core.Native;
+#endif
 using System;
 using System.Windows;
 using DevExpress.Mvvm.UI.Interactivity.Internal;
 
+#if !NETFX_CORE
 using System.Windows.Data;
 using DevExpress.Mvvm.UI.Native;
+#else
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Data;
+using Windows.ApplicationModel;
+using DevExpress.Mvvm.UI.Native;
+#if FREE && !NETFX_CORE
+using DevExpress.Mvvm.UI.Native;
+#else
+#endif
+#endif
 
 namespace DevExpress.Mvvm.UI.Interactivity {
     public abstract class TriggerBase : Behavior {
@@ -25,10 +39,12 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         public static readonly DependencyProperty EventNameProperty =
             DependencyProperty.Register("EventName", typeof(string), typeof(EventTriggerBase<T>),
             new PropertyMetadata("Loaded", (d, e) => ((EventTriggerBase<T>)d).OnEventNameChanged((string)e.OldValue, (string)e.NewValue)));
+#if !NETFX_CORE
         [IgnoreDependencyPropertiesConsistencyChecker]
         public static readonly DependencyProperty EventProperty =
             DependencyProperty.Register("Event", typeof(RoutedEvent), typeof(EventTriggerBase<T>),
             new PropertyMetadata(null, (d, e) => ((EventTriggerBase<T>)d).OnEventChanged((RoutedEvent)e.OldValue, (RoutedEvent)e.NewValue)));
+#endif
         [IgnoreDependencyPropertiesConsistencyChecker]
         public static readonly DependencyProperty SourceNameProperty =
             DependencyProperty.Register("SourceName", typeof(string), typeof(EventTriggerBase<T>),
@@ -39,15 +55,23 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             new PropertyMetadata(null, (d, e) => ((EventTriggerBase<T>)d).OnSourceObjectChanged()));
 
         static BindingExpression GetBindingExp(DependencyObject d, DependencyProperty dp) {
+#if !NETFX_CORE
             return BindingOperations.GetBindingExpression(d, dp);
+#else
+            if(d is FrameworkElement)
+                return ((FrameworkElement)d).GetBindingExpression(dp);
+            return d.ReadLocalValue(dp) as BindingExpression;
+#endif
         }
         static string GetObjectName(object obj) {
             FrameworkElement fe = obj as FrameworkElement;
             if(fe != null)
                 return fe.Name;
+#if !NETFX_CORE
             FrameworkContentElement fce = obj as FrameworkContentElement;
             if(fce != null)
                 return fce.Name;
+#endif
             return null;
         }
         static DependencyObject FindObject(DependencyObject root, string elementName, bool useVisualTree) {
@@ -57,6 +81,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             FrameworkElement feParent = fe.Parent as FrameworkElement;
             FrameworkElement el = feParent ?? fe;
 
+#if !NETFX_CORE
             try {
                 res = LogicalTreeHelper.FindLogicalNode(el, elementName);
             } catch { }
@@ -65,6 +90,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             FrameworkContentElement fce = root as FrameworkContentElement;
             res = fce != null ? (DependencyObject)fce.FindName(elementName) : null;
             if(res != null) return res;
+#endif
             res = el != null ? (DependencyObject)el.FindName(elementName) : null;
             if(res != null) return res;
 
@@ -79,15 +105,19 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             return null;
         }
         #endregion
+#if DEBUGTEST || MVVM
         internal int RaiseSourceChangedCount = 0;
+#endif
         public string EventName {
             get { return (string)GetValue(EventNameProperty); }
             set { SetValue(EventNameProperty, value); }
         }
+#if !NETFX_CORE
         public RoutedEvent Event {
             get { return (RoutedEvent)GetValue(EventProperty); }
             set { SetValue(EventProperty, value); }
         }
+#endif
         public string SourceName {
             get { return (string)GetValue(SourceNameProperty); }
             set { SetValue(SourceNameProperty, value); }
@@ -115,7 +145,9 @@ namespace DevExpress.Mvvm.UI.Interactivity {
 
         void ResolveSource(bool forceResolving, bool? useVisualTree = null) {
             if(ViewModelBase.IsInDesignMode
+#if !NETFX_CORE
                 && !InteractionHelper.GetEnableBehaviorsInDesignTime(AssociatedObject)
+#endif
             ) return;
             if(!IsAttached) return;
             if(Source != null && !forceResolving)
@@ -124,7 +156,11 @@ namespace DevExpress.Mvvm.UI.Interactivity {
                 Source = SourceObject;
                 return;
             }
+#if !NETFX_CORE
             bool useVisualTreeCore = useVisualTree ?? false;
+#else
+            bool useVisualTreeCore = useVisualTree ?? true;
+#endif
             var sourceObjectBinding = GetBindingExp(this, SourceObjectProperty);
             if(sourceObjectBinding != null) {
                 string elementName = null;
@@ -156,19 +192,30 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         }
         protected virtual void OnEvent(object sender, object eventArgs) { }
         protected virtual void OnSourceChanged(object oldSource, object newSource) {
+#if DEBUGTEST || MVVM
             RaiseSourceChangedCount++;
+#endif
+#if !NETFX_CORE
             EventHelper.UnsubscribeFromEvent(oldSource, Event);
+#endif
             EventHelper.UnsubscribeFromEvent(oldSource, EventName);
             EventHelper.SubscribeToEvent(newSource, EventName);
+#if !NETFX_CORE
             EventHelper.SubscribeToEvent(newSource, Event);
+#else
+            RaisePropertyChanged(nameof(Source));
+#endif
         }
         protected virtual void OnEventNameChanged(string oldEventName, string newEventName) {
+#if !NETFX_CORE
             if(newEventName != null)
                 Event = null;
+#endif
             if(!IsAttached) return;
             EventHelper.UnsubscribeFromEvent(Source, oldEventName);
             EventHelper.SubscribeToEvent(Source, newEventName);
         }
+#if !NETFX_CORE
         protected virtual void OnEventChanged(RoutedEvent oldRoutedEvent, RoutedEvent newRoutedEvent) {
             if(newRoutedEvent != null)
                 EventName = null;
@@ -176,20 +223,35 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             EventHelper.UnsubscribeFromEvent(Source, oldRoutedEvent);
             EventHelper.SubscribeToEvent(Source, newRoutedEvent);
         }
+#endif
         protected override void OnAttached() {
             base.OnAttached();
+#if !NETFX_CORE
             EventHelper.UnsubscribeFromEvent(Source, Event);
+#endif
             EventHelper.UnsubscribeFromEvent(Source, EventName);
             EventHelper.SubscribeToEvent(Source, EventName);
+#if !NETFX_CORE
             EventHelper.SubscribeToEvent(Source, Event);
+#endif
             ResolveSource(false);
+#if !NETFX_CORE
             Dispatcher.BeginInvoke(new Action(() => ResolveSource(false)));
+#else
+#pragma warning disable 4014
+            if (!DesignMode.DesignModeEnabled)
+                Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Low, new Windows.UI.Core.DispatchedHandler(() => ResolveSource(false)));//TODO
+#pragma warning restore 4014
+            
+#endif
             SubsribeAssociatedObject();
         }
         protected override void OnDetaching() {
             UnsubscribeAssociatedObject();
             EventHelper.UnsubscribeFromEvent(Source, EventName);
+#if !NETFX_CORE
             EventHelper.UnsubscribeFromEvent(Source, Event);
+#endif
             Source = null;
             base.OnDetaching();
         }
@@ -197,18 +259,22 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             UnsubscribeAssociatedObject();
             FrameworkElement fe = AssociatedObject as FrameworkElement;
             if(fe != null) {
+#if !NETFX_CORE
                 fe.Initialized += OnAssociatedObjectUpdated;
+#endif
                 fe.LayoutUpdated += AssociatedObjectLayoutUpdated;
                 fe.SizeChanged += AssociatedObjectSizeChanged;
                 fe.Loaded += AssociatedObjectLoaded;
                 return;
             }
+#if !NETFX_CORE
             FrameworkContentElement fce = AssociatedObject as FrameworkContentElement;
             if(fce != null) {
                 fce.Initialized += OnAssociatedObjectUpdated;
                 fce.Loaded += OnAssociatedObjectUpdated;
                 return;
             }
+#endif
         }
 
         void AssociatedObjectLoaded(object sender, RoutedEventArgs e) {
@@ -226,17 +292,21 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         void UnsubscribeAssociatedObject() {
             FrameworkElement fe = AssociatedObject as FrameworkElement;
             if(fe != null) {
+#if !NETFX_CORE
                 fe.Initialized -= OnAssociatedObjectUpdated;
+#endif
                 fe.LayoutUpdated -= AssociatedObjectLayoutUpdated;
                 fe.SizeChanged -= AssociatedObjectSizeChanged;
                 fe.Loaded -= AssociatedObjectLoaded;
             }
+#if !NETFX_CORE
             FrameworkContentElement fce = AssociatedObject as FrameworkContentElement;
             if(fce != null) {
                 fce.Initialized -= OnAssociatedObjectUpdated;
                 fce.Loaded -= OnAssociatedObjectUpdated;
                 return;
             }
+#endif
         }
         void OnAssociatedObjectUpdated(object sender, EventArgs e) {
             ResolveSource(false);

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -43,6 +43,7 @@ namespace DevExpress.Internal.WinApi {
         UInt32 GetPath(
             [Out(), MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile,
             int cchMaxPath,
+            //ref _WIN32_FIND_DATAW pfd,
             IntPtr pfd,
             uint fFlags);
         UInt32 GetIDList(out IntPtr ppidl);
@@ -134,7 +135,7 @@ namespace DevExpress.Internal.WinApi {
             return other.Equals((object)this);
         }
         public override int GetHashCode() {
-            return unchecked(propertyId * 5381 + formatId.GetHashCode());
+            return unchecked(propertyId * 5381 + formatId.GetHashCode());   // due to free MVVM -- return HashCodeHelper.CalculateGeneric(formatId,  propertyId);
         }
         public override bool Equals(object obj) {
             if(obj == null)
@@ -216,7 +217,7 @@ namespace DevExpress.Internal.WinApi {
                 array.SetValue(val, i);
             });
 
-            cache.Add(typeof(Single), (pv, array, i) =>
+            cache.Add(typeof(Single), (pv, array, i) => // float
             {
                 float[] val = new float[1];
                 Marshal.Copy(pv._ptr2, val, (int)i, 1);
@@ -227,7 +228,7 @@ namespace DevExpress.Internal.WinApi {
                 int[] val = new int[4];
                 for(int a = 0; a < val.Length; a++) {
                     val[a] = Marshal.ReadInt32(pv._ptr2,
-                        (int)i * sizeof(decimal) + a * sizeof(int));
+                        (int)i * sizeof(decimal) + a * sizeof(int)); //index * size + offset quarter
                 }
                 array.SetValue(new decimal(val), i);
             });
@@ -237,7 +238,11 @@ namespace DevExpress.Internal.WinApi {
                 PropVariantNativeMethods.PropVariantGetStringElem(pv, i, ref val);
                 array.SetValue(val, i);
             });
-
+            cache.Add(typeof(Guid), (pv, array, i) => {
+                byte[] guid = new byte[16];
+                Marshal.Copy(pv._ptr, guid, 0, 16);
+                array.SetValue(new Guid(guid), i);
+            });
             return cache;
         }
         public static PropVariant FromObject(object value) {
@@ -407,6 +412,8 @@ namespace DevExpress.Internal.WinApi {
 
             _valueType = (ushort)(VarEnum.VT_DECIMAL | VarEnum.VT_VECTOR);
             _int32 = value.Length;
+
+            // allocate required memory for array with 128bit elements
             _ptr2 = Marshal.AllocCoTaskMem(value.Length * sizeof(decimal));
             for(int i = 0; i < value.Length; i++) {
                 int[] bits = decimal.GetBits(value[i]);
@@ -440,6 +447,13 @@ namespace DevExpress.Internal.WinApi {
             _valueType = (ushort)VarEnum.VT_R8;
             _double = value;
         }
+        [System.Security.SecuritySafeCritical]
+        public PropVariant(Guid value) {
+            _valueType = (ushort)VarEnum.VT_CLSID;
+            byte[] guid = ((Guid)value).ToByteArray();
+            _ptr = Marshal.AllocCoTaskMem(guid.Length);
+            Marshal.Copy(guid, 0, _ptr, guid.Length);
+        }
         internal void SetIUnknown(object value) {
             _valueType = (ushort)VarEnum.VT_UNKNOWN;
             _ptr = Marshal.GetIUnknownForObject(value);
@@ -450,7 +464,7 @@ namespace DevExpress.Internal.WinApi {
             IntPtr psa = PropVariantNativeMethods.SafeArrayCreateVector(vtUnknown, 0, (uint)array.Length);
 
             IntPtr pvData = PropVariantNativeMethods.SafeArrayAccessData(psa);
-            try
+            try // to remember to release lock on data
             {
                 for(int i = 0; i < array.Length; ++i) {
                     object obj = array.GetValue(i);
@@ -548,7 +562,10 @@ namespace DevExpress.Internal.WinApi {
                         return GetVector<DateTime>();
                     case (VarEnum.VT_VECTOR | VarEnum.VT_DECIMAL):
                         return GetVector<Decimal>();
+                    case VarEnum.VT_CLSID:
+                        return GetVector<Guid>();
                     default:
+                        // if the value cannot be marshaled
                         return null;
                 }
             }
@@ -602,7 +619,7 @@ namespace DevExpress.Internal.WinApi {
             int lBound = PropVariantNativeMethods.SafeArrayGetLBound(psa, 1U);
             int uBound = PropVariantNativeMethods.SafeArrayGetUBound(psa, 1U);
 
-            int n = uBound - lBound + 1;
+            int n = uBound - lBound + 1; // uBound is inclusive
 
             object[] array = new object[n];
             for(int i = lBound; i <= uBound; ++i) {
@@ -623,27 +640,29 @@ namespace DevExpress.Internal.WinApi {
     }
 
     static class PropVariantNativeMethods {
-        [DllImport("Ole32.dll", PreserveSig = false)]
+        [DllImport("Ole32.dll", PreserveSig = false)] // returns hresult
         internal extern static void PropVariantClear([In, Out] PropVariant pvar);
 
-        [DllImport("OleAut32.dll", PreserveSig = true)]
+        [DllImport("OleAut32.dll", PreserveSig = true)] // psa is actually returned, not hresult
         internal extern static IntPtr SafeArrayCreateVector(ushort vt, int lowerBound, uint cElems);
 
-        [DllImport("OleAut32.dll", PreserveSig = false)]
+        [DllImport("OleAut32.dll", PreserveSig = false)] // returns hresult
         internal extern static IntPtr SafeArrayAccessData(IntPtr psa);
 
-        [DllImport("OleAut32.dll", PreserveSig = false)]
+        [DllImport("OleAut32.dll", PreserveSig = false)] // returns hresult
         internal extern static void SafeArrayUnaccessData(IntPtr psa);
 
-        [DllImport("OleAut32.dll", PreserveSig = true)]
+        [DllImport("OleAut32.dll", PreserveSig = true)] // retuns uint32
         internal extern static uint SafeArrayGetDim(IntPtr psa);
 
-        [DllImport("OleAut32.dll", PreserveSig = false)]
+        [DllImport("OleAut32.dll", PreserveSig = false)] // returns hresult
         internal extern static int SafeArrayGetLBound(IntPtr psa, uint nDim);
 
-        [DllImport("OleAut32.dll", PreserveSig = false)]
+        [DllImport("OleAut32.dll", PreserveSig = false)] // returns hresult
         internal extern static int SafeArrayGetUBound(IntPtr psa, uint nDim);
-        [DllImport("OleAut32.dll", PreserveSig = false)]
+
+        // This decl for SafeArrayGetElement is only valid for cDims==1!
+        [DllImport("OleAut32.dll", PreserveSig = false)] // returns hresult
         [return: MarshalAs(UnmanagedType.IUnknown)]
         internal extern static object SafeArrayGetElement(IntPtr psa, ref int rgIndices);
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
@@ -56,7 +56,7 @@ namespace DevExpress.Xpf.DXBinding {
                 style = DXTriggerHelper.CreateStyle<DXDataTemplateTrigger>(Items, FrameworkElement.TagProperty, e => e.Template, null);
             }
             var element = new FrameworkElement();
-            element.DataContext = item;
+            element.DataContext = item; //first time data context should be assigned before style or bindings will work asynchronously
             element.Style = style;
             try {
                 return (DataTemplate)element.Tag;

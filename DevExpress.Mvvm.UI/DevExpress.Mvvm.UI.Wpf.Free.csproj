@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -10,13 +10,15 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>DevExpress.Mvvm.UI</RootNamespace>
     <AssemblyName>DevExpress.Mvvm.UI</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <LangVersion>6</LangVersion>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>SAK</SccProjectName>
     <SccLocalPath>SAK</SccLocalPath>
     <SccAuxPath>SAK</SccAuxPath>
     <SccProvider>SAK</SccProvider>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
     <BaseIntermediateOutputPath>obj.Wpf.Free</BaseIntermediateOutputPath>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
@@ -98,6 +100,7 @@
     <Compile Include="ModuleInjection\StrategyBase.cs" />
     <Compile Include="ModuleInjection\StrategyManager.cs" />
     <Compile Include="Native\ApplicationHelper.cs" />
+    <Compile Include="Native\CanExecuteChangedEventHandler.cs" />
     <Compile Include="Native\CollectionWrapper.cs" />
     <Compile Include="Native\DependencyObjectExt.cs" />
     <Compile Include="Native\DependencyPropertyRegistrator.cs" />
@@ -256,7 +259,4 @@
     <Compile Include="DXBinding\TreeVisitor.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup Condition="'$(VisualStudioVersion)' != '' And $(VisualStudioVersion) &gt; 11.0">
-    <LangVersion>4</LangVersion>
-  </PropertyGroup>
 </Project>

@@ -2,7 +2,13 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Windows;
 using System;
+#if !NETFX_CORE
 using DevExpress.Mvvm.POCO;
+#else
+using Windows.UI.Xaml;
+using DevExpress.Mvvm.Native;
+using Windows.ApplicationModel;
+#endif
 
 namespace DevExpress.Mvvm.UI {
     public class ViewLocator : LocatorBase, IViewLocator {
@@ -13,7 +19,11 @@ namespace DevExpress.Mvvm.UI {
         readonly IEnumerable<Assembly> assemblies;
         protected override IEnumerable<Assembly> Assemblies { get { return assemblies; } }
         public ViewLocator(Application application)
+#if !NETFX_CORE
             : this(EntryAssembly != null && !EntryAssembly.IsInDesignMode() ? new[] { EntryAssembly } : new Assembly[0]) {
+#else
+            : this(EntryAssembly != null && !DesignMode.DesignModeEnabled ? new[] { EntryAssembly } : new Assembly[0]) {
+#endif
 
         }
         public ViewLocator(IEnumerable<Assembly> assemblies) {

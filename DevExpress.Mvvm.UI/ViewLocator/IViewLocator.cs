@@ -1,11 +1,20 @@
+#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Media;
+#else
+using Windows.Foundation;
+using Windows.UI;
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media;
+#endif
 using System;
 using System.Windows;
 using System.ComponentModel;
 
 namespace DevExpress.Mvvm.UI {
     public static class ViewLocatorExtensions {
+#if !NETFX_CORE
         public static DataTemplate CreateViewTemplate(this IViewLocator viewLocator, Type viewType) {
             Verify(viewLocator);
             return CreateViewTemplate(viewType);
@@ -43,6 +52,7 @@ namespace DevExpress.Mvvm.UI {
             res.Seal();
             return res;
         }
+#endif
         internal static object CreateFallbackView(string errorText) {
             return new FallbackView() { Text = errorText };
         }
