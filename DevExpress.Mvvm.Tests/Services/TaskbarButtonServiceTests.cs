@@ -1,7 +1,3 @@
-#if !FREE
-using DevExpress.Xpf.Core.Tests;
-using DevExpress.Xpf.Core.Native;
-#endif
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.POCO;

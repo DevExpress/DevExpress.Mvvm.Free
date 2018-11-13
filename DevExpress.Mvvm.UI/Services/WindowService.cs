@@ -1,4 +1,4 @@
-﻿using DevExpress.Mvvm;
+using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
 using DevExpress.Mvvm.UI.Native;
@@ -19,32 +19,8 @@ namespace DevExpress.Mvvm.UI {
     public enum WindowShowMode { Dialog, Default }
     public class WindowService : ViewServiceBase, IWindowService, IDocumentOwner {
         internal static Type GetDefaultWindowType(Style windowStyle) {
-#if !FREE
-            if (DevExpress.Xpf.Core.CompatibilitySettings.UseThemedWindowInServices)
-                return GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.ThemedWindow))
-                    ?? GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.DXWindow));
-            else return GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.DXWindow))
-                    ?? GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.ThemedWindow));
-#else
             return typeof(Window);
-#endif
         }
-#if !FREE
-        internal static Type GetDefaultDialogWindowType(Style windowStyle) {
-            if (DevExpress.Xpf.Core.CompatibilitySettings.UseThemedWindowInServices)
-                return GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.ThemedWindow))
-                    ?? GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.DXDialogWindow));
-            else return GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.DXDialogWindow))
-                    ?? GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.ThemedWindow));
-        }
-        internal static Type GetDefaultTabbedWindowType(Style windowStyle) {
-            if (DevExpress.Xpf.Core.CompatibilitySettings.UseThemedWindowInServices)
-                return GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.ThemedWindow))
-                    ?? GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.DXTabbedWindow));
-            else return GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.DXTabbedWindow))
-                    ?? GetWindowType(windowStyle, typeof(DevExpress.Xpf.Core.ThemedWindow));
-        }
-#endif
         static Type GetWindowType(Style windowStyle, Type expectedType) {
             if (windowStyle == null || windowStyle.TargetType == expectedType)
                 return expectedType;

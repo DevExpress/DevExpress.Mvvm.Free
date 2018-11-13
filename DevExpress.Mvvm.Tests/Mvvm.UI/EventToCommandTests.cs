@@ -1,50 +1,25 @@
-#if NETFX_CORE
-using DevExpress.Mvvm.Tests.TestUtils;
-using System.Threading.Tasks;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Data;
-using DevExpress.TestUtils;
-#endif
-#if !FREE && !NETFX_CORE
-using DevExpress.Xpf.Core.Tests;
-#endif
 using System;
 using System.Linq;
 using System.Windows;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
 using NUnit.Framework;
-#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using DevExpress.Mvvm.POCO;
 using System.Windows.Threading;
 using System.Windows.Data;
-#else
-#if !FREE
-using System.Windows.Data;
-using System.ComponentModel;
-#endif
-#endif
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
     public class EventToCommandTests : BaseWpfFixture {
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void EventToCommandInWindow() {
-#else
-        public async Task EventToCommandInWindow() {
-#endif
             var userControl = new EventToCommandTestView();
             Window.Content = userControl;
             var viewModel = (EventToCommandTestViewModel)userControl.DataContext;
             Assert.AreEqual(0, viewModel.LoadedCount);
             Assert.AreEqual(0, viewModel.SelectionChangedCount);
-#if NETFX_CORE 
-            await 
-#endif
             EnqueueTestWindowMainCallback(() => {
                 foreach(EventToCommand trigger in Interaction.GetBehaviors(userControl)) {
                     Assert.AreEqual(1, trigger.RaiseSourceChangedCount);
@@ -86,8 +61,6 @@ namespace DevExpress.Mvvm.UI.Tests {
                 Assert.IsTrue(userControl.listBox4.IsEnabled);
                 eventToCommand.AllowChangingEventOwnerIsEnabled = true;
                 Assert.IsFalse(userControl.listBox4.IsEnabled);
-
-                //B235358
                 Assert.IsFalse(userControl.listBox5.IsEnabled);
                 viewModel.SelectionChangedCommandParameter5 = true;
                 Assert.IsTrue(userControl.listBox5.IsEnabled);
@@ -105,7 +78,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
-#if !NETFX_CORE
         [Test, Asynchronous]
         public void SourceChangedFireCount1() {
             var panel = new StackPanel();
@@ -131,22 +103,14 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueConditional(() => gotFocusCount == 1);
             EnqueueTestComplete();
         }
-#endif
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void SourceChangedFireCount2() {
-#else
-        public async Task SourceChangedFireCount2() {
-#endif        
             var panel = new StackPanel();
             panel.Children.Add(new Button() { Name = "button2" });
             int gotFocusCount = 0;
             var eventToCommand = new EventToCommand() { EventName = "GotFocus", Command = new DelegateCommand(() => gotFocusCount++) };
             Interaction.GetBehaviors(panel).Add(eventToCommand);
             Window.Content = panel;
-#if NETFX_CORE
-            await
-#endif
             EnqueueTestWindowMainCallback(() => {
                 Assert.AreEqual(1, eventToCommand.RaiseSourceChangedCount);
                 eventToCommand.SourceName = "button2";
@@ -159,11 +123,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueTestComplete();
         }
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void B236199_DataContextChangedSubscription() {
-#else
-        public async Task B236199_DataContextChangedSubscription() {
-#endif
             var button = new Button();
             int dataContextChangedCount = 0;
             int dataContextChangedCount2 = 0;
@@ -171,9 +131,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             var eventToCommand = new EventToCommand() { EventName = "DataContextChanged", Command = new DelegateCommand(() => dataContextChangedCount++) };
             Interaction.GetBehaviors(button).Add(eventToCommand);
             Window.Content = button;
-#if NETFX_CORE
-            await
-#endif
             EnqueueTestWindowMainCallback(() => {
                 Assert.AreEqual(dataContextChangedCount2, dataContextChangedCount);
                 button.DataContext = "1";
@@ -181,23 +138,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
-#if NETFX_CORE
-        [Test]
-        public void TestSourceChanged_T329540() {
-            var window = new ContentControl();
-            int counter = 0;
-            PropertyChangedEventHandler handler = (s, e) => counter += e.PropertyName == "Source" ? 1 :0;
-            var eventToCommand = new EventToCommand();
-            (eventToCommand as INotifyPropertyChanged).PropertyChanged += handler;
-
-            Interaction.GetBehaviors(window).Add(eventToCommand);
-            Assert.AreEqual(1, counter);
-            Interaction.GetBehaviors(window).Remove(eventToCommand);
-            Assert.AreEqual(2, counter);
-
-            (eventToCommand as INotifyPropertyChanged).PropertyChanged -= handler;
-        }
-#endif
         [Test]
         public void NameScopeAccessProviderSourceTest() {
             var window = new ContentControl();
@@ -220,20 +160,13 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
 
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void B250383() {
-#else
-        public async Task B250383() {
-#endif
             var control = new Button();
             control.IsEnabled = false;
             int loaded = 0;
             var eventToCommand = new EventToCommand() { EventName = "Loaded", Command = new DelegateCommand(() => loaded++) };
             Interaction.GetBehaviors(control).Add(eventToCommand);
             Window.Content = control;
-#if NETFX_CORE
-            await
-#endif
             EnqueueTestWindowMainCallback(() => {
                 Assert.AreEqual(1, loaded);
                 eventToCommand.SourceName = "button2";
@@ -254,11 +187,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueTestComplete();
         }
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void Q539009_1() {
-#else
-        public async Task Q539009_1() {
-#endif
             var control = new Grid();
             int counter2 = 0;
             int counter1 = 0;
@@ -269,9 +198,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             };
             Interaction.GetBehaviors(control).Add(eventToCommand);
             Window.Content = control;
-#if NETFX_CORE
-            await
-#endif
             EnqueueShowWindow();
             EnqueueCallback(() => {
                 Assert.AreEqual(counter2, counter1);
@@ -279,11 +205,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueTestComplete();
         }
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void Q539009_2() {
-#else
-        public async Task Q539009_2() {
-#endif
             var control = new Grid() { Name = "control" };
             int counter2 = 0;
             int counter1 = 0;
@@ -295,9 +217,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             };
             Interaction.GetBehaviors(control).Add(eventToCommand);
             Window.Content = control;
-#if NETFX_CORE
-            await
-#endif
             EnqueueShowWindow();
             EnqueueCallback(() => {
                 Assert.AreEqual(counter2, counter1);
@@ -305,11 +224,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueTestComplete();
         }
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void Q539009_3() {
-#else
-        public async Task Q539009_3() {
-#endif
             var control = new Grid() { Name = "control" };
             int counter2 = 0;
             int counter1 = 0;
@@ -321,9 +236,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             };
             Interaction.GetBehaviors(control).Add(eventToCommand);
             Window.Content = control;
-#if NETFX_CORE
-            await
-#endif
             EnqueueShowWindow();
             EnqueueCallback(() => {
                 Assert.AreEqual(counter2, counter1);
@@ -332,46 +244,22 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
 
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void Q554072_11() {
-#else
-        public async Task Q554072_11() {
-            await
-#endif      
             Q554072_1Core("Loaded");
         }
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void Q554072_12() {
-#else
-        public async Task Q554072_12() {
-            await
-#endif
             Q554072_1Core("SizeChanged");
         }
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void Q554072_21() {
-#else
-        public async Task Q554072_21() {
-            await
-#endif
             Q554072_2Core("Loaded");
         }
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void Q554072_22() {
-#else
-        public async Task Q554072_22() {
-            await
-#endif
             Q554072_2Core("SizeChanged");
         }
-#if !NETFX_CORE
         void Q554072_1Core(string eventName) {
-#else
-        async Task Q554072_1Core(string eventName) {
-#endif        
             var control = new Grid();
             var bt = new Button() { Name = "View" };
             control.Children.Add(bt);
@@ -394,9 +282,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             Interaction.GetBehaviors(control).Add(eventToCommand1);
             Interaction.GetBehaviors(bt).Add(eventToCommand2);
             Window.Content = control;
-#if NETFX_CORE
-            await
-#endif
             EnqueueShowWindow();
             EnqueueCallback(() => {
                 Assert.AreEqual(counter2, counter1);
@@ -404,11 +289,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
-#if !NETFX_CORE
         void Q554072_2Core(string eventName) {
-#else
-        async Task Q554072_2Core(string eventName) {
-#endif
             var control = new Grid();
             var bt = new Button() { Name = "View" };
             control.Children.Add(bt);
@@ -423,9 +304,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             BindingOperations.SetBinding(eventToCommand1, EventToCommand.SourceObjectProperty, new Binding() { ElementName = "View" });
             Interaction.GetBehaviors(control).Add(eventToCommand1);
             Window.Content = control;
-#if NETFX_CORE
-            await
-#endif
             EnqueueShowWindow();
             EnqueueCallback(() => {
                 var evv = eventToCommand1.SourceObject;
@@ -435,28 +313,16 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
 
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void Q554072_3() {
-#else
-        public async Task Q554072_3() {
-#endif
             var control = new EventToCommandTestView();
             Window.Content = control;
-#if NETFX_CORE
-            await
-#endif
             EnqueueShowWindow();
             EnqueueCallback(() => {
                 EventToCommandTestViewModel vm = (EventToCommandTestViewModel)control.DataContext;
-#if !NETFX_CORE
                 Assert.AreEqual(2, vm.Q554072CommandCount);
-#else
-                Assert.IsTrue(vm.Q554072CommandCount > 1);
-#endif
             });
             EnqueueTestComplete();
         }
-#if !NETFX_CORE
         [Test]
         public void SetEvent_CheckEventNameIsReset_SetEventName_CheckEventIsReset() {
             EventToCommand eventToCommand = new EventToCommand();
@@ -481,8 +347,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueWindowUpdateLayout();
             Assert.IsTrue(commandExecuted);
         }
-#endif
-#if !NETFX_CORE
         [Test, Asynchronous]
         public void EventSenderTest1() {
             EventSenderTestCore(true, true);
@@ -575,119 +439,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
-#else
-        [Test, Asynchronous]
-        public async Task EventSenderTest1() {
-            await EventSenderTestCore(true, true);
-        }
-        [Test, Asynchronous]
-        public async Task EventSenderTest2() {
-            await EventSenderTestCore(false, true);
-        }
-        [Test, Asynchronous]
-        public async Task EventSenderTest3() {
-            await EventSenderTestCore(true, false);
-        }
-        [Test, Asynchronous]
-        public async Task EventSenderTest4() {
-            await EventSenderTestCore(false, false);
-        }
-        class TestButton : Button {
-            public TestButton() {
-                Loaded += TestButton_Loaded;
-            }
-
-            async void TestButton_Loaded(object sender, RoutedEventArgs e) {
-                await Task.Delay(35);
-                Width *= 2;
-            }
-        }
-        public async Task EventSenderTestCore(bool addControlFirst, bool linearLayout) {
-            Grid rootRoot = new Grid();
-            Grid root = new Grid();
-            Button bt = null;
-            if(addControlFirst) {
-                if(linearLayout) {
-                    bt = new TestButton() { Name = "bt" };
-                    root.Children.Add(bt);
-                } else {
-                    bt = new TestButton() { Name = "bt" };
-                    rootRoot.Children.Add(bt);
-                    rootRoot.Children.Add(root);
-                }
-            }
-
-            EventToCommandTestClass eventToCommand1 = new EventToCommandTestClass() { EventName = "SizeChanged" };
-            EventToCommandTestClass eventToCommand2 = new EventToCommandTestClass() { EventName = "SizeChanged" };
-            BindingOperations.SetBinding(eventToCommand2, EventToCommand.SourceObjectProperty, new Binding() { ElementName = "bt" });
-            EventToCommandTestClass eventToCommand3 = new EventToCommandTestClass() { EventName = "SizeChanged", SourceName = "bt" };
-
-            EventToCommandTestClass eventToCommand4 = new EventToCommandTestClass() { EventName = "Loaded" };
-            EventToCommandTestClass eventToCommand5 = new EventToCommandTestClass() { EventName = "Loaded" };
-            BindingOperations.SetBinding(eventToCommand5, EventToCommand.SourceObjectProperty, new Binding() { ElementName = "bt" });
-            EventToCommandTestClass eventToCommand6 = new EventToCommandTestClass() { EventName = "Loaded", SourceName = "bt" };
-
-            Interaction.GetBehaviors(root).Add(eventToCommand1);
-            Interaction.GetBehaviors(root).Add(eventToCommand2);
-            Interaction.GetBehaviors(root).Add(eventToCommand3);
-            Interaction.GetBehaviors(root).Add(eventToCommand4);
-            Interaction.GetBehaviors(root).Add(eventToCommand5);
-            Interaction.GetBehaviors(root).Add(eventToCommand6);
-
-            if(!addControlFirst) {
-                if(linearLayout) {
-                    bt = new TestButton() { Name = "bt" };
-                    root.Children.Add(bt);
-                } else {
-                    bt = new TestButton() { Name = "bt" };
-                    rootRoot.Children.Add(bt);
-                    rootRoot.Children.Add(root);
-                }
-            }
-            bt.Loaded += bt_Loaded;
-            bt.SizeChanged += bt_SizeChanged;
-            if(linearLayout)
-                Window.Content = root;
-            else
-                Window.Content = rootRoot;
-            await EnqueueShowWindow();
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                Assert.AreEqual(1, eventToCommand1.EventCount);
-                Assert.AreEqual(root, eventToCommand1.EventSender);
-                Assert.AreEqual(EventToCommandType.AssociatedObject, eventToCommand1.Type);
-
-                Assert.IsTrue(eventToCommand2.EventCount > 0);
-                Assert.AreEqual(bt, eventToCommand2.EventSender);
-                Assert.AreEqual(EventToCommandType.SourceObject, eventToCommand2.Type);
-
-                Assert.AreEqual(1, eventToCommand3.EventCount);
-                Assert.AreEqual(bt, eventToCommand3.EventSender);
-                Assert.AreEqual(EventToCommandType.SourceName, eventToCommand3.Type);
-
-                Assert.AreEqual(1, eventToCommand4.EventCount);
-                Assert.AreEqual(root, eventToCommand4.EventSender);
-                Assert.AreEqual(EventToCommandType.AssociatedObject, eventToCommand4.Type);
-
-                Assert.AreEqual(1, eventToCommand5.EventCount);
-                Assert.AreEqual(bt, eventToCommand5.EventSender);
-                Assert.AreEqual(EventToCommandType.SourceObject, eventToCommand5.Type);
-
-                Assert.AreEqual(1, eventToCommand6.EventCount);
-                Assert.AreEqual(bt, eventToCommand6.EventSender);
-                Assert.AreEqual(EventToCommandType.SourceName, eventToCommand6.Type);
-            });
-            EnqueueTestComplete();
-        }
-
-        void bt_SizeChanged(object sender, SizeChangedEventArgs e) {
-            
-        }
-
-        void bt_Loaded(object sender, RoutedEventArgs e) {
-            
-        }
-#endif
         [Test]
         public void EventArgsConverter_PassEventArgsToCommand() {
             var button = new Button();
@@ -711,23 +462,10 @@ namespace DevExpress.Mvvm.UI.Tests {
             button.DataContext = "2";
             Assert.AreEqual(2, dataContextChangedCount);
             Assert.AreEqual(dataContextChangedCount2, dataContextChangedCount);
-#if !NETFX_CORE
             Assert.AreEqual(1, eventArgsConverter.Count);
-#else
-            Assert.AreEqual(2, eventArgsConverter.Count);
-            eventToCommand.EventArgsConverter = null;
-            button.DataContext = "2";
-            Assert.AreEqual(3, dataContextChangedCount);
-            Assert.AreEqual(dataContextChangedCount2, dataContextChangedCount);
-            Assert.AreEqual(2, eventArgsConverter.Count);
-#endif
         }
 
-#if !NETFX_CORE
         void DispatcherTestCore(Action<EventToCommand> eventToCommandInitializer, bool checkImmediately) {
-#else
-        async Task DispatcherTestCore(Action<EventToCommand> eventToCommandInitializer, bool checkImmediately) {
-#endif
             var button = new Button();
             int dataContextChangedCount = 0;
             int dataContextChangedCount2 = 0;
@@ -735,9 +473,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             var eventToCommand = new EventToCommand() {
                 EventName = "DataContextChanged",
                 Command = new DelegateCommand(() => dataContextChangedCount++),
-#if !NETFX_CORE
                 DispatcherPriority = DispatcherPriority.Render,
-#endif
             };
             eventToCommandInitializer(eventToCommand);
             Interaction.GetBehaviors(button).Add(eventToCommand);
@@ -748,21 +484,13 @@ namespace DevExpress.Mvvm.UI.Tests {
                 Assert.AreEqual(0, dataContextChangedCount);
             else Assert.AreEqual(1, dataContextChangedCount);
             Assert.AreEqual(1, dataContextChangedCount2);
-#if NETFX_CORE
-            await
-#endif
             EnqueueShowWindow();
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
-#if !NETFX_CORE
                 Assert.AreEqual(1, dataContextChangedCount);
-#else
-                Assert.AreEqual(dataContextChangedCount2, dataContextChangedCount);
-#endif
             });
             EnqueueTestComplete();
         }
-#if !NETFX_CORE
         [Test]
         public void DispatcherDefaultValues() {
             EventToCommand eventToCommand = new EventToCommand();
@@ -791,20 +519,13 @@ namespace DevExpress.Mvvm.UI.Tests {
                 x.DispatcherPriority = DispatcherPriority.Render;
             }, false);
         }
-#endif
         [Test, Asynchronous]
-#if !NETFX_CORE
         public void TrueUseDispatcher_NullDispatcherPriority() {
-#else
-        public async Task TrueUseDispatcher_NullDispatcherPriority() {
-        await
-#endif
             DispatcherTestCore(x => {
                 x.UseDispatcher = true;
             }, false);
         }
 
-#if !NETFX_CORE
         [Test, Asynchronous]
         public void MarkRoutedEventsAsHandled() {
             var button = new Button() { Name = "View" };
@@ -837,7 +558,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
-#endif
 
         public enum EventToCommandType { AssociatedObject, SourceName, SourceObject }
         public class EventToCommandTestClass : EventToCommand {

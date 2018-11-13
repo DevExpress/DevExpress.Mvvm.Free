@@ -1,20 +1,11 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-#if NETFX_CORE
-using DevExpress.Mvvm.Native;
-#endif
 
-#if MVVM
 namespace DevExpress.Mvvm.Native {
-#else
-namespace DevExpress.Internal {
-#endif
-#if MVVM
     public
-#endif
     static class ExpressionHelper {
         internal static MethodInfo GetArgumentMethodStrict<T>(Expression<Action<T>> expression) {
             return GetArgumentMethodStrictCore(expression);
@@ -83,11 +74,9 @@ namespace DevExpress.Internal {
         public static string GetPropertyName<T, TProperty>(Expression<Func<T, TProperty>> expression) {
             return GetPropertyNameCore(expression);
         }
-#if !NETFX_CORE
         public static PropertyDescriptor GetProperty<T, TProperty>(Expression<Func<T, TProperty>> expression) {
             return TypeDescriptor.GetProperties(typeof(T))[GetPropertyName(expression)];
         }
-#endif
         static string GetPropertyNameCore(LambdaExpression expression) {
             MemberExpression memberExpression = GetMemberExpression(expression);
             MemberExpression nextMemberExpression = memberExpression.Expression as MemberExpression;
@@ -99,11 +88,7 @@ namespace DevExpress.Internal {
 
         static bool IsPropertyExpression(MemberExpression expression) {
             return expression != null &&
-#if !NETFX_CORE
                 expression.Member.MemberType == MemberTypes.Property;
-#else
-                expression.Member is PropertyInfo;
-#endif
         }
         static MemberExpression GetMemberExpression(LambdaExpression expression) {
             if(expression == null)
@@ -136,9 +121,7 @@ namespace DevExpress.Internal {
             }
             catch (Exception e)
             {
-#if !NETFX_CORE
                 if(e is TargetException) return false;
-#endif
                 if(e is ArgumentException) return false;
                 if(e is TargetParameterCountException) return false;
                 if(e is MethodAccessException) return false;
@@ -148,19 +131,12 @@ namespace DevExpress.Internal {
             return true;
         }
         static MethodInfo GetGetMethod<TInterface>(TInterface _interface, string getMethodName) {
-#if !NETFX_CORE
             InterfaceMapping map = _interface.GetType().GetInterfaceMap(typeof(TInterface));
             MethodInfo getMethod = map.TargetMethods[map.InterfaceMethods
                 .Select((m, i) => new { name = m.Name, index = i })
                 .Where(m => string.Equals(m.name, getMethodName, StringComparison.Ordinal))
                 .Select(m => m.index)
                 .First()];
-#else
-            var expliciteGetMethodName = typeof(TInterface).FullName.Replace("+", ".") + "." + getMethodName;
-            var expliciteMethod = _interface.GetType().GetRuntimeMethods().FirstOrDefault(x => string.Equals(x.Name, expliciteGetMethodName, StringComparison.Ordinal));
-            var method = _interface.GetType().GetRuntimeMethods().FirstOrDefault(x => string.Equals(x.Name, getMethodName, StringComparison.Ordinal));
-            MethodInfo getMethod = expliciteMethod != null ? expliciteMethod : method;
-#endif
             return getMethod;
         }
     }

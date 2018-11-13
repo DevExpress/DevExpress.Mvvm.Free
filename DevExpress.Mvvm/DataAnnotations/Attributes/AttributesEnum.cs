@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace DevExpress.Mvvm.DataAnnotations {
     [AttributeUsage(AttributeTargets.Enum, AllowMultiple = false)]
@@ -20,11 +20,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
         public string ImageUri { get; internal set; }
     }
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method | AttributeTargets.Field, AllowMultiple = false)]
-#if FREE
     internal
-#else
-    public 
-#endif
     class DXImageAttribute : Attribute {
         public DXImageAttribute() {
         }

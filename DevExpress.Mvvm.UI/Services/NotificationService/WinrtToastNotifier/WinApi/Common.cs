@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -35,11 +35,8 @@ namespace DevExpress.Internal.WinApi {
         public enum RO_INIT_TYPE {
             RO_INIT_MULTITHREADED = 1
         };
-        //
         public static bool Initialize() {
             try {
-                // ignore the error code, the COM could have already been initialized with a different 
-                // multithreading model, that's ok
                 ComBaseImport.RoInitialize(RO_INIT_TYPE.RO_INIT_MULTITHREADED);
                 return true;
             }

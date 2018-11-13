@@ -1,4 +1,3 @@
-﻿#if DEBUGTEST || MVVM
 using NUnit.Framework;
 using System;
 using System.ComponentModel;
@@ -8,13 +7,8 @@ using System.Reflection;
 using System.Text;
 using System.Windows;
 
-#if MVVM
 using DevExpress.Mvvm.UI.Native;
 namespace DevExpress {
-#else
-using DevExpress.Xpf.Core.Native;
-namespace DevExpress.Xpf.Core.Tests {
-#endif
     [TestFixture]
     public class BaseWpfFixture : WpfTestWindow {
         protected class BindingErrorsTraceListener : TraceListener {
@@ -191,4 +185,3 @@ namespace DevExpress {
         }
     }
 }
-#endif

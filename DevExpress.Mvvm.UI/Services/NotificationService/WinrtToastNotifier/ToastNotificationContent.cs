@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -7,7 +7,6 @@ using DevExpress.Internal.WinApi.Window.Data.Xml.Dom;
 using DevExpress.Internal.WinApi.Windows.UI.Notifications;
 
 namespace DevExpress.Internal {
-    // http://msdn.microsoft.com/en-us/library/windows/apps/hh761494.aspx
     class WinRTToastNotificationContent : IPredefinedToastNotificationContent, IPredefinedToastNotificationContentGeneric {
         string[] lines = new string[3];
         ToastTemplateType type;
@@ -171,7 +170,6 @@ namespace DevExpress.Internal {
             }
             return false;
         }
-        // http://msdn.microsoft.com/en-us/library/windows/apps/hh781198.aspx 
         void CheckImagePath(string imagePath) {
             FileInfo info = new FileInfo(imagePath);
             if(!info.Exists)

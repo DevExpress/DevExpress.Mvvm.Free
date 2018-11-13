@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,12 +7,12 @@ namespace DevExpress.Mvvm.Native {
     public static class DesignTimeValuesProvider {
         public static readonly DateTime Today = DateTime.Today;
         public static object[] Types = new object[] { typeof(string), typeof(DateTime), typeof(int), typeof(Decimal), typeof(byte),
-												 typeof(Int64), typeof(double), typeof(bool) };
+             typeof(Int64), typeof(double), typeof(bool) };
         public static object[] CreateValues() {
             return new object[] { "string", Today, 123, 123, 123, 123, 123, null };
         }
         public static object[][] CreateDistinctValues() {
-            return new object[][] { 
+            return new object[][] {
                     new object[] { "string1", Today, 123, 123, (byte)123, 123, 123, null },
                     new object[] { "string2", Today.AddDays(1), 456, 456, (byte)124, 456, 456, true },
                     new object[] { "string3", Today.AddDays(2), 789, 789, (byte)125, 789, 789, false },

@@ -1,4 +1,4 @@
-﻿using DevExpress.DXBinding.Native;
+using DevExpress.DXBinding.Native;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -169,7 +169,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             return new CommandCalculator(info.ExecuteExpr, info.CanExecuteExpr, true, errorHandler);
         }
     }
-    
+
     [TestFixture]
     public class BaseParserTests : BaseTestFixtureBase {
         [Test]
@@ -220,8 +220,6 @@ namespace DevExpress.Xpf.DXBinding.Tests {
 
             AssertSyntaxTreeString("(1+2).GetType()");
             AssertArithmetic("(1+2).GetType()", typeof(int));
-
-            //TODO: AssertArithmetic("Generic1(1)", 1, null, new[] { new ParserTests_a() });
         }
         [Test]
         public virtual void PropertyAndMethod() {
@@ -286,19 +284,14 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
         [Test, Category("T476018")]
         public virtual void Attached_NotAttached() {
-            //attached:
             AssertSyntaxTreeString("($sys:DateTime.Now)", "(sys:DateTime.Now)");
             AssertSyntaxTreeString("($DateTime.Now)", "(DateTime.Now)");
-
-            //not attached:
             AssertSyntaxTreeString("($sys:DateTime.Now.Year)", "sys:DateTime.Now.Year");
             AssertSyntaxTreeString("($DateTime.Now.Year)", "DateTime.Now.Year");
             AssertSyntaxTreeString("($sys:DateTime.Now())", "sys:DateTime.Now()");
             AssertSyntaxTreeString("($DateTime.Now())", "DateTime.Now()");
             AssertSyntaxTreeString("($sys:DateTime.Now().Year)", "sys:DateTime.Now().Year");
             AssertSyntaxTreeString("($DateTime.Now().Year)", "DateTime.Now().Year");
-
-            //T476018 fix:
             AssertSyntaxTreeString("($sys:DateTime.Now.Year - Row.HireDate.Year)", "sys:DateTime.Now.Year-Row.HireDate.Year");
         }
         [Test]
@@ -466,11 +459,6 @@ namespace DevExpress.Xpf.DXBinding.Tests {
 
             AssertArithmetic("a.GetSelf().Array[1]", "b", null,
                 new[] { new BaseParserTests_a(array: new string[] { "a", "b" }) });
-
-            //TODO: DXBinding
-            //var dict = new Dictionary<Type, string>() { { typeof(int), "a" }, };
-            //AssertArithmetic("a.GetSelf().Dictionary[typeof(@int)]", "a", null,
-            //    new[] { new ParserTests_a(dictionary: dict) });
         }
         [Test]
         public virtual void OperandsOrder() {
@@ -664,7 +652,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Execute_AssertArithmetic("Execute1(Tag)", new[] { vm, vm.Tag }, null);
             Assert.AreEqual(false, vm.Execute1Res);
         }
-        #region Research How the C# searches for the appropriate method overload
+        #region Research How the Csearches for the appropriate method overload
         [Test]
         public void ResearchStandardMethodSearchTest1() {
             var obj = new ResearchStandardMethodSearch();
@@ -713,16 +701,6 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             obj.B(a3, o); Assert.IsTrue(obj.B13); obj.Clear();
             obj.B(a3, a1); Assert.IsTrue(obj.B14); obj.Clear();
             obj.B(a3, a2); Assert.IsTrue(obj.B15); obj.Clear();
-
-            //error CS0121: The call is ambiguous between the following methods or properties: 
-            //'ParserTests_CommandToMethod.ResearchStandardMethodSearch.B(
-            //ParserTests_CommandToMethod.ResearchStandardMethodSearch.a2, 
-            //ParserTests_CommandToMethod.ResearchStandardMethodSearch.a3)' 
-            //and 
-            //'ParserTests_CommandToMethod.ResearchStandardMethodSearch.B(
-            //ParserTests_CommandToMethod.ResearchStandardMethodSearch.a3, 
-            //ParserTests_CommandToMethod.ResearchStandardMethodSearch.a2)'
-            //obj.B(a3, a3); Assert.IsTrue(obj.B16); obj.Clear();
         }
         [Test]
         public virtual void MethodSearchTest2() {
@@ -753,22 +731,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             ex("B(a3, o)"); Assert.IsTrue(obj.B13); obj.Clear();
             ex("B(a3, a1)"); Assert.IsTrue(obj.B14); obj.Clear();
             ex("B(a3, a2)"); Assert.IsTrue(obj.B15); obj.Clear();
-
-            //error CS0121: The call is ambiguous between the following methods or properties: 
-            //'ParserTests_CommandToMethod.ResearchStandardMethodSearch.B(
-            //ParserTests_CommandToMethod.ResearchStandardMethodSearch.a2, 
-            //ParserTests_CommandToMethod.ResearchStandardMethodSearch.a3)' 
-            //and 
-            //'ParserTests_CommandToMethod.ResearchStandardMethodSearch.B(
-            //ParserTests_CommandToMethod.ResearchStandardMethodSearch.a3, 
-            //ParserTests_CommandToMethod.ResearchStandardMethodSearch.a2)'
-            //obj.B(a3, a3); Assert.IsTrue(obj.B16); obj.Clear();
             Execute_AssertValidation("o; a1; a2; a3; a4; " + "B(a3, a3)",
                 new object[] { o, a1, a2, a3, a4, obj }, "The 'B(Class_a3, Class_a3)' method is not found on object 'ResearchStandardMethodSearch'.");
-
-            //error CS0121: The call is ambiguous between the following methods or properties: 
-            //...
-            //obj.C(a4, a4);
             Execute_AssertValidation("o; a1; a2; a3; a4; " + "C(a4, a4)",
                 new object[] { o, a1, a2, a3, a4, obj }, "The 'C(Class_a4, Class_a4)' method is not found on object 'ResearchStandardMethodSearch'.");
         }
@@ -785,7 +749,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             public void A(int p1, object p2) { A4 = true; }
             public void A(char p1, char p2) { A5 = true; }
             #endregion
-            #region B 
+            #region B
             public bool B1 { get; set; }
             public bool B2 { get; set; }
             public bool B3 { get; set; }
@@ -806,7 +770,6 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             public void B(object p1, object p2) { B1 = true; }
             public void B(object p1, Class_a1 p2) { B2 = true; }
             public void B(object p1, Class_a2 p2) { B3 = true; }
-            //public void B(object p1, a3 p2) { B4 = true; }
             public void B(Class_a1 p1, object p2) { B5 = true; }
             public void B(Class_a1 p1, Class_a1 p2) { B6 = true; }
             public void B(Class_a1 p1, Class_a2 p2) { B7 = true; }
@@ -818,7 +781,6 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             public void B(Class_a3 p1, object p2) { B13 = true; }
             public void B(Class_a3 p1, Class_a1 p2) { B14 = true; }
             public void B(Class_a3 p1, Class_a2 p2) { B15 = true; }
-            //public void B(a3 p1, a3 p2) { B16 = true; }
             #endregion
             #region C
             public void C(Class_a2 p1, Class_a1 p2) { }
@@ -856,7 +818,6 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             AssertSyntaxTreeString("--+1", "--1");
             AssertSyntaxTreeString("++1", "1");
             AssertArithmetic("!false", true); AssertArithmetic("!a", true, "a", new[] { false });
-            //AssertArithmetic("~false", true); AssertArithmetic("~a", true, "a", new[] { false }); //TODO
             AssertArithmetic("(a) + 1", 2, "a", new[] { 1 });
         }
         [Test]
@@ -900,12 +861,12 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
         [Test]
         public void NewOperator_Arithmetic() {
-            AssertArithmetic("new int()", 
+            AssertArithmetic("new int()",
                 x => Assert.That(object.Equals(x, new int())));
-            AssertArithmetic("new int?()", 
+            AssertArithmetic("new int?()",
                 x => Assert.That(object.Equals(x, new int?())));
-            AssertArithmetic("new $dx:DXType()", 
-                x => Assert.That(x is NewOperator_a), 
+            AssertArithmetic("new $dx:DXType()",
+                x => Assert.That(x is NewOperator_a),
                 null, null, x => typeof(NewOperator_a));
             AssertArithmetic("new $dx:DXType(1)",
                 x => Assert.That(((NewOperator_a)x).V1 == 1),
@@ -995,31 +956,17 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             ex("B(A1V, A1V)"); Assert.IsTrue(obj.B6); obj.Clear();
             ex("B(A1V, A2V)"); Assert.IsTrue(obj.B7); obj.Clear();
             ex("B(A1V, A3V)"); Assert.IsTrue(obj.B8); obj.Clear();
-                       
+
             ex("B(A2V, o)"); Assert.IsTrue(obj.B9); obj.Clear();
             ex("B(A2V, A1V)"); Assert.IsTrue(obj.B10); obj.Clear();
             ex("B(A2V, A2V)"); Assert.IsTrue(obj.B11); obj.Clear();
             ex("B(A2V, A3V)"); Assert.IsTrue(obj.B12); obj.Clear();
-                       
+
             ex("B(A3V, o)"); Assert.IsTrue(obj.B13); obj.Clear();
             ex("B(A3V, A1V)"); Assert.IsTrue(obj.B14); obj.Clear();
             ex("B(A3V, A2V)"); Assert.IsTrue(obj.B15); obj.Clear();
-
-            //error CS0121: The call is ambiguous between the following methods or properties: 
-            //'ParserTests_CommandToMethod.ResearchStandardMethodSearch.B(
-            //ParserTests_CommandToMethod.ResearchStandardMethodSearch.a2, 
-            //ParserTests_CommandToMethod.ResearchStandardMethodSearch.a3)' 
-            //and 
-            //'ParserTests_CommandToMethod.ResearchStandardMethodSearch.B(
-            //ParserTests_CommandToMethod.ResearchStandardMethodSearch.a3, 
-            //ParserTests_CommandToMethod.ResearchStandardMethodSearch.a2)'
-            //obj.B(a3, a3); Assert.IsTrue(obj.B16); obj.Clear();
             Execute_AssertValidation("o; A1V; A2V; A3V; A4V; " + "B(A3V, A3V)",
                 new object[] { obj }, "The 'B(Class_a3, Class_a3)' method is not found on object 'ResearchStandardMethodSearch2'.");
-
-            //error CS0121: The call is ambiguous between the following methods or properties: 
-            //...
-            //obj.C(a4, a4);
             Execute_AssertValidation("o; A1V; A2V; A3V; A4V; " + "C(A4V, A4V)",
                 new object[] { obj }, "The 'C(Class_a4, Class_a4)' method is not found on object 'ResearchStandardMethodSearch2'.");
         }

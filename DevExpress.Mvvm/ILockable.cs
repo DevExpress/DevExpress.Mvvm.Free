@@ -1,4 +1,4 @@
-﻿
+
 namespace DevExpress.Mvvm {
     public interface ILockable {
         void BeginUpdate();

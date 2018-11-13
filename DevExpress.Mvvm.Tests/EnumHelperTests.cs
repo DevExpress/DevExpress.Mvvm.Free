@@ -10,9 +10,6 @@ using DevExpress.Mvvm.DataAnnotations;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-#if !FREE
-using DevExpress.Xpf.Core.Tests;
-#endif
 
 using NUnit.Framework;
 
@@ -133,13 +130,8 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
         #region display name description and image
-#if !FREE
-        const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests;component/Icons/";
-        const string SvgUriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests;component/Images/";
-#else
         const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Icons/";
         const string SvgUriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Images/";
-#endif
         public enum EnumWithDisplayName {
             [Display(ShortName = "OneMember")]
             [Image(UriPrefix + "icon1.ico")]

@@ -1,8 +1,5 @@
-﻿#if DEBUGTEST || MVVM
 using NUnit.Framework;
-#if !NETFX_CORE
 using DevExpress.Mvvm.Native;
-#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,16 +7,10 @@ using System.Linq;
 using System.Reflection;
 using NUnit.Framework.Constraints;
 using NUnit.Framework.SyntaxHelpers;
-#if MVVM
 namespace DevExpress {
-#else
-namespace DevExpress.Xpf.Core.Tests {
-#endif
-#if !NETFX_CORE
     public class SetNotEqualsException : AssertionException {
         public SetNotEqualsException(string message) : base(message) { }
     }
-#endif
     [System.Diagnostics.DebuggerNonUserCode]
     public static class AssertExtension {
         public static void AssertSequenceEqual(this IEnumerable expected, IEnumerable actual) {
@@ -71,26 +62,16 @@ namespace DevExpress.Xpf.Core.Tests {
             Assert.IsFalse(val);
             return val;
         }
-#if !NETFX_CORE
         public static TInput IsInstanceOfType<TInput>(this TInput obj, Type expectedType) where TInput : class {
-#if MVVM
             DevExpress
-#else
-            DevExpress.Xpf.Core.Tests
-#endif
             .AssertHelper.IsInstanceOf(expectedType, obj);
             return obj;
         }
         public static TInput IsInstanceOfType<TInput>(this TInput obj, Func<TInput, object> valueEvaluator, Type expectedType) where TInput : class {
-#if MVVM
             DevExpress
-#else
-            DevExpress.Xpf.Core.Tests
-#endif
             .AssertHelper.IsInstanceOf(expectedType, valueEvaluator(obj));
             return obj;
         }
-#endif
         static object GetActualValue<TInput>(TInput obj, Func<TInput, object> valueEvaluator) {
             return valueEvaluator == null ? obj : valueEvaluator(obj);
         }
@@ -104,11 +85,7 @@ namespace DevExpress.Xpf.Core.Tests {
             Assert.IsInstanceOf(type, target, message);
         }
         public static void IsInstanceOf(Type expected, object actual, string message, params object[] args) {
-#if !NETFX_CORE
             Assert.IsInstanceOf(expected, actual, message, args);
-#else
-            Assert.IsInstanceOf(expected, actual, message, string.Empty, 0, args);
-#endif
         }
 #pragma warning restore 612, 618
         public static Constraint HasCount(int count) {
@@ -136,7 +113,7 @@ namespace DevExpress.Xpf.Core.Tests {
                 if(setter == null || !setter.IsPublic) continue;
                 PropertyInfo actualProperty = actual.GetType().GetProperty(expectedProperty.Name);
                 Assert.AreEqual(expectedProperty.Name, actualProperty != null ? actualProperty.Name : null);
-                Assert.AreEqual(expectedProperty.GetValue(expected, null), actualProperty.GetValue(actual, null)); //new List<string> (){"one", "two"}
+                Assert.AreEqual(expectedProperty.GetValue(expected, null), actualProperty.GetValue(actual, null));
             }
         }
         public static void AssertEnumerablesAreEqual(IEnumerable expected, IEnumerable actual) {
@@ -187,11 +164,7 @@ namespace DevExpress.Xpf.Core.Tests {
                 }
                 message += "\n";
             }
-#if !NETFX_CORE
             throw new SetNotEqualsException(message);
-#else
-		    throw new Exception(message);
-#endif
         }
         public static void AssertThrows<T>(Action action, Action<T> checkException = null) where T : Exception {
             try {
@@ -230,4 +203,3 @@ namespace DevExpress.Xpf.Core.Tests {
         }
     }
 }
-#endif

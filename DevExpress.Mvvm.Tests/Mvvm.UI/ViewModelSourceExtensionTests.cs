@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using DevExpress.Mvvm.POCO;
 
 namespace DevExpress.Mvvm.UI.Tests {

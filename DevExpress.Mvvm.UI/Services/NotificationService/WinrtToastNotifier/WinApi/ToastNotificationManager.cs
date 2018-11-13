@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security;
 using DevExpress.Utils;
 using DevExpress.Internal.WinApi.Windows.UI.Notifications;
@@ -10,7 +10,6 @@ namespace DevExpress.Internal.WinApi {
         void Show(IToastNotification notification);
         void Hide(IToastNotification notification);
     }
-    //
     [SecuritySafeCritical]
     public static class ToastNotificationManager {
         static Version Win8Version = new Version(6, 2, 9200, 0);
@@ -39,7 +38,7 @@ namespace DevExpress.Internal.WinApi {
             return WinRTToastNotificationContent.GetDocument(manager, info);
         }
         internal static string GetXml(IPredefinedToastNotificationInfo info) {
-            return GetXml((Window.Data.Xml.Dom.IXmlNodeSerializer)GetDocument(info)); 
+            return GetXml((Window.Data.Xml.Dom.IXmlNodeSerializer)GetDocument(info));
         }
         internal static string GetXml(Window.Data.Xml.Dom.IXmlNodeSerializer content) {
             string xml;

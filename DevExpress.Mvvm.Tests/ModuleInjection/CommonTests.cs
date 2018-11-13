@@ -1,7 +1,3 @@
-﻿#if !FREE
-using DevExpress.Xpf.Core;
-using DevExpress.Xpf.Core.Tests;
-#endif
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.ModuleInjection;
 using DevExpress.Mvvm.POCO;
@@ -40,10 +36,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         }
         [Test]
         public void MissingModule() {
-            Assert.Throws<ModuleInjectionException>(() => 
+            Assert.Throws<ModuleInjectionException>(() =>
                 ModuleManager.DefaultManager.Inject("A", "1"),
                "Cannot find a module with the passed key. Register module before working with it.");
-            Assert.Throws<ModuleInjectionException>(() => 
+            Assert.Throws<ModuleInjectionException>(() =>
                ModuleManager.DefaultManager.InjectOrNavigate("A", "1"),
                "Cannot find a module with the passed key. Register module before working with it.");
             ModuleManager.DefaultManager.Navigate("A", "1");
@@ -55,10 +51,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Assert.AreEqual(null, ModuleManager.DefaultManager.GetRegion("B").SelectedKey);
 
 
-            Assert.Throws<ModuleInjectionException>(() => 
+            Assert.Throws<ModuleInjectionException>(() =>
                 ModuleManager.DefaultWindowManager.Show("A", "1"),
                "Cannot find a module with the passed key. Register module before working with it.");
-            Assert.Throws<ModuleInjectionException>(() => 
+            Assert.Throws<ModuleInjectionException>(() =>
                 ModuleManager.DefaultWindowManager.ShowOrActivate("A", "1"),
                "Cannot find a module with the passed key. Register module before working with it.");
             ModuleManager.DefaultWindowManager.Activate("A", "1");
@@ -126,220 +122,6 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         }
     }
 
-#if !FREE
-    [TestFixture]
-    public class ModuleInjectionTests : BaseWpfFixture {
-        protected override void SetUpCore() {
-            base.SetUpCore();
-            InjectionTestHelper.SetUp(GetType().Assembly);
-        }
-        protected override void TearDownCore() {
-            InjectionTestHelper.TearDown();
-            base.TearDownCore();
-        }
-
-        [Test]
-        public void TwoControls_Selection() {
-            Grid g = new Grid();
-            TabControl t1 = new TabControl();
-            TabControl t2 = new TabControl();
-            g.Children.Add(t1);
-            g.Children.Add(t2);
-            Window.Content = g;
-            UIRegion.SetRegion(t1, "A");
-            UIRegion.SetRegion(t2, "A");
-            Window.Show();
-            object vm1 = null;
-            object vm2 = null;
-            var service1 = UIRegionBase.GetInheritedService(t1);
-            var service2 = UIRegionBase.GetInheritedService(t2);
-            var serviceHelper1 = InjectionTestHelper.CreateServiceHelper(service1);
-            var serviceHelper2 = InjectionTestHelper.CreateServiceHelper(service2);
-
-            ModuleManager.DefaultManager.RegisterOrInjectOrNavigate("A", new Module("1", () => vm1 = new object(), typeof(View1_BaseTests)));
-            ModuleManager.DefaultManager.RegisterOrInjectOrNavigate("A", new Module("2", () => vm2 = new object(), typeof(View2_BaseTests)));
-            DispatcherHelper.DoEvents();
-            Assert.AreEqual(vm2, t1.SelectedItem);
-            Assert.AreEqual(vm2, t2.SelectedItem);
-            serviceHelper1.AssertSelectionChanged(2);
-            serviceHelper2.AssertSelectionChanged(2);
-
-            ModuleManager.DefaultManager.Navigate("A", "1");
-            DispatcherHelper.DoEvents();
-            Assert.AreEqual(vm1, t1.SelectedItem);
-            Assert.AreEqual(vm1, t2.SelectedItem);
-            serviceHelper1.AssertSelectionChanged(3);
-            serviceHelper2.AssertSelectionChanged(3);
-
-            ModuleManager.DefaultManager.Navigate("A", null);
-            DispatcherHelper.DoEvents();
-            Assert.AreEqual(null, t1.SelectedItem);
-            Assert.AreEqual(null, t2.SelectedItem);
-            serviceHelper1.AssertSelectionChanged(4);
-            serviceHelper2.AssertSelectionChanged(4);
-
-            t1.SelectedIndex = 0;
-            DispatcherHelper.DoEvents();
-            Assert.AreEqual(vm1, t1.SelectedItem);
-            Assert.AreEqual(vm1, t2.SelectedItem);
-            serviceHelper1.AssertSelectionChanged(5);
-            serviceHelper2.AssertSelectionChanged(5);
-
-            t2.SelectedIndex = 1;
-            DispatcherHelper.DoEvents();
-            Assert.AreEqual(vm2, t1.SelectedItem);
-            Assert.AreEqual(vm2, t2.SelectedItem);
-            serviceHelper1.AssertSelectionChanged(6);
-            serviceHelper2.AssertSelectionChanged(6);
-        }
-        [Test]
-        public void TwoControls_Remove() {
-            Grid g = new Grid();
-            TabControl t1 = new TabControl();
-            DXTabControl t2 = new DXTabControl();
-            g.Children.Add(t1);
-            g.Children.Add(t2);
-            Window.Content = g;
-            UIRegion.SetRegion(t1, "A");
-            UIRegion.SetRegion(t2, "A");
-            Window.Show();
-            object vm1 = null;
-            object vm2 = null;
-            var service1 = UIRegionBase.GetInheritedService(t1);
-            var service2 = UIRegionBase.GetInheritedService(t2);
-            var serviceHelper1 = InjectionTestHelper.CreateServiceHelper(service1);
-            var serviceHelper2 = InjectionTestHelper.CreateServiceHelper(service2);
-
-            ModuleManager.DefaultManager.RegisterOrInjectOrNavigate("A", new Module("1", () => vm1 = new object(), typeof(View1_BaseTests)));
-            ModuleManager.DefaultManager.RegisterOrInjectOrNavigate("A", new Module("2", () => vm2 = new object(), typeof(View2_BaseTests)));
-            DispatcherHelper.DoEvents();
-            Assert.AreEqual(vm2, t1.SelectedItem);
-            Assert.AreEqual(vm2, t2.SelectedItem);
-            serviceHelper1.AssertSelectionChanged(2);
-            serviceHelper2.AssertSelectionChanged(2);
-
-            serviceHelper1.CancelViewModelRemoving = true;
-            ModuleManager.DefaultManager.Remove("A", "2");
-            serviceHelper1.AssertViewModelRemoving(1);
-            serviceHelper2.AssertViewModelRemoving(1);
-            serviceHelper1.AssertSelectionChanged(2);
-            serviceHelper2.AssertSelectionChanged(2);
-
-            serviceHelper2.CancelViewModelRemoving = true;
-            ModuleManager.DefaultManager.Remove("A", "2");
-            serviceHelper1.AssertViewModelRemoving(2);
-            serviceHelper2.AssertViewModelRemoving(2);
-            serviceHelper1.AssertSelectionChanged(2);
-            serviceHelper2.AssertSelectionChanged(2);
-
-            serviceHelper1.CancelViewModelRemoving = false;
-            ModuleManager.DefaultManager.Remove("A", "2");
-            serviceHelper1.AssertViewModelRemoving(3);
-            serviceHelper2.AssertViewModelRemoving(3);
-            serviceHelper1.AssertSelectionChanged(2);
-            serviceHelper2.AssertSelectionChanged(2);
-
-            serviceHelper1.AssertViewModelRemoved(0);
-            serviceHelper2.AssertViewModelRemoved(0);
-            Assert.AreEqual(2, serviceHelper1.ViewModels.Count());
-            Assert.AreEqual(2, serviceHelper2.ViewModels.Count());
-
-            serviceHelper2.CancelViewModelRemoving = false;
-            ModuleManager.DefaultManager.Remove("A", "2");
-            serviceHelper1.AssertViewModelRemoving(4);
-            serviceHelper2.AssertViewModelRemoving(4);
-            serviceHelper1.AssertSelectionChanged(3);
-            serviceHelper2.AssertSelectionChanged(3);
-            serviceHelper1.AssertViewModelRemoved(1);
-            serviceHelper2.AssertViewModelRemoved(1);
-            Assert.AreEqual(1, serviceHelper1.ViewModels.Count());
-            Assert.AreEqual(1, serviceHelper2.ViewModels.Count());
-
-            ModuleManager.DefaultManager.Remove("A", "1");
-            serviceHelper1.AssertViewModelRemoving(5);
-            serviceHelper2.AssertViewModelRemoving(5);
-            serviceHelper1.AssertSelectionChanged(4);
-            serviceHelper2.AssertSelectionChanged(4);
-            serviceHelper1.AssertViewModelRemoved(2);
-            serviceHelper2.AssertViewModelRemoved(2);
-            Assert.AreEqual(0, serviceHelper1.ViewModels.Count());
-            Assert.AreEqual(0, serviceHelper2.ViewModels.Count());
-        }
-        [Test]
-        public void TwoControls_RemoveFromControl() {
-            Grid g = new Grid();
-            TabControl t1 = new TabControl();
-            DXTabControl t2 = new DXTabControl();
-            g.Children.Add(t1);
-            g.Children.Add(t2);
-            Window.Content = g;
-            UIRegion.SetRegion(t1, "A");
-            UIRegion.SetRegion(t2, "A");
-            Window.Show();
-            object vm1 = null;
-            object vm2 = null;
-            var service1 = UIRegionBase.GetInheritedService(t1);
-            var service2 = UIRegionBase.GetInheritedService(t2);
-            var serviceHelper1 = InjectionTestHelper.CreateServiceHelper(service1);
-            var serviceHelper2 = InjectionTestHelper.CreateServiceHelper(service2);
-
-            ModuleManager.DefaultManager.RegisterOrInjectOrNavigate("A", new Module("1", () => vm1 = new object(), typeof(View1_BaseTests)));
-            ModuleManager.DefaultManager.RegisterOrInjectOrNavigate("A", new Module("2", () => vm2 = new object(), typeof(View2_BaseTests)));
-            DispatcherHelper.DoEvents();
-            Assert.AreEqual(vm2, t1.SelectedItem);
-            Assert.AreEqual(vm2, t2.SelectedItem);
-            serviceHelper1.AssertSelectionChanged(2);
-            serviceHelper2.AssertSelectionChanged(2);
-
-            serviceHelper1.CancelViewModelRemoving = true;
-            t2.RemoveTabItem(1);
-            serviceHelper1.AssertViewModelRemoving(1);
-            serviceHelper2.AssertViewModelRemoving(1);
-            serviceHelper1.AssertSelectionChanged(2);
-            serviceHelper2.AssertSelectionChanged(2);
-
-            serviceHelper2.CancelViewModelRemoving = true;
-            t2.RemoveTabItem(1);
-            serviceHelper1.AssertViewModelRemoving(2);
-            serviceHelper2.AssertViewModelRemoving(2);
-            serviceHelper1.AssertSelectionChanged(2);
-            serviceHelper2.AssertSelectionChanged(2);
-
-            serviceHelper1.CancelViewModelRemoving = false;
-            t2.RemoveTabItem(1);
-            serviceHelper1.AssertViewModelRemoving(3);
-            serviceHelper2.AssertViewModelRemoving(3);
-            serviceHelper1.AssertSelectionChanged(2);
-            serviceHelper2.AssertSelectionChanged(2);
-
-            serviceHelper1.AssertViewModelRemoved(0);
-            serviceHelper2.AssertViewModelRemoved(0);
-            Assert.AreEqual(2, serviceHelper1.ViewModels.Count());
-            Assert.AreEqual(2, serviceHelper2.ViewModels.Count());
-
-            serviceHelper2.CancelViewModelRemoving = false;
-            t2.RemoveTabItem(1);
-            serviceHelper1.AssertViewModelRemoving(4);
-            serviceHelper2.AssertViewModelRemoving(4);
-            serviceHelper1.AssertSelectionChanged(4);
-            serviceHelper2.AssertSelectionChanged(4);
-            serviceHelper1.AssertViewModelRemoved(1);
-            serviceHelper2.AssertViewModelRemoved(1);
-            Assert.AreEqual(1, serviceHelper1.ViewModels.Count());
-            Assert.AreEqual(1, serviceHelper2.ViewModels.Count());
-
-            t2.RemoveTabItem(0);
-            serviceHelper1.AssertViewModelRemoving(5);
-            serviceHelper2.AssertViewModelRemoving(5);
-            serviceHelper1.AssertSelectionChanged(5);
-            serviceHelper2.AssertSelectionChanged(5);
-            serviceHelper1.AssertViewModelRemoved(2);
-            serviceHelper2.AssertViewModelRemoved(2);
-            Assert.AreEqual(0, serviceHelper1.ViewModels.Count());
-            Assert.AreEqual(0, serviceHelper2.ViewModels.Count());
-        }
-    }
-#endif
 
     [TestFixture]
     public class ViewModelCreationTests : BaseWpfFixture {

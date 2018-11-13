@@ -1,4 +1,4 @@
-﻿using DevExpress.Data;
+using DevExpress.Data;
 using DevExpress.Internal.WinApi;
 using DevExpress.Internal.WinApi.Window.Data.Xml.Dom;
 using System;
@@ -41,11 +41,9 @@ namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
     [Guid("3F89D935-D9CB-4538-A0F0-FFE7659938F8")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IToastDismissedEventArgs : IInspectable {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
         ToastDismissalReason Reason { get; }
     }
 
@@ -53,11 +51,9 @@ namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
     [Guid("35176862-CFD4-44F8-AD64-F500FD896C3B")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IToastFailedEventArgs : IInspectable {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
         int Error { get; }
     }
 
@@ -66,11 +62,9 @@ namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
     [Guid("997E2675-059E-4E60-8B06-1760917C8B80")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IToastNotification : IInspectable {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
         IXmlDocument Content { get; }
         DateTime ExpirationTime { get; set; }
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -89,11 +83,9 @@ namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
     [Guid("75927B93-03F3-41EC-91D3-6E5BAC1B38E7")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface IToastNotifier : IInspectable {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
         int Show(IToastNotification notification);
         void Hide(IToastNotification notification);
         NotificationSetting Setting { get; }
@@ -106,28 +98,24 @@ namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
     [Guid("ba0aff1f-6a8a-5a7e-a9f7-505b6266a436")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface IVectorView_ToastNotification {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
         HResult GetAt(uint index, [Out] out IToastNotification value);
         uint Size { get; }
         HResult IndexOf(IToastNotification value, [Out] out uint index, [Out] out bool found);
-        HResult GetMany(); // todo
+        HResult GetMany();
     }
 
     [ComImport]
     [Guid("50AC103F-D235-4598-BBEF-98FE4D1A3AD4")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface IToastNotificationManager : IInspectable {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
         void f6();
-        int CreateToastNotifierWithId([In, MarshalAs(47/*UnmanagedType.HString*/)] string applicationId, out IToastNotifier notifier);
+        int CreateToastNotifierWithId([In, MarshalAs(47)] string applicationId, out IToastNotifier notifier);
         IXmlDocument GetTemplateContent(ToastTemplateType type);
     }
 
@@ -135,11 +123,9 @@ namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
     [Guid("04124B20-82C6-4229-B109-FD9ED4662B53")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface IToastNotificationFactory : IInspectable {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
         int CreateToastNotification(IXmlDocument content, out IToastNotification notification);
     }
 
@@ -147,7 +133,7 @@ namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
     [ComImport]
     [Guid("61c2402f-0ed0-5a18-ab69-59f4aa99a368")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface ITypedEventHandler_IToastNotification_Dismissed { // not an IInspectable
+    public interface ITypedEventHandler_IToastNotification_Dismissed {
         [MethodImpl(MethodImplOptions.PreserveSig)]
         int Invoke(IToastNotification sender, IToastDismissedEventArgs args);
     }
@@ -156,7 +142,7 @@ namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
     [ComImport]
     [Guid("ab54de2d-97d9-5528-b6ad-105afe156530")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface ITypedEventHandler_IToastNotification_Activated { // not an IInspectable
+    public interface ITypedEventHandler_IToastNotification_Activated {
         [MethodImpl(MethodImplOptions.PreserveSig)]
         int Invoke(IToastNotification sender, IInspectable args);
     }
@@ -165,7 +151,7 @@ namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
     [ComImport]
     [Guid("95e3e803-c969-5e3a-9753-ea2ad22a9a33")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface ITypedEventHandler_IToastNotification_Failed { // not an IInspectable
+    public interface ITypedEventHandler_IToastNotification_Failed {
         [MethodImpl(MethodImplOptions.PreserveSig)]
         int Invoke(IToastNotification sender, IToastFailedEventArgs args);
     }

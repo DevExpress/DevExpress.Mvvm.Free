@@ -1,4 +1,4 @@
-﻿using DevExpress.Mvvm;
+using DevExpress.Mvvm;
 using DevExpress.Mvvm.UI;
 using DevExpress.Mvvm.Native;
 using System;
@@ -14,12 +14,7 @@ using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Native;
 using WindowBase = System.Windows.Window;
 
-#if !FREE
-using DevExpress.Xpf.Core.Serialization;
-namespace DevExpress.Xpf.Core {
-#else
 namespace DevExpress.Mvvm.UI {
-#endif
     [TargetTypeAttribute(typeof(UserControl))]
     [TargetTypeAttribute(typeof(Window))]
     public class WindowedDocumentUIService : DocumentUIServiceBase, IDocumentManagerService, IDocumentOwner {
@@ -37,11 +32,6 @@ namespace DevExpress.Mvvm.UI {
                 this.documentType = documentType;
                 Window.Closing += window_Closing;
                 Window.Closed += window_Closed;
-#if !FREE
-                if (documentContentView is DependencyObject) {
-                    DXSerializer.SetEnabled((DependencyObject)documentContentView, false);
-                }
-#endif
             }
             [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
             public IWindowSurrogate Window { get; private set; }

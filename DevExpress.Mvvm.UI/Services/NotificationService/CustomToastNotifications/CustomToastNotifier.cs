@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -10,7 +10,6 @@ using System.Windows.Forms;
 using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm.UI.Native {
-    // http://diditwith.net/2007/03/23/SolvingTheProblemWithEventsWeakEventHandlers.aspx
     public delegate void UnregisterCallback<E>(EventHandler<E> eventHandler) where E : EventArgs;
     public interface IAnotherWeakEventHandler<E> where E : EventArgs {
         EventHandler<E> Handler { get; }
@@ -94,11 +93,7 @@ namespace DevExpress.Mvvm.UI.Native {
     }
 
     public class CustomNotifier {
-#if DEBUGTEST
-        public
-#else
         internal
-#endif
         class ToastInfo {
             public Window win;
             public CustomNotification toast;
@@ -120,9 +115,6 @@ namespace DevExpress.Mvvm.UI.Native {
             UpdatePositioner(NotificationPosition.TopRight, maxVisibleToasts);
         }
 
-#if DEBUGTEST
-        public
-#endif
         List<ToastInfo> VisibleItems {
             get { return positioner.Items.Where(i => i != null).ToList(); }
         }
@@ -194,7 +186,6 @@ namespace DevExpress.Mvvm.UI.Native {
                 info.win.Show();
             }
             catch(System.ComponentModel.Win32Exception) {
-                /* Tests*/
                 content.TimeOutCommand.Execute(null);
                 return;
             }
@@ -233,7 +224,7 @@ namespace DevExpress.Mvvm.UI.Native {
 
         void RemoveVisibleToast(CustomNotification toast, NotificationResult result) {
             ToastInfo info = GetVisibleToastInfo(toast);
-            if(info == null) { // already activated or dismissed
+            if(info == null) {
                 return;
             }
             info.win.Close();
@@ -251,7 +242,6 @@ namespace DevExpress.Mvvm.UI.Native {
         }
 
         internal void ResetTimer(CustomNotification toast) {
-            // the null check is here because a trigger can modify the timer leading to a null ref
             GetVisibleToastInfo(toast).Do(t => t.timer.Start());
         }
 

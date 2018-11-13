@@ -170,14 +170,6 @@ namespace DevExpress.Mvvm.UI.Native {
         public static DateTime GetApplicationCreateTime() {
             if(applicationCreateTime == null) {
                 applicationCreateTime = DateTime.Now;
-
-                //sometimes the TaskLauncher cannot be written for some reason. The following error occurs:
-                //this file does not have a program associated with it for performing this action
-                //try {
-                //    applicationCreateTime = GetFileTime(ApplicationExecutablePath);
-                //} catch {
-                //    applicationCreateTime = DateTime.Now;
-                //}
             }
             return applicationCreateTime.Value;
         }

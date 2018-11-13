@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -215,7 +215,6 @@ namespace DevExpress.DXBinding.Native {
     }
 
     abstract class ParserBase {
-        //-->constants
         protected const bool _T = true;
         protected const bool _x = false;
         protected const int minErrDist = 2;
@@ -226,7 +225,6 @@ namespace DevExpress.DXBinding.Native {
         protected Token t;
         protected Token la;
         int errDist = minErrDist;
-        //-->declarations
         public ParserBase(Scanner scanner, IParserErrorHandler errorHandler) {
             Errors = CreateErrorHandler(errorHandler);
             Scanner = scanner;
@@ -274,10 +272,10 @@ namespace DevExpress.DXBinding.Native {
             return false;
         }
 
-        protected abstract void ParseRoot(); //--> parseRoot
-        protected abstract bool[,] GetSet(); //-->initialization
-        protected abstract int GetMaxTokenKind(); //maxT
-        protected abstract void Pragmas(); //--> pragmas
+        protected abstract void ParseRoot();
+        protected abstract bool[,] GetSet();
+        protected abstract int GetMaxTokenKind();
+        protected abstract void Pragmas();
         protected abstract bool IsEOF(int n);
 
         protected void Get() {
@@ -285,7 +283,6 @@ namespace DevExpress.DXBinding.Native {
                 t = la;
                 la = Scanner.Scan();
                 if(la.kind <= GetMaxTokenKind()) { ++errDist; break; }
-                //--> pragmas
                 la = t;
             }
         }
@@ -321,7 +318,6 @@ namespace DevExpress.DXBinding.Native {
             if(errDist >= minErrDist) Errors.SemErr(t.line, t.col, msg);
             errDist = 0;
         }
-        //-->productions
     }
     abstract class ErrorsBase {
         readonly IParserErrorHandler errorHandler;
@@ -355,7 +351,6 @@ namespace DevExpress.DXBinding.Native {
     abstract class ScannerBase {
         protected const char EOL = '\n';
         protected const int eofSym = 0;
-        //-->declarations
 
         public Buffer buffer;
 
@@ -376,7 +371,6 @@ namespace DevExpress.DXBinding.Native {
 
         static ScannerBase() {
             start = new Hashtable(128);
-            //--> initialization
         }
         public ScannerBase(string fileName) {
             try {
@@ -427,11 +421,9 @@ namespace DevExpress.DXBinding.Native {
                 NextCh();
             }
         }
-        protected abstract void Casing1(); //--> casing1
-        protected abstract void Casing2(); //--> casing2
-
-        //-->comments
-        protected abstract void CheckLiteral(); //--> literals
+        protected abstract void Casing1();
+        protected abstract void Casing2();
+        protected abstract void CheckLiteral();
 
         protected abstract int GetMaxT();
         protected abstract Token NextToken();
@@ -471,8 +463,8 @@ namespace DevExpress.DXBinding.Native {
 
     class Buffer {
         public const int EOF = char.MaxValue + 1;
-        const int MIN_BUFFER_LENGTH = 1024; // 1KB
-        const int MAX_BUFFER_LENGTH = MIN_BUFFER_LENGTH * 64; // 64KB
+        const int MIN_BUFFER_LENGTH = 1024;
+        const int MAX_BUFFER_LENGTH = MIN_BUFFER_LENGTH * 64;
         byte[] buf;
         int bufStart;
         int bufLen;
@@ -553,9 +545,9 @@ namespace DevExpress.DXBinding.Native {
                     throw new FatalError("buffer out of bounds access, position: " + value);
                 }
 
-                if(value >= bufStart && value < bufStart + bufLen) { // already in buffer
+                if(value >= bufStart && value < bufStart + bufLen) {
                     bufPos = value - bufStart;
-                } else if(stream != null) { // must be swapped in
+                } else if(stream != null) {
                     stream.Seek(value, SeekOrigin.Begin);
                     bufLen = stream.Read(buf, 0, buf.Length);
                     bufStart = value; bufPos = 0;
@@ -586,26 +578,20 @@ namespace DevExpress.DXBinding.Native {
             int ch;
             do {
                 ch = base.Read();
-                // until we find a utf8 start (0xxxxxxx or 11xxxxxx)
             } while((ch >= 128) && ((ch & 0xC0) != 0xC0) && (ch != EOF));
             if(ch < 128 || ch == EOF) {
-                // nothing to do, first 127 chars are the same in ascii and utf8
-                // 0xxxxxxx or end of file character
             } else if((ch & 0xF0) == 0xF0) {
-                // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
                 int c1 = ch & 0x07; ch = base.Read();
                 int c2 = ch & 0x3F; ch = base.Read();
                 int c3 = ch & 0x3F; ch = base.Read();
                 int c4 = ch & 0x3F;
                 ch = (((((c1 << 6) | c2) << 6) | c3) << 6) | c4;
             } else if((ch & 0xE0) == 0xE0) {
-                // 1110xxxx 10xxxxxx 10xxxxxx
                 int c1 = ch & 0x0F; ch = base.Read();
                 int c2 = ch & 0x3F; ch = base.Read();
                 int c3 = ch & 0x3F;
                 ch = (((c1 << 6) | c2) << 6) | c3;
             } else if((ch & 0xC0) == 0xC0) {
-                // 110xxxxx 10xxxxxx
                 int c1 = ch & 0x1F; ch = base.Read();
                 int c2 = ch & 0x3F;
                 ch = (c1 << 6) | c2;

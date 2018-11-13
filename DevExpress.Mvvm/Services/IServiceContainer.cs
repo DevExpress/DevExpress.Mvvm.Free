@@ -1,4 +1,4 @@
-﻿using DevExpress.Mvvm.Native;
+using DevExpress.Mvvm.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;

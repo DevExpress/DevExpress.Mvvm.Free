@@ -1,11 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 
 namespace DevExpress.Utils {
-#if !DXPORTABLE
     class WindowsVersionInfo {
         public int CurrentBuild { get; set; }
         public int CurrentMajorVersionNumber { get; set; }
@@ -94,5 +93,4 @@ namespace DevExpress.Utils {
             return defaultVal;
         }
     }
-#endif
 }

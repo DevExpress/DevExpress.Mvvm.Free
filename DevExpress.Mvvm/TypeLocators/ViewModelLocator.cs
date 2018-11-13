@@ -1,4 +1,4 @@
-﻿using DevExpress.Mvvm.POCO;
+using DevExpress.Mvvm.POCO;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -20,11 +20,7 @@ namespace DevExpress.Mvvm {
         readonly IEnumerable<Assembly> assemblies;
         protected override IEnumerable<Assembly> Assemblies { get { return assemblies; } }
         public ViewModelLocator(Application application)
-#if !NETFX_CORE
             : this(EntryAssembly != null && !ViewModelBase.IsInDesignMode ? new[] { EntryAssembly } : new Assembly[0]) {
-#else
-            : this(EntryAssembly != null && !DesignMode.DesignModeEnabled ? new[] { EntryAssembly } : new Assembly[0]) {
-#endif
         }
         public ViewModelLocator(params Assembly[] assemblies)
             : this((IEnumerable<Assembly>)assemblies) {

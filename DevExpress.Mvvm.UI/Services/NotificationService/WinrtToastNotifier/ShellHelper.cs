@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
@@ -34,7 +34,6 @@ namespace DevExpress.Data {
             string shortcutPath = GetShortcutPath(name);
             return File.Exists(shortcutPath);
         }
-        //
         static string GetShortcutPath(string name) {
             return Path.Combine(GetProgramsFolder(), name + ".lnk");
         }

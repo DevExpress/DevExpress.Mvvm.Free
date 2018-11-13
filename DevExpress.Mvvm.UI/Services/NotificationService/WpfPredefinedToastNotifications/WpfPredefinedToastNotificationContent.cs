@@ -1,4 +1,4 @@
-﻿using DevExpress.Internal;
+using DevExpress.Internal;
 using DevExpress.Internal.WinApi.Windows.UI.Notifications;
 using System;
 using System.Diagnostics;

@@ -1,4 +1,4 @@
-﻿using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.UI.Interactivity;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;

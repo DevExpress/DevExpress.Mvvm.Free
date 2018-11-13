@@ -1,7 +1,3 @@
-﻿#if !FREE
-using DevExpress.Xpf.Core;
-using DevExpress.Xpf.Core.Tests;
-#endif
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.UI;
 using DevExpress.Mvvm.UI.Interactivity;
@@ -98,7 +94,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 Template = TemplateCreator.Invoke();
         }
     }
-    
+
     public class DXSplashScreenBaseTestFixture : BaseWpfFixture {
         protected override void SetUpCore() {
             base.SetUpCore();
@@ -254,7 +250,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(SplashScreenTestWindow.Instance.IsIndeterminate);
             Assert.AreEqual(100, SplashScreenTestWindow.Instance.Progress);
             Assert.AreEqual("test", ((SplashScreenTestWindow)SplashScreenTestWindow.Instance).TextProp);
-            DXSplashScreen.SetState("test"); // should no exceptions
+            DXSplashScreen.SetState("test");
             SplashScreenTestWindow.DoEvents();
         }
         [Test, Order(8)]
@@ -628,8 +624,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(1, SplashScreenTestUserControl.ViewModel.Progress);
             Assert.AreEqual(2, SplashScreenTestUserControl.ViewModel.MaxProgress);
             DispatcherHelper.DoEvents();
-            //DXSplashScreen.Close();
-            //CloseDXSplashScreen();
         }
         [Test, Order(36)]
         public void NonInitializedCallbacks_Test01() {
@@ -724,8 +718,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual("init", SplashScreenTestWindow.Instance.TextProp);
             Assert.AreEqual(2, SplashScreenTestWindow.Instance.Progress);
             DispatcherHelper.DoEvents();
-            //DXSplashScreen.Close();
-            //CloseDXSplashScreen();
         }
         [Test, Order(41)]
         public void NonInitializedCallbacks_Test06() {
@@ -856,7 +848,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(SplashScreenTestWindow.Instance.IsIndeterminate);
             Assert.AreEqual(100, SplashScreenTestWindow.Instance.Progress);
             Assert.AreEqual("test", ((SplashScreenTestWindow)SplashScreenTestWindow.Instance).TextProp);
-            DXSplashScreen.SetState("test"); // should no exceptions
+            DXSplashScreen.SetState("test");
             service.SetSplashScreenState("test");
             SplashScreenTestWindow.DoEvents();
             service.HideSplashScreen();

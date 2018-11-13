@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -85,13 +85,8 @@ namespace DevExpress.Mvvm.UI.Native {
             vsAppeared = (VisualState)GetTemplateChild("Appeared");
             vsTimedOut = (VisualState)GetTemplateChild("TimedOut");
 
-#if DEBUGTEST
-            var timedOutDuration = new Duration(new TimeSpan(0, 0, 0, 0, 110));
-            var appearedDuration = new Duration(new TimeSpan(0, 0, 0, 0, 100));
-#else
             var timedOutDuration = new Duration(new TimeSpan(0, 0, 0, 1, 0));
             var appearedDuration = new Duration(new TimeSpan(0, 0, 0, 0, 100));
-#endif
 
             (GetTemplateChild("PART_TimedOutAnimation") as DoubleAnimation).Do(x => x.Duration = timedOutDuration);
             (GetTemplateChild("PART_AppearedAnimation1") as DoubleAnimation).Do(x => x.Duration = appearedDuration);

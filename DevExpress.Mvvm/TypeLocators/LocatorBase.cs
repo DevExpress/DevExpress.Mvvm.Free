@@ -1,12 +1,9 @@
-﻿using DevExpress.Mvvm.Native;
+using DevExpress.Mvvm.Native;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-#if NETFX_CORE
-using Windows.UI.Xaml;
-#endif
 
 namespace DevExpress.Mvvm {
     public abstract class LocatorBase {
@@ -14,12 +11,7 @@ namespace DevExpress.Mvvm {
         protected static Assembly EntryAssembly {
             get {
                 if(entryAssembly == null) {
-#if NETFX_CORE
-                    //entryAssembly = Application.Current == null ? null : Application.Current.GetType().GetAssembly();
                     entryAssembly = Assembly.GetEntryAssembly();
-#else
-                    entryAssembly = Assembly.GetEntryAssembly();
-#endif
                 }
                 return entryAssembly;
             }
@@ -65,12 +57,7 @@ namespace DevExpress.Mvvm {
             foreach(Assembly asm in Assemblies) {
                 Type[] types = new Type[] { };
                 try {
-#if !NETFX_CORE
                     types = asm.GetTypes();
-#else
-                    types = asm.GetTypes();
-                    //types = Mvvm.Native.TypeExtensions.GetExportedTypes(asm);
-#endif
                 } catch(ReflectionTypeLoadException e) {
                     types = e.Types;
                 }
@@ -80,7 +67,7 @@ namespace DevExpress.Mvvm {
                 }
             }
         }
-        
+
         protected static void ResolveTypeProperties(ref string name, out IDictionary<string, string> properties) {
             Func<string, string> getPropName = x => {
                 var ind = x.IndexOf('=');
@@ -122,17 +109,6 @@ namespace DevExpress.Mvvm {
             if(type == null) return null;
             object res = null;
             try {
-#if NETFX_CORE
-                var ctors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
-                var parameterlessCtor = ctors.FirstOrDefault(x => x.GetParameters().Count() == 0);
-                if(parameterlessCtor != null)
-                    res = parameterlessCtor.Invoke(null);
-                if(res == null) {
-                    var optionalParametersCtor = ctors.FirstOrDefault(x => x.GetParameters().All(p => p.IsOptional));
-                    if(optionalParametersCtor != null)
-                        res = optionalParametersCtor.Invoke(optionalParametersCtor.GetParameters().Select(x => Type.Missing).ToArray());
-                }
-#else
                 var parameterlessCtor = type.GetConstructor(
                     BindingFlags.CreateInstance | BindingFlags.Public | BindingFlags.Instance,
                     null, new Type[] { }, null);
@@ -143,7 +119,6 @@ namespace DevExpress.Mvvm {
                         BindingFlags.CreateInstance | BindingFlags.Public | BindingFlags.Instance | BindingFlags.OptionalParamBinding,
                         null, null, null);
                 }
-#endif
             } catch(Exception e) {
                 throw new LocatorException(GetType().Name, typeName, e);
             }

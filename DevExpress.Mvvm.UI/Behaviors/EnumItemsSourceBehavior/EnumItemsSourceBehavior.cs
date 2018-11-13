@@ -1,6 +1,3 @@
-#if !FREE
-using DevExpress.Xpf.Core.Native;
-#endif
 using DevExpress.Internal;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Interactivity.Internal;
@@ -18,9 +15,6 @@ using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm.UI {
     [TargetType(typeof(ItemsControl))]
-#if !FREE
-    [TargetType(typeof(DevExpress.Xpf.Editors.ListBoxEdit)), TargetType(typeof(DevExpress.Xpf.Editors.LookUpEditBase))]
-#endif
     public class EnumItemsSourceBehavior : Behavior<FrameworkElement> {
         public EnumItemsSourceBehavior() {
             InteractionHelper.SetBehaviorInDesignMode(this, InteractionBehaviorInDesignMode.AsWellAsNotInDesignMode);
@@ -84,19 +78,15 @@ namespace DevExpress.Mvvm.UI {
                 PropertyDescriptor descriptor = TypeDescriptor.GetProperties(this.AssociatedObject).Find("ItemsSource", true);
                 if (descriptor == null)
                     throw new Exception("ItemsSource dependency property required");
-                else 
-                    descriptor.SetValue(this.AssociatedObject, EnumSourceHelperCore.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter, 
+                else
+                    descriptor.SetValue(this.AssociatedObject, EnumSourceHelperCore.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter,
                         SplitNames, SortMode, null, showImage: AllowImages
-#if !FREE                        
-                        ,
-                        getSvgImageSource: uri=> WpfSvgRenderer.CreateImageSource(new Uri(uri), null, null, autoSize: true)
-#endif
                         ));
             }
         }
         void ChangeItemTemplate() {
             ItemsControl itemsControl = this.AssociatedObject as ItemsControl;
-            if(itemsControl != null) 
+            if(itemsControl != null)
                 itemsControl.ItemTemplate = ItemTemplate;
         }
 
@@ -107,13 +97,8 @@ namespace DevExpress.Mvvm.UI {
 
         void GetDefaultDataTemplate() {
             ResourceDictionary resourceDictionary = new ResourceDictionary() {
-#if !FREE
-            Source = new Uri(string.Format("pack://application:,,,/{0};component/Mvvm.UI/Behaviors/EnumItemsSourceBehavior/EnumItemsSourceDefaultTemplate.xaml", 
-                AssemblyInfo.SRAssemblyXpfCore), UriKind.Absolute)
-#else
                 Source = new Uri(string.Format("pack://application:,,,/{0};component/Behaviors/EnumItemsSourceBehavior/EnumItemsSourceDefaultTemplate.xaml",
                     AssemblyInfo.SRAssemblyXpfMvvmUIFree), UriKind.Absolute)
-#endif
             };
             defaultDataTemplate = (DataTemplate)resourceDictionary["ItemsSourceDefaultTemplate"];
         }

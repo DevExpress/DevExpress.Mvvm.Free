@@ -1,23 +1,11 @@
-﻿#if DEBUGTEST || MVVM
 using NUnit.Framework;
-#if !FREE
-using DevExpress.Xpf.Core.Tests;
-#endif
 using DevExpress.Mvvm.UI.Interactivity;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows;
 using System;
-#if !MVVM
-using DevExpress.Mvvm;
-using DevExpress.Mvvm.UI;
-#endif
 
-#if MVVM
 namespace DevExpress.Mvvm.UI.Tests {
-#else
-namespace DevExpress.Xpf.Core.Mvvm.UI.Tests {
-#endif
     [TestFixture]
     public class DependencyPropertyBehaviorTests : BaseWpfFixture {
         protected void ShowWindow(UIElement element) {
@@ -53,7 +41,7 @@ namespace DevExpress.Xpf.Core.Mvvm.UI.Tests {
             });
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
-                Assert.AreEqual("654321", passwordBox.Password);   
+                Assert.AreEqual("654321", passwordBox.Password);
             });
             EnqueueTestComplete();
         }
@@ -212,11 +200,10 @@ namespace DevExpress.Xpf.Core.Mvvm.UI.Tests {
         string property;
         public string Property {
             get { return property; }
-            set { 
+            set {
                 property = value;
                 propertyChangedCounter++;
             }
         }
     }
 }
-#endif

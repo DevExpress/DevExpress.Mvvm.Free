@@ -8,14 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using NUnit.Framework;
-#if !NETFX_CORE
 using System.Windows.Controls;
-#else
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using System.Reflection;
-using DevExpress.TestRunner.Utils;
-#endif
 
 namespace DevExpress.Mvvm.Tests {
     public abstract class CommandTests {
@@ -137,7 +130,6 @@ namespace DevExpress.Mvvm.Tests {
             Execute(command, null);
             Assert.IsNull(param);
         }
-#if !NETFX_CORE
         [Test]
         public void DoubleParameter() {
             double param = 0;
@@ -161,7 +153,6 @@ namespace DevExpress.Mvvm.Tests {
                 Thread.CurrentThread.CurrentCulture = culture;
             }
         }
-#endif
         [Test]
         public void DoubleParameterException() {
             ICommand command = CreateCommand<double>(x => { });
@@ -331,7 +322,6 @@ namespace DevExpress.Mvvm.Tests {
             command.RaiseCanExecuteChanged();
             Assert.IsTrue(button.IsEnabled);
         }
-#if !NETFX_CORE
         [Test]
         public void CanExecuteIsEnabledWithCommandManager() {
             Button button = new Button();
@@ -345,7 +335,6 @@ namespace DevExpress.Mvvm.Tests {
             DispatcherHelper.DoEvents();
             Assert.IsTrue(button.IsEnabled);
         }
-#endif
         #endregion
         #region RaiseCanExecuteChanged
         void RaiseCanExecuteChangedTest<T>(CommandBase<T> command) {
@@ -356,7 +345,6 @@ namespace DevExpress.Mvvm.Tests {
             command.RaiseCanExecuteChanged();
             Assert.AreEqual(1, counter.FireCount);
         }
-#if !NETFX_CORE
         void RaiseCanExecuteChangedWithCommandManagerTest<T>(CommandBase<T> command) {
             var counter = new CanExecuteChangedCounter(command);
             command.RaiseCanExecuteChanged();
@@ -368,7 +356,6 @@ namespace DevExpress.Mvvm.Tests {
             DispatcherHelper.DoEvents();
             Assert.AreEqual(1, counter.FireCount);
         }
-#endif
         [Test]
         public void RaiseCanExecuteChanged() {
             CommandBase<object> command1 = CreateCommand(() => { }, () => true, false);
@@ -380,7 +367,6 @@ namespace DevExpress.Mvvm.Tests {
             RaiseCanExecuteChangedTest(command3);
             RaiseCanExecuteChangedTest(command4);
         }
-#if !NETFX_CORE
         [Test]
         public void RaiseCanExecuteChangedWithCommandManager() {
             CommandBase<object> command1 = CreateCommand(() => { }, () => true);
@@ -392,7 +378,6 @@ namespace DevExpress.Mvvm.Tests {
             RaiseCanExecuteChangedWithCommandManagerTest(command3);
             RaiseCanExecuteChangedWithCommandManagerTest(command4);
         }
-#endif
         #endregion
         #region References and Memory
         public class ViewModel {
@@ -465,8 +450,6 @@ namespace DevExpress.Mvvm.Tests {
             commandContainer.CreateInternalCommand((x1, x2) => CreateCommand(x1, x2));
             Assert.IsTrue(reference.IsAlive);
             commandContainer = null;
-            //MemoryLeaksHelper.GarbageCollect();
-            //Assert.IsFalse(reference.IsAlive);
             MemoryLeaksHelper.EnsureCollected(reference);
         }
 
@@ -477,12 +460,9 @@ namespace DevExpress.Mvvm.Tests {
             };
             CommandBase<object> command = CreateCommand<object>(null, x => true);
             WeakReference wrButton = createButton(command);
-            //MemoryLeaksHelper.GarbageCollect();
-            //Assert.IsFalse(wrButton.IsAlive);
             MemoryLeaksHelper.EnsureCollected(wrButton);
         }
 
-#if !NETFX_CORE
         [Test]
         public void CommandMultithreading() {
             Window mainWindow = new Window();
@@ -507,7 +487,6 @@ namespace DevExpress.Mvvm.Tests {
             thread.Join();
             mainWindow.Close();
         }
-#endif
         #endregion
     }
     [TestFixture]
@@ -516,35 +495,19 @@ namespace DevExpress.Mvvm.Tests {
             return new DelegateCommand(execute);
         }
         protected override CommandBase<object> CreateCommand(Action execute, bool useCommandManager) {
-#if !NETFX_CORE
             return new DelegateCommand(execute, useCommandManager);
-#else
-            return new DelegateCommand(execute);
-#endif
         }
         protected override CommandBase<object> CreateCommand(Action execute, Func<bool> canExecute, bool? useCommandManager = null) {
-#if !NETFX_CORE
             return new DelegateCommand(execute, canExecute, useCommandManager);
-#else
-            return new DelegateCommand(execute, canExecute);
-#endif
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute) {
             return new DelegateCommand<T>(execute);
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute, bool useCommandManager) {
-#if !NETFX_CORE
             return new DelegateCommand<T>(execute, useCommandManager);
-#else
-            return new DelegateCommand<T>(execute);
-#endif
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute, Func<T, bool> canExecute, bool? useCommandManager = null) {
-#if !NETFX_CORE
             return new DelegateCommand<T>(execute, canExecute, useCommandManager);
-#else
-            return new DelegateCommand<T>(execute, canExecute);
-#endif
         }
         protected override void Execute(ICommand command, object parameter) {
             command.Execute(parameter);
@@ -558,26 +521,14 @@ namespace DevExpress.Mvvm.Tests {
             return new AsyncCommand(() => Task.Factory.StartNew(() => execute())) { AllowMultipleExecution = true };
         }
         protected override CommandBase<object> CreateCommand(Action execute, bool useCommandManager) {
-#if !NETFX_CORE
             if(execute == null)
                 return new AsyncCommand(null, useCommandManager) { AllowMultipleExecution = true };
             return new AsyncCommand(() => Task.Factory.StartNew(() => execute()), useCommandManager) { AllowMultipleExecution = true };
-#else
-            if(execute == null)
-                return new AsyncCommand(null) { AllowMultipleExecution = true };
-            return new AsyncCommand(() => Task.Factory.StartNew(() => execute())) { AllowMultipleExecution = true };
-#endif
         }
         protected override CommandBase<object> CreateCommand(Action execute, Func<bool> canExecute, bool? useCommandManager = null) {
-#if !NETFX_CORE
             if(execute == null)
                 return new AsyncCommand(null, canExecute, useCommandManager) { AllowMultipleExecution = true };
             return new AsyncCommand(() => Task.Factory.StartNew(() => execute()), canExecute, useCommandManager) { AllowMultipleExecution = true };
-#else
-            if(execute == null)
-                return new AsyncCommand(null, canExecute) { AllowMultipleExecution = true };
-            return new AsyncCommand(() => Task.Factory.StartNew(() => execute()), canExecute) { AllowMultipleExecution = true };
-#endif
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute) {
             if(execute == null)
@@ -585,26 +536,14 @@ namespace DevExpress.Mvvm.Tests {
             return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x))) { AllowMultipleExecution = true };
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute, bool useCommandManager) {
-#if !NETFX_CORE
             if(execute == null)
                 return new AsyncCommand<T>(null, useCommandManager) { AllowMultipleExecution = true };
             return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x)), useCommandManager) { AllowMultipleExecution = true };
-#else
-            if(execute == null)
-                return new AsyncCommand<T>(null) { AllowMultipleExecution = true };
-            return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x))) { AllowMultipleExecution = true };
-#endif
         }
         protected override CommandBase<T> CreateCommand<T>(Action<T> execute, Func<T, bool> canExecute, bool? useCommandManager = null) {
-#if !NETFX_CORE
             if(execute == null)
                 return new AsyncCommand<T>(null, canExecute, useCommandManager) { AllowMultipleExecution = true };
             return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x)), canExecute, useCommandManager) { AllowMultipleExecution = true };
-#else
-            if(execute == null)
-                return new AsyncCommand<T>(null, canExecute) { AllowMultipleExecution = true };
-            return new AsyncCommand<T>(x => Task.Factory.StartNew(() => execute(x)), canExecute) { AllowMultipleExecution = true };
-#endif
         }
         protected override void Execute(ICommand command, object parameter) {
             command.Execute(parameter);
@@ -612,7 +551,6 @@ namespace DevExpress.Mvvm.Tests {
         }
 
         static TimeSpan latencyTime = TimeSpan.FromSeconds(2);
-#if !NETFX_CORE
         bool executingAsyncMethod = false;
         AsyncCommand<int> asyncTestCommand;
 
@@ -812,7 +750,6 @@ namespace DevExpress.Mvvm.Tests {
                 executingAsyncMethod = false;
             });
         }
-#endif
     }
 }
 #pragma warning restore 612, 618

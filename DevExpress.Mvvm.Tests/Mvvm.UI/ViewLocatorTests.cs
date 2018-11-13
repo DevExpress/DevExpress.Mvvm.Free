@@ -1,13 +1,5 @@
-﻿#if NETFX_CORE
-using NUnit.Framework;
-using Windows.UI.Xaml.Controls;
-#else
 using NUnit.Framework;
 using System.Windows.Controls;
-#endif
-#if !FREE
-using DevExpress.Xpf.Core.Tests;
-#endif
 using System;
 using System.Linq;
 using System.Windows;
@@ -39,7 +31,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             var view = ViewLocator.Default.ResolveView(string.Empty);
             Assert.AreEqual(typeof(ViewLocatorExtensions.FallbackView), view.GetType());
         }
-#if !NETFX_CORE
         [Test]
         public void ResolveViewTest_00() {
             ViewLocator.Default = new ViewLocator(new Assembly[] { typeof(ViewLocatorTests).Assembly });
@@ -49,8 +40,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             var view = ViewLocator.Default.ResolveView("TestView1");
             Assert.AreEqual(typeof(TestView1), view.GetType());
         }
-#endif
-#if !NETFX_CORE
         [Test]
         public void NullService() {
             IViewLocator vl = null;
@@ -90,7 +79,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueTestComplete();
         }
-#endif
     }
     public class TestView1 : Grid { }
     public class TestView2 : Grid { }

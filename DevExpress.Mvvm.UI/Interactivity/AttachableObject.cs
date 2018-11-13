@@ -1,16 +1,8 @@
-﻿using System.ComponentModel;
-#if !NETFX_CORE
+using System.ComponentModel;
 using DevExpress.Mvvm.UI.Interactivity.Internal;
 using System;
 using System.Windows;
 using System.Windows.Media.Animation;
-#else
-using System;
-using DevExpress.Mvvm.Native;
-using DevExpress.Core.Native;
-using Windows.UI.Xaml;
-using DevExpress.Mvvm.UI.Interactivity.Internal;
-#endif
 
 namespace DevExpress.Mvvm.UI.Interactivity {
     public interface IAttachableObject {
@@ -19,11 +11,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         void Detach();
     }
 
-#if NETFX_CORE
-    public abstract class AttachableObjectBase : DependencyObject, IAttachableObject, INotifyPropertyChanged {
-#else
     public abstract class AttachableObjectBase : Animatable, IAttachableObject, INotifyPropertyChanged {
-#endif
         public bool IsAttached { get; private set; }
         internal bool _AllowAttachInDesignMode { get { return AllowAttachInDesignMode; } }
         protected virtual bool AllowAttachInDesignMode {
@@ -84,58 +72,31 @@ namespace DevExpress.Mvvm.UI.Interactivity {
                 throw new InvalidOperationException(string.Format("This object cannot be attached to a {0} object", type.ToString()));
             AssociatedObject = obj;
             IsAttached = true;
-#if NETFX_CORE
-            DataContextRegistrator.Register(AssociatedObject, this);
-            var fElement = AssociatedObject as FrameworkElement;
-            if(fElement != null)
-                fElement.DataContextChanged += OnDataContextChanged;
-#endif
             OnAttached();
         }
         public void Detach() {
             OnDetaching();
-#if NETFX_CORE
-            DataContextRegistrator.Unregister(AssociatedObject, this);
-            var fElement = AssociatedObject as FrameworkElement;
-            if(fElement != null)
-                fElement.DataContextChanged -= OnDataContextChanged;
-#endif
             AssociatedObject = null;
             IsAttached = false;
         }
-#if !NETFX_CORE
         protected override bool FreezeCore(bool isChecking) {
             return false;
         }
-#else
-        void OnDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args) {
-            OnDataContextChange(args.NewValue);
-        }
-        protected virtual void OnDataContextChange(object dataContext) { }
-#endif
         protected virtual void OnAttached() { }
         protected virtual void OnDetaching() { }
 
         protected void VerifyRead() {
-#if !NETFX_CORE
             ReadPreamble();
-#endif
         }
         protected void VerifyWrite() {
-#if !NETFX_CORE
             WritePreamble();
-#endif
         }
         protected void NotifyChanged() {
-#if !NETFX_CORE
             WritePostscript();
-#endif
         }
 
-#if !NETFX_CORE
         protected override Freezable CreateInstanceCore() {
             return (Freezable)Activator.CreateInstance(GetType());
         }
-#endif
     }
 }

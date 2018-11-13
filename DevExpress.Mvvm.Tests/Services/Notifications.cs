@@ -1,4 +1,4 @@
-﻿using System.Windows.Controls;
+using System.Windows.Controls;
 using DevExpress.Internal;
 using DevExpress.Mvvm.UI.Native;
 using NUnit.Framework;
@@ -229,8 +229,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             CustomNotification toast;
             Task<NotificationResult> task;
             var notifier = new CustomNotifier();
-
-            // show several notifications first, this may expose a nullref
             var tasks = Enumerable.Range(0, 5).Select(_ => notifier.ShowAsync(new CustomNotification(null, notifier), 1)).ToList();
             tasks.ToList().ForEach(WaitWithDispatcher);
             tasks.ToList().ForEach(t => Assert.AreEqual(NotificationResult.TimedOut, t.Result));
@@ -240,8 +238,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             notifier.UpdatePositioner(NotificationPosition.TopRight, 2);
             WaitWithDispatcher(task);
             Assert.AreEqual(NotificationResult.TimedOut, task.Result);
-
-            // both the visible and enqueued notifications should be preserved
             tasks = Enumerable.Range(0, 10).Select(_ => notifier.ShowAsync(new CustomNotification(null, notifier), 1)).ToList();
             notifier.UpdatePositioner(NotificationPosition.TopRight, 2);
             tasks.ToList().ForEach(WaitWithDispatcher);
@@ -393,21 +389,17 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void GetBackgroundTest() {
             string _ = PackUriHelper.UriSchemePack;
             Action<byte, byte, byte, string> assertMatch = (r, g, b, icon) => {
-#if !FREE
-                string path = string.Format("pack://application:,,,/{0};component/Icons/{1}", "DevExpress.Mvvm.Tests", icon);
-#else
                 string path = string.Format("pack://application:,,,/{0};component/Icons/{1}", "DevExpress.Mvvm.Tests.Free", icon);
-#endif
                 Uri uri = new Uri(path, UriKind.Absolute);
                 var bmp = new System.Drawing.Bitmap(Application.GetResourceStream(uri).Stream);
                 Assert.AreEqual(System.Windows.Media.Color.FromRgb(r, g, b), BackgroundCalculator.GetBestMatch(bmp));
             };
             assertMatch(9, 74, 178, "icon1.ico");
-            assertMatch(210, 71, 38, "icon2.ico"); // 89, 89, 89
+            assertMatch(210, 71, 38, "icon2.ico");
             assertMatch(81, 51, 171, "icon3.ico");
             assertMatch(210, 71, 38, "icon4.ico");
-            assertMatch(81, 51, 171, "icon5.ico"); // 89, 89, 89
-            assertMatch(0, 130, 153, "icon6.ico"); // 210, 71, 38
+            assertMatch(81, 51, 171, "icon5.ico");
+            assertMatch(0, 130, 153, "icon6.ico");
             assertMatch(9, 74, 178, "icon7.ico");
         }
 
@@ -424,11 +416,11 @@ namespace DevExpress.Mvvm.UI.Tests {
             }
         }
 
-        [Test] // T116778
+        [Test]
         public void UpdateCustomToastPositionTest() {
             var service = new NotificationService();
             var toast = service.CreateCustomNotification(null);
-            Assert.AreEqual(NotificationPosition.TopRight, CustomNotifier.positioner.position); // default
+            Assert.AreEqual(NotificationPosition.TopRight, CustomNotifier.positioner.position);
             service.CustomNotificationPosition = NotificationPosition.BottomRight;
             Assert.AreEqual(NotificationPosition.BottomRight, CustomNotifier.positioner.position);
 
@@ -440,7 +432,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(NotificationPosition.TopRight, CustomNotifier.positioner.position);
         }
 
-        [Test] // T156120
+        [Test]
         public void ResettingTimerOfHiddenNotificationTest() {
             var customNotifier = new CustomNotifier(new TestScreen());
             var toast = new CustomNotification(null, customNotifier);
@@ -458,7 +450,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             }
         }
 
-        [Test] // T159542
+        [Test]
         public void CustomNotificationTemplateSelectorTest() {
             var customNotifier = new CustomNotifier(new TestScreen { bounds = new Rect(0, 0, 1000, 500) });
             var selector = new TestTemplateSelector();
@@ -468,7 +460,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsTrue(selector.Called);
         }
 
-        [Test] // T214950
+        [Test]
         public void ThrowOnAutoHeight() {
             var style = new Style();
             style.Setters.Add(new Setter(FrameworkElement.HeightProperty, double.NaN));
@@ -482,7 +474,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             } catch(InvalidOperationException) { }
         }
 
-		[Test] // T250377
+  [Test]
         public void ConvertTimeSpanToMilliseconds() {
             var service = new NotificationService();
             service.CustomNotificationDuration = TimeSpan.MaxValue;
@@ -510,26 +502,5 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(1, toast.duration);
         }
 
-#if !FREE
-        [Test] // T310016
-        public void CustomNotificationScreen() {
-            var screen = new TestScreen { bounds = new Rect(0, 0, 1000, 500) };
-            var notifier = new CustomNotifier(screen);
-            var toast = new CustomNotification(null, notifier);
-            notifier.ShowAsync(toast);
-            var window = notifier.VisibleItems.Single().win;
-            Assert.AreEqual(615.0, window.Left);
-            Assert.AreEqual(20.0, window.Top);
-            toast.Dismiss();
-
-            notifier.ChangeScreen(new Point(100, 10));
-            toast = new CustomNotification(null, notifier);
-            notifier.ShowAsync(toast, int.MaxValue);
-            window = notifier.VisibleItems.Single().win;
-            Assert.AreEqual(615.0 - 100.0, window.Left);
-            Assert.AreEqual(20.0 - 10.0, window.Top);
-            toast.Dismiss();
-        }
-#endif
     }
 }

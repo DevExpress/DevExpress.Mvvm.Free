@@ -1,15 +1,8 @@
-﻿#if NETFX_CORE
-using Windows.UI.Xaml;
-#else
 using DevExpress.Mvvm.UI;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.POCO;
 using System.Windows.Controls;
 using System.Threading;
-#if !FREE
-using DevExpress.Xpf.Core.Tests;
-#endif
-#endif
 using System;
 using System.Windows;
 using System.Linq;
@@ -481,7 +474,6 @@ namespace DevExpress.Mvvm.Tests {
         }
     }
 
-#if !NETFX_CORE
     [TestFixture]
     public class ServiceBaseTests : BaseWpfFixture {
         [Test]
@@ -610,5 +602,4 @@ namespace DevExpress.Mvvm.Tests {
             }
         }
     }
-#endif
 }

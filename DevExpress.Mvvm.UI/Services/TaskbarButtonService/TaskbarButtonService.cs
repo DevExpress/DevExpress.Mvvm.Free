@@ -1,6 +1,3 @@
-﻿#if !MVVM
-using DevExpress.Xpf.Core.Native;
-#endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -223,7 +220,7 @@ namespace DevExpress.Mvvm.UI {
                 window.TaskbarItemInfo.ThumbnailClipMargin = ItemInfo.ThumbnailClipMargin;
                 ItemInfo = window.TaskbarItemInfo;
             }
-            if(window.TaskbarItemInfo != null) { // T528105, T617958
+            if(window.TaskbarItemInfo != null) {
                 BindingOperations.SetBinding(this, WindowItemInfoProperty, new Binding("TaskbarItemInfo") { Source = window, Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged });
                 processWindowItemInfoChanged = true;
             }

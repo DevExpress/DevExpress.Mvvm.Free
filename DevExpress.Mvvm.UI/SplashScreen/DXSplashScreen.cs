@@ -1,4 +1,4 @@
-﻿using DevExpress.Mvvm.Native;
+using DevExpress.Mvvm.Native;
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -9,21 +9,13 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Windows.Interop;
 
-#if !FREE
-using DevExpress.Mvvm.UI;
-using DevExpress.Mvvm;
-
-namespace DevExpress.Xpf.Core {
-#else
 namespace DevExpress.Mvvm.UI {
-#endif
     public static class DXSplashScreen {
         public static bool UseLegacyLocationLogic { get; set; }
         public static bool UseDefaultAltTabBehavior { get; set; }
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static bool DisableThreadingProblemsDetection { get; set; }
         public static NotInitializedStateMethodCallPolicy NotInitializedStateMethodCallPolicy { get; set; }
-        //There are several solutions, that used reflection to access MainThreadDelay property. So public wrapper required to prevent BC.
         public static int UIThreadDelay {
             get { return MainThreadDelay; }
             set { MainThreadDelay = value; }
@@ -210,7 +202,6 @@ namespace DevExpress.Mvvm.UI {
                 ActiveInfo.EnsureCallbacksContainer();
                 ActiveInfo.InternalThread = new Thread(InternalThreadEntryPoint);
                 ActiveInfo.InternalThread.SetApartmentState(ApartmentState.STA);
-                //Owner container should be initialized in this thread
                 ActiveInfo.InternalThread.Start(new object[] { windowCreator, splashScreenCreator, windowCreatorParameter, splashScreenCreatorParameter, GetOwnerContainer(windowCreatorParameter), ActiveInfo });
                 if(MainThreadDelay > 0)
                     SyncEvent.WaitOne(MainThreadDelay);
@@ -343,7 +334,6 @@ namespace DevExpress.Mvvm.UI {
                 if(ActiveInfo.CloseWithParent)
                     ActiveInfo.RelationInfo.Do(x => x.ParentClosed += OnSplashScreenOwnerClosed);
             }
-            //Prevents hanging if main thread is busy
             void PatchSplashScreenWindowStyle(Window splashScreen, bool hasOwner) {
                 if(!SplashScreenHelper.PatchWindowStyle(splashScreen, hasOwner))
                     splashScreen.SourceInitialized += OnSplashScreenSourceInitialized;
@@ -487,8 +477,6 @@ namespace DevExpress.Mvvm.UI {
                 IsActiveOnClosing = IsActive;
                 base.OnClosing(e);
             }
-
-            //handle alt + f4
             IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) {
                 if(msg == WM_SYSCOMMAND) {
                     int cmd = (wParam.ToInt32() & 0xfff0);
@@ -499,7 +487,6 @@ namespace DevExpress.Mvvm.UI {
             }
             void OnWindowLoaded(object sender, RoutedEventArgs e) {
                 Loaded -= OnWindowLoaded;
-                //SizeToContent.Width works incorrectly, Width of window always will be at least 140px
                 if(SizeToContent != SizeToContent.Manual) {
                     SizeToContent oldValue = SizeToContent;
                     SizeToContent = SizeToContent.Manual;

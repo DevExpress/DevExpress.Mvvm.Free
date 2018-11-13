@@ -1,4 +1,3 @@
-﻿#if DEBUGTEST || MVVM
 using NUnit.Framework;
 using System;
 using System.Threading;
@@ -12,12 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 
-#if MVVM
 namespace DevExpress {
-#else
-using DevExpress.Xpf.Core;
-namespace DevExpress.Xpf.Core.Tests {
-#endif
     public class WpfTestWindow {
         public static readonly DependencyProperty MethodsToSkipProperty = DependencyProperty.RegisterAttached("MethodsToSkip", typeof(IEnumerable<string>), typeof(WpfTestWindow), new PropertyMetadata(Enumerable.Empty<string>()));
 
@@ -38,7 +32,7 @@ namespace DevExpress.Xpf.Core.Tests {
         public WpfTestWindow() {
             MethodsToSkip = Enumerable.Empty<string>();
         }
- 
+
         public virtual int TimeoutInSeconds { get { return 5; } }
         protected virtual TestWindow CreateTestWindow() { return TestWindow.GetContainer(); }
         protected virtual Window CreateRealWindow() { return new Window(); }
@@ -71,18 +65,6 @@ namespace DevExpress.Xpf.Core.Tests {
 
         protected virtual void FixtureSetUpCore() {
             List<string> methodsToSkip = new List<string>();
-#if !MVVM
-            Type currentType = GetType();
-            string themeName = string.IsNullOrEmpty(Theme.CurrentThemeName) ? Theme.DeepBlueName : Theme.CurrentThemeName;
-            CheckToSkip(themeName, currentType.GetCustomAttributes(typeof(ExcludeThemedTestAttribute), false).OfType<ExcludeThemedTestAttribute>());
-            var testMethods = currentType.GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(method => !method.IsSpecialName && method.ReturnType == voidType && Attribute.IsDefined(method, typeof(TestAttribute)));
-            foreach (var methodInfo in testMethods) {
-                foreach (ExcludeThemedTestAttribute attr in methodInfo.GetCustomAttributes(typeof(ExcludeThemedTestAttribute), false)) {
-                    if (attr.ExcludedThemes.Any(t => string.Equals(t.Name, themeName)))
-                        methodsToSkip.Add(methodInfo.Name);
-                }
-            }
-#endif
             MethodsToSkip = methodsToSkip;
         }
         protected virtual void FixtureTearDownCore() {
@@ -133,10 +115,6 @@ namespace DevExpress.Xpf.Core.Tests {
             CheckToSkip(MethodsToSkip);
         }
         protected virtual void SetThemeForWindow(System.Windows.Controls.ContentControl window) {
-#if !MVVM
-            if(!String.IsNullOrEmpty(Theme.CurrentThemeName))
-                ThemeManager.SetThemeName(window, Theme.CurrentThemeName);
-#endif
         }
         public virtual void EnqueueCallback(Action testCallbackDelegate) {
             testCallbackDelegate();
@@ -300,25 +278,6 @@ namespace DevExpress.Xpf.Core.Tests {
                 DispatcherHelper.UpdateLayoutAndDoEvents(Window, priority);
             });
         }
-#if !MVVM
-        public virtual void EnqueuePumpAll(Func<DevExpress.Data.AsyncServerModeDataController> getAsyncDataController, bool updateLayout = true) {
-            EnqueueCallback(delegate {
-                try {
-                    System.Threading.Thread.Sleep(100);
-                    DevExpress.Data.AsyncServerModeDataController asyncDataController = getAsyncDataController();
-                    DevExpress.Data.Async.CommandGetAllFilteredAndSortedRows commandGetRows = asyncDataController.Server.GetAllFilteredAndSortedRows();
-                    while(!asyncDataController.Server.WaitFor(commandGetRows)) System.Threading.Thread.Sleep(1);
-                } catch(ObjectDisposedException) {
-                    System.Threading.Thread.Sleep(1000);
-                }
-            });
-            if(updateLayout)
-                EnqueueWindowUpdateLayout();
-        }
-        public virtual void EnqueuePumpAll(DevExpress.Data.AsyncServerModeDataController asyncDataController, bool updateLayout = true) {
-            EnqueuePumpAll(() => asyncDataController, updateLayout);
-        }
-#endif
         public void EnqueueLoadedEventAction(FrameworkElement element, Action action) {
             EnqueueLoadedEventAction(() => element, action);
         }
@@ -339,47 +298,6 @@ namespace DevExpress.Xpf.Core.Tests {
         public static void CheckToSkip(IEnumerable<string> methodsToSkip) {
             if (methodsToSkip.Count() == 0)
                 return;
-#if !MVVM
-            StackTrace stackTrace = new StackTrace();
-            string themeName = string.IsNullOrEmpty(Theme.CurrentThemeName) ? Theme.DeepBlueName : Theme.CurrentThemeName;
-            foreach(var stackFrame in stackTrace.GetFrames()) {
-                MethodBase methodBase = stackFrame.GetMethod();
-                if(methodBase.IsPublic && methodsToSkip.Contains(methodBase.Name))
-                    Assert.Ignore("Skipped for {0} theme", themeName);
-            }
-        }
-        void CheckToSkip(string themeName, IEnumerable<ExcludeThemedTestAttribute> excludeThemedTestAttributes) {
-            foreach(ExcludeThemedTestAttribute attr in excludeThemedTestAttributes) {
-                if(attr.ExcludedThemes.Any(t => string.Equals(t.Name, themeName)))
-                    Assert.Ignore("Skipped for {0} theme", themeName);
-            }
-        }
-    }
-
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
-    public sealed class ExcludeThemedTestAttribute : Attribute {
-        public bool ExcludeTouchThemes { get; set; }
-        public bool ExcludeBlackThemes { get; set; }
-        public string ExcludeTheme { get; set; }
-        public bool SkipIfNotDefaultTheme { get; set; }
-
-        public IEnumerable<Theme> ExcludedThemes {
-            get {
-                if(SkipIfNotDefaultTheme) {
-                    return Theme.Themes.Where(t => t != Theme.DeepBlue);
-                }
-                return Theme.Themes.Where(t => string.Equals(t.Name, ExcludeTheme) || IsBlackTheme(t) && ExcludeBlackThemes || IsTouchTheme(t) && ExcludeTouchThemes);
-            }
-        }
-        public ExcludeThemedTestAttribute() { }
-
-        bool IsTouchTheme(Theme theme) {
-            return theme.Name.Contains("Touch");
-        }
-        bool IsBlackTheme(Theme theme) {
-            return theme == Theme.Office2010Black || theme == Theme.MetropolisDark || theme == Theme.TouchlineDark;
-#endif
         }
     }
 }
-#endif

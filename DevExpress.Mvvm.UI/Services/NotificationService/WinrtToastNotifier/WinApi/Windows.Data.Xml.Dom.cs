@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -10,17 +10,15 @@ namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
     [Guid("F7F3A506-1E87-42D6-BCFB-B8C809FA5494")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IXmlDocument : IInspectable {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
         void get_Doctype();
         void get_Implementation();
         void get_DocumentElement();
-        int CreateElement([In, MarshalAs(47/*UnmanagedType.HString*/)] string name, out IXmlElement element);
+        int CreateElement([In, MarshalAs(47)] string name, out IXmlElement element);
         void CreateDocumentFragment();
-        int CreateTextNode([In, MarshalAs(47/*UnmanagedType.HString*/)] string data,
+        int CreateTextNode([In, MarshalAs(47)] string data,
                            out IXmlText newTextNode);
         void CreateComment();
         void CreateProcessingInstruction();
@@ -44,15 +42,13 @@ namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
     [Guid("2DFB8A1F-6B10-4EF8-9F83-EFCCE8FAEC37")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IXmlElement : IInspectable {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
         string TagName { get; }
         void GetAttribute();
-        int SetAttribute([In, MarshalAs(47/*UnmanagedType.HString*/)] string attributeName,
-                         [In, MarshalAs(47/*UnmanagedType.HString*/)] string attributeValue);
+        int SetAttribute([In, MarshalAs(47)] string attributeName,
+                         [In, MarshalAs(47)] string attributeValue);
     }
 
     [CLSCompliant(false)]
@@ -60,12 +56,10 @@ namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
     [Guid("5CC5B382-E6DD-4991-ABEF-06D8D2E7BD0C")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IXmlNodeSerializer : IInspectable {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
-        int GetXml([Out, MarshalAs(47/*UnmanagedType.HString*/)] out string xml);
+        int GetXml([Out, MarshalAs(47)] out string xml);
     }
 
     [CLSCompliant(false)]
@@ -73,11 +67,9 @@ namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
     [Guid("8C60AD77-83A4-4EC1-9C54-7BA429E13DA6")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IXmlNodeList : IInspectable {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
         int Length { get; }
         int Item(UInt32 index, out IXmlNode node);
     }
@@ -86,11 +78,9 @@ namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
     [Guid("1C741D59-2122-47D5-A856-83F3D4214875")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IXmlNode : IInspectable {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
         void get_NodeValue();
         void put_NodeValue();
         void get_NodeType();
@@ -119,13 +109,11 @@ namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
     [Guid("B3A69EB0-AAB0-4B82-A6FA-B1453F7C021B")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IXmlNamedNodeMap : IInspectable {
-        // iinspectable
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        //
         void get_Length();
         void Item();
-        int GetNamedItem([In, MarshalAs(47/*UnmanagedType.HString*/)] string name, out IXmlNode node);
+        int GetNamedItem([In, MarshalAs(47)] string name, out IXmlNode node);
     }
 }

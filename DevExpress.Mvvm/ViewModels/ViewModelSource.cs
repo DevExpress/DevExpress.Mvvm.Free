@@ -1,4 +1,4 @@
-﻿using DevExpress.Internal;
+using DevExpress.Internal;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.Native;
 using System;
@@ -53,13 +53,6 @@ namespace DevExpress.Mvvm.POCO {
         }
 
         static ViewModelSource() {
-#if !FREE
-            RegisterAttributeBuilderProvider(new CommandParameterAttributeBuilderProvider());
-            RegisterAttributeBuilderProvider(new DXImageAttributeBuilderProvider());
-            RegisterAttributeBuilderProvider(new ImageAttributeBuilderProvider());
-            RegisterAttributeBuilderProvider(new ToolBarItemAttributeBuilderProvider());
-            RegisterAttributeBuilderProvider(new ContextMenuItemAttributeBuilderProvider());
-#endif
             RegisterAttributeBuilderProvider(new DisplayAttributeBuilderProvider());
             RegisterAttributeBuilderProvider(new DisplayNameAttributeBuilderProvider());
             RegisterAttributeBuilderProvider(new ScaffoldColumnAttributeBuilderProvider());
@@ -218,10 +211,6 @@ namespace DevExpress.Mvvm.POCO {
             }
         }
         #endregion
-
-        //public static void Save() {
-        //    assemblyBuilder.Save(assemblyName.Name + ".dll");
-        //}
         static Type CreateType(Type type, ViewModelSourceBuilderBase builder) {
             CheckType(type, true);
             TypeBuilder typeBuilder = BuilderType.CreateTypeBuilder(type);
@@ -293,7 +282,7 @@ namespace DevExpress.Mvvm.POCO {
                 return ViewModelSourceException.ReturnFalseOrThrow(@throw, ViewModelSourceException.Error_TypeImplementsIPOCOViewModel, type);
             return true;
         }
-        
+
         #region commands
         static void BuildCommands(Type type, TypeBuilder typeBuilder) {
             MethodInfo[] methods = GetCommandMethods(type).ToArray();
@@ -386,8 +375,6 @@ namespace DevExpress.Mvvm.POCO {
                 : (isCommandMethodReturnTypeVoid ?
                     DelegateCommandFactory.GetSimpleMethodWithoutResult(useCommandManager != null)
                     : DelegateCommandFactory.GetSimpleMethodWithResult(commandMethodReturnType, useCommandManager != null));
-
-            //Expression<Action> createCommandExpressionWithParameter = () => CommandFactory.CreateCommand(default(Action), default(Func<bool>));
             method.SetReturnType(commandPropertyType);
 
             ILGenerator gen = method.GetILGenerator();
@@ -629,8 +616,8 @@ namespace DevExpress.Mvvm.POCO {
             var bindableProps = GetBindableProperties(type);
             var propertyRelations = GetPropertyRelations(type, bindableProps);
             foreach(var propertyInfo in bindableProps) {
-                var newProperty = BuilderBindableProperty.BuildBindableProperty(type, typeBuilder, 
-                    propertyInfo, raisePropertyChangedMethod, raisePropertyChangingMethod, 
+                var newProperty = BuilderBindableProperty.BuildBindableProperty(type, typeBuilder,
+                    propertyInfo, raisePropertyChangedMethod, raisePropertyChangingMethod,
                     propertyRelations.GetValueOrDefault(propertyInfo.Name, null));
                 BuildBindablePropertyAttributes(propertyInfo, newProperty);
             }
@@ -769,7 +756,7 @@ namespace DevExpress.Mvvm.POCO {
             var assemblyName = new AssemblyName();
             assemblyName.Name = AssemblyInfo.SRAssemblyXpfMvvm + ".DynamicTypes." + Guid.NewGuid().ToString();
             var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
-            return assemblyBuilder.DefineDynamicModule(assemblyName.Name, /*assemblyName.Name + ".dll",*/ false);
+            return assemblyBuilder.DefineDynamicModule(assemblyName.Name, false);
         }
         static bool ShouldImplementINotifyPropertyChanging(Type type) {
             if(type.GetInterfaces().Contains(typeof(INotifyPropertyChanging)))
@@ -961,17 +948,15 @@ namespace DevExpress.Mvvm.POCO {
             typeBuilder.DefineMethodOverride(getter, propertyInfo.GetGetMethod());
             MethodInfo propertyChangedMethod = GetPropertyChangedMethod(type, propertyInfo, "Changed", x => x.OnPropertyChangedMethodName, x => x.OnPropertyChangedMethod);
             MethodInfo propertyChangingMethod = GetPropertyChangedMethod(type, propertyInfo, "Changing", x => x.OnPropertyChangingMethodName, x => x.OnPropertyChangingMethod);
-            //
             var onChangedFirst = ShouldInvokeOnPropertyChangedMethodsFirst(type);
             var setter = BuildBindablePropertySetter(typeBuilder, propertyInfo,
-                raisePropertyChangedMethod, 
-                raisePropertyChangingMethod, 
-                propertyChangedMethod, 
+                raisePropertyChangedMethod,
+                raisePropertyChangingMethod,
+                propertyChangedMethod,
                 propertyChangingMethod,
                 relatedProperties,
                 onChangedFirst);
             typeBuilder.DefineMethodOverride(setter, propertyInfo.GetSetMethod(true));
-            //
             var newProperty = typeBuilder.DefineProperty(propertyInfo.Name, PropertyAttributes.None, propertyInfo.PropertyType, new Type[0]);
             newProperty.SetGetMethod(getter);
             newProperty.SetSetMethod(setter);
@@ -996,17 +981,15 @@ namespace DevExpress.Mvvm.POCO {
             Expression<Action> equalsExpression = () => object.Equals(null, null);
             method.SetReturnType(typeof(void));
             method.SetParameters(property.PropertyType);
-            bool shouldBoxValues = property.PropertyType.IsValueType; //TODO use IEquitable
+            bool shouldBoxValues = property.PropertyType.IsValueType;
 
             ParameterBuilder value = method.DefineParameter(1, ParameterAttributes.None, "value");
             ILGenerator gen = method.GetILGenerator();
             gen.DeclareLocal(property.PropertyType);
             Label returnLabel = gen.DefineLabel();
-
-            //
             gen.Emit(OpCodes.Ldarg_0);
             gen.Emit(OpCodes.Call, property.GetGetMethod());
-            gen.Emit(OpCodes.Stloc_0); //TODO create local only if needed
+            gen.Emit(OpCodes.Stloc_0);
             gen.Emit(OpCodes.Ldloc_0);
 
             if(shouldBoxValues)
@@ -1167,7 +1150,6 @@ namespace DevExpress.Mvvm.POCO {
 #pragma warning disable 612,618
     public static class POCOViewModelExtensions {
         public static bool IsInDesignMode(this object viewModel) {
-            //GetPOCOViewModel(viewModel);
             return ViewModelBase.IsInDesignMode;
         }
         public static void RaisePropertiesChanged(this object viewModel) {

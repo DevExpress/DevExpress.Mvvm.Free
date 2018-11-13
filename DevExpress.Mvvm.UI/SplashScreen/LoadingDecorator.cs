@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Markup;
@@ -8,19 +8,8 @@ using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
 using System.Collections.Generic;
 using System.Linq;
-#if !FREE
-using DevExpress.Xpf.Editors.Helpers;
-using DevExpress.Mvvm;
-using DevExpress.Mvvm.UI;
-using DevExpress.Xpf.Utils.Themes;
-using DXDecorator = DevExpress.Xpf.Core.HandleDecorator.Decorator;
-using WindowDecorator = DevExpress.Xpf.Core.HandleDecorator.FormHandleDecorator;
-
-namespace DevExpress.Xpf.Core {
-#else
 
 namespace DevExpress.Mvvm.UI {
-#endif
 
     [ContentProperty("LoadingChild")]
     public class LoadingDecorator : Decorator {
@@ -40,10 +29,6 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty SplashScreenLocationProperty;
         public static readonly DependencyProperty SplashScreenWindowStyleProperty;
         public static readonly DependencyProperty LoadingChildTemplateProperty;
-#if !FREE
-        public static readonly DependencyProperty BorderEffectProperty;
-        public static readonly DependencyProperty BorderEffectColorProperty;
-#endif
 
         static LoadingDecorator() {
             UseFadeEffectProperty = DependencyProperty.Register("UseFadeEffect", typeof(bool), typeof(LoadingDecorator),
@@ -68,12 +53,6 @@ namespace DevExpress.Mvvm.UI {
                 new PropertyMetadata(null, (d, e) => ((LoadingDecorator)d).OnIsSplashScreenWindowStyleChanged()));
             LoadingChildTemplateProperty = DependencyProperty.Register("LoadingChildTemplate", typeof(DataTemplate), typeof(LoadingDecorator),
                 new PropertyMetadata(null, (d, e) => ((LoadingDecorator)d).OnLoadingChildTemplateChanged()));
-#if !FREE
-            BorderEffectProperty = DependencyProperty.Register("BorderEffect", typeof(BorderEffect), typeof(LoadingDecorator),
-                new PropertyMetadata(BorderEffect.None));
-            BorderEffectColorProperty = DependencyProperty.Register("BorderEffectColor", typeof(SolidColorBrush), typeof(LoadingDecorator),
-                new PropertyMetadata(null));
-#endif
         }
         #endregion
 
@@ -114,16 +93,6 @@ namespace DevExpress.Mvvm.UI {
             get { return (DataTemplate)GetValue(LoadingChildTemplateProperty); }
             set { SetValue(LoadingChildTemplateProperty, value); }
         }
-#if !FREE
-        public BorderEffect BorderEffect {
-            get { return (BorderEffect)GetValue(BorderEffectProperty); }
-            set { SetValue(BorderEffectProperty, value); }
-        }
-        public SolidColorBrush BorderEffectColor {
-            get { return (SolidColorBrush)GetValue(BorderEffectColorProperty); }
-            set { SetValue(BorderEffectColorProperty, value); }
-        }
-#endif
         public SplashScreenLock OwnerLock {
             get { return (SplashScreenLock)GetValue(OwnerLockProperty); }
             set { SetValue(OwnerLockProperty, value); }
@@ -178,7 +147,6 @@ namespace DevExpress.Mvvm.UI {
             SplashScreenTemplate.Do(x => x.Seal());
         }
         void OnLoaded(object sender, RoutedEventArgs e) {
-            //T384922 - Loaded event is raised twice
             if(!IsLoaded)
                 return;
 
@@ -207,8 +175,6 @@ namespace DevExpress.Mvvm.UI {
             Child = null;
             if((LoadingChild == null && LoadingChildTemplate == null) || !IsLoaded)
                 return;
-
-            //T238780: don't show, if LoadingDecorator is hidden
             if(IsSplashScreenShown == null && IsVisible)
                 ShowSplashScreen();
 
@@ -254,18 +220,8 @@ namespace DevExpress.Mvvm.UI {
             FrameworkElement child = (FrameworkElement)sender;
 
             child.Loaded -= OnLoadingChildLoaded;
-#if !DEBUGTEST
             CloseSplashScreenOnLoading();
         }
-#else
-            if(!Test_SkipAutomaticCloseOnChildLoaded)
-                CloseSplashScreenOnLoading();
-        }
-
-        internal bool Test_SkipAutomaticCloseOnChildLoaded { get; set; }
-        internal bool Test_IsSplashContainerEmpty { get { return splashContainer == null; } }
-        internal DXSplashScreen.SplashScreenContainer Test_SplashContainer { get { return SplashContainer; } }
-#endif
         void SplashScreenDataContextChanged() {
             if(SplashScreenDataContext is DependencyObject)
                 throw new InvalidOperationException(Exception1);
@@ -289,18 +245,8 @@ namespace DevExpress.Mvvm.UI {
             SplashScreenHelper.InvokeAsync(this, CloseSplashScreen, DispatcherPriority.Render);
         }
         object[] GetSplashScreenCreatorParams() {
-#if !FREE
-            string themeName = ThemeHelper.GetWindowThemeName(this);
-            if(string.IsNullOrEmpty(themeName))
-                themeName = ApplicationThemeHelper.ApplicationThemeName;
-
-            Color? borderColor = BorderEffectColor.Return(x => (Color?)x.Color, null);
-            return new object[] { UseFadeEffect, new WindowArrangerContainer(this, SplashScreenLocation) { ArrangeMode = ArrangeMode() }, OwnerLock, themeName,
-                BorderEffect, borderColor, FadeInDuration, FadeOutDuration, FlowDirection, SplashScreenWindowStyle };
-#else
-            return new object[] { UseFadeEffect, new WindowArrangerContainer(this, SplashScreenLocation), OwnerLock, 
+            return new object[] { UseFadeEffect, new WindowArrangerContainer(this, SplashScreenLocation), OwnerLock,
                 FadeInDuration, FadeOutDuration, FlowDirection, SplashScreenWindowStyle };
-#endif
         }
         internal virtual SplashScreenArrangeMode ArrangeMode() { return SplashScreenArrangeMode.Default; }
         static Window CreateSplashScreenWindow(object parameter) {
@@ -311,16 +257,7 @@ namespace DevExpress.Mvvm.UI {
             IList<TimeSpan> durations = SplashScreenHelper.FindParameters<TimeSpan>(parameter);
             FlowDirection flowDirection = SplashScreenHelper.FindParameter<FlowDirection>(parameter);
             Style windowStyle = SplashScreenHelper.FindParameter<Style>(parameter);
-#if !FREE
-            string themeName = (string)parameters[3];
-            BorderEffect borderEffect = (BorderEffect)parameters[4];
-            Color? borderColor = (Color?)parameters[5];
-            var brush = borderColor.HasValue ? new SolidColorBrush(borderColor.Value) : null;
-
-            var window = new LoadingDecoratorWindow(owner, lockMode, themeName, borderEffect, brush);
-#else
             var window = new LoadingDecoratorWindowFree(owner, lockMode);
-#endif
             if(windowStyle != null)
                 window.Style = windowStyle;
             else
@@ -393,67 +330,5 @@ namespace DevExpress.Mvvm.UI {
                 ParentLocker = new ContainerLocker(parentContainer, lockMode);
             }
         }
-#if !FREE
-        internal class LoadingDecoratorWindow : LoadingDecoratorWindowFree {
-#if DEBUGTEST
-            internal ContainerLocker Test_GetWindowLocker() { return ParentLocker; }
-            internal DXDecorator Test_GetBorderDecorator() { return decorator; }
-#endif
-            DXDecorator decorator;
-
-            public LoadingDecoratorWindow(WindowArrangerContainer parentContainer, SplashScreenLock lockMode,
-                    string themeName, BorderEffect borderEffect, SolidColorBrush borderBrush) : base(parentContainer, lockMode) {
-                CreateBorderDecorator(borderEffect, borderBrush, themeName);
-                ThemeManager.SetThemeName(this, themeName);
-            }
-
-            protected override void OnClosing(System.ComponentModel.CancelEventArgs e) {
-                if(!e.Cancel)
-                    ReleaseBorderDecorator();
-                base.OnClosing(e);
-            }
-            protected override void OnClosed(EventArgs e) {
-                ReleaseBorderDecorator();
-                base.OnClosed(e);
-            }
-
-            void ReleaseBorderDecorator() {
-                if(decorator != null) {
-                    decorator.Hide();
-                    decorator.Dispose();
-                    decorator = null;
-                }
-            }
-            void CreateBorderDecorator(BorderEffect borderEffect, SolidColorBrush brush, string themeName) {
-                if(borderEffect == BorderEffect.None)
-                    return;
-
-                if(!string.IsNullOrEmpty(themeName) && themeName.Contains(";Touch"))
-                    themeName = themeName.Substring(0, themeName.IndexOf(";Touch"));
-                Thickness? offset = FindDxWindowResource<Thickness?>(DXWindowThemeKey.BorderEffectOffset, themeName);
-                Thickness? leftMargin = FindDxWindowResource<Thickness?>(DXWindowThemeKey.BorderEffectLeftMargins, themeName);
-                Thickness? rightMargin = FindDxWindowResource<Thickness?>(DXWindowThemeKey.BorderEffectRightMargins, themeName);
-                Thickness? topMargin = FindDxWindowResource<Thickness?>(DXWindowThemeKey.BorderEffectTopMargins, themeName);
-                Thickness? bottomMargin = FindDxWindowResource<Thickness?>(DXWindowThemeKey.BorderEffectBottomMargins, themeName);
-                brush = brush ?? FindDxWindowResource<SolidColorBrush>(DXWindowThemeKey.BorderEffectActiveColor, themeName);
-
-                decorator = new WindowDecorator(brush, brush, offset.HasValue ? offset.Value : new Thickness(),
-                    new HandleDecorator.StructDecoratorMargins() {
-                        LeftMargins = leftMargin.HasValue ? leftMargin.Value : new Thickness(),
-                        RightMargins = rightMargin.HasValue ? rightMargin.Value : new Thickness(),
-                        TopMargins = topMargin.HasValue ? topMargin.Value : new Thickness(),
-                        BottomMargins = bottomMargin.HasValue ? bottomMargin.Value : new Thickness()
-                    }, true);
-                decorator.Control = this;
-            }
-            T FindDxWindowResource<T>(DXWindowThemeKey resourceKey, string themeName) {
-                DXWindowThemeKeyExtension ex = new DXWindowThemeKeyExtension() {
-                    ThemeName = themeName,
-                    ResourceKey = resourceKey
-                };
-                return (T)TryFindResource(ex);
-            }
-        }
-#endif
     }
 }

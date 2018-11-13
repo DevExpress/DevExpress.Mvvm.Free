@@ -1,6 +1,3 @@
-﻿#if !FREE
-using DevExpress.Xpf.Core.Native;
-#endif
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Native;

@@ -1,14 +1,8 @@
-﻿using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.UI.Interactivity;
 using System;
 using System.Windows;
-#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Threading;
-#else
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Core;
-#endif
 
 namespace DevExpress.Mvvm.UI {
     [TargetType(typeof(UserControl)), TargetType(typeof(Window))]
@@ -22,31 +16,19 @@ namespace DevExpress.Mvvm.UI {
             set { SetValue(DelayProperty, value); }
         }
         TimeSpan delay;
-#if NETFX_CORE
-        public CoreDispatcherPriority DispatcherPriority { get; set; }
-#else
         public DispatcherPriority DispatcherPriority { get; set; }
 
         public DispatcherService() {
             DispatcherPriority = DispatcherPriority.Normal;
         }
-#endif
 
         public void BeginInvoke(Action action) {
             if(delay == TimeSpan.Zero) {
                 BeginInvokeCore(action);
                 return;
             }
-#if NETFX_CORE
-            DispatcherTimer timer = new DispatcherTimer();
-#else
             DispatcherTimer timer = new DispatcherTimer(DispatcherPriority, Dispatcher);
-#endif
-#if NETFX_CORE
-            EventHandler<object> onTimerTick = null;
-#else
             EventHandler onTimerTick = null;
-#endif
             onTimerTick = (s, e) => {
                 timer.Tick -= onTimerTick;
                 timer.Stop();
@@ -58,11 +40,7 @@ namespace DevExpress.Mvvm.UI {
         }
 
         void BeginInvokeCore(Action action) {
-#if !NETFX_CORE
             Dispatcher.BeginInvoke(action, DispatcherPriority, null);
-#else
-            Dispatcher.RunAsync(DispatcherPriority, new DispatchedHandler(action)).AsTask();
-#endif
         }
         void OnDelayChanged() {
             delay = Delay;

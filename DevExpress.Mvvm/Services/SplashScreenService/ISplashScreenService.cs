@@ -1,6 +1,4 @@
-﻿#if !NETFX_CORE
 using System.Threading.Tasks;
-#endif
 namespace DevExpress.Mvvm {
     public interface ISplashScreenService {
         void ShowSplashScreen(string documentType);

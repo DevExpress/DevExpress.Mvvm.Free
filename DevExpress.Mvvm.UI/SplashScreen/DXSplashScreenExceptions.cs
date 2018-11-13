@@ -1,9 +1,5 @@
-﻿
-#if !FREE
-namespace DevExpress.Xpf.Core {
-#else
+
 namespace DevExpress.Mvvm.UI {
-#endif
     static class DXSplashScreenExceptions {
         public const string Exception1 = "SplashScreen has been displayed. Only one splash screen can be displayed simultaneously.";
         public const string Exception2 = "Incorrect SplashScreen Type.";

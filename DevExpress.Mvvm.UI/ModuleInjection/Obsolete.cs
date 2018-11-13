@@ -1,4 +1,4 @@
-﻿using DevExpress.Mvvm.Native;
+using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.ModuleInjection;
 using System;
 using System.Collections.Generic;
@@ -140,7 +140,7 @@ namespace DevExpress.Mvvm.UI {
             viewModels.Remove(key);
         }
 
-        #region StrategyOwner 
+        #region StrategyOwner
         class StrategyOwner : IStrategyOwner {
             readonly ViewInjectionService owner;
             public StrategyOwner(ViewInjectionService owner) {
@@ -166,4 +166,3 @@ namespace DevExpress.Mvvm.UI {
         #endregion
     }
 }
-

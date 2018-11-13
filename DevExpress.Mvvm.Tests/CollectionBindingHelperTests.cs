@@ -1,6 +1,3 @@
-﻿#if !FREE
-using DevExpress.Xpf.Core.Tests;
-#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,160 +7,10 @@ using DevExpress.Mvvm.Native;
 using NUnit.Framework;
 
 namespace DevExpress.Mvvm.Tests {
-#if !FREE
-    [TestFixture]
-    public class ListAdapterTests {
-        [Test]
-        public void AddRemoveItems() {
-            List<int> list1 = new List<int>();
-            List<string> list2 = new List<string>();
-            var combinedList = ListAdapter<object>.FromTwoLists(list1, list2);
-            Assert.AreEqual(0, combinedList.Count);
-            combinedList.Add(13);
-            AssertHelper.AssertEnumerablesAreEqual(new int[] { 13 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new string[] {  }, list2);
-            combinedList.Add("qwerty");
-            AssertHelper.AssertEnumerablesAreEqual(new int[] { 13 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new string[] { "qwerty" }, list2);
-            combinedList.Add(14);
-            AssertHelper.AssertEnumerablesAreEqual(new int[] { 13, 14 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new string[] { "qwerty" }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { 13, "qwerty", 14 }, combinedList);
-            combinedList.Remove("qwerty");
-            AssertHelper.AssertEnumerablesAreEqual(new int[] { 13, 14 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new string[] { }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { 13, 14 }, combinedList);
-            combinedList.Insert(1, 18);
-            AssertHelper.AssertEnumerablesAreEqual(new int[] { 13, 18, 14 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new string[] { }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { 13, 18, 14 }, combinedList);
-            combinedList.Insert(1, "abc");
-            AssertHelper.AssertEnumerablesAreEqual(new int[] { 13, 18, 14 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new string[] { "abc" }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { 13, "abc", 18, 14 }, combinedList);
-            combinedList.Add("def");
-            AssertHelper.AssertEnumerablesAreEqual(new int[] { 13, 18, 14 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new string[] { "abc", "def" }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { 13, "abc", 18, 14, "def" }, combinedList);
-            combinedList.Insert(1, "012");
-            AssertHelper.AssertEnumerablesAreEqual(new int[] { 13, 18, 14 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new string[] { "012", "abc", "def" }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { 13, "012", "abc", 18, 14, "def" }, combinedList);
-        }
-        [Test]
-        public void RemoveFirstElementIfFirstListIsEmpty() {
-            List<int> list1 = new List<int>();
-            List<string> list2 = new List<string>() { "a", "b", "c" };
-            var combinedList = ListAdapter<object>.FromTwoLists(list1, list2);
-            combinedList.RemoveAt(0);
-            AssertHelper.AssertEnumerablesAreEqual(new int[] {  }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new string[] { "b", "c" }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { "b", "c" }, combinedList);
-        }
-        [Test]
-        public void RestoreIndexMapTest() {
-            var list1 = new List<string> { "str1" };
-            var list2 = new List<int> { 13 };
-            var listAdapter = ListAdapter<object>.FromTwoLists(list1, list2);
-            Assert.AreEqual(2, listAdapter.Count);
-            listAdapter.Add("str2");
-            Assert.AreEqual(3, listAdapter.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { "str1", "str2" }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 13 }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { "str1", 13, "str2" }, listAdapter);
-            var newListAdapter = ListAdapter<object>.FromTwoLists(list1, list2);
-            Assert.AreEqual(3, newListAdapter.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { "str1", "str2", 13 }, newListAdapter);
-            var oldMappedList = (IMappedList)listAdapter;
-            var newMappedList = (IMappedList)newListAdapter;
-            newMappedList.Map = oldMappedList.Map;
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { "str1", 13, "str2" }, listAdapter);
-        }
-        [Test]
-        public void RestoreIndexMapInResortedListTest() {
-            var list = new List<int> { 13 };
-            var listAdapter = ListAdapter<int>.FromUnsortedList(list, x => x > 10 ? 0 : list.Count - 1);
-            Assert.AreEqual(1, listAdapter.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 13 }, listAdapter);
-            listAdapter.Insert(0, 14);
-            Assert.AreEqual(2, list.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 13, 14 }, list);
-            Assert.AreEqual(2, listAdapter.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 14, 13 }, listAdapter);
-            var newListAdapter = ListAdapter<int>.FromUnsortedList(list, _ => list.Count - 1);
-            Assert.AreEqual(2, newListAdapter.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 13, 14 }, newListAdapter);
-            var oldMappedList = (IMappedList)listAdapter;
-            var newMappedList = (IMappedList)newListAdapter;
-            newMappedList.Map = oldMappedList.Map;
-            Assert.AreEqual(2, newListAdapter.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 14, 13 }, newListAdapter);
-        }
-        [Test]
-        public void RestoreSeveralIndexMapsInCombinedListTest() {
-            var list1 = new List<int> { 13 };
-            var list2 = new List<string> { "str1" };
-            var list3 = new List<char> { 'a' };
-            var list4 = new List<long> { 128L };
-            var listAdapter = ListAdapter<object>.FromTwoLists(list1, list2);
-            listAdapter = ListAdapter<object>.FromTwoLists(list3, listAdapter);
-            listAdapter = ListAdapter<object>.FromTwoLists(list4, listAdapter);
-            Assert.AreEqual(4, listAdapter.Count);
-            listAdapter.Add(14);
-            Assert.AreEqual(5, listAdapter.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 13, 14 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { "str1" }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 'a' }, list3);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 128L }, list4);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { 128L, 'a', 13, "str1", 14 }, listAdapter);
-            listAdapter.Add("str2");
-            Assert.AreEqual(6, listAdapter.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 13, 14 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { "str1", "str2" }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 'a' }, list3);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 128L }, list4);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { 128L, 'a', 13, "str1", 14, "str2" }, listAdapter);
-            listAdapter.Add('b');
-            Assert.AreEqual(7, listAdapter.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 13, 14 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { "str1", "str2" }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 'a', 'b' }, list3);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 128L }, list4);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { 128L, 'a', 13, "str1", 14, "str2", 'b' }, listAdapter);
-            listAdapter.Add(256L);
-            Assert.AreEqual(8, listAdapter.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 13, 14 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { "str1", "str2" }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 'a', 'b' }, list3);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 128L, 256L }, list4);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { 128L, 'a', 13, "str1", 14, "str2", 'b', 256L }, listAdapter);
-            var map = ((IMappedList)listAdapter).Map;
-            listAdapter = ListAdapter<object>.FromTwoLists(list1, list2);
-            listAdapter = ListAdapter<object>.FromTwoLists(list3, listAdapter);
-            listAdapter = ListAdapter<object>.FromTwoLists(list4, listAdapter);
-            Assert.AreEqual(8, listAdapter.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 13, 14 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { "str1", "str2" }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 'a', 'b' }, list3);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 128L, 256L }, list4);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { 128L, 256L, 'a', 'b', 13, 14, "str1", "str2" }, listAdapter);
-            ((IMappedList)listAdapter).Map = map;
-            Assert.AreEqual(8, listAdapter.Count);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 13, 14 }, list1);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { "str1", "str2" }, list2);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 'a', 'b' }, list3);
-            AssertHelper.AssertEnumerablesAreEqual(new[] { 128L, 256L }, list4);
-            AssertHelper.AssertEnumerablesAreEqual(new object[] { 128L, 'a', 13, "str1", 14, "str2", 'b', 256L }, listAdapter);
-        }
-    }
-#endif
     [TestFixture]
     public class CollectionBindingHelperTests {
         static void CreateAndCheckBinding(Func<IDisposable> binding) {
             WeakReference bindingRef = new WeakReference(binding());
-#if !FREE
-            MemoryLeaksTestHelper.AssertLeaks(new WeakReference[] { bindingRef });
-#endif
         }
         [Test]
         public void AddItemsReverse() {
@@ -416,52 +263,10 @@ namespace DevExpress.Mvvm.Tests {
             var target = new ArrayList();
             var binding = CollectionBindingHelper.Bind((int i) => i, target, i => i, list);
             Assert.AreEqual(1, target[1]);
-#if !FREE
-            MemoryLeaksTestHelper.GarbageCollect();
-            list.Add(2);
-            list.OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, list[2], 2));
-            Assert.AreEqual(3, target.Count);
-            Assert.AreEqual(2, target[2]);
-#endif
             GC.KeepAlive(binding);
             GC.KeepAlive(list);
             GC.KeepAlive(target);
         }
-#if !FREE
-        [Test]
-        public void MemoryLeaksTest() {
-            var list = new ArrayList();
-            list.Add(0);
-            list.Add(1);
-            var target = new ArrayList();
-            var binding = CollectionBindingHelper.Bind((int i) => i, target, i => i, list);
-            var listRef = new WeakReference(list);
-            var targetRef = new WeakReference(target);
-            list = null;
-            target = null;
-            MemoryLeaksTestHelper.AssertLeaks(new WeakReference[] { listRef, targetRef });
-            GC.KeepAlive(binding);
-        }
-
-        [Test]
-        public void CheckReferencesCollectedTest() {
-            CheckReferencesCollected(false);
-            CheckReferencesCollected(true); 
-        }
-        void CheckReferencesCollected(bool useStrongReferences) {
-            var source = new ObservableCollection<int>();
-            var target = new ObservableCollection<int>();
-            var binding = CollectionBindingHelper.Bind(target, (int i) => i, source, (int i) => i, false, useStrongReferences);
-            var sourceRef = new WeakReference(source);
-            source = null;
-            binding = null;
-
-            MemoryLeaksTestHelper.GarbageCollect();
-            Assert.AreEqual(useStrongReferences, sourceRef.IsAlive);
-            GC.KeepAlive(target);
-        }
-
-#endif
     }
     public class MyTestCollection<T> : IList<T>, INotifyCollectionChanged {
         List<T> internalCollection = new List<T>();

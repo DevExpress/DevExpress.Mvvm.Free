@@ -1,10 +1,6 @@
-﻿using DevExpress.Mvvm;
+using DevExpress.Mvvm;
 
-#if !FREE
-namespace DevExpress.Xpf.Core {
-#else
 namespace DevExpress.Mvvm.UI {
-#endif
     public class SplashScreenViewModel : ViewModelBase, ISupportSplashScreen {
         public const double ProgressDefaultValue = 0d;
         public const double MaxProgressDefaultValue = 100d;

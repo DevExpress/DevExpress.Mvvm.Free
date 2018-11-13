@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -27,11 +27,6 @@ namespace DevExpress {
         public static void EnsureCollected(IEnumerable<WeakReference> references) {
             AssertCollectedCore(references, -1);
         }
-#if NETFX_CORE
-        static void AssertCollectedCore(IEnumerable<WeakReference> references, int alreadyCollectedGen) {
-            SlowButSureAssertCollected(references.ToArray());
-        }
-#else
         static void AssertCollectedCore(IEnumerable<WeakReference> references, int alreadyCollectedGen) {
             int maxGeneration;
             List<WeakReference> nextIterationHolder = CollectExistingData(references, out maxGeneration);
@@ -40,8 +35,7 @@ namespace DevExpress {
             if(maxGeneration <= alreadyCollectedGen) {
                 SlowButSureAssertCollected(nextIterationHolder);
             } else {
-                //Console.WriteLine("GC.Collect({0})", maxGeneration);
-                GC.Collect(maxGeneration, GCCollectionMode.Forced/*, true*/);
+                GC.Collect(maxGeneration, GCCollectionMode.Forced);
                 AssertCollectedCore(nextIterationHolder, maxGeneration);
             }
         }
@@ -59,17 +53,13 @@ namespace DevExpress {
             }
             return nextIterationHolder;
         }
-#endif
         static void SlowButSureAssertCollected(IList<WeakReference> nextIterationHolder) {
-            //Console.WriteLine("First GC.GetTotalMemory(true)");
             GC.GetTotalMemory(true);
             if(nextIterationHolder.All(wr => !wr.IsAlive))
                 return;
-            //Console.WriteLine("GCCollect()");
             GC.Collect();
             if(nextIterationHolder.All(wr => !wr.IsAlive))
                 return;
-            //Console.WriteLine("Second GC.GetTotalMemory(true)");
             GC.GetTotalMemory(true);
             var notCollected = nextIterationHolder.Select(wr => wr.Target).Where(t => t != null).ToArray();
             if(notCollected.Length == 0)
@@ -78,7 +68,6 @@ namespace DevExpress {
                 .Select(gr => string.Format("\t{0} object(s) of type {1}:\n{2}", gr.Count(), gr.Key.FullName
                     , string.Join("\n", gr.Select(o => o.ToString()).OrderBy(s => s).Select(s => string.Format("\t\t{0}", s)))
                     )));
-            //Assert.Fail();
             throw new GCTestHelperException(string.Format("{0} garbage object(s) not collected:\n{1}", notCollected.Length, objectsReport));
         }
         public static void CollectOptional(params WeakReference[] references) {
@@ -94,21 +83,15 @@ namespace DevExpress {
             }
         }
         public static void CollectOptional(IEnumerable<WeakReference> references) {
-#if NETFX_CORE
-            GC.Collect();
-            GC.GetTotalMemory(true);
-#else
             if(IsHardOptional()) {
                 GC.Collect();
                 GC.GetTotalMemory(true);
             } else {
                 int? maxGeneration = references.Select(wr => wr.Target).Where(t => t != null).Select(t => GC.GetGeneration(t)).Max(gen => (int?)gen);
                 if(maxGeneration.HasValue) {
-                    //Console.WriteLine("GC.Collect({0}) optional", maxGeneration);
-                    GC.Collect(maxGeneration.Value, GCCollectionMode.Forced/*, true*/);
+                    GC.Collect(maxGeneration.Value, GCCollectionMode.Forced);
                 }
             }
-#endif
         }
     }
 }

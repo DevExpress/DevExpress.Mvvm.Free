@@ -1,36 +1,26 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace DevExpress.Mvvm {
     public interface INavigationService {
-#if !NETFX_CORE
         void ClearCache();
         void ClearNavigationHistory();
         void Navigate(string viewType, object viewModel, object param, object parentViewModel, bool saveToJournal);
         bool CanNavigate { get; }
         void GoBack(object param);
         void GoForward(object param);
-#else
-        void Navigate(string target, object param = null, object parentViewModel = null);
-        void Navigate(string target, object param, object parentViewModel, bool saveToJournal);
-#endif
         void GoBack();
         void GoForward();
         bool CanGoBack { get; }
         bool CanGoForward { get; }
-#if !NETFX_CORE
         event EventHandler CanGoBackChanged;
         event EventHandler CanGoForwardChanged;
-#endif
         object Current { get; }
-#if !NETFX_CORE
         event EventHandler CurrentChanged;
-#endif
     }
 
-#if !NETFX_CORE
     public static class INavigationServiceExtensions {
         public static void Navigate(this INavigationService service, string viewType, object param = null, object parentViewModel = null) {
             NavigateCore(service, viewType, null, param, parentViewModel, true);
@@ -50,5 +40,4 @@ namespace DevExpress.Mvvm {
                 throw new ArgumentNullException("service");
         }
     }
-#endif
 }

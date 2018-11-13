@@ -1,7 +1,3 @@
-#if !FREE
-using DevExpress.Xpf.Editors;
-using DevExpress.Xpf.Core.Tests;
-#endif
 using DevExpress.Internal;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.POCO;
@@ -24,13 +20,8 @@ using System.Linq;
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
     public class EnumItemsSourceBehaviorTests : BaseWpfFixture {
-#if FREE
         const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Behaviors/TestImages/";
         const string SvgUriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Images/";
-#else
-        const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests;component/Behaviors/TestImages/";
-        const string SvgUriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests;component/Images/";
-#endif
 
         enum TestEnum1 {
             [Image(UriPrefix + "Cut.png")]
@@ -398,9 +389,9 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void ItemsSourseRequiredException() {
             FrameworkElement element = new FrameworkElement();
             EnumItemsSourceBehavior behavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum1) };
-            Assert.Throws<Exception>(() => { Interaction.GetBehaviors(element).Add(behavior); }, 
+            Assert.Throws<Exception>(() => { Interaction.GetBehaviors(element).Add(behavior); },
                 "ItemsSource dependency property required");
-            
+
         }
     }
 }

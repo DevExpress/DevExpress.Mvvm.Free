@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using System.Windows.Forms;
 using System;
 using System.Linq;
@@ -6,12 +6,9 @@ using System.ComponentModel;
 using System.Collections.Generic;
 using DevExpress.Mvvm.UI.Native;
 using System.Windows;
-#if !FREE
-using DevExpress.Utils.CommonDialogs;
-#endif
 
 namespace DevExpress.Mvvm.UI.Tests {
-    public abstract class FileDialogServiceBaseTests { } 
+    public abstract class FileDialogServiceBaseTests { }
     [TestFixture]
     public class SaveFileDialogServiceTests : FileDialogServiceBaseTests {
         [Test]
@@ -69,7 +66,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
         [Test]
         public void UpdateSelectedFilesAtErrorTest() {
-            IOpenFileDialogService dialog = new TestFileDialogService();            
+            IOpenFileDialogService dialog = new TestFileDialogService();
             var selectedFilesList = new List<string>();
 
             int retryCount = 2;

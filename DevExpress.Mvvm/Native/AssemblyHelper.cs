@@ -12,38 +12,21 @@ using System.Linq;
 
 using System.IO.Compression;
 
-#if DEMODATA || MVVM
 using DevExpress.Internal;
-#endif
 
-#if DEMODATA
-namespace DevExpress.DemoData.Utils {
-#else
-#if DEMO
-namespace DevExpress.Internal {
-#else
 namespace DevExpress.Utils {
-#endif
-#endif
     public static class AssemblyHelper {
         static Dictionary<Assembly, string> defaultNamespaces = new Dictionary<Assembly, string>();
         const string PublicKeyTokenString = "PublicKeyToken";
-        //workaround for clickonce
-        //search entry assembly is slow when current appdomain starts from another appdomain
         static Assembly entryAssembly;
         public static Assembly EntryAssembly {
             get {
                 if(entryAssembly == null)
-#if NETFX_CORE
-                    entryAssembly = Windows.UI.Xaml.Application.Current == null ? null : Windows.UI.Xaml.Application.Current.GetType().GetTypeInfo().Assembly;
-#else
                     entryAssembly = Assembly.GetEntryAssembly();
-#endif
                 return entryAssembly;
             }
             set { entryAssembly = value; }
         }
-#if !NETFX_CORE
         static Assembly GetReflectionOnlyLoadedAssembly(string asmName) {
             try {
                 return Assembly.ReflectionOnlyLoad(asmName);
@@ -51,7 +34,6 @@ namespace DevExpress.Utils {
                 return null;
             }
         }
-#endif
         const int PublicKeyTokenBytesLength = 8;
 
         static byte[] StringToBytes(string str) {
@@ -74,7 +56,6 @@ namespace DevExpress.Utils {
             }
             return asmName.FullName;
         }
-#if !DemosSourceCode
         public static Assembly GetThemeAssembly(string themeName) {
             string assemblyName = GetThemeAssemblyName(themeName);
             Assembly assembly = AssemblyHelper.GetLoadedAssembly(assemblyName);
@@ -90,7 +71,6 @@ namespace DevExpress.Utils {
             string nameWithoutVSuffix = name.Replace(AssemblyInfo.VSuffix, string.Empty);
             return nameWithoutVSuffix;
         }
-#endif
 
         public static bool HasAttribute(string assemblyName, Type attributeType) {
             return HasAttribute(GetLoadedAssembly(assemblyName), attributeType);
@@ -115,7 +95,6 @@ namespace DevExpress.Utils {
         public static IEnumerable<Assembly> GetLoadedAssemblies() {
             return AppDomain.CurrentDomain.GetAssemblies();
         }
-#if !DemosSourceCode
         public static string GetThemeAssemblyFullName(string themeName) {
             return GetThemeAssemblyName(themeName) + GetFullNameAppendix();
         }
@@ -125,14 +104,12 @@ namespace DevExpress.Utils {
         public static Assembly LoadDXAssembly(string assemblyName) {
             Assembly assembly = null;
             try {
-                //Office2007Black.theme, Version=10.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35
                 assembly = Assembly.Load(assemblyName + GetFullNameAppendix());
             } catch {
             }
             return assembly;
         }
         public static string GetFullNameAppendix() {
-            //Office2007Black.theme, Version=10.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35
             return ", Version=" + AssemblyInfo.Version + ", Culture=neutral, " + PublicKeyTokenString + "=" + GetCoreAssemblyPublicKeyToken();
         }
         public static string GetCoreAssemblyPublicKeyToken() {
@@ -149,7 +126,6 @@ namespace DevExpress.Utils {
             if(NameContains(Assembly.GetExecutingAssembly().FullName, AssemblyInfo.SRAssemblyXpfMvvm)) return assemblyFullName;
             throw new NotSupportedException(string.Format("Wrong DX assembly: {0}", assemblyFullName));
         }
-#endif
         public static Assembly GetAssembly(string assemblyFullName) {
             Assembly assembly = AssemblyHelper.GetLoadedAssembly(assemblyFullName);
             if(assembly != null) return assembly;
@@ -164,7 +140,6 @@ namespace DevExpress.Utils {
         public static bool NameContains(AssemblyName assembly, string assemblyName) {
             return AssertAssemblyName(assembly.FullName, assemblyName);
         }
-#if !DemosSourceCode
         public static bool IsDXProductAssembly(Assembly assembly) {
             return NameContains(assembly, AssemblyInfo.SRAssemblyXpfPrefix) && !IsDXThemeAssembly(assembly);
         }
@@ -177,7 +152,6 @@ namespace DevExpress.Utils {
         public static bool IsDXThemeAssembly(string assemblyName) {
             return NameContains(assemblyName, AssemblyInfo.ThemePrefixWithoutSeparator);
         }
-#endif
         public static bool IsEntryAssembly(Assembly assembly) {
             Assembly entryAssembly = EntryAssembly;
             return entryAssembly == assembly;

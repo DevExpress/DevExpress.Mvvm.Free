@@ -1,4 +1,4 @@
-﻿using DevExpress.Internal;
+using DevExpress.Internal;
 using System;
 using System.Windows;
 using System.Windows.Data;
@@ -11,11 +11,7 @@ namespace DevExpress.Mvvm.UI.Native {
         static ResourceDictionary GetResourceDictionary() {
             if(resourceDictionary == null) {
                 resourceDictionary = new ResourceDictionary();
-#if !FREE
-                string path = string.Format("pack://application:,,,/{0};component/Mvvm.UI/Services/NotificationService/PredefinedToastNotification.xaml", AssemblyInfo.SRAssemblyXpfCore);
-#else
                 string path = string.Format("pack://application:,,,/{0};component/Services/NotificationService/PredefinedToastNotification.xaml", AssemblyInfo.SRAssemblyXpfMvvmUIFree);
-#endif
                 resourceDictionary.Source = new Uri(path, UriKind.Absolute);
             }
             return resourceDictionary;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 
 namespace DevExpress.Mvvm.DataAnnotations {

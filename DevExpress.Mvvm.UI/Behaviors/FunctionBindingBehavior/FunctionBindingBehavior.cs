@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Data;
 using DevExpress.Mvvm.Native;
@@ -7,16 +7,16 @@ using System.Globalization;
 namespace DevExpress.Mvvm.UI {
     public class FunctionBindingBehavior : FunctionBindingBehaviorBase {
         #region Dependency Properties
-        public static readonly DependencyProperty PropertyProperty = 
+        public static readonly DependencyProperty PropertyProperty =
              DependencyProperty.Register("Property", typeof(string), typeof(FunctionBindingBehavior),
              new PropertyMetadata(null, (d, e) => ((FunctionBindingBehavior)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty ConverterProperty = 
+        public static readonly DependencyProperty ConverterProperty =
             DependencyProperty.Register("Converter", typeof(IValueConverter), typeof(FunctionBindingBehavior),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehavior)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty ConverterParameterProperty = 
+        public static readonly DependencyProperty ConverterParameterProperty =
             DependencyProperty.Register("ConverterParameter", typeof(object), typeof(FunctionBindingBehavior),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehavior)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty FunctionProperty = 
+        public static readonly DependencyProperty FunctionProperty =
             DependencyProperty.Register("Function", typeof(string), typeof(FunctionBindingBehavior),
             new PropertyMetadata(null, (d, e) => ((FunctionBindingBehavior)d).OnResultAffectedPropertyChanged()));
 

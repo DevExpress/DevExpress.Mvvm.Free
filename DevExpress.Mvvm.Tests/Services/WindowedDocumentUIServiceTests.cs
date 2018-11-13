@@ -1,11 +1,5 @@
-﻿using NUnit.Framework;
-#if !FREE
-using DevExpress.Xpf.Core;
-using DevExpress.Xpf.Core.Serialization;
-using DevExpress.Xpf.Core.Tests;
-#else
+using NUnit.Framework;
 using DevExpress.Mvvm.Tests;
-#endif
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -113,83 +107,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             document.Close();
         }
 
-#if !FREE
-        class AutoClosingWindow : Window {
-            public static IDocument document;
-            public AutoClosingWindow() {
-                Loaded += (s, e) => {
-                    document.Close();
-                };
-            }
-        }
-
-        [Test]
-        public void ConsistencyTest() {
-            Window.Show();
-            DispatcherHelper.DoEvents();
-            WindowedDocumentUIService service = CreateService();
-            Interaction.GetBehaviors(Window).Add(service);
-            DocumentManagerServiceConsistencyChecker.AssertConsistency(service, "View1");
-        }
-
-        [Test]
-        public void ClosingModalWindowThroughServiceShouldChangeDocumentState() {
-            EnqueueShowWindow();
-            Window.Show();
-            DispatcherHelper.DoEvents();
-            var service = CreateService();
-            Interaction.GetBehaviors(Window).Add(service);
-            service.DocumentShowMode = WindowShowMode.Dialog;
-            service.WindowType = typeof(AutoClosingWindow);
-            var document = service.CreateDocument("View1", null);
-            AutoClosingWindow.document = document;
-            document.DestroyOnClose = true;
-            document.Show();
-            Assert.AreEqual(DocumentState.Destroyed, ((IDocumentInfo)document).State);
-        }
-
-        class TestWindow : Window {
-            public static TestWindow instance;
-            public TestWindow() {
-                instance = this;
-            }
-        }
-
-        [Test]
-        public void ClosingWindowDirectlyWithoutServiceShouldRespectDestroyOnCloseFalse() {
-            Window.Show();
-            DispatcherHelper.DoEvents();
-            var service = CreateService();
-            Interaction.GetBehaviors(Window).Add(service);
-            service.WindowType = typeof(TestWindow);
-            var document = service.CreateDocument("View1", null);
-            document.DestroyOnClose = false;
-            document.Show();
-            TestWindow.instance.Close();
-            Assert.AreEqual(DocumentState.Hidden, ((IDocumentInfo)document).State);
-        }
-
-        class AutoClosingWithoutServiceWindow : Window {
-            public AutoClosingWithoutServiceWindow() {
-                Loaded += (s, e) => {
-                    Close();
-                };
-            }
-        }
-
-        [Test]
-        public void ClosingModalWindowDirectlyWithoutServiceShouldChangeDocumentState() {
-            Window.Show();
-            DispatcherHelper.DoEvents();
-            var service = CreateService();
-            Interaction.GetBehaviors(Window).Add(service);
-            service.DocumentShowMode = WindowShowMode.Dialog;
-            service.WindowType = typeof(AutoClosingWithoutServiceWindow);
-            var document = service.CreateDocument("View1", null);
-            document.Show();
-            Assert.AreEqual(DocumentState.Destroyed, ((IDocumentInfo)document).State);
-        }
-#endif
 
         [Test]
         public void UnActiveDocumentClose() {
@@ -348,7 +265,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 onClose();
             }
             public void OnDestroy() {
-                
+
             }
             public object Title {
                 get { return ""; }
@@ -409,45 +326,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             return new WindowedDocumentUIService() { WindowType = typeof(Window) };
         }
     }
-#if !FREE
-    [TestFixture]
-    public class WindowedDocumentUIServiceTests_DXWindow : WindowedDocumentUIServiceTests {
-        protected override WindowedDocumentUIService CreateService() {
-            return new WindowedDocumentUIService() { WindowType = typeof(DXWindow) };
-        }
-        [Test]
-        public void UseDXWindowWithNullTitle() {
-            WindowedDocumentUIService service = CreateService();
-            Interaction.GetBehaviors(Window).Add(service);
-            IDocument document = service.CreateDocument("EmptyView", new ViewModelWithNullTitle());
-            Assert.AreEqual(string.Empty, document.Title);
-        }
-    }
-    [TestFixture]
-    public class WindowedDocumentUIServiceTests_DXDialogWindow : WindowedDocumentUIServiceTests_DXWindow {
-        protected override WindowedDocumentUIService CreateService() {
-            return new WindowedDocumentUIService() { WindowType = typeof(DXDialogWindow) };
-        }
-    }
-    [TestFixture]
-    public class WindowedDocumentUIServiceTests_ThemedWindow : WindowedDocumentUIServiceTests {
-        protected override WindowedDocumentUIService CreateService() {
-            return new WindowedDocumentUIService() { WindowType = typeof(ThemedWindow) };
-        }
-    }
-    [TestFixture]
-    public class DXWindow_WindowedDocumentUIServiceIDocumentContentCloseTests : WindowedDocumentUIServiceIDocumentContentCloseTests {
-        protected override WindowedDocumentUIService CreateService() {
-            return new WindowedDocumentUIService() { WindowType = typeof(DXWindow) };
-        }
-    }
-    [TestFixture]
-    public class Themed_WindowedDocumentUIServiceIDocumentContentCloseTests : WindowedDocumentUIServiceIDocumentContentCloseTests {
-        protected override WindowedDocumentUIService CreateService() {
-            return new WindowedDocumentUIService() { WindowType = typeof(ThemedWindow) };
-        }
-    }
-#endif
 
     [TestFixture]
     public class WindowedDocumentUIServiceIDocumentContentCloseTests : BaseWpfFixture {

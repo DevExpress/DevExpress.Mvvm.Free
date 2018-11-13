@@ -1,6 +1,3 @@
-﻿#if !FREE
-using DevExpress.Xpf.Core.Tests;
-#endif
 using NUnit.Framework;
 using System;
 using System.Windows.Controls;
@@ -296,7 +293,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
     }
     class FCBButton : FrameworkContentElement {
-        public static readonly DependencyProperty CommandProperty = 
+        public static readonly DependencyProperty CommandProperty =
             DependencyProperty.Register("Command", typeof(ICommand), typeof(FCBButton), new PropertyMetadata(null));
 
         public ICommand Command {

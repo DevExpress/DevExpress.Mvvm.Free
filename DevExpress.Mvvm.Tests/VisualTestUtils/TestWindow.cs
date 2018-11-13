@@ -1,15 +1,10 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 
-#if MVVM
 namespace DevExpress {
-#else
-using DevExpress.Xpf.Core;
-namespace DevExpress.Xpf.Core.Tests {
-#endif
     public class TestWindowBase : Window {
         public delegate TestWindow TestWindowCreate();
         public static T GetContainer<T>(TestWindowCreate create) where T : TestWindow {
@@ -22,7 +17,6 @@ namespace DevExpress.Xpf.Core.Tests {
     }
 
     public class TestWindow : ContentControl {
-        //return false if you want to slowdown :)
         public static bool IsAllowStaticContainer { get { return true; } }
         [ThreadStatic]
         static Hashtable staticContainers;
@@ -37,9 +31,7 @@ namespace DevExpress.Xpf.Core.Tests {
         Size lastSize = sizeSmall;
         public virtual void Show() {
             if(StaticContainers[GetType()] == this) {
-#if DEBUGTEST || MVVM
                 WpfTestWindow.CheckToSkip(WpfTestWindow.GetMethodsToSkip(this));
-#endif
                 SetSize(GetNewSize());
                 return;
             }
@@ -82,9 +74,6 @@ namespace DevExpress.Xpf.Core.Tests {
             return res;
         }
         static void ClearThemeName(TestWindow window) {
-#if !MVVM
-            window.ClearValue(DevExpress.Xpf.Core.ThemeManager.ThemeNameProperty);
-#endif
         }
         public static TestWindow GetContainer() {
             return GetContainer<TestWindow>(delegate() { return new TestWindow(); });
@@ -142,7 +131,6 @@ namespace DevExpress.Xpf.Core.Tests {
         public string Title { get; set; }
 
         public void Activate() {
-            //todo?
         }
     }
 }

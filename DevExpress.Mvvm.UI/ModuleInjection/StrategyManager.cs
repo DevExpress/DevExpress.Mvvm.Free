@@ -1,4 +1,4 @@
-﻿using DevExpress.Mvvm.ModuleInjection;
+using DevExpress.Mvvm.ModuleInjection;
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -52,9 +52,6 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             RegisterStrategy<Selector, SelectorStrategy<Selector, SelectorWrapper>>();
             RegisterStrategy<TabControl, SelectorStrategy<TabControl, TabControlWrapper>>();
             RegisterWindowStrategy<Window, WindowStrategy<Window, WindowWrapper>>();
-#if !FREE
-            RegisterWindowStrategy<DevExpress.Xpf.Core.DXDialogWindow, WindowStrategy<DevExpress.Xpf.Core.DXDialogWindow, DXDialogWindowWrapper>>();
-#endif
         }
 
         static void RegisterStrategy<TTarget, TStrategy>(Dictionary<Type, Type> strategies) where TStrategy : new() {

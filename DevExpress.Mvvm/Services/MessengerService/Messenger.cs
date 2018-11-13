@@ -1,16 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Windows;
 using DevExpress.Mvvm.Internal;
 using DevExpress.Mvvm.Native;
-#if !NETFX_CORE
 using System.Windows.Threading;
-#else
-using Windows.UI.Xaml;
-using Windows.UI.Core;
-#endif
 
 namespace DevExpress.Mvvm {
     public class Messenger : IMessenger {
@@ -57,7 +52,7 @@ namespace DevExpress.Mvvm {
                 if(recipient == null) return;
                 foreach(List<ActionInvokerTokenPair> list in GetValues(messageType)) {
                     foreach(ActionInvokerTokenPair item in list) {
-                        if(token == null || token.Equals(item.Token)) { //TODO add tests
+                        if(token == null || token.Equals(item.Token)) {
                             item.ActionInvoker.ClearIfMatched(action, recipient);
                         }
                     }
@@ -65,7 +60,7 @@ namespace DevExpress.Mvvm {
             }
             public void Send(object message, Type messageTargetType, object token, Type messageType) {
                 foreach(List<ActionInvokerTokenPair> list in GetValues(messageType)) {
-                    foreach(ActionInvokerTokenPair item in list.ToArray()) { //TODO add tests
+                    foreach(ActionInvokerTokenPair item in list.ToArray()) {
                         if(object.Equals(item.Token, token))
                             item.ActionInvoker.ExecuteIfMatched(messageTargetType, message);
                     }
@@ -73,9 +68,7 @@ namespace DevExpress.Mvvm {
             }
         }
 #endregion
-#if !NETFX_CORE
         const DispatcherPriority CleanUpPriority = DispatcherPriority.ApplicationIdle;
-#endif
         static readonly object defaultMessengerLock = new object();
         static IMessenger defaultMessenger;
         public static IMessenger Default {
@@ -126,7 +119,7 @@ namespace DevExpress.Mvvm {
             try {
                 if(isMultiThreadSafe)
                     Monitor.Enter(actionInvokers);
-                actionInvokers.Send(message, messageTargetType, token, typeof(TMessage)); //TODO tests
+                actionInvokers.Send(message, messageTargetType, token, typeof(TMessage));
             } finally {
                 if(isMultiThreadSafe)
                     Monitor.Exit(actionInvokers);
@@ -164,14 +157,7 @@ namespace DevExpress.Mvvm {
         public void RequestCleanup() {
             if(cleanupScheduled) return;
             cleanupScheduled = true;
-#if NETFX_CORE
-#pragma warning disable 4014
-            if(!Windows.ApplicationModel.DesignMode.DesignModeEnabled)
-                Window.Current.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, new DispatchedHandler(Cleanup));
-#pragma warning restore 4014
-#else
             Dispatcher.CurrentDispatcher.BeginInvoke(new Action(Cleanup), CleanUpPriority, null);
-#endif
         }
         static IActionInvokerFactory CreateActionInvokerFactory(ActionReferenceType actionReferenceType) {
             return actionReferenceType == ActionReferenceType.WeakReference ?

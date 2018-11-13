@@ -1,4 +1,3 @@
-﻿#if !NETFX_CORE
 using System.Windows.Media;
 using System.Globalization;
 using System.Windows.Data;
@@ -8,19 +7,6 @@ using System.Linq;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using DevExpress.Mvvm.Native;
-#else
-using Windows.UI.Xaml;
-using System.Globalization;
-using Windows.UI.Xaml.Data;
-using Windows.UI;
-using Windows.UI.Xaml.Media;
-#endif
-#if !FREE
-using DevExpress.Utils;
-#endif
-#if !FREE && !NETFX_CORE
-using DevExpress.Xpf.Core.Tests;
-#endif
 using System;
 using System.Windows;
 using NUnit.Framework;
@@ -29,7 +15,6 @@ using DevExpress.Mvvm.UI;
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class ConvertersTest {
-#if !NETFX_CORE
         [Test]
         public void ReflectionConverterShouldNotPassNullIntoContructorIfTargetTypeIsNotValueType() {
             var converter1 = new ReflectionConverter();
@@ -175,14 +160,6 @@ namespace DevExpress.Mvvm.Tests {
         void TestEnumerableConverter<TCollection>(IValueConverter converter) where TCollection : IEnumerable {
             AssertHelper.AssertEnumerablesAreEqual(new string[] { "0", "1", "2" }, (TCollection)converter.Convert(new int[] { 0, 1, 2 }, typeof(TCollection), null, null));
         }
-#endif
-#if !NETFX_CORE && !FREE
-        [Test]
-        public void CriteriaOperatorConverter_ToUpperCaseTest() {
-            var converter = new CriteriaOperatorConverter() { Expression = "Upper(This)" };
-            Assert.AreEqual("ABCD", converter.Convert("abcd", null, null, null));
-        }
-#endif
         [Test]
         public void BooleanToVisibilityConverter() {
             var converter = new BooleanToVisibilityConverter();
@@ -194,46 +171,28 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(Visibility.Collapsed, converter.Convert(new Nullable<bool>(), typeof(Visibility), null, null));
             Assert.AreEqual(Visibility.Collapsed, converter.Convert(null, typeof(Visibility), null, null));
             Assert.AreEqual(Visibility.Collapsed, converter.Convert("test", typeof(Visibility), null, null));
-#if !FREE
-            Assert.AreEqual(Visibility.Collapsed, converter.Convert(DefaultBoolean.Default, typeof(Visibility), null, null));
-            Assert.AreEqual(Visibility.Collapsed, converter.Convert(DefaultBoolean.False, typeof(Visibility), null, null));
-            Assert.AreEqual(Visibility.Visible, converter.Convert(DefaultBoolean.True, typeof(Visibility), null, null));
-#endif
             Assert.AreEqual(true, converter.ConvertBack(Visibility.Visible, typeof(bool), null, null));
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Collapsed, typeof(bool), null, null));
             Assert.AreEqual(false, converter.ConvertBack("test", typeof(bool), null, null));
-#if !FREE
-            Assert.AreEqual(DefaultBoolean.True, converter.ConvertBack(Visibility.Visible, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.ConvertBack(Visibility.Collapsed, typeof(DefaultBoolean), null, null));
-#endif
             Assert.AreEqual(new bool?(true), converter.ConvertBack(Visibility.Visible, typeof(bool?), null, null));
             Assert.AreEqual(new bool?(false), converter.ConvertBack(Visibility.Collapsed, typeof(bool?), null, null));
-#if !NETFX_CORE
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Hidden, typeof(bool), null, null));
-#if !FREE
-            Assert.AreEqual(DefaultBoolean.False, converter.ConvertBack(Visibility.Hidden, typeof(DefaultBoolean), null, null));
-#endif
             Assert.AreEqual(new bool?(false), converter.ConvertBack(Visibility.Hidden, typeof(bool?), null, null));
-#endif
 
             converter.Inverse = true;
             Assert.AreEqual(Visibility.Collapsed, converter.Convert(true, typeof(Visibility), null, null));
             Assert.AreEqual(Visibility.Visible, converter.Convert(false, typeof(Visibility), null, null));
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Visible, typeof(bool), null, null));
             Assert.AreEqual(true, converter.ConvertBack(Visibility.Collapsed, typeof(bool), null, null));
-#if !NETFX_CORE
             Assert.AreEqual(true, converter.ConvertBack(Visibility.Hidden, typeof(bool), null, null));
-#endif
 
             converter.Inverse = false;
             converter.HiddenInsteadOfCollapsed = true;
             Assert.AreEqual(Visibility.Visible, converter.Convert(true, typeof(Visibility), null, null));
             Assert.AreEqual(true, converter.ConvertBack(Visibility.Visible, typeof(bool), null, null));
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Collapsed, typeof(bool), null, null));
-#if !NETFX_CORE
             Assert.AreEqual(Visibility.Hidden, converter.Convert(false, typeof(Visibility), null, null));
             Assert.AreEqual(false, converter.ConvertBack(Visibility.Hidden, typeof(bool), null, null));
-#endif
         }
         [Test]
         public void NegationConverter_Convert_NoTargetType() {
@@ -241,11 +200,6 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(null, converter.Convert(null, null, null, null));
             Assert.AreEqual(false, converter.Convert(true, null, null, null));
             Assert.AreEqual(true, converter.Convert(false, null, null, null));
-#if !FREE
-            Assert.AreEqual(false, converter.Convert(DefaultBoolean.True, null, null, null));
-            Assert.AreEqual(true, converter.Convert(DefaultBoolean.False, null, null, null));
-            Assert.AreEqual(null, converter.Convert(DefaultBoolean.Default, null, null, null));
-#endif
             Assert.AreEqual(false, converter.Convert(new Nullable<bool>(true), null, null, null));
             Assert.AreEqual(true, converter.Convert(new Nullable<bool>(false), null, null, null));
             Assert.AreEqual(null, converter.Convert(new Nullable<bool>(), null, null, null));
@@ -257,11 +211,6 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(true, converter.Convert(null, typeof(bool), null, null));
             Assert.AreEqual(false, converter.Convert(true, typeof(bool), null, null));
             Assert.AreEqual(true, converter.Convert(false, typeof(bool), null, null));
-#if !FREE
-            Assert.AreEqual(false, converter.Convert(DefaultBoolean.True, typeof(bool), null, null));
-            Assert.AreEqual(true, converter.Convert(DefaultBoolean.False, typeof(bool), null, null));
-            Assert.AreEqual(true, converter.Convert(DefaultBoolean.Default, typeof(bool), null, null));
-#endif
             Assert.AreEqual(false, converter.Convert(new Nullable<bool>(true), typeof(bool), null, null));
             Assert.AreEqual(true, converter.Convert(new Nullable<bool>(false), typeof(bool), null, null));
             Assert.AreEqual(true, converter.Convert(new Nullable<bool>(), typeof(bool), null, null));
@@ -273,43 +222,17 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(null, converter.Convert(null, typeof(bool?), null, null));
             Assert.AreEqual(false, converter.Convert(true, typeof(bool?), null, null));
             Assert.AreEqual(true, converter.Convert(false, typeof(bool?), null, null));
-#if !FREE
-            Assert.AreEqual(false, converter.Convert(DefaultBoolean.True, typeof(bool?), null, null));
-            Assert.AreEqual(true, converter.Convert(DefaultBoolean.False, typeof(bool?), null, null));
-            Assert.AreEqual(null, converter.Convert(DefaultBoolean.Default, typeof(bool?), null, null));
-#endif
             Assert.AreEqual(false, converter.Convert(new Nullable<bool>(true), typeof(bool?), null, null));
             Assert.AreEqual(true, converter.Convert(new Nullable<bool>(false), typeof(bool?), null, null));
             Assert.AreEqual(null, converter.Convert(new Nullable<bool>(), typeof(bool?), null, null));
             Assert.AreEqual(null, converter.Convert("test", typeof(bool?), null, null));
         }
-#if !FREE
-        [Test]
-        public void NegationConverter_Convert_TargeTypeDefaultBoolean() {
-            var converter = new BooleanNegationConverter();
-            Assert.AreEqual(DefaultBoolean.Default, converter.Convert(null, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.Convert(true, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.Convert(false, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.Convert(DefaultBoolean.True, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.Convert(DefaultBoolean.False, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.Convert(DefaultBoolean.Default, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.Convert(new Nullable<bool>(true), typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.Convert(new Nullable<bool>(false), typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.Convert(new Nullable<bool>(), typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.Convert("test", typeof(DefaultBoolean), null, null));
-        }
-#endif
         [Test]
         public void NegationConverter_ConvertBack_NoTargetType() {
             var converter = new BooleanNegationConverter();
             Assert.AreEqual(null, converter.ConvertBack(null, null, null, null));
             Assert.AreEqual(false, converter.ConvertBack(true, null, null, null));
             Assert.AreEqual(true, converter.ConvertBack(false, null, null, null));
-#if !FREE
-            Assert.AreEqual(false, converter.ConvertBack(DefaultBoolean.True, null, null, null));
-            Assert.AreEqual(true, converter.ConvertBack(DefaultBoolean.False, null, null, null));
-            Assert.AreEqual(null, converter.ConvertBack(DefaultBoolean.Default, null, null, null));
-#endif
             Assert.AreEqual(false, converter.ConvertBack(new Nullable<bool>(true), null, null, null));
             Assert.AreEqual(true, converter.ConvertBack(new Nullable<bool>(false), null, null, null));
             Assert.AreEqual(null, converter.ConvertBack(new Nullable<bool>(), null, null, null));
@@ -321,11 +244,6 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(true, converter.ConvertBack(null, typeof(bool), null, null));
             Assert.AreEqual(false, converter.ConvertBack(true, typeof(bool), null, null));
             Assert.AreEqual(true, converter.ConvertBack(false, typeof(bool), null, null));
-#if !FREE
-            Assert.AreEqual(false, converter.ConvertBack(DefaultBoolean.True, typeof(bool), null, null));
-            Assert.AreEqual(true, converter.ConvertBack(DefaultBoolean.False, typeof(bool), null, null));
-            Assert.AreEqual(true, converter.ConvertBack(DefaultBoolean.Default, typeof(bool), null, null));
-#endif
             Assert.AreEqual(false, converter.ConvertBack(new Nullable<bool>(true), typeof(bool), null, null));
             Assert.AreEqual(true, converter.ConvertBack(new Nullable<bool>(false), typeof(bool), null, null));
             Assert.AreEqual(true, converter.ConvertBack(new Nullable<bool>(), typeof(bool), null, null));
@@ -337,43 +255,17 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(null, converter.ConvertBack(null, typeof(bool?), null, null));
             Assert.AreEqual(false, converter.ConvertBack(true, typeof(bool?), null, null));
             Assert.AreEqual(true, converter.ConvertBack(false, typeof(bool?), null, null));
-#if !FREE
-            Assert.AreEqual(false, converter.ConvertBack(DefaultBoolean.True, typeof(bool?), null, null));
-            Assert.AreEqual(true, converter.ConvertBack(DefaultBoolean.False, typeof(bool?), null, null));
-            Assert.AreEqual(null, converter.ConvertBack(DefaultBoolean.Default, typeof(bool?), null, null));
-#endif
             Assert.AreEqual(false, converter.ConvertBack(new Nullable<bool>(true), typeof(bool?), null, null));
             Assert.AreEqual(true, converter.ConvertBack(new Nullable<bool>(false), typeof(bool?), null, null));
             Assert.AreEqual(null, converter.ConvertBack(new Nullable<bool>(), typeof(bool?), null, null));
             Assert.AreEqual(null, converter.ConvertBack("test", typeof(bool?), null, null));
         }
-#if !FREE
-        [Test]
-        public void NegationConverter_ConvertBack_TargeTypeDefaultBoolean() {
-            var converter = new BooleanNegationConverter();
-            Assert.AreEqual(DefaultBoolean.Default, converter.ConvertBack(null, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.ConvertBack(true, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.ConvertBack(false, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.ConvertBack(DefaultBoolean.True, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.ConvertBack(DefaultBoolean.False, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.ConvertBack(DefaultBoolean.Default, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.ConvertBack(new Nullable<bool>(true), typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.ConvertBack(new Nullable<bool>(false), typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.ConvertBack(new Nullable<bool>(), typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.ConvertBack("test", typeof(DefaultBoolean), null, null));
-        }
-#endif
         [Test]
         public void DefaultBooleanToBooleanConverter_Convert_NoTargetType() {
             var converter = new DefaultBooleanToBooleanConverter();
             Assert.AreEqual(null, converter.Convert(null, null, null, null));
             Assert.AreEqual(true, converter.Convert(true, null, null, null));
             Assert.AreEqual(false, converter.Convert(false, null, null, null));
-#if !FREE
-            Assert.AreEqual(true, converter.Convert(DefaultBoolean.True, null, null, null));
-            Assert.AreEqual(false, converter.Convert(DefaultBoolean.False, null, null, null));
-            Assert.AreEqual(null, converter.Convert(DefaultBoolean.Default, null, null, null));
-#endif
             Assert.AreEqual(true, converter.Convert(new Nullable<bool>(true), null, null, null));
             Assert.AreEqual(false, converter.Convert(new Nullable<bool>(false), null, null, null));
             Assert.AreEqual(null, converter.Convert(new Nullable<bool>(), null, null, null));
@@ -385,11 +277,6 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(false, converter.Convert(null, typeof(bool), null, null));
             Assert.AreEqual(true, converter.Convert(true, typeof(bool), null, null));
             Assert.AreEqual(false, converter.Convert(false, typeof(bool), null, null));
-#if !FREE
-            Assert.AreEqual(true, converter.Convert(DefaultBoolean.True, typeof(bool), null, null));
-            Assert.AreEqual(false, converter.Convert(DefaultBoolean.False, typeof(bool), null, null));
-            Assert.AreEqual(false, converter.Convert(DefaultBoolean.Default, typeof(bool), null, null));
-#endif
             Assert.AreEqual(true, converter.Convert(new Nullable<bool>(true), typeof(bool), null, null));
             Assert.AreEqual(false, converter.Convert(new Nullable<bool>(false), typeof(bool), null, null));
             Assert.AreEqual(false, converter.Convert(new Nullable<bool>(), typeof(bool), null, null));
@@ -401,57 +288,17 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(null, converter.Convert(null, typeof(bool?), null, null));
             Assert.AreEqual(true, converter.Convert(true, typeof(bool?), null, null));
             Assert.AreEqual(false, converter.Convert(false, typeof(bool?), null, null));
-#if !FREE
-            Assert.AreEqual(true, converter.Convert(DefaultBoolean.True, typeof(bool?), null, null));
-            Assert.AreEqual(false, converter.Convert(DefaultBoolean.False, typeof(bool?), null, null));
-            Assert.AreEqual(null, converter.Convert(DefaultBoolean.Default, typeof(bool?), null, null));
-#endif
             Assert.AreEqual(true, converter.Convert(new Nullable<bool>(true), typeof(bool?), null, null));
             Assert.AreEqual(false, converter.Convert(new Nullable<bool>(false), typeof(bool?), null, null));
             Assert.AreEqual(null, converter.Convert(new Nullable<bool>(), typeof(bool?), null, null));
             Assert.AreEqual(null, converter.Convert("test", typeof(bool?), null, null));
         }
-#if !FREE
-        [Test]
-        public void DefaultBooleanToBooleanConverter_Convert_TargeTypeDefaultBoolean() {
-            var converter = new DefaultBooleanToBooleanConverter();
-            Assert.AreEqual(DefaultBoolean.Default, converter.Convert(null, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.Convert(true, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.Convert(false, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.Convert(DefaultBoolean.True, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.Convert(DefaultBoolean.False, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.Convert(DefaultBoolean.Default, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.Convert(new Nullable<bool>(true), typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.Convert(new Nullable<bool>(false), typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.Convert(new Nullable<bool>(), typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.Convert("test", typeof(DefaultBoolean), null, null));
-        }
-        [Test]
-        public void DefaultBooleanToBooleanConverter_ConvertBack_NoTargetType() {
-            var converter = new DefaultBooleanToBooleanConverter();
-            Assert.AreEqual(DefaultBoolean.Default, converter.ConvertBack(null, null, null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.ConvertBack(true, null, null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.ConvertBack(false, null, null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.ConvertBack(DefaultBoolean.True, null, null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.ConvertBack(DefaultBoolean.False, null, null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.ConvertBack(DefaultBoolean.Default, null, null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.ConvertBack(new Nullable<bool>(true), null, null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.ConvertBack(new Nullable<bool>(false), null, null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.ConvertBack(new Nullable<bool>(), null, null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.ConvertBack("test", null, null, null));
-        }
-#endif
         [Test]
         public void DefaultBooleanToBooleanConverter_ConvertBack_TargetTypeBool() {
             var converter = new DefaultBooleanToBooleanConverter();
             Assert.AreEqual(false, converter.ConvertBack(null, typeof(bool), null, null));
             Assert.AreEqual(true, converter.ConvertBack(true, typeof(bool), null, null));
             Assert.AreEqual(false, converter.ConvertBack(false, typeof(bool), null, null));
-#if !FREE
-            Assert.AreEqual(true, converter.ConvertBack(DefaultBoolean.True, typeof(bool), null, null));
-            Assert.AreEqual(false, converter.ConvertBack(DefaultBoolean.False, typeof(bool), null, null));
-            Assert.AreEqual(false, converter.ConvertBack(DefaultBoolean.Default, typeof(bool), null, null));
-#endif
             Assert.AreEqual(true, converter.ConvertBack(new Nullable<bool>(true), typeof(bool), null, null));
             Assert.AreEqual(false, converter.ConvertBack(new Nullable<bool>(false), typeof(bool), null, null));
             Assert.AreEqual(false, converter.ConvertBack(new Nullable<bool>(), typeof(bool), null, null));
@@ -463,32 +310,11 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(null, converter.ConvertBack(null, typeof(bool?), null, null));
             Assert.AreEqual(true, converter.ConvertBack(true, typeof(bool?), null, null));
             Assert.AreEqual(false, converter.ConvertBack(false, typeof(bool?), null, null));
-#if !FREE
-            Assert.AreEqual(true, converter.ConvertBack(DefaultBoolean.True, typeof(bool?), null, null));
-            Assert.AreEqual(false, converter.ConvertBack(DefaultBoolean.False, typeof(bool?), null, null));
-            Assert.AreEqual(null, converter.ConvertBack(DefaultBoolean.Default, typeof(bool?), null, null));
-#endif
             Assert.AreEqual(true, converter.ConvertBack(new Nullable<bool>(true), typeof(bool?), null, null));
             Assert.AreEqual(false, converter.ConvertBack(new Nullable<bool>(false), typeof(bool?), null, null));
             Assert.AreEqual(null, converter.ConvertBack(new Nullable<bool>(), typeof(bool?), null, null));
             Assert.AreEqual(null, converter.ConvertBack("test", typeof(bool?), null, null));
         }
-#if !FREE
-        [Test]
-        public void DefaultBooleanToBooleanConverter_ConvertBack_TargeTypeDefaultBoolean() {
-            var converter = new DefaultBooleanToBooleanConverter();
-            Assert.AreEqual(DefaultBoolean.Default, converter.ConvertBack(null, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.ConvertBack(true, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.ConvertBack(false, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.ConvertBack(DefaultBoolean.True, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.ConvertBack(DefaultBoolean.False, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.ConvertBack(DefaultBoolean.Default, typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.True, converter.ConvertBack(new Nullable<bool>(true), typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.False, converter.ConvertBack(new Nullable<bool>(false), typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.ConvertBack(new Nullable<bool>(), typeof(DefaultBoolean), null, null));
-            Assert.AreEqual(DefaultBoolean.Default, converter.ConvertBack("test", typeof(DefaultBoolean), null, null));
-        }
-#endif
         enum MyColorEnum {
             Red, Green, Blue
         }
@@ -685,22 +511,7 @@ namespace DevExpress.Mvvm.Tests {
                 throw new NotImplementedException();
             }
         }
-#if NETFX_CORE
         [Test]
-        public void FormatStringConverter() {
-            var savedCulture = System.Globalization.CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol;
-            try {
-                FormatStringConverter converter = new FormatStringConverter();
-                converter.FormatString = "C0";
-                System.Globalization.CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol = "#test currency symbol#";
-                string s = (string)converter.Convert(13, typeof(string), null, System.Globalization.CultureInfo.InvariantCulture.NativeName);
-                Assert.IsTrue(s.Contains("#test currency symbol#"));
-            } finally {
-                System.Globalization.CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol = savedCulture;
-            }
-        }
-#else
-        [Test] // T491851
         public void DontConvertAlreadyCorrectTypes() {
             var converter = new ObjectToObjectConverter();
             var target = new T491851_Convertible();
@@ -723,7 +534,6 @@ namespace DevExpress.Mvvm.Tests {
                 System.Threading.Thread.CurrentThread.CurrentUICulture = savedCulture;
             }
         }
-#endif
         [Test]
         public void FormatStringConverterOutStringCase() {
             FormatStringConverter converter = new FormatStringConverter() { FormatString = "MMMM" };
@@ -797,15 +607,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("trueValue", converter.Convert(true, typeof(string), null, null));
             Assert.AreEqual("falseValue", converter.Convert(false, typeof(string), null, null));
             Assert.AreEqual(null, converter.Convert("garbage", typeof(string), null, null));
-#if !FREE
-            Assert.AreEqual("trueValue", converter.Convert(DefaultBoolean.True, typeof(string), null, null));
-            Assert.AreEqual("falseValue", converter.Convert(DefaultBoolean.False, typeof(string), null, null));
-            Assert.AreEqual(null, converter.Convert(DefaultBoolean.Default, typeof(string), null, null));
-#endif
             converter.NullValue = "nullvalue";
-#if !FREE
-            Assert.AreEqual("nullvalue", converter.Convert(DefaultBoolean.Default, typeof(string), null, null));
-#endif
             Assert.AreEqual("nullvalue", converter.Convert(null, typeof(string), null, null));
         }
 
@@ -833,21 +635,12 @@ namespace DevExpress.Mvvm.Tests {
         }
     }
     public class ToStringConverter : IValueConverter {
-#if !NETFX_CORE
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             return value.ToString();
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             throw new NotSupportedException();
         }
-#else
-        public object Convert(object value, Type targetType, object parameter, string language) {
-            return value.ToString();
-        }
-        public object ConvertBack(object value, Type targetType, object parameter, string language) {
-            throw new NotImplementedException();
-        }
-#endif
     }
     public class FromString {
         public FromString(string s) {

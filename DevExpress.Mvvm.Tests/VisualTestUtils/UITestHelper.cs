@@ -1,15 +1,10 @@
-﻿#if DEBUGTEST || MVVM
 using System.Windows;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
-#if MVVM
 namespace DevExpress {
-#else
-namespace DevExpress.Xpf.Core.Tests {
-#endif
     public static class UITestHelper {
         public static bool IsElementVisible(FrameworkElement element) {
             return element.Visibility == Visibility.Visible;
@@ -25,4 +20,3 @@ namespace DevExpress.Xpf.Core.Tests {
         }
     }
 }
-#endif

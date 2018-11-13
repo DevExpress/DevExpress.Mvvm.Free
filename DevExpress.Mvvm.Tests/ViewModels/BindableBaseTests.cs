@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
@@ -83,7 +83,6 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("SomeProperty8", propName);
             Assert.AreEqual(2, count);
         }
-#if !NETFX_CORE
         [Test]
         public void RaisePropertyChangedWithNoParametersTest_B251476() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -117,7 +116,6 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(6, propertyChangedCounter);
             Assert.AreEqual(string.Empty, propertyChangedArgs);
         }
-#endif
         [Test]
         public void SetPropertyTest() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -147,9 +145,8 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(150, bb.SomeProperty3);
 
             bb.SomeProperty3 = 150;
-            Assert.AreEqual(1, count);            
+            Assert.AreEqual(1, count);
         }
-#if !NETFX_CORE
         [Test]
         public void SetPropertyInvalidLambdaTest() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -157,7 +154,6 @@ namespace DevExpress.Mvvm.Tests {
             Assert.Throws<ArgumentException>(() => { bb.SomeProperty5 = 150; });
             Assert.Throws<ArgumentException>(() => { bb.SomeProperty6 = 150; });
         }
-#endif
         [Test]
         public void SetPropertyWithCallbackTest() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -258,10 +254,10 @@ namespace DevExpress.Mvvm.Tests {
         int someProperty7;
         public int SomeProperty7 {
             get { return someProperty7; }
-            set {                
+            set {
                 SetProperty(ref someProperty7, value, () => SomeProperty7, () => {
                     ChangedCallbackCallCount++;
-                });                
+                });
             }
         }
 
@@ -336,11 +332,9 @@ namespace DevExpress.Mvvm.Tests {
         public new void RaisePropertyChanged(string propertyName) {
             base.RaisePropertyChanged(propertyName);
         }
-#if !NETFX_CORE
         public new void RaisePropertyChanged() {
             base.RaisePropertyChanged();
         }
-#endif
         public new void RaisePropertiesChanged(params string[] propertyNames) {
             base.RaisePropertiesChanged(propertyNames);
         }
@@ -356,7 +350,6 @@ namespace DevExpress.Mvvm.Tests {
         }
     }
 
-#if !NETFX_CORE
     [TestFixture]
     public class BindableBaseTests_CallerMemberName {
         [Test]
@@ -514,10 +507,10 @@ namespace DevExpress.Mvvm.Tests {
         int someProperty7;
         public int SomeProperty7 {
             get { return someProperty7; }
-            set {                
+            set {
                 SetValue(ref someProperty7, value, () => {
                     ChangedCallbackCallCount++;
-                });                
+                });
             }
         }
 
@@ -552,17 +545,6 @@ namespace DevExpress.Mvvm.Tests {
             get { return someProperty2; }
             set { SetValue(ref someProperty2, value, "SomeProperty2"); }
         }
-        //public new void RaisePropertyChanged(string propertyName) {
-        //    base.RaisePropertyChanged(propertyName);
-        //}
-//#if !NETFX_CORE
-//        public void RaisePropertyChanged() {
-//            base.RaisePropertyChanged();
-//        }
-//#endif
-        //public new void RaisePropertiesChanged(params string[] propertyNames) {
-        //    base.RaisePropertiesChanged(propertyNames);
-        //}
     }
     class BindableBaseTest2_CallerMemberName : BindableBase {
         public bool Prop
@@ -575,5 +557,4 @@ namespace DevExpress.Mvvm.Tests {
             PropOld = oldValue;
         }
     }
-#endif
 }

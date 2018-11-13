@@ -1,4 +1,4 @@
-﻿using DevExpress.Mvvm.Native;
+using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
 using System;
 using System.Collections.Generic;
@@ -401,7 +401,7 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
             readonly IViewLocator viewLocator;
             readonly IStateSerializer stateSerializer;
 
-            public RegionItem(IModuleManagerImplementation manager, IModule module, object parameter, RegionItemInfo info) 
+            public RegionItem(IModuleManagerImplementation manager, IModule module, object parameter, RegionItemInfo info)
                 : this(manager.ViewModelLocator, manager.ViewLocator, manager.ViewModelStateSerializer,
                       module.Key, module.ViewModelFactory, module.ViewModelName, module.ViewName, module.ViewType, parameter)  {
                 if(info != null) {
@@ -409,7 +409,7 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
                 }
             }
             public RegionItem(IModuleManagerImplementation manager, RegionItemInfo info)
-                : this(manager.ViewModelLocator, manager.ViewLocator, manager.ViewModelStateSerializer, 
+                : this(manager.ViewModelLocator, manager.ViewLocator, manager.ViewModelStateSerializer,
                       info.Key, null, info.ViewModelName, info.ViewName, null, null) {
                 SetViewModelState(info.ViewModelState.With(x => x.State), info.ViewModelStateType);
             }

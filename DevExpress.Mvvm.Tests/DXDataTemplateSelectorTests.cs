@@ -1,4 +1,4 @@
-﻿using DevExpress.Mvvm.DataAnnotations;
+using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.POCO;
 using DevExpress.Xpf.DXBinding;
 using NUnit.Framework;
@@ -290,15 +290,6 @@ xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
             Assert.IsFalse(selector.Items.IsFrozen);
             selector.Items.Add(new DXDataTemplateTrigger());
         }
-
-
-        //assign template via static resource
-
-
-        //doc notes
-        //template can be only set explicitly or via static resource (dynamic resources not supported)
-        //last trigger gives the template
-        //can't modify selector after selecttemplate
 
     }
 }

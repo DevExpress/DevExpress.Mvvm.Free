@@ -1,4 +1,4 @@
-﻿using System.Windows.Forms;
+using System.Windows.Forms;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,9 +14,6 @@ using DevExpress.Utils;
 using DevExpress.Internal;
 using DevExpress.Xpf.Core.Native;
 using System.Windows.Interop;
-#if !FREE
-using DevExpress.Utils.CommonDialogs;
-#endif
 
 namespace DevExpress.Mvvm.UI.Native {
     public class Win32WindowWrapper : System.Windows.Forms.IWin32Window {
@@ -30,7 +27,6 @@ namespace DevExpress.Mvvm.UI.Native {
                 Handle = new WindowInteropHelper(window).Handle;
         }
     }
-#if FREE
     public interface ICommonDialog : IDisposable {
         event EventHandler HelpRequest;
         DialogResult ShowDialog();
@@ -57,7 +53,6 @@ namespace DevExpress.Mvvm.UI.Native {
         bool ValidateNames { get; set; }
         event CancelEventHandler FileOk;
     }
-#endif
 }
 
 namespace DevExpress.Mvvm.UI {

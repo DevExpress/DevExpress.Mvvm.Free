@@ -1,7 +1,3 @@
-﻿#if !FREE
-using DevExpress.Xpf.Core.Native;
-using DevExpress.Xpf.Utils;
-#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;

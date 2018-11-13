@@ -86,13 +86,13 @@
                                 <Border x:Name="border" SnapsToDevicePixels="true">
                                     <Canvas Width="10" Height="10" Margin="1,1,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Line x:Name="line1" X1="0" Y1="0"
-                							X2="9.5" Y2="9.5"
-                							Stroke="White"
-                							StrokeThickness="2"/>
+                       X2="9.5" Y2="9.5"
+                       Stroke="White"
+                       StrokeThickness="2"/>
                                         <Line x:Name="line2" X1="0" Y1="9.5"
-                							X2="9.5" Y2="0"
-                							Stroke="White"
-                							StrokeThickness="2"/>
+                       X2="9.5" Y2="0"
+                       Stroke="White"
+                       StrokeThickness="2"/>
                                     </Canvas>
                                 </Border>
                             </Grid>

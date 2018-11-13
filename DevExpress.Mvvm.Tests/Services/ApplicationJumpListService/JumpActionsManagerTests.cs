@@ -1,4 +1,4 @@
-﻿using DevExpress.Mvvm.UI.Native;
+using DevExpress.Mvvm.UI.Native;
 using NUnit.Framework;
 using System;
 using System.Collections.Concurrent;

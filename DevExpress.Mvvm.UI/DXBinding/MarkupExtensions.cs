@@ -1,4 +1,4 @@
-﻿using DevExpress.DXBinding.Native;
+using DevExpress.DXBinding.Native;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
 using DevExpress.Xpf.Core.Native;
@@ -14,9 +14,6 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Xaml;
-#if !FREE
-using DevExpress.Xpf.Core;
-#endif
 
 namespace DevExpress.Xpf.DXBinding {
     public abstract class DXMarkupExtensionBase : MarkupExtension {
@@ -92,12 +89,10 @@ namespace DevExpress.Xpf.DXBinding {
         protected abstract object ProvideValueCore();
     }
 
-#if FREE
     public enum DXBindingResolvingMode {
         LegacyStaticTyping,
         DynamicTyping
     }
-#endif
     public abstract class DXBindingBase : DXMarkupExtensionBase {
         protected Binding CreateBinding(Operand operand, BindingMode mode) {
             var path = operand != null && !string.IsNullOrEmpty(operand.Path) ? operand.Path : ".";
@@ -147,23 +142,15 @@ namespace DevExpress.Xpf.DXBinding {
         protected internal Type TargetPropertyType { get; private set; }
         bool IsInitialized { get; set; }
 
-#if FREE
         public static DXBindingResolvingMode DefaultResolvingMode { get; set; }
-#endif
         public DXBindingResolvingMode? ResolvingMode { get; set; }
         protected DXBindingResolvingMode ActualResolvingMode {
-#if !FREE
-            get { return ResolvingMode ?? CompatibilitySettings.DXBindingResolvingMode; }
-#else 
             get { return ResolvingMode ?? DefaultResolvingMode; }
-#endif
         }
 
-#if FREE
         static DXBindingBase() {
             DefaultResolvingMode = DXBindingResolvingMode.DynamicTyping;
         }
-#endif
         public bool CatchExceptions {
             get { return ErrorHandler.CatchAllExceptions; }
             set { ErrorHandler.CatchAllExceptions = value; }
@@ -332,7 +319,7 @@ namespace DevExpress.Xpf.DXBinding {
             }
         }
     }
-    
+
     public sealed class DXBindingExtension : DXBindingBase {
         public string BindingGroupName { get; set; }
         public object TargetNullValue { get; set; }
@@ -738,7 +725,7 @@ namespace DevExpress.Xpf.DXBinding {
         }
         protected override void Init() {
             TreeInfo = new EventTreeInfo(Handler, ErrorHandler);
-            if(ActualResolvingMode == DXBindingResolvingMode.LegacyStaticTyping) 
+            if(ActualResolvingMode == DXBindingResolvingMode.LegacyStaticTyping)
                 Calculator = new EventCalculator(TreeInfo);
             else Calculator = new EventCalculatorDynamic(TreeInfo);
             Calculator.Init(TypeResolver);
@@ -789,9 +776,6 @@ namespace DevExpress.Xpf.DXBinding {
             readonly string targetPropertyName;
             readonly Type targetPropertyType;
             readonly Type eventHandlerType;
-#if !FREE
-            [DevExpress.Xpf.Core.Native.IgnoreDependencyPropertiesConsistencyChecker]
-#endif
             DependencyProperty dataProperty;
             static object locker = new object();
             static long dataPropertyIndex = 0;
@@ -826,7 +810,7 @@ namespace DevExpress.Xpf.DXBinding {
             object[] GetBoundEventData() {
                 if(!IsAlive) return null;
                 var res = (IEnumerable<object>)TargetObject.GetValue(dataProperty);
-                if (res == null) { //T680366
+                if (res == null) {
                     var expr = BindingOperations.GetBindingExpression(TargetObject, dataProperty);
                     if(expr != null && expr.Status == BindingStatus.Unattached) {
                         var b = BindingOperations.GetBinding(TargetObject, dataProperty);
@@ -867,12 +851,12 @@ namespace DevExpress.Xpf.DXBinding {
         }
     }
 
-    public abstract class DXBindingExceptionBase<TSelf, TOwner> : Exception 
+    public abstract class DXBindingExceptionBase<TSelf, TOwner> : Exception
         where TSelf : DXBindingExceptionBase<TSelf, TOwner>
         where TOwner : DXBindingBase {
         public string TargetPropertyName { get; private set; }
         public string TargetObjectType { get; private set; }
-        protected DXBindingExceptionBase(TOwner owner, string message, Exception innerException) 
+        protected DXBindingExceptionBase(TOwner owner, string message, Exception innerException)
             : this(owner.TargetPropertyName, owner.TargetObjectName, message, innerException) {
         }
         protected DXBindingExceptionBase(string targetPropertyName, string targetObjectType, string message, Exception innerException)

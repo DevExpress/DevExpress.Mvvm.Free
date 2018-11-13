@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -206,12 +206,10 @@ namespace DevExpress.DXBinding.Native {
             return instanceType.GetField(fieldName, flags);
         }
         internal static bool IsImplicitConversion(Type from, Type to) {
-            // 6.1.1 Identity conversion
             if (from == to)
                 return true;
             if (from == null && !to.IsValueType)
                 return true;
-            // 6.1.2 Implicit numeric conversions
             var isShort = to == typeof(short);
             var isInt = to == typeof(int);
             var isLong = to == typeof(long);
@@ -241,10 +239,6 @@ namespace DevExpress.DXBinding.Native {
                 return true;
             if (from == typeof(float) && isDouble)
                 return true;
-            // 6.1.3 Implicit enumeration conversions
-            // 6.1.4 Implicit nullable conversions
-            // 6.1.5 Null literal conversions
-            // 6.1.6 Implicit reference conversions
             return to.IsAssignableFrom(from);
         }
         static bool IsApplicableInNormalForm(Type[] args, ParameterInfo[] parameters) {
@@ -304,17 +298,13 @@ namespace DevExpress.DXBinding.Native {
             if (leftMethod.GetParameters().Length == left.Length
                 && rightMethod.GetParameters().Length > args.Length)
                 return true;
-            // check which are more specific
-            // check if lifted
-            return false; // actually none
+            return false;
         }
         static bool IsLeftConversionBetter(Type arg, ParameterInfo left, ParameterInfo right) {
-            // better conversion from expression
             if (arg == null)
                 return false;
             if (arg == left.ParameterType && arg != right.ParameterType)
                 return true;
-            // better conversion target
             if (IsImplicitConversion(left.ParameterType, right.ParameterType)
                 && !IsImplicitConversion(right.ParameterType, left.ParameterType))
                 return true;
@@ -337,7 +327,6 @@ namespace DevExpress.DXBinding.Native {
             if (left.Select(x => x.ParameterType).SequenceEqual(right.Select(x => x.ParameterType)))
                 return IsLeftBetterByTieBreakingRules(args, leftMethod, left, rightMethod, right);
             for (int i = 0; i < args.Length; ++i) {
-                // right is better than left? left isn't better then
                 if (IsLeftConversionBetter(args[i], right[i], left[i]))
                     return false;
             }
@@ -868,7 +857,7 @@ namespace DevExpress.DXBinding.Native {
                    }).SelectMany(x => x).ToList().ForEach(x => res = res.Union(Visit(x)));
             return res.ToList();
         }
-        
+
         void BackExpr(NBase n) {
             if(operands.Count() == 0) {
                 errorHandler.Throw(ErrorHelper.Err102(), null);
@@ -1150,7 +1139,7 @@ namespace DevExpress.DXBinding.Native {
                 return x.GetType();
             }).ToArray();
         }
-        static void GetInvocation<T>(IEnumerable<T> methods, IEnumerable<object> args, out T method, out IEnumerable<object> outArgs) 
+        static void GetInvocation<T>(IEnumerable<T> methods, IEnumerable<object> args, out T method, out IEnumerable<object> outArgs)
             where T : MethodBase {
 
             var argsTypes = GetArgsTypes(args);
@@ -1647,7 +1636,7 @@ namespace DevExpress.DXBinding.Native {
             return null;
         }
         #endregion
-        
+
         IErrorHandler errorHandler;
         Func<NType, Type> typeResolver;
         protected IEnumerable<Expression> Resolve(NRoot expr, Func<NType, Type> typeResolver, IErrorHandler errorHandler) {
@@ -1733,7 +1722,7 @@ namespace DevExpress.DXBinding.Native {
             }
             Clean();
         }
-        public void ResolveExecute(NRoot executeExpr, NRoot canExecuteExpr, Type parameterType, 
+        public void ResolveExecute(NRoot executeExpr, NRoot canExecuteExpr, Type parameterType,
             out Func<object[], object> execute, out Func<object[], object> canExecute) {
             execute = null;
             canExecute = null;

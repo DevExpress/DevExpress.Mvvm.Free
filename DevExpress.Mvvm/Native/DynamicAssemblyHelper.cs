@@ -1,19 +1,12 @@
-﻿using DevExpress.Internal;
+using DevExpress.Internal;
 using System;
 using System.Collections;
 using System.Reflection;
 
 namespace DevExpress.Mvvm.Native {
     static class DynamicAssemblyHelper {
-#if !FREE && !NETFX_CORE
-        static Lazy<Assembly> dataAssembly = new Lazy<Assembly>(() => ResolveAssembly(AssemblyInfo.SRAssemblyData + AssemblyInfo.FullAssemblyVersionExtension));
-        static Lazy<Assembly> xpfCoreAssembly = new Lazy<Assembly>(() => ResolveAssembly(AssemblyInfo.SRAssemblyXpfCore + AssemblyInfo.FullAssemblyVersionExtension));
-        public static Assembly DataAssembly { get { return dataAssembly.Value; } }
-        public static Assembly XpfCoreAssembly { get { return xpfCoreAssembly.Value; } }
-#elif FREE
         static Lazy<Assembly> mvvmUIAssembly = new Lazy<Assembly>(() => ResolveAssembly(MvvmAssemblyHelper.MvvmUIAssemblyName));
         public static Assembly MvvmUIAssembly { get { return mvvmUIAssembly.Value; } }
-#endif
 
         static Assembly ResolveAssembly(string asmName) {
             IEnumerable assemblies = AppDomain.CurrentDomain.GetAssemblies();

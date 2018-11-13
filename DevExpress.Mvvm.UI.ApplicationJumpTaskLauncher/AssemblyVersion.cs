@@ -1,20 +1,12 @@
-#if DXCommon
-public static class AssemblyInfo {
-#else
 namespace DevExpress.Internal {
-	internal static class AssemblyInfo {
-#endif
+ internal static class AssemblyInfo {
     public const string AssemblyCopyright = "Copyright (c) 2000-2018 Developer Express Inc.";
     public const string AssemblyCompany = "Developer Express Inc.";
 
     public const int VersionId = 182;
     public const int VersionIdMinor = 18201;
     public const string VersionShort = "18.2";
-#if NETFX_CORE
-    public const string Version = VersionShort + ".0.3";
-#else
     public const string Version = VersionShort + ".0.0";
-#endif
     public const string FileVersion = Version;
     public const string MarketingVersion = "v2018 vol 2";
     public const string VirtDirSuffix = "_v18_2";
@@ -202,7 +194,6 @@ namespace DevExpress.Internal {
         SRAssemblyASPxPivotGridTests = "DevExpress.Web.ASPxPivotGrid" + VSuffix + ".Tests",
         SRAssemblyBonusSkins = "DevExpress.BonusSkins" + VSuffix,
         SRAssemblyBonusSkinsFull = "DevExpress.BonusSkins" + VSuffix + FullAssemblyVersionExtension,
-        //SRAssemblyOfficeSkins = "DevExpress.OfficeSkins" + VSuffix,
         SRAssemblyDesign = "DevExpress.Design" + VSuffix,
         SRAssemblyDesignFull = "DevExpress.Design" + VSuffix + FullAssemblyVersionExtension,
         SRAssemblyDataLinq = "DevExpress.Data" + VSuffixLinq,
@@ -449,6 +440,4 @@ namespace DevExpress.Internal {
         DXLinkEmailInfo = "mailto:" + DXEmailInfo;
 
 }
-#if !DXCommon
 }
-#endif

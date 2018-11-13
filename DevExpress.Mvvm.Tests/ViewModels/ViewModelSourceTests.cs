@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using System.Windows.Threading;
 using System;
 using System.Collections.Generic;
@@ -19,9 +19,6 @@ using System.Threading.Tasks;
 using System.Threading;
 using Expression = System.Linq.Expressions.Expression;
 using System.Reflection.Emit;
-#if !FREE
-using DevExpress.Xpf.Core.Tests;
-#endif
 
 namespace DevExpress.Mvvm.Tests.Internal {
     public class POCOViewModel {
@@ -282,7 +279,7 @@ namespace DevExpress.Mvvm.Tests {
 
         public class POCOViewModel_INPCImplementor_NoPopertyChanged : INotifyPropertyChanged {
             public POCOViewModel_INPCImplementor_NoPopertyChanged() {
-                PropertyChanged(null, null); //avoid warning as error
+                PropertyChanged(null, null);
             }
             public virtual string Property1 { get; set; }
             public event PropertyChangedEventHandler PropertyChanged;
@@ -296,7 +293,7 @@ namespace DevExpress.Mvvm.Tests {
 
         public class POCOViewModel_INPCImplementor_PrivatePopertyChanged : INotifyPropertyChanged {
             public POCOViewModel_INPCImplementor_PrivatePopertyChanged() {
-                PropertyChanged(null, null); //avoid warning as error
+                PropertyChanged(null, null);
             }
             public virtual string Property1 { get; set; }
             public event PropertyChangedEventHandler PropertyChanged;
@@ -311,7 +308,7 @@ namespace DevExpress.Mvvm.Tests {
 
         public class POCOViewModel_INPCImplementor_ByRefPopertyChanged : INotifyPropertyChanged {
             public POCOViewModel_INPCImplementor_ByRefPopertyChanged() {
-                PropertyChanged(null, null); //avoid warning as error
+                PropertyChanged(null, null);
             }
             public virtual string Property1 { get; set; }
             public event PropertyChangedEventHandler PropertyChanged;
@@ -326,7 +323,7 @@ namespace DevExpress.Mvvm.Tests {
 
         public class POCOViewModel_INPCImplementor_OutPopertyChanged : INotifyPropertyChanged {
             public POCOViewModel_INPCImplementor_OutPopertyChanged() {
-                PropertyChanged(null, null); //avoid warning as error
+                PropertyChanged(null, null);
             }
             public virtual string Property1 { get; set; }
             public event PropertyChangedEventHandler PropertyChanged;
@@ -341,7 +338,7 @@ namespace DevExpress.Mvvm.Tests {
 
         public class POCOViewModel_INPCImplementor_NoArgPopertyChanged : INotifyPropertyChanged {
             public POCOViewModel_INPCImplementor_NoArgPopertyChanged() {
-                PropertyChanged(null, null); //avoid warning as error
+                PropertyChanged(null, null);
             }
             public virtual string Property1 { get; set; }
             public event PropertyChangedEventHandler PropertyChanged;
@@ -650,28 +647,6 @@ namespace DevExpress.Mvvm.Tests {
             POCOViewModel_PropertyChanged viewModel = new POCOViewModel_PropertyChanged();
             Assert.IsFalse(viewModel.IsInDesignMode());
         }
-
-        //TODO
-        //[Test]
-        //public void GeneratedTypesTest() {
-        //    POCOViewModel viewModel1 = ViewModelSource.Create<POCOViewModel>();
-        //    POCOViewModel viewModel2 = ViewModelSource.Create<POCOViewModel>();
-        //    Assert.AreSame(viewModel1.GetType(), viewModel2.GetType());
-        //    Assert.IsTrue(viewModel1.GetType().Assembly.FullName.StartsWith(AssemblyInfo.SRAssemblyXpfMvvm + ".DynamicTypes"));
-
-        //    POCOViewModel2 viewModel3 = ViewModelSource.Create<POCOViewModel2>();
-        //    Assert.AreNotSame(viewModel1.GetType(), viewModel3.GetType());
-        //    Assert.AreSame(viewModel1.GetType().Assembly, viewModel3.GetType().Assembly);
-        //    Assert.IsTrue(viewModel1.GetType().Name.StartsWith(typeof(POCOViewModel).Name));
-
-        //    DevExpress.Mvvm.Tests.Internal.POCOViewModel viewModel4 = ViewModelSource.Create<DevExpress.Mvvm.Tests.Internal.POCOViewModel>();
-        //    Assert.AreSame(viewModel1.GetType().Assembly, viewModel4.GetType().Assembly);
-        //    Assert.AreNotEqual(viewModel1.GetType().Name, viewModel4.GetType().Name);
-
-        //    DataTypeAttribute viewModel5 = ViewModelSource.Create(() => new DataTypeAttribute(DataType.Currency));
-        //    Assert.IsTrue(viewModel5.GetType().Assembly.FullName.StartsWith(AssemblyInfo.SRAssemblyXpfMvvm + ".DynamicTypes"));
-        //    Assert.AreNotEqual(viewModel1.GetType().Assembly, viewModel5.GetType().Assembly);
-        //}
         [Test]
         public void OverridingPropertyTest() {
             POCOViewModel viewModel = ViewModelSource.Create<POCOViewModel>();
@@ -723,7 +698,7 @@ namespace DevExpress.Mvvm.Tests {
                 IPOCOViewModel iPOCOViewModel = (IPOCOViewModel)ViewModelSource.Create<POCOWithoutINPChanging>();
                 iPOCOViewModel.RaisePropertyChanging(null);
             }, x => x.Message.AreEqual(string.Format(
-                ViewModelSourceException.Error_INotifyPropertyChangingIsNotImplemented, 
+                ViewModelSourceException.Error_INotifyPropertyChangingIsNotImplemented,
                 typeof(POCOWithoutINPChanging).Name)));
 
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
@@ -848,8 +823,6 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void GetCommandFromFunction_VB() {
             ViewModelWithFunctionCommandMethod viewModel = ViewModelSource.Create<ViewModelWithFunctionCommandMethod>();
-
-            //this is what roslyn generates in this case in vb
 
             ParameterExpression parameter1 = Expression.Parameter(typeof(ViewModelWithFunctionCommandMethod), "x");
             MethodCallExpression methodCallExpression = Expression.Call((Expression)parameter1, typeof(ViewModelWithFunctionCommandMethod).GetMethod("Save", BindingFlags.Public | BindingFlags.Instance), new Expression[0]);
@@ -1035,7 +1008,7 @@ namespace DevExpress.Mvvm.Tests {
             var inpc = (INotifyPropertyChanged)vm;
             inpc.PropertyChanged += (s, a) => {
                 Assert.AreEqual("Property", a.PropertyName);
-                Assert.AreEqual(vm.onChangedCalledCount, 0); // by default INPC fires first
+                Assert.AreEqual(vm.onChangedCalledCount, 0);
             };
             vm.Property = "value";
             Assert.AreEqual(vm.onChangedCalledCount, 1);
@@ -1044,7 +1017,7 @@ namespace DevExpress.Mvvm.Tests {
             inpc = (INotifyPropertyChanged)vm;
             inpc.PropertyChanged += (s, a) => {
                 Assert.AreEqual("Property", a.PropertyName);
-                Assert.AreEqual(vm.onChangedCalledCount, 1); // now OnChanged fires first
+                Assert.AreEqual(vm.onChangedCalledCount, 1);
             };
             vm.Property = "value";
             Assert.AreEqual(vm.onChangedCalledCount, 1);
@@ -1158,9 +1131,6 @@ namespace DevExpress.Mvvm.Tests {
             public void OutParameter(out int x) { x = 0; }
             public void RefParameter(ref int x) { x = 0; }
             public int MethodWithReturnValue() { return 0; }
-
-            //public void Existing() { }
-            //public int ExistingCommand { get; set; }
         }
         [Test]
         public void CommandsGeneration() {
@@ -1293,7 +1263,6 @@ namespace DevExpress.Mvvm.Tests {
             public bool MethodWithCustomCanExecuteCanExcute = false;
         }
         public abstract class CommandAttributeViewModelBase : CommandAttributeViewModelBaseCounters {
-            //[Command]
             public void BaseClass() { BaseClassCommandCallCount++; }
         }
         public class CommandAttributeViewModel : CommandAttributeViewModelBase {
@@ -1549,176 +1518,6 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(1, canExecuteChangedCount);
         }
         #endregion
-#if !FREE
-        #region attributes
-
-        public class POCOViewModelWithAttributes {
-            [Browsable(false)]
-            public void Method0() { }
-            [DisplayName("DisplayName_"), Display(Name = "DisplayName", ShortName = "DisplayShortName")]
-            [ToolBarItem(Order = 1, Page = "page", PageGroup = "group"), ContextMenuItem(Order = 2, Group = "group2"), CommandParameter("X"), DXImage("Image", LargeImageUri = "Large", SmallImageUri = "Small"), Image("Large")]
-            public void Method1() { }
-
-            [Display(Order = 1, Description = "desc", AutoGenerateField = false), ToolBarItem(Page = "page1", PageGroup = "group1"), ContextMenuItem(Group = "group3"), DXImage(LargeImageUri = "Large")]
-            public void Method2() { }
-        }
-        public class POCOViewModelWithAttributes_FluentAPIBase {
-            public void Method1() { }
-        }
-        [MetadataType(typeof(Metadata))]
-        public class POCOViewModelWithAttributes_FluentAPI : POCOViewModelWithAttributes_FluentAPIBase {
-            public class Metadata : IMetadataProvider<POCOViewModelWithAttributes_FluentAPI> {
-                void IMetadataProvider<POCOViewModelWithAttributes_FluentAPI>.BuildMetadata(MetadataBuilder<POCOViewModelWithAttributes_FluentAPI> builder) {
-                    builder.ToolBarLayout().DefaultCategory()
-                        .Page("page")
-                            .PageGroup("group")
-                                .ContainsCommand(x => x.Method1())
-                            .EndPageGroup()
-                        .EndPage()
-                        .Page("page1")
-                            .PageGroup("group1")
-                                .ContainsCommand(x => x.Method2())
-                            .EndPageGroup()
-                        .EndPage();
-                    builder.ContextMenuLayout()
-                        .Group("group2")
-                                .ContainsCommand(x => x.Method1())
-                        .EndGroup()
-                        .Group("group3")
-                                .ContainsCommand(x => x.Method2())
-                        .EndGroup();
-                    builder.CommandFromMethod(x => x.Method1())
-                        .ImageName("Image")
-                        .ImageUriLarge("Large")
-                        .ImageUriSmall("Small")
-                        .ImageUri("Large")
-                        .Parameter(x => x.X)
-                        .DisplayName("DisplayName")
-                        .DisplayShortName("DisplayShortName");
-                    builder.CommandFromMethod(x => x.Method2())
-                        .ImageUriLarge("Large")
-                        .LocatedAt(1)
-                        .NotAutoGenerated()
-                        .Description("desc")
-                        .DoNotScaffold();
-                }
-            }
-            public object X { get; set; }
-            public void Method0() { }
-            public void Method2() { }
-        }
-        [MetadataType(typeof(Metadata))]
-        public class POCOViewModelWithAttributes_ExternalMetadata : POCOViewModelWithAttributes_FluentAPIBase {
-            public class Metadata {
-                [Browsable(false)]
-                public void Method0() { }
-                [DisplayName("DisplayName_"), Display(Name = "DisplayName", ShortName = "DisplayShortName")]
-                [ToolBarItem(Order = 1, Page = "page", PageGroup = "group"), ContextMenuItem(Order = 2, Group = "group2"), CommandParameter("X"), DXImage("Image", LargeImageUri = "Large", SmallImageUri = "Small"), Image("Large")]
-                public void Method1() { }
-
-                [Display(Order = 1, Description = "desc", AutoGenerateField = false), ToolBarItem(Page = "page1", PageGroup = "group1"), ContextMenuItem(Group = "group3"), DXImage(LargeImageUri = "Large")]
-                public void Method2() { }
-            }
-            public void Method0() { }
-            public void Method2() { }
-        }
-        [Test]
-        public void AttributesTest() {
-            var viewModel = ViewModelSource.Create<POCOViewModelWithAttributes>();
-            AttributesTestCore(viewModel, true);
-            var method1Property = TypeDescriptor.GetProperties(viewModel.GetType())["Method1Command"];
-            DisplayNameAttribute displayNameAttribute = method1Property.Attributes[typeof(DisplayNameAttribute)] as DisplayNameAttribute;
-            Assert.AreEqual("DisplayName_", displayNameAttribute.DisplayName);
-        }
-        [Test]
-        public void AttributesTest_FluentAPI() {
-            var viewModel = ViewModelSource.Create<POCOViewModelWithAttributes_FluentAPI>();
-            AttributesTestCore(viewModel, false);
-            var property = TypeDescriptor.GetProperties(viewModel.GetType())["Method2Command"];
-            var scaffoldColumnAttribute = property.Attributes[typeof(ScaffoldColumnAttribute)] as ScaffoldColumnAttribute;
-            Assert.AreEqual(false, scaffoldColumnAttribute.Scaffold);
-        }
-        [Test]
-        public void AttributesTest_ExternalMetadata() {
-            var viewModel = ViewModelSource.Create<POCOViewModelWithAttributes_ExternalMetadata>();
-            AttributesTestCore(viewModel, false);
-            var method1Property = TypeDescriptor.GetProperties(viewModel.GetType())["Method1Command"];
-            DisplayNameAttribute displayNameAttribute = method1Property.Attributes[typeof(DisplayNameAttribute)] as DisplayNameAttribute;
-            Assert.AreEqual("DisplayName_", displayNameAttribute.DisplayName);
-        }
-        void AttributesTestCore(object viewModel, bool checkOrder) {
-            var toolBarItemAttribute = TypeHelper.GetPropertyAttribute<ToolBarItemAttribute>(viewModel, "Method0Command");
-            Assert.IsNull(toolBarItemAttribute);
-            toolBarItemAttribute = TypeHelper.GetPropertyAttribute<ToolBarItemAttribute>(viewModel, "Method1Command");
-            if(checkOrder)
-                Assert.AreEqual(1, toolBarItemAttribute.Order);
-            Assert.AreEqual("page", toolBarItemAttribute.Page);
-            Assert.AreEqual("group", toolBarItemAttribute.PageGroup);
-            var contextMenuItemAttribute = TypeHelper.GetPropertyAttribute<ContextMenuItemAttribute>(viewModel, "Method1Command");
-            if(checkOrder)
-                Assert.AreEqual(2, contextMenuItemAttribute.Order);
-            Assert.AreEqual("group2", contextMenuItemAttribute.Group);
-            var commandParameterAttribute = TypeHelper.GetPropertyAttribute<CommandParameterAttribute>(viewModel, "Method1Command");
-            Assert.AreEqual("X", commandParameterAttribute.CommandParameter);
-            var dxImageAttribute = TypeHelper.GetPropertyAttribute<DXImageAttribute>(viewModel, "Method1Command");
-            Assert.AreEqual("Image", dxImageAttribute.ImageName);
-            Assert.AreEqual("Large", dxImageAttribute.LargeImageUri);
-            Assert.AreEqual("Small", dxImageAttribute.SmallImageUri);
-
-            var imageAttribute = TypeHelper.GetPropertyAttribute<ImageAttribute>(viewModel, "Method1Command");
-            Assert.AreEqual("Large", imageAttribute.ImageUri);
-
-            toolBarItemAttribute = TypeHelper.GetPropertyAttribute<ToolBarItemAttribute>(viewModel, "Method2Command");
-            if(checkOrder)
-                Assert.AreEqual(null, toolBarItemAttribute.GetOrder());
-            Assert.AreEqual("page1", toolBarItemAttribute.Page);
-            Assert.AreEqual("group1", toolBarItemAttribute.PageGroup);
-            contextMenuItemAttribute = TypeHelper.GetPropertyAttribute<ContextMenuItemAttribute>(viewModel, "Method2Command");
-            if(checkOrder)
-                Assert.AreEqual(null, contextMenuItemAttribute.GetOrder());
-            Assert.AreEqual("group3", contextMenuItemAttribute.Group);
-            dxImageAttribute = TypeHelper.GetPropertyAttribute<DXImageAttribute>(viewModel, "Method2Command");
-            Assert.AreEqual(null, dxImageAttribute.ImageName);
-            Assert.AreEqual("Large", dxImageAttribute.LargeImageUri);
-            Assert.AreEqual(null, dxImageAttribute.SmallImageUri);
-
-            var displayAttribute = TypeHelper.GetPropertyAttribute<DisplayAttribute>(viewModel, "Method1Command");
-            Assert.AreEqual("DisplayName", displayAttribute.Name);
-            Assert.AreEqual("DisplayShortName", displayAttribute.ShortName);
-            Assert.AreEqual(null, displayAttribute.GetOrder());
-            Assert.AreEqual(null, displayAttribute.GetAutoGenerateField());
-            Assert.AreEqual(null, displayAttribute.Description);
-
-            displayAttribute = TypeHelper.GetPropertyAttribute<DisplayAttribute>(viewModel, "Method2Command");
-            Assert.AreEqual(null, displayAttribute.Name);
-            Assert.AreEqual(1, displayAttribute.GetOrder());
-            Assert.AreEqual(false, displayAttribute.AutoGenerateField);
-            Assert.AreEqual("desc", displayAttribute.Description);
-        }
-
-        public class POCOViewModel_PropertyWithAttribute {
-            [Display(Name = "x")]
-            public virtual string Property { get; set; }
-        }
-        [MetadataType(typeof(POCOViewModel_PropertyWithAttributeMetadata))]
-        public class POCOViewModel_PropertyWithAttribute_FluentApi {
-            public virtual string Property { get; set; }
-        }
-        public class POCOViewModel_PropertyWithAttributeMetadata : IMetadataProvider<POCOViewModel_PropertyWithAttribute_FluentApi> {
-            void IMetadataProvider<POCOViewModel_PropertyWithAttribute_FluentApi>.BuildMetadata(MetadataBuilder<POCOViewModel_PropertyWithAttribute_FluentApi> builder) {
-                builder.Property(x => x.Property).DisplayName("x");
-            }
-        }
-        [Test]
-        public void AttributesDiscovery() {
-            var p = TypeDescriptor.GetProperties(ViewModelSource.GetPOCOType(typeof(POCOViewModel_PropertyWithAttribute)))["Property"];
-            var a = p.Attributes[typeof(DisplayAttribute)] as DisplayAttribute;
-            Assert.AreEqual("x", a.Name);
-            var attributes = MetadataHelper.GetExternalAndFluentAPIAttributes(ViewModelSource.GetPOCOType(typeof(POCOViewModel_PropertyWithAttribute_FluentApi)), "Property");
-            Assert.AreEqual("x", ((DisplayAttribute)attributes.Single()).Name);
-        }
-        #endregion
-#endif
         #region non default constructors
         public class POCOViewModel_NonDefaultConstructors {
             public string Property1 { get; set; }
@@ -2275,7 +2074,6 @@ namespace DevExpress.Mvvm.Tests {
             ((ISupportServices)parentViewModel).ServiceContainer.RegisterService(messageBoxMock2);
             Assert.AreSame(messageBoxMock1, viewModel.GetService<IMessageBoxService>());
             Assert.AreSame(messageBoxMock1, viewModel.GetRequiredService<IMessageBoxService>());
-            //Assert.AreSame(messageBoxMock2, viewModel.GetService<IMessageBoxService>(ServiceSearchMode.PreferParents));
             TestHelper.AssertThrows<ViewModelSourceException>(() => new GetServiceViewModel().GetService<IMessageBoxService>());
         }
         [Test]
@@ -2296,7 +2094,6 @@ namespace DevExpress.Mvvm.Tests {
             ((ISupportServices)parentViewModel).ServiceContainer.RegisterService("svc3", messageBoxMock3);
             Assert.AreSame(messageBoxMock1, viewModel.GetService<IMessageBoxService>("svc1"));
             Assert.AreSame(messageBoxMock2, viewModel.GetService<IMessageBoxService>("svc2"));
-            //Assert.AreSame(messageBoxMock3, viewModel.GetService<IMessageBoxService>("svc3", ServiceSearchMode.PreferParents));
             TestHelper.AssertThrows<ViewModelSourceException>(() => new GetServiceViewModel().GetService<IMessageBoxService>("svc1"));
         }
         #endregion
@@ -2316,29 +2113,6 @@ namespace DevExpress.Mvvm.Tests {
         #endregion
 
         #region inheritance
-        //public class Category { }
-        //public class Product { }
-        //[MetadataType(typeof(EntityViewModelBaseMetadata<>))]
-        //public class EntityViewModelBase<T> {
-        //    public bool Save() {
-        //        return true;
-        //    }
-        //}
-        //public class CategoryViewModel : EntityViewModelBase<Category> {
-        //    public bool Close() {
-        //        return true;
-        //    }
-        //}
-        //public class EntityViewModelBaseMetadata<T> : IMetadataProvider<EntityViewModelBase<T>> {
-        //    void IMetadataProvider<EntityViewModelBase<T>>.BuildMetadata(MetadataBuilder<EntityViewModelBase<T>> builder) {
-        //        builder.CommandFromMethod(x => x.Save());
-        //    }
-        //}
-        //[Test]
-        //public void LoadMetadataFromBaseClass() {
-        //    var viewModel = ViewModelSource.Create<CategoryViewModel>();
-        //    Assert.IsNotNull(TypeDescriptor.GetProperties(viewModel)["SaveCommand"]);
-        //}
         #endregion
 
         #region IsPOCOViewModel
@@ -2496,13 +2270,6 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(CommandAttributeViewModel)));
             Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(CommandAttributeViewModel_FluentAPI)));
             Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_CommandsInViewModelBaseDescendant)));
-#if !FREE
-            Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModelWithAttributes)));
-            Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModelWithAttributes_FluentAPIBase)));
-            Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModelWithAttributes_FluentAPI)));
-            Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_PropertyWithAttribute)));
-            Assert.AreEqual(true, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_PropertyWithAttribute_FluentApi)));
-#endif
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_NonDefaultConstructors)));
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_NonDefaultConstructors_ProtectedDefaultCtor)));
             Assert.AreEqual(false, ViewModelSourceHelper.IsPOCOViewModelType(typeof(POCOViewModel_NonDefaultConstructors_NoDefaultCtor)));

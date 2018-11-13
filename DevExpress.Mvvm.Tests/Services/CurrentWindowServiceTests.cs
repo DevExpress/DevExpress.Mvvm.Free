@@ -1,7 +1,4 @@
-﻿using NUnit.Framework;
-#if !FREE
-using DevExpress.Xpf.Core.Tests;
-#endif
+using NUnit.Framework;
 using System.Windows.Controls;
 using System.Threading.Tasks;
 using System;

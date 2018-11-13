@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -168,22 +168,4 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             Target.Close();
         }
     }
-#if !FREE
-    public class DXDialogWindowWrapper : WindowWrapper, IWindowWrapper<DevExpress.Xpf.Core.DXDialogWindow> {
-        public new DevExpress.Xpf.Core.DXDialogWindow Target { get { return (DevExpress.Xpf.Core.DXDialogWindow)base.Target; } set { base.Target = value; } }
-        public override void Show() {
-            Target.Show();
-        }
-        public override MessageBoxResult ShowDialog() {
-            Target.ShowDialogWindow();
-            return Target.dialogWindowResult;
-        }
-        public override void Activate() {
-            Target.Activate();
-        }
-        public override void Close() {
-            Target.Close();
-        }
-    }
-#endif
 }

@@ -1,6 +1,3 @@
-﻿#if !FREE
-using DevExpress.Xpf.Core.Tests;
-#endif
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;

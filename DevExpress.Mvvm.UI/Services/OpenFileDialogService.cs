@@ -1,4 +1,4 @@
-﻿using System.Windows.Forms;
+using System.Windows.Forms;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,9 +9,6 @@ using System.ComponentModel;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Native;
 
-#if !FREE
-using DevExpress.Utils.CommonDialogs;
-#else
 namespace DevExpress.Mvvm.UI.Native {
     public interface IOpenFileDialog : IFileDialog {
         bool Multiselect { get; set; }
@@ -21,7 +18,6 @@ namespace DevExpress.Mvvm.UI.Native {
         bool ReadOnlyChecked { get; set; }
     }
 }
-#endif
 
 namespace DevExpress.Mvvm.UI {
     [Browsable(true), EditorBrowsable(EditorBrowsableState.Always)]

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using DevExpress.Mvvm.Native;
 using NUnit.Framework;
 
@@ -120,9 +120,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("StringProperty", ExpressionHelper.GetPropertyName<TestViewModel, object>(x => x.StringProperty));
             Assert.AreEqual("IntProperty", ExpressionHelper.GetPropertyName<TestViewModel, object>(x => x.IntProperty));
 
-#if !NETFX_CORE
             Assert.AreEqual(System.ComponentModel.TypeDescriptor.GetProperties(this)["MyProperty"], ExpressionHelper.GetProperty((ExpressionHelperTests x) => x.MyProperty));
-#endif
         }
 
         [Test]

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace DevExpress.Mvvm.UI.Native {
     public enum MemberVisibility {

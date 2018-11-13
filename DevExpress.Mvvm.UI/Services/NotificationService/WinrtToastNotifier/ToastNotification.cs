@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DevExpress.Data.Controls.WinrtToastNotifier.WinApi;
@@ -60,7 +60,6 @@ namespace DevExpress.Internal {
         }
         #endregion IPredefinedToastNotificationContentFactory
     }
-    //
     public class WinRTToastNotification : IPredefinedToastNotification {
         ToastNotificationHandlerInfo<HandlerDismissed> handlerDismissed;
         ToastNotificationHandlerInfo<HandlerActivated> handlerActivated;

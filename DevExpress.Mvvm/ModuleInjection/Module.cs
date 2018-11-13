@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace DevExpress.Mvvm.ModuleInjection {
     public interface IModule {

@@ -3,37 +3,13 @@ using System.Collections;
 using System.Windows;
 using System.Collections.Generic;
 using System.ComponentModel;
-#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
-#else
-using Windows.UI.Xaml;
-using Windows.Foundation;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Controls.Primitives;
-using DevExpress.Mvvm.Native;
-#if !FREE
-using DevExpress.Xpf.Core.Native;
-#endif
-#endif
-#if DXWINDOW
-namespace DevExpress.Internal.DXWindow {
-    public static class LayoutHelper {
-#elif DESIGN
-namespace DevExpress.Design.UI {
-    public static class WpfLayoutHelper {
-#elif MVVM || NETFX_CORE
 namespace DevExpress.Mvvm.UI.Native {
     public static class LayoutHelper {
-#else
-namespace DevExpress.Xpf.Core.Native {
-    public static class LayoutHelper {
-#endif
 
-#if !NETFX_CORE
         public static UIElement GetTopContainerWithAdornerLayer(UIElement element) {
             FrameworkElement fElement = element as FrameworkElement;
             if(fElement != null && GetParent(element) == null) {
@@ -98,30 +74,7 @@ namespace DevExpress.Xpf.Core.Native {
         public static FrameworkElement GetRoot(FrameworkElement element) {
             return FindRoot(element) as FrameworkElement;
         }
-#if !DESIGN && !MVVM
-        public static UIElement HitTest(UIElement element, Point point) {
-            UIElement result = null;
-            HitTestFilterCallback filterCallback = e => {
-                UIElement uiElement = e as UIElement;
-                return uiElement == null || uiElement.IsVisible ? HitTestFilterBehavior.Continue : HitTestFilterBehavior.ContinueSkipSelfAndChildren;
-            };
-            HitTestResultCallback resultCallback = e => {
-                result = e.VisualHit as UIElement;
-                return result != null ? HitTestResultBehavior.Stop : HitTestResultBehavior.Continue;
-            };
-            VisualTreeHelper.HitTest(element, filterCallback, resultCallback, new PointHitTestParameters(point));
-            return result;
-        }
-#endif
-#if !DESIGN
         public static Rect GetScreenRect(FrameworkElement element) {
-#if !FREE
-            if(element is DXWindow) {
-                DXWindow elementDXWindow = (DXWindow)element;
-                var windowChild = VisualTreeHelper.GetChild(elementDXWindow, 0) as FrameworkElement;
-                return GetScreenRectCore(elementDXWindow, windowChild ?? elementDXWindow);
-            }
-#endif
             if(element is Window) {
                 Window elementWindow = (Window)element;
                 if(elementWindow.WindowStyle == WindowStyle.None)
@@ -139,11 +92,7 @@ namespace DevExpress.Xpf.Core.Native {
                         }
                         return new Rect(leftTop, size);
                     } else {
-#if !NETFX_CORE && !FREE
-                        return GetStandardWindowRect(elementWindow);
-#else
                         return new Rect(new Point(elementWindow.Left, elementWindow.Top), new Size(elementWindow.Width, elementWindow.Height));
-#endif
                     }
                 }
             }
@@ -156,11 +105,7 @@ namespace DevExpress.Xpf.Core.Native {
         static Rect GetScreenRectCore(Window window, FrameworkElement element) {
             Point leftTop;
             Point rightBottom;
-#if FREE
             if(element.FlowDirection == FlowDirection.RightToLeft && (element is Window)) {
-#else 
-            if(element.FlowDirection == FlowDirection.RightToLeft && (element is DXWindow || !(element is Window))) {
-#endif
                 leftTop = element.PointToScreen(new Point(element.ActualWidth, 0));
                 rightBottom = element.PointToScreen(new Point(0, element.ActualHeight));
             } else {
@@ -177,40 +122,6 @@ namespace DevExpress.Xpf.Core.Native {
             return new Rect(leftTop, rightBottom);
         }
 
-#if !NETFX_CORE && !FREE
-        static Rect GetStandardWindowRect(Window window) {
-            if(window is ThemedWindow)
-                return new Rect(new Point(window.Left, window.Top), new Size(window.Width, window.Height));
-            Rect rect;
-            if (NativeMethods.GetWindowRect_DwmGetWindowAttribute(new System.Windows.Interop.WindowInteropHelper(window).Handle, out rect))
-                return ScreenHelper.GetScaledRect(rect);
-            return new Rect(new Point(window.Left, window.Top), new Size(window.Width, window.Height));
-        }
-#endif
-#endif
-#if !FREE
-        public static Rect GetRelativeElementRect(UIElement element, UIElement parent) {
-            GeneralTransform transform = element.TransformToVisual(parent);
-            return transform.TransformBounds(new Rect(element.RenderSize));
-        }
-        public static bool IsChildElementEx(DependencyObject root, DependencyObject element, bool useLogicalTree = false) {
-            DependencyObject parent = element;
-            while(parent != null) {
-                if(parent == root)
-                    return true;
-                if(parent is ContextMenu)
-                    parent = ((ContextMenu)parent).PlacementTarget;
-                else {
-                    var popup = parent as Popup;
-                    if(popup != null && popup.PlacementTarget != null)
-                        parent = popup.PlacementTarget;
-                    else
-                        parent = GetParentCore(parent, useLogicalTree);
-                }
-            }
-            return false;
-        }
-#endif
 
         static DependencyObject GetParentCore(DependencyObject d, bool useLogicalTree = false) {
             DependencyObject parent = LogicalTreeHelper.GetParent(d);
@@ -224,171 +135,6 @@ namespace DevExpress.Xpf.Core.Native {
         static bool IsElementLoadedCore(FrameworkElement element) {
             return element.IsLoaded;
         }
-#else
-        public static bool IsInVisualTree(DependencyObject o) {
-            //TODO: doesn`t work for content of Resource or attached DependencyObjectCollection
-            DependencyObject current = o;
-            DependencyObject node = GetParent(o, true);
-            Popup popup;
-            while(node != null) {
-                popup = node as Popup;
-                if(popup != null && !popup.IsOpen)
-                    return false;
-
-                current = node;
-                node = GetParent(node, true);
-            }
-            popup = current as Popup;
-            if(popup != null)
-                return popup.IsOpen;
-
-            return current == Window.Current.Content || current == FindRoot(Window.Current.Content as FrameworkElement, false);
-        }
-        public static T FindParentObject<T>(DependencyObject child, Predicate<T> isSearchTarget = null, bool useLogicalTree = false) where T : class {
-            while(child != null) {
-                T currentItem = child as T;
-                if(currentItem != null && (isSearchTarget == null || isSearchTarget(currentItem)))
-                    return currentItem;
-                child = GetParent(child, useLogicalTree);
-            }
-            return null;
-        }
-        public static Rect GetRelativeElementRect(UIElement element, UIElement parent) {
-            GeneralTransform transform = element.TransformToVisual(parent);
-            return transform.TransformBounds(new Rect(new Point(), element.RenderSize));
-        }
-        public static T FindAmongLogicalParents<T>(DependencyObject o, DependencyObject stopObject) where T : DependencyObject {
-            while(!(o == null || o is T || o == stopObject)) {
-                o = GetLogicalParent(o);
-            }
-            return o as T;
-        }
-        public static DependencyObject GetLogicalParent(DependencyObject o) {
-            DependencyObject result = null;
-            try { // !!! Do not remove. Sometimes an exception is raised if o is not in visual tree
-                if(o is FrameworkElement)
-                    result = (o as FrameworkElement).Parent;
-                if(result == null)
-                    result = VisualTreeHelper.GetParent(o);
-            } catch {
-            }
-            return result;
-        }
-        public static T FindElementByName<T>(FrameworkElement treeRoot, string name) where T : FrameworkElement {
-            Type type = typeof(T);
-            return (T)FindElement(treeRoot, element => type.IsAssignableFrom(element.GetType()) && element.Name == name);
-        }
-        public static bool IsChildElement(DependencyObject root, DependencyObject element, Func<DependencyObject, DependencyObject> getParent) {
-            DependencyObject parent = element;
-            while(parent != null) {
-                if(parent == root)
-                    return true;
-                parent = getParent(parent);
-            }
-            return false;
-        }
-        public static bool IsPopupRoot(DependencyObject root) {
-            bool result = false;
-            var rootCanvas = root as Canvas;
-            if(rootCanvas != null && rootCanvas.Parent == null && VisualTreeHelper.GetParent(rootCanvas) == null) {
-                foreach(var child in rootCanvas.Children) {
-                    result = (child as FrameworkElement).With(x => x.Parent) is Popup && VisualTreeHelper.GetParent(child) == rootCanvas;
-                    if(result)
-                        break;
-                }
-            }
-
-            return result;
-        }
-
-        static DependencyObject GetParentCore(DependencyObject o, bool useLogicalTree = false) {
-            DependencyObject result = null;
-            try { // !!! Do not remove. Sometimes an exception is raised if o is not in visual tree
-                result = VisualTreeHelper.GetParent(o);
-                if(useLogicalTree) {
-                    DependencyObject logicalParent = (o as FrameworkElement).With(x => x.Parent);
-                    //Win10 magic
-                    if(result != logicalParent && logicalParent is Popup)
-                        result = logicalParent;
-                    if(result == null)
-                        result = logicalParent;
-                }
-            } catch { }
-
-            return result;
-        }
-        static bool IsVisibleInTreeCore(UIElement element, bool visualTreeOnly = false) {
-            DependencyObject node = element;
-            UIElement rootVisual = Window.Current.With(x => x.Content);
-            UIElement uiElem = node as UIElement;
-            Popup popup = null;
-            while(node != null) {
-                uiElem = node as UIElement;
-                popup = node as Popup;
-                if((uiElem != null && uiElem.Visibility != Visibility.Visible) || (popup != null && !popup.IsOpen))
-                    return false;
-                if(uiElem == rootVisual)
-                    return true;
-
-                node = GetParentCore(node, true);
-            }
-            return popup != null && popup.IsOpen;
-        }
-        static bool IsElementLoadedCore(FrameworkElement element) {
-            if(element.Parent != null || VisualTreeHelper.GetParent(element) != null)
-                return true;
-
-            UIElement rootVisual = Window.Current.With(x => x.Content);
-            return element == rootVisual;
-        }
-
-        static TElement FindElementCore<TElement>(DependencyObject treeRoot, Predicate<FrameworkElement> predicate, Predicate<DependencyObject> skipTreeNode)
-            where TElement : FrameworkElement {
-            VisualTreeEnumeratorWithConditionalStop en = new VisualTreeEnumeratorWithConditionalStop(treeRoot, skipTreeNode);
-            var searchType = typeof(TElement);
-            while(en.MoveNext()) {
-                DependencyObject element = en.Current;
-                FrameworkElement fElement = element as FrameworkElement;
-                if(element != null && searchType.IsAssignableFrom(element.GetType()) && fElement != null && (predicate == null || predicate(fElement)))
-                    return element as TElement;
-            }
-            return null;
-        }
-        public static FrameworkElement FindElement(FrameworkElement treeRoot, Predicate<FrameworkElement> predicate, Predicate<DependencyObject> skipTreeNode) {
-            if(skipTreeNode != null)
-                return FindElementCore<FrameworkElement>(treeRoot, predicate, skipTreeNode);
-            else
-                return FindElement(treeRoot, predicate);
-        }
-        public static T FindElementByName<T>(FrameworkElement treeRoot, string name, Predicate<DependencyObject> skipTreeNode) where T : FrameworkElement {
-            if(skipTreeNode != null)
-                return FindElementCore<T>(treeRoot, element => element.Name == name, skipTreeNode);
-            else
-                return FindElementByName<T>(treeRoot, name);
-        }
-        public static T FindElementByType<T>(FrameworkElement treeRoot, Predicate<DependencyObject> skipTreeNode) where T : FrameworkElement {
-            if(skipTreeNode != null)
-                return FindElementCore<T>(treeRoot, null, skipTreeNode);
-            else
-                return FindElementByType<T>(treeRoot);
-        }
-        public static Point GetScreenPosition(UIElement element, Point elementPosition) {
-            if(element == null)
-                return new Point();
-
-            var root = AppHelper.RootVisual ?? FindRoot(element, true) as UIElement;
-            var transform = element.TransformToVisual(root);
-            return transform.TransformPoint(elementPosition);
-        }
-        public static Point GetRelativePosition(UIElement element, Point screenPosition) {
-            if(element == null)
-                return new Point();
-
-            var root = AppHelper.RootVisual ?? FindRoot(element, true) as UIElement;
-            var transform = root.TransformToVisual(element);
-            return transform.TransformPoint(screenPosition);
-        }
-#endif
 
         public static T FindAmongParents<T>(DependencyObject o, DependencyObject stopObject) where T : DependencyObject {
             while(!(o == null || o is T || o == stopObject)) {
@@ -415,11 +161,9 @@ namespace DevExpress.Xpf.Core.Native {
             return result;
         }
         public static DependencyObject GetParent(DependencyObject d, bool useLogicalTree = false) {
-#if !NETFX_CORE
             if(DesignerProperties.GetIsInDesignMode(d)) {
                 if(CheckIsDesignTimeRoot(d)) return null;
             }
-#endif
             return GetParentCore(d, useLogicalTree);
         }
         public static T FindLayoutOrVisualParentObject<T>(DependencyObject child, bool useLogicalTree = false, DependencyObject stopSearchNode = null) where T : class {
@@ -462,11 +206,7 @@ namespace DevExpress.Xpf.Core.Native {
             return FindElement(treeRoot, element => element.Name == name);
         }
         public static FrameworkElement FindElementByType(FrameworkElement treeRoot, Type type) {
-#if NETFX_CORE
-            return FindElement(treeRoot, element => type.IsAssignableFrom(element.GetType()));
-#else
             return FindElement(treeRoot, element => element.GetType() == type);
-#endif
         }
         public static T FindElementByType<T>(FrameworkElement treeRoot) where T : FrameworkElement {
             return (T)FindElementByType(treeRoot, typeof(T));

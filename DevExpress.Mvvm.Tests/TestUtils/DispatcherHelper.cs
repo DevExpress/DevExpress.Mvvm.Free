@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +12,7 @@ namespace DevExpress {
             IncreasePriorityContextIdleMessages();
         }
         static void IncreasePriorityContextIdleMessages() {
-            CurrentDispatcherReference = Dispatcher.CurrentDispatcher; //otherwise this dispatcher can be collected
+            CurrentDispatcherReference = Dispatcher.CurrentDispatcher;
             Dispatcher.CurrentDispatcher.Hooks.OperationPosted += (d, e) => {
                 if(e.Operation.Priority == DispatcherPriority.ContextIdle)
                     e.Operation.Priority = DispatcherPriority.Background;
@@ -24,7 +24,6 @@ namespace DevExpress {
             return null;
         }
         public static void ForceIncreasePriorityContextIdleMessages() {
-            //do nothing
         }
         public static void UpdateLayoutAndDoEvents(UIElement element) { UpdateLayoutAndDoEvents(element, DispatcherPriority.Background); }
         public static void UpdateLayoutAndDoEvents(UIElement element, DispatcherPriority priority) {

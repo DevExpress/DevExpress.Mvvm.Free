@@ -1,7 +1,3 @@
-﻿#if !FREE
-using DevExpress.Xpf.Core.Tests;
-using DevExpress.Xpf.Core;
-#endif
 using DevExpress.Mvvm.POCO;
 using DevExpress.Mvvm.UI;
 using NUnit.Framework;
@@ -197,11 +193,9 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 "{b:DXCommand Execute='Do3(@s.Tag.Parameter, @parameter);', CanExecute='CanDo3(@s.Tag.CanDo)'}", null, vm);
             Assert.AreEqual(false, BindingTestHelper.CanDoCommand(bt));
             bt.Tag = new { CanDo = true }; BindingTestHelper.DoEvents(bt);
-            //Assert.AreEqual(false, BindingTestHelper.CanDoCommand(bt)); //old
-            Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt)); //new
+            Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt));
             bt.Tag = new { CanDo = true, Parameter = 1 }; BindingTestHelper.DoEvents(bt);
-            //Assert.AreEqual(false, BindingTestHelper.CanDoCommand(bt)); //old
-            Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt)); //new
+            Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt));
             bt.CommandParameter = 1; BindingTestHelper.DoEvents(bt);
             Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt));
             BindingTestHelper.DoCommand(bt);
@@ -214,7 +208,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 "Button", "Command",
                 @"{b:DXCommand 
                     Execute='Do(@s.Margin);', 
-                    CanExecute='new $Thickness(@s.Margin.Bottom).Left == 1'}", 
+                    CanExecute='new $Thickness(@s.Margin.Bottom).Left == 1'}",
                 null, vm);
             Assert.AreEqual(false, BindingTestHelper.CanDoCommand(bt));
             Assert.AreEqual(0, vm.DoubleProp);

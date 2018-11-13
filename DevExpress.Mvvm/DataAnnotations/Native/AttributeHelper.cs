@@ -1,4 +1,4 @@
-﻿using DevExpress.Mvvm.DataAnnotations;
+using DevExpress.Mvvm.DataAnnotations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -29,11 +29,6 @@ namespace DevExpress.Mvvm.Native {
         internal static TBuilder DoNotScaffoldCore<TBuilder>(TBuilder builder) where TBuilder : IAttributeBuilderInternal<TBuilder> {
             return builder.AddOrReplaceAttribute(new ScaffoldColumnAttribute(false));
         }
-#if !FREE
-        internal static TBuilder DoNotScaffoldDetailCollectionCore<TBuilder>(TBuilder builder) where TBuilder : IAttributeBuilderInternal<TBuilder> {
-            return builder.AddOrReplaceAttribute(new ScaffoldDetailCollectionAttribute(false));
-        }
-#endif
         #endregion
 
         internal static Type GetDisplayAttributeType() {
@@ -94,32 +89,6 @@ namespace DevExpress.Mvvm.Native {
         static DisplayAttribute GetFieldDisplayAttribute(FieldInfo field) {
             return MetadataHelper.GetAttribute<DisplayAttribute>(field);
         }
-#if !FREE
-        #region DisplayAttribute
-        internal static TBuilder SetOrderCore<TBuilder>(TBuilder builder, int order) where TBuilder : IAttributeBuilderInternal<TBuilder> {
-            return builder.AddOrModifyAttribute<DisplayAttribute>(x => x.Order = order);
-        }
-        #endregion
-
-        #region Display Format
-        internal static TBuilder SetConvertEmptyStringToNull<TBuilder>(TBuilder builder, bool convert) where TBuilder : IAttributeBuilderInternal<TBuilder> {
-            return builder.AddOrModifyAttribute<DisplayFormatAttribute>(x => x.ConvertEmptyStringToNull = convert);
-        }
-        internal static TBuilder SetDataFormatString<TBuilder>(TBuilder builder, string dataFormatString, bool applyDisplayFormatInEditMode) where TBuilder : IAttributeBuilderInternal<TBuilder> {
-            return builder.AddOrModifyAttribute<DisplayFormatAttribute>(x => { x.DataFormatString = dataFormatString; x.ApplyFormatInEditMode = applyDisplayFormatInEditMode; });
-        }
-        internal static TBuilder SetNullDisplayText<TBuilder>(TBuilder builder, string nullDisplayText) where TBuilder : IAttributeBuilderInternal<TBuilder> {
-            return builder.AddOrModifyAttribute<DisplayFormatAttribute>(x => x.NullDisplayText = nullDisplayText);
-        }
-        #endregion
-
-        internal static TBuilder SetReadonly<TBuilder>(TBuilder builder) where TBuilder : IAttributeBuilderInternal<TBuilder> {
-            return builder.AddOrReplaceAttribute(new ReadOnlyAttribute(true));
-        }
-        internal static TBuilder SetNotEditable<TBuilder>(TBuilder builder) where TBuilder : IAttributeBuilderInternal<TBuilder> {
-            return builder.AddOrReplaceAttribute(new EditableAttribute(false));
-        }
-#endif
         internal static TBuilder SetDataTypeCore<TBuilder>(TBuilder builder, PropertyDataType dataType) where TBuilder : IAttributeBuilderInternal<TBuilder> {
             return builder.AddOrReplaceAttribute(new DataTypeAttribute(ToDataType(dataType)));
         }
@@ -127,32 +96,6 @@ namespace DevExpress.Mvvm.Native {
             return builder.AddOrReplaceAttribute(new EnumDataTypeAttribute(enumDataType));
         }
         #region data type conversion
-#if !FREE
-        public static PropertyDataType FromDataType(DataType dataType) {
-            switch(dataType) {
-                case DataType.Currency:
-                    return PropertyDataType.Currency;
-                case DataType.Password:
-                    return PropertyDataType.Password;
-                case DataType.MultilineText:
-                    return PropertyDataType.MultilineText;
-                case DataType.PhoneNumber:
-                    return PropertyDataType.PhoneNumber;
-                case DataType.Url:
-                    return PropertyDataType.Url;
-                case DataType.ImageUrl:
-                    return PropertyDataType.ImageUrl;
-                case DataType.Time:
-                    return PropertyDataType.Time;
-                case DataType.DateTime:
-                    return PropertyDataType.DateTime;
-                case DataType.Date:
-                    return PropertyDataType.Date;
-                default:
-                    return PropertyDataType.Custom;
-            }
-        }
-#endif
         static DataType ToDataType(PropertyDataType dataType) {
             switch(dataType) {
                 case PropertyDataType.Currency:
