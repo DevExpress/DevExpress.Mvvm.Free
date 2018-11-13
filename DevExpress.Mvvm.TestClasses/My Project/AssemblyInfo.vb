@@ -11,8 +11,8 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyTitle("DevExpress.Mvvm.TestClasses.VB")> 
 <Assembly: AssemblyDescription("")> 
 <Assembly: AssemblyCompany("")> 
-<Assembly: AssemblyProduct("DevExpress.Mvvm.TestClasses.VB")> 
-<Assembly: AssemblyCopyright("Copyright ©  2016")> 
+<Assembly: AssemblyProduct("DevExpress.Mvvm.TestClasses.VB")>
+<Assembly: AssemblyCopyright("Copyright ©  2018")>
 <Assembly: AssemblyTrademark("")> 
 
 <Assembly: ComVisible(False)>
