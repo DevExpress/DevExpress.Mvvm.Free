@@ -1,3 +1,8 @@
+﻿#if !FREE
+using DevExpress.Utils.Serializing;
+using DevExpress.Xpf.Core.Serialization;
+using DevExpress.Xpf.Core.Tests;
+#endif
 using DevExpress.Mvvm.ModuleInjection;
 using DevExpress.Mvvm.ModuleInjection.Native;
 using DevExpress.Mvvm.POCO;
@@ -80,7 +85,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Assert.AreEqual(0, logicalInfo.Regions[0].Items.Count);
         }
 
-        [Test]
+        [Test, Retry(4)]
         public void SerializeState() {
             string logicalState = null;
             string visualState = null;
@@ -253,4 +258,162 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count());
         }
     }
+#if !FREE
+    public class VisualSerializationTests_V : StackPanel {
+        public static bool IsEnabledSerialization = true;
+        public static bool AutoSave = true;
+        public static bool AutoRestore = true;
+
+        public SerializableControl Control { get; private set; }
+        public VisualSerializationTests_V() {
+            Control = new SerializableControl();
+            Children.Add(Control);
+            if(IsEnabledSerialization) {
+                Interactivity.Interaction.GetBehaviors(this).Add(
+                    new VisualStateService() { AutoSaveState = AutoSave, AutoRestoreState = AutoRestore });
+            }
+        }
+    }
+    public class SerializableControl : TextBox {
+        [XtraSerializableProperty]
+        public string Value { get { return Text; } set { Text = value; } }
+
+        static SerializableControl() {
+            DXSerializer.SerializationIDDefaultProperty.OverrideMetadata(typeof(SerializableControl), new UIPropertyMetadata(typeof(SerializableControl).Name));
+            DXSerializer.SerializationProviderProperty.OverrideMetadata(typeof(SerializableControl), new UIPropertyMetadata(new SerializationProvider()));
+        }
+        public SerializableControl() {
+            Value = "12345";
+        }
+    }
+    [TestFixture]
+    public class VisualSerializationTests : BaseWpfFixture {
+        public class VM { }
+
+        public IModuleManager Manager { get { return ModuleManager.DefaultManager; } }
+        public IModuleWindowManager WindowManager { get { return ModuleManager.DefaultWindowManager; } }
+        protected override void SetUpCore() {
+            base.SetUpCore();
+            InjectionTestHelper.SetUp(typeof(VisualSerializationTests).Assembly);
+            VisualSerializationTests_V.AutoSave = true;
+            VisualSerializationTests_V.AutoRestore = true;
+        }
+        protected override void TearDownCore() {
+            InjectionTestHelper.TearDown();
+            base.TearDownCore();
+        }
+
+        [Test]
+        public void NoSerializationService() {
+            VisualSerializationTests_V.IsEnabledSerialization = false;
+            Grid container = new Grid();
+            UIRegion.SetRegion(container, "R");
+            Window.Content = container;
+
+            Manager.Register("R", new Module("1", () => ViewModelSource.Create(() => new VM()), typeof(VisualSerializationTests_V)));
+            Manager.Inject("R", "1");
+            Window.Show();
+
+            string logicalState = null;
+            string visualState = null;
+            VisualInfo visualInfo = null;
+            Manager.Save(out logicalState, out visualState);
+            visualInfo = VisualInfo.Deserialize(visualState);
+            Assert.AreEqual(0, visualInfo.Regions[0].Items.Count);
+        }
+        [Test]
+        public void DefaultLayout() {
+            Grid container = new Grid();
+            UIRegion.SetRegion(container, "R");
+            Window.Content = container;
+
+            Manager.Register("R", new Module("1", () => ViewModelSource.Create(() => new VM()), typeof(VisualSerializationTests_V)));
+            Manager.Inject("R", "1");
+            Window.Show();
+
+            var vm = Manager.GetRegion("R").GetViewModel("1");
+            var serv = vm.GetService<IVisualStateService>();
+            Assert.AreEqual(true, serv.DefaultState.Contains("12345"));
+
+            string logicalState = null;
+            string visualState = null;
+            VisualInfo visualInfo = null;
+            Manager.Save(out logicalState, out visualState);
+            visualInfo = VisualInfo.Deserialize(visualState);
+            Assert.AreEqual(
+                serv.DefaultState.Replace("\n", "").Replace("\r", ""), 
+                visualInfo.Regions[0].Items[0].State.State.Replace("\n", "").Replace("\r", ""));
+        }
+        [Test]
+        public void AutoSaveAndAutoRestore() {
+            Grid container = new Grid();
+            UIRegion.SetRegion(container, "R");
+            Window.Content = container;
+
+            Manager.Register("R", new Module("1", () => ViewModelSource.Create(() => new VM()), typeof(VisualSerializationTests_V)));
+            Manager.Inject("R", "1");
+            Window.Show();
+            
+            var vm = Manager.GetRegion("R").GetViewModel("1");
+            VisualSerializationTests_V v = LayoutTreeHelper.GetVisualChildren(container).OfType<VisualSerializationTests_V>().First(x => x.DataContext == vm);
+            Assert.AreEqual("12345", v.Control.Value);
+            v.Control.Value = "abcd";
+
+            Manager.Remove("R", "1");
+            Manager.Inject("R", "1");
+            DispatcherHelper.DoEvents();
+
+            vm = Manager.GetRegion("R").GetViewModel("1");
+            v = LayoutTreeHelper.GetVisualChildren(container).OfType<VisualSerializationTests_V>().First(x => x.DataContext == vm);
+            Assert.AreEqual("abcd", v.Control.Value);
+        }
+
+        void GetServices(string region, string key, DependencyObject container, out object vm, out VisualSerializationTests_V v, out VisualStateService serv) {
+            vm = Manager.GetRegion(region).GetViewModel(key);
+            serv = (VisualStateService)vm.GetService<IVisualStateService>();
+            var vmm = vm;
+            v = LayoutTreeHelper.GetVisualChildren(container).OfType<VisualSerializationTests_V>().First(x => x.DataContext == vmm);
+        }
+        [Test]
+        public void DisableAutoSaveAndAutoRestore() {
+            Grid container = new Grid();
+            UIRegion.SetRegion(container, "R");
+            Window.Content = container;
+
+            Manager.Register("R", new Module("1", () => ViewModelSource.Create(() => new VM()), typeof(VisualSerializationTests_V)));
+            Manager.Inject("R", "1");
+            Window.Show();
+            object vm;
+            VisualSerializationTests_V v;
+            VisualStateService serv;
+
+            GetServices("R", "1", container, out vm, out v, out serv);
+            Assert.AreEqual("12345", v.Control.Value);
+            v.Control.Value = "abcd";
+            serv.AutoSaveState = false;
+            VisualSerializationTests_V.AutoSave = false;
+
+            Manager.Remove("R", "1");
+            Manager.Inject("R", "1");
+            DispatcherHelper.DoEvents();
+            GetServices("R", "1", container, out vm, out v, out serv);
+            Assert.AreEqual("12345", v.Control.Value);
+
+            v.Control.Value = "abcd";
+            serv.AutoSaveState = true;
+            serv.AutoRestoreState = false;
+            VisualSerializationTests_V.AutoSave = true;
+            VisualSerializationTests_V.AutoRestore = false;
+            Manager.Remove("R", "1");
+            Manager.Inject("R", "1");
+            DispatcherHelper.DoEvents();
+            GetServices("R", "1", container, out vm, out v, out serv);
+
+            Assert.AreEqual("12345", v.Control.Value);
+            serv.RestoreState();
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual("abcd", v.Control.Value);
+        }
+    }
+#endif
 }

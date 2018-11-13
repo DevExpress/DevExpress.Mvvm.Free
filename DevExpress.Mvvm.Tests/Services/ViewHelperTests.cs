@@ -1,4 +1,7 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
+#if !FREE
+using DevExpress.Xpf.Core.Tests;
+#endif
 using System.Windows.Controls;
 using System.Threading.Tasks;
 using System;
@@ -301,3 +304,9 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
     }
 }
+#if !FREE
+namespace DevExpress {
+    class WpfSetupFixture : DevExpress.Xpf.Core.Tests.WpfSetupFixtureBase {
+    }
+}
+#endif

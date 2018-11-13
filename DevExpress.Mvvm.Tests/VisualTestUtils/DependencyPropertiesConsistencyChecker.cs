@@ -1,3 +1,7 @@
+﻿#if DEBUGTEST || MVVM
+#if !MVVM
+using DevExpress.Xpf.Core.Native;
+#endif
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,7 +15,11 @@ using System.Linq;
 using DevExpress.Mvvm.UI.Native;
 using System.IO;
 
+#if MVVM
 namespace DevExpress {
+#else
+namespace DevExpress.Xpf.Core.Tests {
+#endif
 
     public class DependencyPropertiesConsistencyChecker {
         [SecuritySafeCritical]
@@ -97,7 +105,7 @@ namespace DevExpress {
             CheckReadOnlyProperty(fieldInfo, property, accessModifier);
         }
         void CheckDependencyPropertyConsistencyForField(FieldInfo fieldInfo) {
-            if(fieldInfo.Name == "IsActiveExProperty") return;
+            if(fieldInfo.Name == "IsActiveExProperty") return; // RomanK:special property 
             DependencyPropertyFieldInfoShouldBePublic(fieldInfo);
             DependencyPropertyFieldInfoShouldBeReadonly(fieldInfo);
             DependencyProperty property = DependencyPropertyShouldBeRegistered(fieldInfo);
@@ -268,3 +276,4 @@ namespace DevExpress {
         }
     }
 }
+#endif

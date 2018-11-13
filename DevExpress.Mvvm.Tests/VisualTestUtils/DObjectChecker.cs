@@ -1,3 +1,4 @@
+﻿#if DEBUGTEST || MVVM
 using NUnit.Framework;
 using System;
 using System.Collections;
@@ -7,8 +8,13 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Text;
 
+#if MVVM
 using DevExpress.Mvvm.UI.Native;
 namespace DevExpress {
+#else
+using DevExpress.Xpf.Core.Native;
+namespace DevExpress.Xpf.Core.Tests {
+#endif
     [ContentProperty("Children")]
     public class DObjectChecker {
         public static void CheckNoSubTree(DependencyObject dObject, DObjectChecker checker) {
@@ -155,3 +161,4 @@ namespace DevExpress {
         }
     }
 }
+#endif 

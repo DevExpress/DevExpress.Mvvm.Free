@@ -1,5 +1,10 @@
+﻿#if DEBUGTEST || MVVM
 
+#if MVVM
 namespace DevExpress {
+#else
+namespace DevExpress.Xpf.Core.Tests {
+#endif
     public static class FixtureTag {
         public const string ThemeTests = "ThemeTests";
         public const string EditorTests = "EditorTests";
@@ -10,3 +15,4 @@ namespace DevExpress {
         public const string RangeControlTests = "RangeControlTests";
     }
 }
+#endif

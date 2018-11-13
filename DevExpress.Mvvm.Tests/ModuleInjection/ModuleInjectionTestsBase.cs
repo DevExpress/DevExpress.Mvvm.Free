@@ -1,3 +1,7 @@
+﻿#if !FREE
+using DevExpress.Xpf.Core;
+using DevExpress.Xpf.Core.Tests;
+#endif
 using DevExpress.Mvvm.ModuleInjection;
 using DevExpress.Mvvm.ModuleInjection.Native;
 using DevExpress.Mvvm.UI.Interactivity;
@@ -9,6 +13,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using DevExpress.Mvvm.POCO;
 
 namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
     internal class TestEmptyViewModel {
@@ -21,7 +26,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         #region ServiceHelper
         public interface IServiceTestHelper {
             IEnumerable<object> ViewModels { get; }
-
+                 
             int SelectionChangedCount { get; }
             int NavigationCount { get; }
 
@@ -200,7 +205,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             memoryTest = false;
         }
         internal WeakReference[] CollectReferencesAndCloseWindow(ITargetWrapper<T> target, object[] refs) {
-            var res = memoryTest
+            var res = memoryTest 
                 ? refs.Select(x => new WeakReference(x))
                 : new WeakReference[] { };
             Close(target);
@@ -846,7 +851,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             vm2 = null;
             return res;
         }
-
+      
         [Test]
         public virtual void ViewInjection_CancelRemoveViewModel() {
             IViewInjectionService service; IContentPresenterWrapper<T> target;
@@ -1067,7 +1072,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
                 serviceHelper.AssertSelectionChanged(0);
                 Assert.IsNull(service.SelectedViewModel);
             }
-
+            
             service.SelectedViewModel = vm1;
             DispatcherHelper.DoEvents();
             serviceHelper.AssertSelectionChanged(1);
@@ -1557,7 +1562,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Manager.Register(regionName, "1", () => vm1 = new TestEmptyViewModel { name = "vm1" });
             Manager.Register(regionName, "2", () => vm2 = new TestEmptyViewModel { name = "vm2" });
             Manager.Inject(regionName, "1");
-
+            
             Assert.AreEqual(1, ((IEnumerable)target.ItemsSource).OfType<object>().Count());
             Manager.Inject(regionName, "2");
             Assert.AreEqual(2, ((IEnumerable)target.ItemsSource).OfType<object>().Count());
@@ -1583,7 +1588,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Manager.Remove(regionName, "1");
             Assert.AreSame(null, target.SelectedItem);
             serviceHelper.AssertViewModelRemoving(3);
-
+            
             serviceHelper.Dispose();
             var res = CollectReferencesAndCloseWindow(target, new object[] { vm1, vm2, target.Target });
             vm1 = null;

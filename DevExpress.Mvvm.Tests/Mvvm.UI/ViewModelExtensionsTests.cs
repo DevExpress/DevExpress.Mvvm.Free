@@ -1,5 +1,18 @@
+#if !NETFX_CORE
 using System.Windows.Controls;
 using System.Windows.Data;
+#if !FREE && !NETFX_CORE
+using DevExpress.Data;
+using DevExpress.Xpf.Core.Tests;
+#endif
+#else
+#if !FREE
+using System.Windows.Data;
+#endif
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Data;
+#endif
 using NUnit.Framework;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
@@ -109,8 +122,10 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(parentViewModel, viewModel.With(x => x as ISupportParentViewModel).ParentViewModel);
             DocumentUIServiceBase.SetTitleBinding(button, TextBlock.TextProperty, textBlock);
             Assert.AreEqual("title", textBlock.Text);
+#if !NETFX_CORE
             viewModel.Title = "title2";
             Assert.AreEqual("title2", textBlock.Text);
+#endif
             var dObject = new DObject();
             Assert.AreEqual(null, ViewHelper.GetViewModelFromView(dObject));
             ViewHelper.InitializeView(button, null, "test", parentViewModel);
@@ -165,6 +180,7 @@ namespace DevExpress.Mvvm.Tests {
                 throw new NotImplementedException();
             }
         }
+#if !NETFX_CORE
         [Test]
         public void ResolveViewTest() {
             var parentViewModel = new ViewModel();
@@ -203,6 +219,45 @@ namespace DevExpress.Mvvm.Tests {
                 ViewLocator.Default = null;
             }
         }
+#endif
+#if !FREE && !NETFX_CORE
+        class TestViewLocator2 : ViewLocator {
+            protected override IEnumerable<Assembly> Assemblies {
+                get {
+                    yield return typeof(DataController).Assembly;
+                    yield return typeof(Button).Assembly;
+                }
+            }
+        }
+        [Test]
+        public void ViewLocatorBaseTest() {
+            IViewLocator locator = new TestViewLocator2();
+            Button button1 = (Button)locator.ResolveView("Button");
+            Button button2 = (Button)locator.ResolveView("Button");
+            Assert.IsNotNull(button1);
+            Assert.IsNotNull(button2);
+            Assert.AreNotEqual(button1, button2);
+
+            DataController dc1 = (DataController)locator.ResolveView("DataController");
+            DataController dc2 = (DataController)locator.ResolveView("DataController");
+            Assert.IsNotNull(dc1);
+            Assert.IsNotNull(dc2);
+            Assert.AreNotEqual(dc1, dc2);
+
+            locator = new ViewLocator(typeof(DataController).Assembly, typeof(Button).Assembly);
+            button1 = (Button)locator.ResolveView("Button");
+            button2 = (Button)locator.ResolveView("Button");
+            Assert.IsNotNull(button1);
+            Assert.IsNotNull(button2);
+            Assert.AreNotEqual(button1, button2);
+
+            dc1 = (DataController)locator.ResolveView("DataController");
+            dc2 = (DataController)locator.ResolveView("DataController");
+            Assert.IsNotNull(dc1);
+            Assert.IsNotNull(dc2);
+            Assert.AreNotEqual(dc1, dc2);
+        }
+#endif
         [Test]
         public void CreateViewThrowExceptionOnNullArgumentsTest() {
             Action<InvalidOperationException> checkExceptionAction = x => {
@@ -260,6 +315,7 @@ namespace DevExpress.Mvvm.Tests {
 
             Assert.AreEqual(1, Interaction.GetBehaviors(view).Count);
         }
+#if !NETFX_CORE
         class TestVM : ISupportParameter, ISupportParentViewModel, IDocumentContent {
             public int ParameterChangingCounter { get; private set; }
             public int ParentViewModelChangingCounter { get; private set; }
@@ -319,6 +375,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(vm2, ((ISupportParentViewModel)vm3).ParentViewModel);
             Assert.AreEqual(vm3, ((ISupportParentViewModel)vm4).ParentViewModel);
         }
+#endif
     }
     public class TestView : ViewModelBase {
     }

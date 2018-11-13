@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -9,6 +9,29 @@ using DevExpress.Mvvm.Native;
 using NUnit.Framework;
 
 namespace DevExpress.Mvvm.Tests {
+    //[TestFixture]
+    //public class AssemblyTests{
+    //    [Test]
+    //    async public Task TypeExtensionReferenceTest() {
+    //        await Task.Yield();
+    //        var list = await GetAssemblyList();
+    //        var res = list.FirstOrDefault(x => x.FullName.Contains("System.Reflection.TypeExtensions"));
+    //    }
+    //    public static async Task<List<Assembly>> GetAssemblyList() {
+    //        List<Assembly> assemblies = new List<Assembly>();
+    //        var files = await Windows.ApplicationModel.Package.Current.InstalledLocation.GetFilesAsync();
+    //        if(files == null)
+    //            return assemblies;
+    //        foreach(var file in files.Where(file => file.FileType == ".dll" || file.FileType == ".exe")) {
+    //            try {
+    //                assemblies.Add(Assembly.Load(new AssemblyName(file.DisplayName)));
+    //            } catch(Exception ex) {
+    //                System.Diagnostics.Debug.WriteLine(ex.Message);
+    //            }
+    //        }
+    //        return assemblies;
+    //    }
+    //}
     [TestFixture]
     public class UICommandTests {
         [Test]

@@ -1,5 +1,11 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
+#if !FREE
+using DevExpress.Xpf.Core;
+using DevExpress.Xpf.Core.Serialization;
+using DevExpress.Xpf.Core.Tests;
+#else
 using DevExpress.Mvvm.Tests;
+#endif
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -46,30 +52,38 @@ namespace DevExpress.Mvvm.UI.Tests {
             ViewLocator.Default = new TestViewLocator(this);
         }
         protected override void TearDownCore() {
-            Interaction.GetBehaviors(Window).Clear();
+            try {
+                WindowedDocumentUIService service = Interaction.GetBehaviors(Window).OfType<WindowedDocumentUIService>().FirstOrDefault();
+                if (service != null) {
+                    while (service.Documents.Any()) {
+                        service.Documents.First().DestroyOnClose = true;
+                        service.Documents.First().Close(true);
+                    }
+                }
+                Interaction.GetBehaviors(Window).Clear();
+            } catch { }
             ViewLocator.Default = null;
             base.TearDownCore();
         }
 
-        [Test, Asynchronous]
+        [Test]
         public void WindowStyle() {
             EnqueueShowWindow();
+            Window.Show();
             IDocument document = null;
-            EnqueueCallback(() => {
-                WindowedDocumentUIService service = CreateService();
-                Interaction.GetBehaviors(Window).Add(service);
-                service.WindowType = typeof(Window);
-                Style windowStyle = new Style(typeof(Window));
-                windowStyle.Setters.Add(new Setter(FrameworkElement.TagProperty, "Style Tag"));
-                service.WindowStyle = windowStyle;
-                document = service.CreateDocument("EmptyView", new object());
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                var windowDocument = (WindowedDocumentUIService.WindowDocument)document;
-                Assert.AreEqual("Style Tag", windowDocument.Window.RealWindow.Tag);
-            });
-            EnqueueTestComplete();
+            DispatcherHelper.DoEvents();
+
+            WindowedDocumentUIService service = CreateService();
+            Interaction.GetBehaviors(Window).Add(service);
+            service.WindowType = typeof(Window);
+            Style windowStyle = new Style(typeof(Window));
+            windowStyle.Setters.Add(new Setter(FrameworkElement.TagProperty, "Style Tag"));
+            service.WindowStyle = windowStyle;
+            document = service.CreateDocument("EmptyView", new object());
+            DispatcherHelper.DoEvents();
+
+            var windowDocument = (WindowedDocumentUIService.WindowDocument)document;
+            Assert.AreEqual("Style Tag", windowDocument.Window.RealWindow.Tag);
         }
 
 
@@ -78,143 +92,205 @@ namespace DevExpress.Mvvm.UI.Tests {
             public virtual string Title { get; set; }
             public virtual int Parameter { get; set; }
         }
-        [Test, Asynchronous]
+        [Test]
         public void ActivateWhenDocumentShow() {
-            EnqueueShowWindow();
+            Window.Show();
             IDocument document = null;
             WindowedDocumentUIService service = CreateService();
             Interaction.GetBehaviors(Window).Add(service);
             IDocumentManagerService iService = service;
-            EnqueueCallback(() => {
-                document = iService.CreateDocument("View1",
+
+            DispatcherHelper.DoEvents();
+            document = iService.CreateDocument("View1",
                     ViewModelSource.Create(() => new UITestViewModel() { Title = "Title1", Parameter = 1 }));
-                document.Show();
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                Assert.AreEqual(iService.ActiveDocument, document);
-                Assert.IsNotNull(document.Content);
-                Assert.AreEqual(document.Content, ViewHelper.GetViewModelFromView(service.ActiveView));
-                Assert.AreEqual(document.Content, ((WindowedDocumentUIService.WindowDocument)document).Window.RealWindow.DataContext);
-                document.Close();
-            });
-            EnqueueTestComplete();
+            document.Show();
+
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(iService.ActiveDocument, document);
+            Assert.IsNotNull(document.Content);
+            Assert.AreEqual(document.Content, ViewHelper.GetViewModelFromView(service.ActiveView));
+            Assert.AreEqual(document.Content, ((WindowedDocumentUIService.WindowDocument)document).Window.RealWindow.DataContext);
+            document.Close();
         }
 
+#if !FREE
+        class AutoClosingWindow : Window {
+            public static IDocument document;
+            public AutoClosingWindow() {
+                Loaded += (s, e) => {
+                    document.Close();
+                };
+            }
+        }
 
-        [Test, Asynchronous]
+        [Test]
+        public void ConsistencyTest() {
+            Window.Show();
+            DispatcherHelper.DoEvents();
+            WindowedDocumentUIService service = CreateService();
+            Interaction.GetBehaviors(Window).Add(service);
+            DocumentManagerServiceConsistencyChecker.AssertConsistency(service, "View1");
+        }
+
+        [Test]
+        public void ClosingModalWindowThroughServiceShouldChangeDocumentState() {
+            EnqueueShowWindow();
+            Window.Show();
+            DispatcherHelper.DoEvents();
+            var service = CreateService();
+            Interaction.GetBehaviors(Window).Add(service);
+            service.DocumentShowMode = WindowShowMode.Dialog;
+            service.WindowType = typeof(AutoClosingWindow);
+            var document = service.CreateDocument("View1", null);
+            AutoClosingWindow.document = document;
+            document.DestroyOnClose = true;
+            document.Show();
+            Assert.AreEqual(DocumentState.Destroyed, ((IDocumentInfo)document).State);
+        }
+
+        class TestWindow : Window {
+            public static TestWindow instance;
+            public TestWindow() {
+                instance = this;
+            }
+        }
+
+        [Test]
+        public void ClosingWindowDirectlyWithoutServiceShouldRespectDestroyOnCloseFalse() {
+            Window.Show();
+            DispatcherHelper.DoEvents();
+            var service = CreateService();
+            Interaction.GetBehaviors(Window).Add(service);
+            service.WindowType = typeof(TestWindow);
+            var document = service.CreateDocument("View1", null);
+            document.DestroyOnClose = false;
+            document.Show();
+            TestWindow.instance.Close();
+            Assert.AreEqual(DocumentState.Hidden, ((IDocumentInfo)document).State);
+        }
+
+        class AutoClosingWithoutServiceWindow : Window {
+            public AutoClosingWithoutServiceWindow() {
+                Loaded += (s, e) => {
+                    Close();
+                };
+            }
+        }
+
+        [Test]
+        public void ClosingModalWindowDirectlyWithoutServiceShouldChangeDocumentState() {
+            Window.Show();
+            DispatcherHelper.DoEvents();
+            var service = CreateService();
+            Interaction.GetBehaviors(Window).Add(service);
+            service.DocumentShowMode = WindowShowMode.Dialog;
+            service.WindowType = typeof(AutoClosingWithoutServiceWindow);
+            var document = service.CreateDocument("View1", null);
+            document.Show();
+            Assert.AreEqual(DocumentState.Destroyed, ((IDocumentInfo)document).State);
+        }
+#endif
+
+        [Test]
         public void UnActiveDocumentClose() {
-            EnqueueShowWindow();
+            Window.Show();
+            DispatcherHelper.DoEvents();
             IDocument document1 = null;
             IDocument document2 = null;
             WindowedDocumentUIService service = CreateService();
             Interaction.GetBehaviors(Window).Add(service);
             IDocumentManagerService iService = service;
             int counter = 0;
-            EnqueueCallback(() => {
 
-                iService.ActiveDocumentChanged += (s, e) => counter++;
-                document1 = iService.CreateDocument("View1",
-                    ViewModelSource.Create(() => new UITestViewModel() { Title = "Title1", Parameter = 1 }));
-                document2 = iService.CreateDocument("View2",
-                    ViewModelSource.Create(() => new UITestViewModel() { Title = "Title2", Parameter = 2 }));
-                document1.Show();
-                Assert.AreEqual(1, counter);
-                document2.Show();
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                Assert.AreEqual(iService.ActiveDocument, document2);
-                Assert.IsNotNull(document2.Content);
-                Assert.AreEqual(document2.Content, ViewHelper.GetViewModelFromView(service.ActiveView));
-                document1.Close();
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                Assert.AreEqual(iService.ActiveDocument, document2);
-                Assert.IsNotNull(document2.Content);
-                Assert.AreEqual(document2.Content, ViewHelper.GetViewModelFromView(service.ActiveView));
-                Assert.AreEqual(3, counter);
-                document2.Close();
-            });
-            EnqueueTestComplete();
+            iService.ActiveDocumentChanged += (s, e) => counter++;
+            document1 = iService.CreateDocument("View1",
+                ViewModelSource.Create(() => new UITestViewModel() { Title = "Title1", Parameter = 1 }));
+            document2 = iService.CreateDocument("View2",
+                ViewModelSource.Create(() => new UITestViewModel() { Title = "Title2", Parameter = 2 }));
+            document1.Show();
+            Assert.AreEqual(1, counter);
+            document2.Show();
+            DispatcherHelper.DoEvents();
+
+            Assert.AreEqual(iService.ActiveDocument, document2);
+            Assert.IsNotNull(document2.Content);
+            Assert.AreEqual(document2.Content, ViewHelper.GetViewModelFromView(service.ActiveView));
+            document1.Close();
+            DispatcherHelper.DoEvents();
+
+            Assert.AreEqual(iService.ActiveDocument, document2);
+            Assert.IsNotNull(document2.Content);
+            Assert.AreEqual(document2.Content, ViewHelper.GetViewModelFromView(service.ActiveView));
+            Assert.AreEqual(3, counter);
+            document2.Close();
         }
 
-        [Test, Asynchronous]
+        [Test]
         public void SettingActiveDocument() {
-            EnqueueShowWindow();
+            Window.Show();
+            DispatcherHelper.DoEvents();
             IDocument document1 = null;
             IDocument document2 = null;
             WindowedDocumentUIService service = CreateService();
             Interaction.GetBehaviors(Window).Add(service);
             IDocumentManagerService iService = service;
             int counter = 0;
-            EnqueueCallback(() => {
-                iService.ActiveDocumentChanged += (s, e) => counter++;
-                document1 = iService.CreateDocument("View1",
-                    ViewModelSource.Create(() => new UITestViewModel() { Title = "Title1", Parameter = 1 }));
-                document2 = iService.CreateDocument("View2",
-                    ViewModelSource.Create(() => new UITestViewModel() { Title = "Title2", Parameter = 2 }));
-                document1.Show();
-                document2.Show();
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                Assert.AreEqual(3, counter);
-                iService.ActiveDocument = document1;
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                Assert.AreEqual(iService.ActiveDocument, document1);
-                Assert.AreEqual(4, counter);
-                document1.Close();
-                document2.Close();
-            });
-            EnqueueTestComplete();
+
+            iService.ActiveDocumentChanged += (s, e) => counter++;
+            document1 = iService.CreateDocument("View1",
+                ViewModelSource.Create(() => new UITestViewModel() { Title = "Title1", Parameter = 1 }));
+            document2 = iService.CreateDocument("View2",
+                ViewModelSource.Create(() => new UITestViewModel() { Title = "Title2", Parameter = 2 }));
+            document1.Show();
+            document2.Show();
+            DispatcherHelper.DoEvents();
+
+            Assert.AreEqual(3, counter);
+            iService.ActiveDocument = document1;
+            DispatcherHelper.DoEvents();
+
+            Assert.AreEqual(iService.ActiveDocument, document1);
+            Assert.AreEqual(4, counter);
+            document1.Close();
+            document2.Close();
         }
 
-        [Test, Asynchronous]
+        [Test]
         public void ActivateDocumentsWhenClosed() {
-            EnqueueShowWindow();
+            Window.Show();
+            DispatcherHelper.DoEvents();
             List<IDocument> documents = new List<IDocument>();
             WindowedDocumentUIService service = CreateService();
             Interaction.GetBehaviors(Window).Add(service);
             IDocumentManagerService iService = service;
             int counter = 0;
-            EnqueueCallback(() => {
-                service.ActiveDocumentChanged += (s, e) => counter++;
-                for(int i = 0; i < 4; i++) {
-                    documents.Add(iService.CreateDocument("View" + i,
-                    ViewModelSource.Create(() => new UITestViewModel() { Title = "Title" + i, Parameter = i })));
-                    documents[i].Show();
-                }
-                iService.ActiveDocument = documents[1];
 
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                counter = 0;
-                documents[1].Close();
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                Assert.AreEqual(2, counter);
-                Assert.AreEqual(iService.ActiveDocument, documents[3]);
-                iService.ActiveDocument = documents[3];
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                counter = 0;
-                documents[3].Close();
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                Assert.AreEqual(iService.ActiveDocument, documents[2]);
-                Assert.AreEqual(2, counter);
-                documents[0].Close();
-                documents[2].Close();
-            });
-            EnqueueTestComplete();
+            service.ActiveDocumentChanged += (s, e) => counter++;
+            for (int i = 0; i < 4; i++) {
+                documents.Add(iService.CreateDocument("View" + i,
+                ViewModelSource.Create(() => new UITestViewModel() { Title = "Title" + i, Parameter = i })));
+                documents[i].Show();
+            }
+            iService.ActiveDocument = documents[1];
+            DispatcherHelper.DoEvents();
+
+            counter = 0;
+            documents[1].Close();
+            DispatcherHelper.DoEvents();
+
+            Assert.AreEqual(2, counter);
+            Assert.AreEqual(iService.ActiveDocument, documents[3]);
+            iService.ActiveDocument = documents[3];
+            DispatcherHelper.DoEvents();
+
+            counter = 0;
+            documents[3].Close();
+            DispatcherHelper.DoEvents();
+
+            Assert.AreEqual(iService.ActiveDocument, documents[2]);
+            Assert.AreEqual(2, counter);
+            documents[0].Close();
+            documents[2].Close();
         }
 
 
@@ -235,9 +311,10 @@ namespace DevExpress.Mvvm.UI.Tests {
             }
         }
 
-        [Test, Asynchronous]
+        [Test]
         public void TwoWayBinding() {
-            EnqueueShowWindow();
+            Window.Show();
+            DispatcherHelper.DoEvents();
             BindingTestClass testClass = new BindingTestClass();
             WindowedDocumentUIService service = CreateService();
             Interaction.GetBehaviors(Window).Add(service);
@@ -248,24 +325,20 @@ namespace DevExpress.Mvvm.UI.Tests {
             BindingOperations.SetBinding(service, WindowedDocumentUIService.ActiveDocumentProperty,
                 new Binding() { Path = new PropertyPath(BindingTestClass.ActiveDocumentProperty), Source = testClass, Mode = BindingMode.Default });
 
-            EnqueueCallback(delegate {
-                document1 = iService.CreateDocument("View1", ViewModelSource.Create(() => new UITestViewModel() { Title = "Title1", Parameter = 1 }));
-                document1.Show();
-                DispatcherHelper.DoEvents();
-                document2 = iService.CreateDocument("View2", ViewModelSource.Create(() => new UITestViewModel() { Title = "Title2", Parameter = 2 }));
-                document2.Show();
-                DispatcherHelper.DoEvents();
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(delegate {
-                Assert.AreSame(document2, service.ActiveDocument);
-                Assert.AreSame(document2, testClass.ActiveDocument);
-                testClass.ActiveDocument = document1;
-                DispatcherHelper.DoEvents();
-                Assert.AreSame(document1, service.ActiveDocument);
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueTestComplete();
+            document1 = iService.CreateDocument("View1", ViewModelSource.Create(() => new UITestViewModel() { Title = "Title1", Parameter = 1 }));
+            document1.Show();
+            DispatcherHelper.DoEvents();
+            document2 = iService.CreateDocument("View2", ViewModelSource.Create(() => new UITestViewModel() { Title = "Title2", Parameter = 2 }));
+            document2.Show();
+            DispatcherHelper.DoEvents();
+            DispatcherHelper.DoEvents();
+
+            Assert.AreSame(document2, service.ActiveDocument);
+            Assert.AreSame(document2, testClass.ActiveDocument);
+            testClass.ActiveDocument = document1;
+            DispatcherHelper.DoEvents();
+            Assert.AreSame(document1, service.ActiveDocument);
+            DispatcherHelper.DoEvents();
         }
 
         class TestDocumentContent : IDocumentContent {
@@ -275,7 +348,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 onClose();
             }
             public void OnDestroy() {
-
+                
             }
             public object Title {
                 get { return ""; }
@@ -283,9 +356,10 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
 
 
-        [Test, Asynchronous]
+        [Test]
         public void ClosingDocumentOnWindowClosingShouldntThrow() {
-            EnqueueShowWindow();
+            Window.Show();
+            DispatcherHelper.DoEvents();
             BindingTestClass testClass = new BindingTestClass();
             WindowedDocumentUIService service = CreateService();
             Interaction.GetBehaviors(Window).Add(service);
@@ -294,20 +368,16 @@ namespace DevExpress.Mvvm.UI.Tests {
             IDocument document = null;
             WindowedDocumentUIService.WindowDocument typedDocument = null;
             var content = new TestDocumentContent();
-            EnqueueCallback(delegate {
-                document = iService.CreateDocument("View1", content);
-                typedDocument = (WindowedDocumentUIService.WindowDocument)document;
-                document.Show();
-                DispatcherHelper.DoEvents();
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(delegate {
-                Window window = typedDocument.Window.RealWindow;
-                content.onClose = () => document.Close();
-                window.Close();
-            });
-            EnqueueWindowUpdateLayout();
-            EnqueueTestComplete();
+
+            document = iService.CreateDocument("View1", content);
+            typedDocument = (WindowedDocumentUIService.WindowDocument)document;
+            document.Show();
+            DispatcherHelper.DoEvents();
+
+            Window window = typedDocument.Window.RealWindow;
+            content.onClose = () => document.Close();
+            window.Close();
+            DispatcherHelper.DoEvents();
         }
 
         [Test]
@@ -336,10 +406,48 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
 
         protected virtual WindowedDocumentUIService CreateService() {
-            return new WindowedDocumentUIService();
+            return new WindowedDocumentUIService() { WindowType = typeof(Window) };
         }
     }
-
+#if !FREE
+    [TestFixture]
+    public class WindowedDocumentUIServiceTests_DXWindow : WindowedDocumentUIServiceTests {
+        protected override WindowedDocumentUIService CreateService() {
+            return new WindowedDocumentUIService() { WindowType = typeof(DXWindow) };
+        }
+        [Test]
+        public void UseDXWindowWithNullTitle() {
+            WindowedDocumentUIService service = CreateService();
+            Interaction.GetBehaviors(Window).Add(service);
+            IDocument document = service.CreateDocument("EmptyView", new ViewModelWithNullTitle());
+            Assert.AreEqual(string.Empty, document.Title);
+        }
+    }
+    [TestFixture]
+    public class WindowedDocumentUIServiceTests_DXDialogWindow : WindowedDocumentUIServiceTests_DXWindow {
+        protected override WindowedDocumentUIService CreateService() {
+            return new WindowedDocumentUIService() { WindowType = typeof(DXDialogWindow) };
+        }
+    }
+    [TestFixture]
+    public class WindowedDocumentUIServiceTests_ThemedWindow : WindowedDocumentUIServiceTests {
+        protected override WindowedDocumentUIService CreateService() {
+            return new WindowedDocumentUIService() { WindowType = typeof(ThemedWindow) };
+        }
+    }
+    [TestFixture]
+    public class DXWindow_WindowedDocumentUIServiceIDocumentContentCloseTests : WindowedDocumentUIServiceIDocumentContentCloseTests {
+        protected override WindowedDocumentUIService CreateService() {
+            return new WindowedDocumentUIService() { WindowType = typeof(DXWindow) };
+        }
+    }
+    [TestFixture]
+    public class Themed_WindowedDocumentUIServiceIDocumentContentCloseTests : WindowedDocumentUIServiceIDocumentContentCloseTests {
+        protected override WindowedDocumentUIService CreateService() {
+            return new WindowedDocumentUIService() { WindowType = typeof(ThemedWindow) };
+        }
+    }
+#endif
 
     [TestFixture]
     public class WindowedDocumentUIServiceIDocumentContentCloseTests : BaseWpfFixture {
@@ -366,45 +474,52 @@ namespace DevExpress.Mvvm.UI.Tests {
             ViewLocator.Default = new TestViewLocator(this);
         }
         protected override void TearDownCore() {
-            Interaction.GetBehaviors(Window).Clear();
+            try {
+                WindowedDocumentUIService service = Interaction.GetBehaviors(Window).OfType<WindowedDocumentUIService>().FirstOrDefault();
+                if (service != null) {
+                    while (service.Documents.Any()) {
+                        service.Documents.First().DestroyOnClose = true;
+                        service.Documents.First().Close(true);
+                    }
+                }
+                Interaction.GetBehaviors(Window).Clear();
+            } catch { }
             ViewLocator.Default = null;
             base.TearDownCore();
         }
         protected virtual WindowedDocumentUIService CreateService() {
-            return new WindowedDocumentUIService();
+            return new WindowedDocumentUIService() { WindowType = typeof(Window) };
         }
 
         void DoCloseTest(bool allowClose, bool destroyOnClose, bool destroyed, Action<IDocument> closeMethod) {
             DoCloseTest((bool?)allowClose, destroyOnClose, destroyed, (d, b) => closeMethod(d));
         }
         void DoCloseTest(bool? allowClose, bool destroyOnClose, bool destroyed, Action<IDocument, bool> closeMethod) {
-            EnqueueShowWindow();
+            Window.Show();
+            DispatcherHelper.DoEvents();
             IDocumentManagerService service = null;
             bool closeChecked = false;
             bool destroyCalled = false;
             IDocument document = null;
-            EnqueueCallback(() => {
-                WindowedDocumentUIService windowedDocumentUIService = CreateService();
-                Interaction.GetBehaviors(Window).Add(windowedDocumentUIService);
-                service = windowedDocumentUIService;
-                TestDocumentContent viewModel = new TestDocumentContent(() => {
-                    closeChecked = true;
-                    return allowClose != null && allowClose.Value;
-                }, () => {
-                    destroyCalled = true;
-                });
-                document = service.CreateDocument("EmptyView", viewModel);
-                document.Show();
+
+            WindowedDocumentUIService windowedDocumentUIService = CreateService();
+            Interaction.GetBehaviors(Window).Add(windowedDocumentUIService);
+            service = windowedDocumentUIService;
+            TestDocumentContent viewModel = new TestDocumentContent(() => {
+                closeChecked = true;
+                return allowClose != null && allowClose.Value;
+            }, () => {
+                destroyCalled = true;
             });
-            EnqueueWindowUpdateLayout();
-            EnqueueCallback(() => {
-                document.DestroyOnClose = destroyOnClose;
-                closeMethod(document, allowClose == null);
-                Assert.AreEqual(allowClose != null, closeChecked);
-                Assert.AreEqual(destroyed, destroyCalled);
-                Assert.AreEqual(!destroyed, service.Documents.Contains(document));
-            });
-            EnqueueTestComplete();
+            document = service.CreateDocument("EmptyView", viewModel);
+            document.Show();
+            DispatcherHelper.DoEvents();
+
+            document.DestroyOnClose = destroyOnClose;
+            closeMethod(document, allowClose == null);
+            Assert.AreEqual(allowClose != null, closeChecked);
+            Assert.AreEqual(destroyed, destroyCalled);
+            Assert.AreEqual(!destroyed, service.Documents.Contains(document));
         }
         void CloseDocument(IDocument document, bool force) {
             document.Close(force);
@@ -417,67 +532,67 @@ namespace DevExpress.Mvvm.UI.Tests {
             Window window = ((WindowedDocumentUIService.WindowDocument)document).Window.RealWindow;
             window.Close();
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest1() {
             DoCloseTest(allowClose: false, destroyOnClose: false, destroyed: false, closeMethod: CloseDocument);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest2() {
             DoCloseTest(allowClose: false, destroyOnClose: false, destroyed: false, closeMethod: CloseDocumentWithDocumentOwner);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest12() {
             DoCloseTest(allowClose: false, destroyOnClose: false, destroyed: false, closeMethod: CloseDocumentWithClosingWindow);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest3() {
             DoCloseTest(allowClose: false, destroyOnClose: true, destroyed: false, closeMethod: CloseDocument);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest4() {
             DoCloseTest(allowClose: false, destroyOnClose: true, destroyed: false, closeMethod: CloseDocumentWithDocumentOwner);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest14() {
             DoCloseTest(allowClose: false, destroyOnClose: true, destroyed: false, closeMethod: CloseDocumentWithClosingWindow);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest5() {
             DoCloseTest(allowClose: true, destroyOnClose: false, destroyed: false, closeMethod: CloseDocument);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest6() {
             DoCloseTest(allowClose: true, destroyOnClose: false, destroyed: false, closeMethod: CloseDocumentWithDocumentOwner);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest16() {
             DoCloseTest(allowClose: true, destroyOnClose: false, destroyed: false, closeMethod: CloseDocumentWithClosingWindow);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest7() {
             DoCloseTest(allowClose: true, destroyOnClose: true, destroyed: true, closeMethod: CloseDocument);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest8() {
             DoCloseTest(allowClose: true, destroyOnClose: true, destroyed: true, closeMethod: CloseDocumentWithDocumentOwner);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest18() {
             DoCloseTest(allowClose: true, destroyOnClose: true, destroyed: true, closeMethod: CloseDocumentWithClosingWindow);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest9() {
             DoCloseTest(allowClose: null, destroyOnClose: false, destroyed: false, closeMethod: CloseDocument);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest10() {
             DoCloseTest(allowClose: null, destroyOnClose: false, destroyed: false, closeMethod: CloseDocumentWithDocumentOwner);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest11() {
             DoCloseTest(allowClose: null, destroyOnClose: true, destroyed: true, closeMethod: CloseDocument);
         }
-        [Test, Asynchronous]
+        [Test]
         public void IDocumentViewModelCloseTest13() {
             DoCloseTest(allowClose: null, destroyOnClose: true, destroyed: true, closeMethod: CloseDocumentWithDocumentOwner);
         }

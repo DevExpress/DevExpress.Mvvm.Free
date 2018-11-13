@@ -1,3 +1,7 @@
+﻿#if !FREE
+using DevExpress.Xpf.Core.Tests;
+using DevExpress.Xpf.Core;
+#endif
 using DevExpress.Mvvm.POCO;
 using DevExpress.Mvvm.UI;
 using NUnit.Framework;
@@ -133,8 +137,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         public void NewOperator() {
             var vm = EventTests_a.Create();
             var bt = BindingTestHelper.BindAssert<EventTests_visual>(
-                "test:EventTests_visual",
-                "CustomRoutedEvent",
+                "test:EventTests_visual", 
+                "CustomRoutedEvent", 
                 "{b:DXEvent Do5(new $Thickness(@s.Margin.Left))}", null, vm);
             bt.RaiseCustomRoutedEvent();
             Assert.AreEqual(new Thickness(), vm.Do5V);

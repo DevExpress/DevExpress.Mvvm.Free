@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
 using System.Linq;
@@ -34,9 +34,15 @@ namespace DevExpress.Mvvm.UI.Tests {
             }
         }
 
+#if !FREE
+        DevExpress.Xpf.Core.DXMessageBoxService CreateMessageService() {
+            return new DevExpress.Xpf.Core.DXMessageBoxService();
+        }
+#else
         MessageBoxService CreateMessageService() {
             return new MessageBoxService();
         }
+#endif
         [Test]
         public void GetActualServiceTest1() {
             var b = new ConfirmationBehavior();
@@ -58,7 +64,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(service, viewModel.MessageBoxService);
             Assert.AreEqual(service, b.GetActualService());
         }
-
+      
         [Test]
         public void SetAssociatedObjectCommandPropertyTest1() {
             Button control = new Button();

@@ -1,7 +1,11 @@
-using System;
+﻿using System;
 using System.Windows.Input;
 
+#if !NETFX_CORE
 using System.Windows.Controls;
+#else
+using Windows.UI.Xaml.Controls;
+#endif
 
 namespace DevExpress.Mvvm.UI.Tests {
     public class EventToCommandTestViewModel : BindableBase {

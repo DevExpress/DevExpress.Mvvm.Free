@@ -1,3 +1,7 @@
+#if !FREE
+using DevExpress.Xpf.Editors;
+using DevExpress.Xpf.Core.Tests;
+#endif
 using DevExpress.Internal;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.POCO;
@@ -20,9 +24,13 @@ using System.Linq;
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
     public class EnumItemsSourceBehaviorTests : BaseWpfFixture {
-
+#if FREE
         const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Behaviors/TestImages/";
         const string SvgUriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Images/";
+#else
+        const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests;component/Behaviors/TestImages/";
+        const string SvgUriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests;component/Images/";
+#endif
 
         enum TestEnum1 {
             [Image(UriPrefix + "Cut.png")]
@@ -390,17 +398,77 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void ItemsSourseRequiredException() {
             FrameworkElement element = new FrameworkElement();
             EnumItemsSourceBehavior behavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum1) };
-            Assert.Throws<Exception>(() => { Interaction.GetBehaviors(element).Add(behavior); },
+            Assert.Throws<Exception>(() => { Interaction.GetBehaviors(element).Add(behavior); }, 
                 "ItemsSource dependency property required");
-
+            
         }
+#if !FREE
+        [Test]
+        public void BehaviorOnLoaded_DXControls() {
+            ListBoxEdit listBox = new ListBoxEdit();
+            ComboBoxEdit comboBox = new ComboBoxEdit();
+
+            EnumItemsSourceBehavior listBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum1) };
+            EnumItemsSourceBehavior comboBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum2) };
+
+            Interaction.GetBehaviors(listBox).Add(listBoxBehavior);
+            Interaction.GetBehaviors(comboBox).Add(comboBoxBehavior);
+
+            Assert.IsTrue(Interaction.GetBehaviors(listBox).Contains(listBoxBehavior));
+            Assert.AreEqual(1, Interaction.GetBehaviors(listBox).Count);
+            Assert.AreEqual(1, listBox.ItemsProvider.Count);
+
+            Assert.IsTrue(Interaction.GetBehaviors(comboBox).Contains(comboBoxBehavior));
+            Assert.AreEqual(1, Interaction.GetBehaviors(comboBox).Count);
+            Assert.AreEqual(3, comboBox.ItemsProvider.Count);
+
+            var listBoxHandle = listBox.ItemsProvider.CurrentDataViewHandle;
+            var comboBoxHandle = comboBox.ItemsProvider.CurrentDataViewHandle;
+
+            Assert.AreEqual("CutItem", listBox.ItemsProvider.GetValueByIndex(0, listBoxHandle).ToString());
+            Assert.AreEqual("CopyItem", comboBox.ItemsProvider.GetValueByIndex(0, comboBoxHandle).ToString());
+            Assert.AreEqual("DeleteItem", comboBox.ItemsProvider.GetValueByIndex(1, comboBoxHandle).ToString());
+            Assert.AreEqual("CutItem", comboBox.ItemsProvider.GetValueByIndex(2, comboBoxHandle).ToString());
+        }
+        [Test, NUnit.Framework.Description("T521914")]
+        public void EnumItemsSourceTest() {
+            var listBox = new ListBoxEdit();
+            Window.Content = listBox;
+            Action<bool, bool> itemTest = (showImage, valueCreated) => {
+                var source = new EnumItemsSource() { EnumType = typeof(TestEnum1), AllowImages = showImage };
+                listBox.ItemsSource = source.ProvideValue(null);
+                Window.UpdateLayout();
+                var item = ((IEnumerable<EnumMemberInfo>)listBox.ItemsSource).First();
+                Assert.AreEqual(showImage, item.ShowImage);
+                Assert.AreEqual(valueCreated, Mvvm.Tests.EnumHelperTests.GetLazyImageSource(item).IsValueCreated);
+            };
+            Window.Show();
+            itemTest(false, false);
+            itemTest(true, true);
+        }
+        [Test]
+        public void SvgImageTest() {
+            ListBox listBox = new ListBox();
+            EnumItemsSourceBehavior listBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum3) };
+            Interaction.GetBehaviors(listBox).Add(listBoxBehavior);
+            Assert.AreEqual(3, listBox.Items.Count);
+            var pngImageSource = ((EnumMemberInfo)listBox.Items.GetItemAt(0)).Image;
+            Assert.AreEqual(UriPrefix + "Copy.png", ((EnumMemberInfo)listBox.Items.GetItemAt(0)).Image.ToString());
+            Assert.IsTrue(pngImageSource is System.Windows.Media.Imaging.BitmapFrame);
+            var svgImageSource = ((EnumMemberInfo)listBox.Items.GetItemAt(1)).Image;
+            Assert.AreEqual(16, svgImageSource.Height);
+            Assert.AreEqual(16, svgImageSource.Width);
+            Assert.AreEqual(typeof(DrawingImage), svgImageSource.GetType());
+        }
+#else
         [Test]
         public void SvgImageExceptionTest() {
             ListBox listBox = new ListBox();
             EnumItemsSourceBehavior listBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum3) };
             Interaction.GetBehaviors(listBox).Add(listBoxBehavior);
             Assert.AreEqual(3, listBox.Items.Count);
-            Assert.Throws(typeof(NullReferenceException), () => { var svgImageSource = ((EnumMemberInfo)listBox.Items.GetItemAt(1)).Image; });
+            Assert.Throws(typeof(NotSupportedException), () => { var svgImageSource = ((EnumMemberInfo)listBox.Items.GetItemAt(1)).Image; });
         }
+#endif
     }
 }

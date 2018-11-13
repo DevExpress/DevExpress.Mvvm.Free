@@ -1,3 +1,6 @@
+﻿#if !FREE
+using DevExpress.Xpf.Core.Tests;
+#endif
 using NUnit.Framework;
 using System;
 using System.Windows.Controls;
@@ -334,11 +337,11 @@ namespace DevExpress.Mvvm.UI.Tests {
     }
     class MBBControl : Control {
         #region Static
-        public static readonly DependencyProperty DataProperty =
+        public static readonly DependencyProperty DataProperty = 
             DependencyProperty.Register("Data", typeof(object), typeof(MBBControl), new PropertyMetadata(null));
-        public static readonly DependencyProperty IntDataProperty =
+        public static readonly DependencyProperty IntDataProperty = 
             DependencyProperty.Register("IntData", typeof(int), typeof(MBBControl), new PropertyMetadata(-1));
-        public static readonly DependencyProperty IntData2Property =
+        public static readonly DependencyProperty IntData2Property = 
             DependencyProperty.Register("IntData2", typeof(int), typeof(MBBControl), new PropertyMetadata(-1));
         #endregion
 

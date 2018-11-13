@@ -10,6 +10,9 @@ using DevExpress.Mvvm.DataAnnotations;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+#if !FREE
+using DevExpress.Xpf.Core.Tests;
+#endif
 
 using NUnit.Framework;
 
@@ -130,8 +133,13 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
         #region display name description and image
+#if !FREE
+        const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests;component/Icons/";
+        const string SvgUriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests;component/Images/";
+#else
         const string UriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Icons/";
         const string SvgUriPrefix = "pack://application:,,,/DevExpress.Mvvm.Tests.Free;component/Images/";
+#endif
         public enum EnumWithDisplayName {
             [Display(ShortName = "OneMember")]
             [Image(UriPrefix + "icon1.ico")]
@@ -254,7 +262,7 @@ namespace DevExpress.Mvvm.Tests {
             var source = EnumSourceHelperCore.GetEnumSource(typeof(EnumWithSvgImage), true, null, false, EnumMembersSortMode.Default,
                 (x, y) => { throw new InvalidOperationException(); });
             Assert.AreEqual(GetImageUri(source.ElementAt(0).Image).ToString(), UriPrefix + "icon1.ico");
-            Assert.Throws(typeof(NullReferenceException), () => { var imageSource = source.ElementAt(1).Image; });
+            Assert.Throws(typeof(NotSupportedException), () => { var imageSource = source.ElementAt(1).Image; });
         }
 
         [Test, NUnit.Framework.Description("T521914")]

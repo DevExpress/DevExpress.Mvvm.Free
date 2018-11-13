@@ -1,4 +1,11 @@
+﻿#if NETFX_CORE
+using Windows.UI.Xaml;
+#else
 using DevExpress.Mvvm.POCO;
+#endif
+#if !FREE && !NETFX_CORE
+using DevExpress.Xpf.Core.Tests;
+#endif
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -95,7 +102,7 @@ namespace DevExpress.Mvvm.Tests {
             TestDocument document1 = (TestDocument)service.CreateDocument("Type", null);
             document1.Id = "doc1";
             Assert.IsNull(service.FindDocumentById("none"));
-            Assert.AreEqual(document1, service.FindDocumentById("DOC1".ToLower()));
+            Assert.AreEqual(document1, service.FindDocumentById("DOC1".ToLower())); //do no use interned string
 
             Assert.AreEqual(document1, service.FindDocumentByIdOrCreate("doc1", x => { throw new NotImplementedException(); }));
             IDocument document2 = service.FindDocumentByIdOrCreate("doc2", x => {

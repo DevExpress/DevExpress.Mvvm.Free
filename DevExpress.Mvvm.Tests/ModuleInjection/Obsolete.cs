@@ -1,3 +1,6 @@
+﻿#if !FREE
+using DevExpress.Xpf.Core.Tests;
+#endif
 using DevExpress.Mvvm.UI.Interactivity;
 using NUnit.Framework;
 using System;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -8,6 +8,9 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using DevExpress.Mvvm.UI.Interactivity;
 using NUnit.Framework;
+#if !FREE
+using DevExpress.Xpf.Core.Tests;
+#endif
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]

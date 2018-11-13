@@ -1,8 +1,21 @@
+﻿#if !NETFX_CORE
+#if !FREE
+using DevExpress.Xpf.Core.Tests;
+#endif
 using System.Windows.Controls;
 using System.Windows.Markup;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+#else
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Markup;
+using Windows.UI.Xaml.Data;
+using Windows.UI.Xaml.Media;
+using Windows.UI;
+using System.Threading.Tasks;
+#endif
 using System;
 using DevExpress.Mvvm.UI.Interactivity;
 using System.Linq;
@@ -51,7 +64,7 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
             return ParseXaml<StackPanel>(view);
         }
         Style CreateStyle(string behaviorsDefinition, string targetType, bool? useItemsControl = true) {
-            string style = behaviorsDefinition == null
+            string style = behaviorsDefinition == null 
                 ? string.Format(@"<Style {0} TargetType='{1}'>
                     <Setter Property='dxmvvm:Interaction.BehaviorsTemplate' Value='{2}'/>
                 </Style>", GetXamlNamespacesDefinition(), targetType, "{x:Null}")
@@ -88,11 +101,19 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
                 defineNamespaces ? GetXamlNamespacesDefinition() : "", control, behaviorsDefinition);
         }
         string GetXamlNamespacesDefinition() {
+#if !NETFX_CORE
             return string.Format(@"xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
                 xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
                 xmlns:local='clr-namespace:DevExpress.Mvvm.Tests.Behaviors;assembly={0}'
                 xmlns:dxmvvm='clr-namespace:DevExpress.Mvvm.UI.Interactivity;assembly={1}'",
                     GetAssemblyName(Assembly.GetExecutingAssembly()), GetAssemblyName(typeof(BehaviorCollection).Assembly));
+#else
+            return @"xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
+                xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+                xmlns:mc='http://schemas.openxmlformats.org/markup-compatibility/2006'
+                xmlns:dxmvvm='using:DevExpress.Mvvm.UI.Interactivity'
+                xmlns:local='using:DevExpress.Mvvm.Tests.Behaviors'";
+#endif
         }
 
         string GetAssemblyName(Assembly assembly) {
@@ -100,7 +121,11 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
         }
 
         T ParseXaml<T>(string xaml) where T : class {
+#if !NETFX_CORE
             return XamlReader.Parse(xaml) as T;
+#else
+            return XamlReader.Load(xaml) as T;
+#endif
         }
         void LoadControlTemplate(string behaviorsDefinition, bool? useItemsControl = true, DependencyObject control = null) {
             control = control ?? TestControl;
@@ -241,10 +266,24 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
             Style style = CreateStyle("<local:TestService/>", "Button");
             TestControl.SetValue(FrameworkElement.StyleProperty, style);
             Assert.AreEqual(1, TestBehaviors.Count);
+#if NETFX_CORE
+            TestControl.SetValue(FrameworkElement.StyleProperty, null);
+#else
             style = CreateStyle(null, "Button");
             TestControl.SetValue(FrameworkElement.StyleProperty, style);
+#endif
             Assert.AreEqual(0, TestBehaviors.Count);
         }
+#if NETFX_CORE
+        [Test, Asynchronous]
+        public async Task SetBehaviorsViaImplicitStyle_Test00() {
+            await SetBehaviorsViaImplicitStyleCore(CreateComplexView("<local:TestBehavior Brush='{Binding Background}'/>", true));
+        }
+        [Test, Asynchronous]
+        public async Task SetBehaviorsViaImplicitStyle_Test01() {
+            await SetBehaviorsViaImplicitStyleCore(CreateComplexView("<local:TestBehavior Brush='{Binding Background}'/>", false));
+        }
+#else
         [Test, Asynchronous]
         public void SetBehaviorsViaImplicitStyle_Test00() {
             SetBehaviorsViaImplicitStyleCore(CreateComplexView("<local:TestBehavior Brush='{Binding Background}'/>", true));
@@ -253,9 +292,15 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
         public void SetBehaviorsViaImplicitStyle_Test01() {
             SetBehaviorsViaImplicitStyleCore(CreateComplexView("<local:TestBehavior Brush='{Binding Background}'/>", false));
         }
+#endif
+#if NETFX_CORE
+        async Task SetBehaviorsViaImplicitStyleCore(StackPanel panel) {
+            await WaitRenderElement(panel);
+#else
         void SetBehaviorsViaImplicitStyleCore(StackPanel panel) {
             Window.Content = panel;
             EnqueueShowWindow();
+#endif
             EnqueueCallback(() => {
                 Dictionary<Color, bool> dic = new Dictionary<Color, bool>() {
                     { Colors.Red, false },
@@ -329,6 +374,7 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
             WaitEvents();
             Assert.AreEqual("TestName", TestBehaviors.OfType<TestBehavior>().First().Data);
         }
+#if !NETFX_CORE
         [Test]
         public void BehaviorsRetainBindings_Test06() {
             var container = new Border();
@@ -347,21 +393,31 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
             WaitEvents();
             Assert.AreEqual(container.Name, TestBehaviors.OfType<TestBehavior>().First().TestName);
         }
+#endif
 
         void WaitEvents() {
+#if !NETFX_CORE
             DispatcherHelper.DoEvents();
+#endif
         }
 
         BindingExpression GetBindingExpression(DependencyObject ob, DependencyProperty prop) {
+#if NETFX_CORE
+            return (BindingExpression)ob.ReadLocalValue(prop);
+#else
             return BindingOperations.GetBindingExpression(ob, prop);
+#endif
         }
     }
+#if NETFX_CORE
+    [Bindable]
+#endif
     public class TestBehavior : Behavior<DependencyObject> {
-        public static readonly DependencyProperty TestNameProperty =
+        public static readonly DependencyProperty TestNameProperty = 
             DependencyProperty.Register("TestName", typeof(string), typeof(TestBehavior), new PropertyMetadata(null));
-        public static readonly DependencyProperty DataProperty =
+        public static readonly DependencyProperty DataProperty = 
             DependencyProperty.Register("Data", typeof(string), typeof(TestBehavior), new PropertyMetadata(null));
-        public static readonly DependencyProperty BrushProperty =
+        public static readonly DependencyProperty BrushProperty = 
             DependencyProperty.Register("Brush", typeof(SolidColorBrush), typeof(TestBehavior), new PropertyMetadata(null));
 
 
@@ -378,8 +434,11 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
             set { SetValue(DataProperty, value); }
         }
     }
+#if NETFX_CORE
+    [Bindable]
+#endif
     public class TestService : ServiceBase {
-        public static readonly DependencyProperty CommandProperty =
+        public static readonly DependencyProperty CommandProperty = 
             DependencyProperty.Register("Command", typeof(ICommand), typeof(TestService), new PropertyMetadata(null));
         public ICommand Command {
             get { return (ICommand)GetValue(CommandProperty); }

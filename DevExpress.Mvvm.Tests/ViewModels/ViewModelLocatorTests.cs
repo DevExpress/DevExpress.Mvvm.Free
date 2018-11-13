@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.POCO;
+﻿using DevExpress.Mvvm.POCO;
 using NUnit.Framework;
 using System;
 

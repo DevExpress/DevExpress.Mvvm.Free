@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using System.Windows.Forms;
 using System;
 using System.Linq;
@@ -6,9 +6,12 @@ using System.ComponentModel;
 using System.Collections.Generic;
 using DevExpress.Mvvm.UI.Native;
 using System.Windows;
+#if !FREE
+using DevExpress.Utils.CommonDialogs;
+#endif
 
 namespace DevExpress.Mvvm.UI.Tests {
-    public abstract class FileDialogServiceBaseTests { }
+    public abstract class FileDialogServiceBaseTests { } 
     [TestFixture]
     public class SaveFileDialogServiceTests : FileDialogServiceBaseTests {
         [Test]
@@ -66,7 +69,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
         [Test]
         public void UpdateSelectedFilesAtErrorTest() {
-            IOpenFileDialogService dialog = new TestFileDialogService();
+            IOpenFileDialogService dialog = new TestFileDialogService();            
             var selectedFilesList = new List<string>();
 
             int retryCount = 2;
@@ -101,9 +104,17 @@ namespace DevExpress.Mvvm.UI.Tests {
             public string FileName { get; set; }
             public string DefaultExt { get; set; }
 
+            public string SafeFileName { get; private set; }
+
+            public string[] SafeFileNames { get; private set; }
+
+            public FileDialogCustomPlacesCollection CustomPlaces { get; private set; }
+
             public event CancelEventHandler FileOk;
             public event EventHandler HelpRequest { add { } remove { } }
+
             public void Reset() { }
+            public void Dispose() { }
 
             public DialogResult ShowDialog() {
                 FileNames = new[] { "initFileName" };
@@ -117,7 +128,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 }
                 return DialogResult.OK;
             }
-            public DialogResult ShowDialog(Window ownerWindow) {
+            public DialogResult ShowDialog(object owner) {
                 return ShowDialog();
             }
         }

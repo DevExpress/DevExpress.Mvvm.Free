@@ -1,4 +1,7 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
+#if !FREE
+using DevExpress.Xpf.Core.Tests;
+#endif
 using System;
 using System.Linq;
 using System.Windows;
@@ -321,3 +324,4 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
     }
 }
+

@@ -1,3 +1,9 @@
+﻿#if !NETFX_CORE && !FREE
+using DevExpress.Xpf.Core.Tests;
+#endif
+#if NETFX_CORE
+using DevExpress.TestRunner;
+#endif
 using System;
 using NUnit.Framework;
 
@@ -98,7 +104,7 @@ namespace DevExpress.Mvvm.Tests {
             public void RegisterAnonymousStatic() {
                 Messenger.Default.Register<string>(this, x => StaticMessage = x);
             }
-
+        
             public void PublicMethod(string message) {
                 PublicMessage = message;
             }
@@ -145,6 +151,9 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("test", recipient.Message);
         }
         [Test]
+#if NETFX_CORE
+        [Retry(1)]
+#endif
         public void BroadcastToOneType() {
             Messenger.Default = null; ;
             var recipient1 = new TestRecipient();
@@ -421,6 +430,9 @@ namespace DevExpress.Mvvm.Tests {
             Assert.IsNull(message4);
         }
         [Test]
+#if NETFX_CORE
+        [Configuration(Configurations.DesktopDotNet)]
+#endif
         public void RegisterUnregisterOneRecipient() {
             string message1 = null;
             string message2 = null;

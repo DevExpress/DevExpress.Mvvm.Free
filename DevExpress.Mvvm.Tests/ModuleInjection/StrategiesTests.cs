@@ -1,3 +1,7 @@
+﻿#if !FREE
+using DevExpress.Xpf.Core;
+using DevExpress.Xpf.Core.Tests;
+#endif
 using DevExpress.Mvvm.ModuleInjection;
 using DevExpress.Mvvm.ModuleInjection.Native;
 using DevExpress.Mvvm.UI.Interactivity;
@@ -245,7 +249,11 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             DispatcherHelper.DoEvents();
             var strategy1 = GetStrategy(service, vm1);
             Window w1 = (Window)strategy1.Owner.Target;
+#if !FREE
+            Assert.AreEqual(true, w1 is DXWindow);
+#else
             Assert.AreEqual(true, w1 is Window);
+#endif
             Assert.AreEqual(true, w1.IsActive);
 
             Manager.Inject("region", "2");
@@ -311,7 +319,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Assert.AreEqual(false, w2.IsLoaded);
             serviceHelper.Dispose();
         }
-        [Test]
+        [Test, Retry(3)]
         public void ClosingWindow() {
             UIWindowRegion service = new UIWindowRegion() { RegionName = "region" };
             ModuleManager.DefaultImplementation.GetRegionImplementation("region").RegisterUIRegion(service);
@@ -331,6 +339,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Window w1 = (Window)strategy1.Owner.Target;
             Window w2 = (Window)strategy2.Owner.Target;
             Assert.AreEqual(true, w1.IsActive);
+            Assert.AreEqual(vm1, service.SelectedViewModel);
 
             serviceHelper.CancelViewModelRemoving = true;
             w1.Close();
@@ -338,17 +347,24 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             serviceHelper.AssertViewModelRemoving(1);
             serviceHelper.AssertViewModelRemoved(0);
             Assert.AreEqual(true, w1.IsActive);
+            Assert.AreEqual(vm1, service.SelectedViewModel);
 
             Manager.Remove("region", "1");
             DispatcherHelper.DoEvents();
             serviceHelper.AssertViewModelRemoving(2);
             serviceHelper.AssertViewModelRemoved(0);
             Assert.AreEqual(true, w1.IsActive);
+            Assert.AreEqual(vm1, service.SelectedViewModel);
 
             Manager.Remove("region", "1", false);
             DispatcherHelper.DoEvents();
             serviceHelper.AssertViewModelRemoving(2);
             serviceHelper.AssertViewModelRemoved(1);
+            Assert.AreEqual(vm2, service.SelectedViewModel);
+
+            Manager.Remove("region", "2", false);
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(null, service.SelectedViewModel);
 
             serviceHelper.Dispose();
             Manager.Clear("region");
@@ -382,5 +398,41 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Manager.Clear("region");
         }
 
+#if !FREE
+        [Test]
+        public void DialogWindowTest1() {
+            UIWindowRegion service = new UIWindowRegion() { RegionName = "region", WindowShowMode = WindowShowMode.Dialog };
+            var template = new DataTemplate() { VisualTree = new FrameworkElementFactory(typeof(DialogWindowTest_Window)) };
+            template.Seal();
+            service.WindowFactory = template;
+            ModuleManager.DefaultImplementation.GetRegionImplementation("region").RegisterUIRegion(service);
+            var serviceHelper = InjectionTestHelper.CreateServiceHelper(service);
+
+            object vm1 = null;
+            object vm2 = null;
+            Manager.Register("region", new Module("1", () => vm1 = new object()));
+            Manager.Register("region", new Module("2", () => vm2 = new object()));
+
+            int closed = 0;
+            var task = WindowManager.Show("region", "1");
+            var task2 = task.ContinueWith(x => {
+                Assert.IsTrue(x.Result.Result == MessageBoxResult.Yes);
+                closed++;
+            });
+            Manager.Inject("region", "1");
+            DispatcherHelper.DoEvents();
+            task.Wait(2);
+            task2.Wait(2);
+            Assert.AreEqual(1, closed);
+        }
+        class DialogWindowTest_Window : DXDialogWindow {
+            public DialogWindowTest_Window() {
+                Loaded += OnLoaded;
+            }
+            private void OnLoaded(object sender, RoutedEventArgs e) {
+                CloseCore(new UICommand() { Tag = MessageBoxResult.Yes });
+            }
+        }
+#endif
     }
 }

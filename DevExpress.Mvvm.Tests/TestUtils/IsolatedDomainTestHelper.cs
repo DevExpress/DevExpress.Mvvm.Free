@@ -1,7 +1,13 @@
+﻿#if DEBUGTEST || FREE
 using NUnit.Framework;
 using System;
 using System.Linq;
 using System.Reflection;
+#if !FREE
+using DevExpress.Data.Tests;
+
+namespace DevExpress.Xpf.Core.Tests {
+#else
 using System.Security;
 using System.Security.Policy;
 using System.IO;
@@ -36,10 +42,11 @@ namespace DevExpress.Mvvm.UI.Tests {
                 AppDomain.Unload(domain);
         }
     }
+#endif
 
     public static class IsolatedDomainTestHelper {
         class IsolatedDomainTester : MarshalByRefObject {
-            public void Test(MethodInfo actionInfo, params object[] args) {
+            public void Test(MethodInfo actionInfo, params object[] args) {                
                 object target = Activator.CreateInstance(actionInfo.DeclaringType);
                 MethodInfo setupFixture = target.GetType().GetMethods().FirstOrDefault((mi) => mi.GetCustomAttributes(typeof(OneTimeSetUpAttribute), true).FirstOrDefault() != null);
                 MethodInfo setup = target.GetType().GetMethods().FirstOrDefault((mi) => mi.GetCustomAttributes(typeof(SetUpAttribute), true).FirstOrDefault() != null);
@@ -78,3 +85,4 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
     }
 }
+#endif

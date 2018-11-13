@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,12 +8,17 @@ using System.Windows.Input;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Native;
 using NUnit.Framework;
+#if !FREE
+using DevExpress.Xpf.Core.Native;
+using DevExpress.Xpf.Core.Tests;
+#else
 using DevExpress.Mvvm.Native;
+#endif
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
     public class ItemsControlMouseEventArgsConverterTests : BaseWpfFixture {
-        public class ItemsControlMouseEventArgsConverterTester : ItemsControlMouseEventArgsConverter {
+        public class ItemsControlMouseEventArgsConverterTester : ItemsControlMouseEventArgsConverter { 
             public object TestConvert(object sender, DependencyObject originalSource) {
                 return ConvertCore(sender, originalSource);
             }
@@ -80,6 +85,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             ShowControl(itemsControl);
             var result = converter.TestConvert(itemsControl, originalSource);
             Assert.AreEqual(itemViewModel1, result);
+            //Assert.AreEqual(itemViewModel1, ItemsControlMouseEventArgsConverter.GetDataRow(itemsControl, CreateMouseArgs()));
         }
         [Test]
         public void CustomListBoxNotAdjustedItemTypeTest() {

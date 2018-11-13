@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
@@ -83,6 +83,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("SomeProperty8", propName);
             Assert.AreEqual(2, count);
         }
+#if !NETFX_CORE
         [Test]
         public void RaisePropertyChangedWithNoParametersTest_B251476() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -116,6 +117,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(6, propertyChangedCounter);
             Assert.AreEqual(string.Empty, propertyChangedArgs);
         }
+#endif
         [Test]
         public void SetPropertyTest() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -145,8 +147,9 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(150, bb.SomeProperty3);
 
             bb.SomeProperty3 = 150;
-            Assert.AreEqual(1, count);
+            Assert.AreEqual(1, count);            
         }
+#if !NETFX_CORE
         [Test]
         public void SetPropertyInvalidLambdaTest() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -154,6 +157,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.Throws<ArgumentException>(() => { bb.SomeProperty5 = 150; });
             Assert.Throws<ArgumentException>(() => { bb.SomeProperty6 = 150; });
         }
+#endif
         [Test]
         public void SetPropertyWithCallbackTest() {
             BindableBaseTest bb = new BindableBaseTest();
@@ -254,10 +258,10 @@ namespace DevExpress.Mvvm.Tests {
         int someProperty7;
         public int SomeProperty7 {
             get { return someProperty7; }
-            set {
+            set {                
                 SetProperty(ref someProperty7, value, () => SomeProperty7, () => {
                     ChangedCallbackCallCount++;
-                });
+                });                
             }
         }
 
@@ -332,9 +336,11 @@ namespace DevExpress.Mvvm.Tests {
         public new void RaisePropertyChanged(string propertyName) {
             base.RaisePropertyChanged(propertyName);
         }
+#if !NETFX_CORE
         public new void RaisePropertyChanged() {
             base.RaisePropertyChanged();
         }
+#endif
         public new void RaisePropertiesChanged(params string[] propertyNames) {
             base.RaisePropertiesChanged(propertyNames);
         }
@@ -349,4 +355,225 @@ namespace DevExpress.Mvvm.Tests {
             PropOld = oldValue;
         }
     }
+
+#if !NETFX_CORE
+    [TestFixture]
+    public class BindableBaseTests_CallerMemberName {
+        [Test]
+        public void PropertyChangedCallbackAndPropertyChangedEventOrderTest() {
+            var bb = new BindableBaseTest_CallerMemberName();
+            bool propertyChangedCalled = false;
+            bb.PropertyChanged += (s, e) => {
+                propertyChangedCalled = true;
+                Assert.AreEqual("SomeProperty7", e.PropertyName);
+                Assert.AreEqual(0, bb.ChangedCallbackCallCount);
+            };
+            bb.SomeProperty7 = 777;
+            Assert.IsTrue(propertyChangedCalled);
+            Assert.AreEqual(1, bb.ChangedCallbackCallCount);
+        }
+        [Test]
+        public void SetPropertyTest() {
+            var bb = new BindableBaseTest_CallerMemberName();
+            int count = 0;
+            string propName = null;
+            bb.SomeProperty2 = 50;
+            bb.PropertyChanged += (o, e) => { count++; propName = e.PropertyName; };
+            bb.SomeProperty2 = 150;
+            Assert.AreEqual("SomeProperty2", propName);
+            Assert.AreEqual(1, count);
+            Assert.AreEqual(150, bb.SomeProperty2);
+
+            bb.SomeProperty2 = 150;
+            Assert.AreEqual(1, count);
+        }
+
+        [Test]
+        public void SetPropertyWithPropertyName() {
+            var bb = new BindableBaseTest_CallerMemberName();
+            int count = 0;
+            string propName = null;
+            bb.SomeProperty3 = 50;
+            bb.PropertyChanged += (o, e) => { count++; propName = e.PropertyName; };
+            bb.SomeProperty3 = 150;
+            Assert.AreEqual("SomeProperty3", propName);
+            Assert.AreEqual(1, count);
+            Assert.AreEqual(150, bb.SomeProperty3);
+
+            bb.SomeProperty3 = 150;
+            Assert.AreEqual(1, count);
+        }
+        [Test]
+        public void SetPropertyNullPropertyName() {
+            var bb = new BindableBaseTest_CallerMemberName();
+            Assert.Throws<ArgumentNullException>(() => { var t = bb.SomeProperty4__; });
+            Assert.Throws<ArgumentNullException>(() => { bb.SomeProperty4 = 150; });
+            Assert.Throws<ArgumentNullException>(() => { bb.SomeProperty4_ = 150; });
+            Assert.Throws<ArgumentNullException>(() => { bb.SomeProperty4__ = 150; });
+            Assert.Throws<ArgumentNullException>(() => { bb.SomeProperty4___ = 150; });
+        }
+        [Test]
+        public void SetPropertyWithCallbackTest() {
+            BindableBaseTest bb = new BindableBaseTest();
+            int count = 0;
+            string propName = null;
+            bb.SomeProperty7 = 50;
+            Assert.AreEqual(1, bb.ChangedCallbackCallCount);
+            bb.PropertyChanged += (o, e) => { count++; propName = e.PropertyName; };
+            bb.SomeProperty7 = 150;
+
+            Assert.AreEqual(2, bb.ChangedCallbackCallCount);
+            Assert.AreEqual("SomeProperty7", propName);
+            Assert.AreEqual(1, count);
+            Assert.AreEqual(150, bb.SomeProperty7);
+
+            bb.SomeProperty7 = 150;
+            Assert.AreEqual(1, count);
+        }
+        #region property bag test
+        class PropertyBagViewModel : BindableBase {
+            public bool? IntPropertySetValueResult;
+            public int IntProperty
+            {
+                get { return GetValue<int>(); }
+                set { IntPropertySetValueResult = SetValue(value); }
+            }
+
+            public int StringPropertyChangedCount;
+            public string StringProperty
+            {
+                get { return GetValue<string>(); }
+                set { SetValue(value, () => StringPropertyChangedCount++); }
+            }
+        }
+        [Test]
+        public void GetSetPropertyTest() {
+            var viewModel = new PropertyBagViewModel();
+
+            int propertyChangedCount = 0;
+            string propName = null;
+            viewModel.PropertyChanged += (o, e) => { propertyChangedCount++; propName = e.PropertyName; };
+
+            Assert.AreEqual(0, viewModel.IntProperty);
+            Assert.IsFalse(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
+
+            viewModel.IntProperty = 0;
+            Assert.AreEqual(0, viewModel.IntProperty);
+            Assert.IsFalse(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
+            Assert.AreEqual(false, viewModel.IntPropertySetValueResult.Value);
+            Assert.AreEqual(0, propertyChangedCount);
+            Assert.AreEqual(null, propName);
+
+            viewModel.IntProperty = 9;
+            Assert.AreEqual(9, viewModel.IntProperty);
+            Assert.IsTrue(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
+            Assert.AreEqual(true, viewModel.IntPropertySetValueResult.Value);
+            Assert.AreEqual(1, propertyChangedCount);
+            Assert.AreEqual("IntProperty", propName);
+
+            viewModel.IntProperty = 0;
+            Assert.AreEqual(0, viewModel.IntProperty);
+            Assert.IsTrue(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
+            Assert.AreEqual(true, viewModel.IntPropertySetValueResult.Value);
+            Assert.AreEqual(2, propertyChangedCount);
+            Assert.AreEqual("IntProperty", propName);
+
+            viewModel.StringProperty = null;
+            Assert.AreEqual(null, viewModel.StringProperty);
+            Assert.AreEqual(0, viewModel.StringPropertyChangedCount);
+            Assert.AreEqual(2, propertyChangedCount);
+
+            viewModel.StringProperty = string.Empty;
+            Assert.AreEqual(string.Empty, viewModel.StringProperty);
+            Assert.AreEqual(1, viewModel.StringPropertyChangedCount);
+            Assert.AreEqual(3, propertyChangedCount);
+            Assert.AreEqual("StringProperty", propName);
+
+            viewModel.StringProperty = "x";
+            Assert.AreEqual("x", viewModel.StringProperty);
+            Assert.AreEqual(2, viewModel.StringPropertyChangedCount);
+
+            viewModel.StringProperty = "x";
+            Assert.AreEqual("x", viewModel.StringProperty);
+            Assert.AreEqual(2, viewModel.StringPropertyChangedCount);
+        }
+        #endregion
+        [Test]
+        public void ChangedCallbackWithOldValue() {
+            var obj = new BindableBaseTest2_CallerMemberName();
+            obj.Prop = true;
+            Assert.AreEqual(false, obj.PropOld);
+            obj.Prop = false;
+            Assert.AreEqual(true, obj.PropOld);
+            obj.Prop = false;
+            Assert.AreEqual(true, obj.PropOld);
+        }
+    }
+    class BindableBaseTest_CallerMemberName : BindableBase {
+        public int ChangedCallbackCallCount { get; private set; }
+        int someProperty7;
+        public int SomeProperty7 {
+            get { return someProperty7; }
+            set {                
+                SetValue(ref someProperty7, value, () => {
+                    ChangedCallbackCallCount++;
+                });                
+            }
+        }
+
+        int someProperty4;
+        public int SomeProperty4 {
+            get { return someProperty4; }
+            set { SetValue(ref someProperty4, value, default(string)); }
+        }
+        public int SomeProperty4_ {
+            get { return someProperty4; }
+            set { SetValue(ref someProperty4, value, () => { }, default(string)); }
+        }
+        public int SomeProperty4__ {
+            get { return GetValue<int>(default(string)); }
+            set { SetValue(value, default(string)); }
+        }
+        public int SomeProperty4___ {
+            get { return GetValue<int>(); }
+            set { SetValue(value, () => { }, default(string)); }
+        }
+        public int SomeProperty4____ {
+            get { return GetValue<int>(); }
+            set { SetValue(value, x => { }, default(string)); }
+        }
+        int someProperty3;
+        public int SomeProperty3 {
+            get { return someProperty3; }
+            set { SetValue(ref someProperty3, value); }
+        }
+        int someProperty2;
+        public int SomeProperty2 {
+            get { return someProperty2; }
+            set { SetValue(ref someProperty2, value, "SomeProperty2"); }
+        }
+        //public new void RaisePropertyChanged(string propertyName) {
+        //    base.RaisePropertyChanged(propertyName);
+        //}
+//#if !NETFX_CORE
+//        public void RaisePropertyChanged() {
+//            base.RaisePropertyChanged();
+//        }
+//#endif
+        //public new void RaisePropertiesChanged(params string[] propertyNames) {
+        //    base.RaisePropertiesChanged(propertyNames);
+        //}
+    }
+    class BindableBaseTest2_CallerMemberName : BindableBase {
+        public bool Prop
+        {
+            get { return GetValue<bool>(); }
+            set { SetValue(value, OnPropChanged); }
+        }
+        public bool PropOld { get; private set; }
+        void OnPropChanged(bool oldValue) {
+            PropOld = oldValue;
+        }
+    }
+#endif
 }

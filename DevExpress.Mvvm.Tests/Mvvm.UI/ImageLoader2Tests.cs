@@ -1,3 +1,6 @@
+﻿#if !FREE
+using DevExpress.Xpf.Core.Native;
+#endif
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -17,6 +20,16 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void SetUp() {
             ApplicationJumpListServiceTestsImageSourceHelper.RegisterPackScheme();
         }
+#if !FREE
+        [Test]
+        public void LoadLocalImages() {
+            TestUri(ImageFormat.Png,
+                AssemblyHelper.GetResourceUri(typeof(ImageLoader2Tests).Assembly, "Images/NancyDavolio.png"),
+                AssemblyHelper.GetResourceUri(typeof(ImageLoader2Tests).Assembly, "Images/Recurrence_32x32.png"),
+                AssemblyHelper.GetResourceUri(typeof(ImageLoader2Tests).Assembly, "Images/sun.png")
+            );
+        }
+#endif
         [Test]
         public void LoadLocalImages2() {
             TestUri(ImageFormat.Png,

@@ -1,3 +1,7 @@
+﻿#if !FREE
+using DevExpress.Xpf.Core.Tests;
+using DevExpress.Xpf.Core;
+#endif
 using DevExpress.Mvvm.POCO;
 using DevExpress.Mvvm.UI;
 using NUnit.Framework;
@@ -6,6 +10,7 @@ using System.Linq;
 using System.Windows.Controls;
 using System.ComponentModel;
 using System.Windows;
+using System.Reflection;
 
 namespace DevExpress.Xpf.DXBinding.Tests {
     [TestFixture]
@@ -192,9 +197,11 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 "{b:DXCommand Execute='Do3(@s.Tag.Parameter, @parameter);', CanExecute='CanDo3(@s.Tag.CanDo)'}", null, vm);
             Assert.AreEqual(false, BindingTestHelper.CanDoCommand(bt));
             bt.Tag = new { CanDo = true }; BindingTestHelper.DoEvents(bt);
-            Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt));
+            //Assert.AreEqual(false, BindingTestHelper.CanDoCommand(bt)); //old
+            Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt)); //new
             bt.Tag = new { CanDo = true, Parameter = 1 }; BindingTestHelper.DoEvents(bt);
-            Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt));
+            //Assert.AreEqual(false, BindingTestHelper.CanDoCommand(bt)); //old
+            Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt)); //new
             bt.CommandParameter = 1; BindingTestHelper.DoEvents(bt);
             Assert.AreEqual(true, BindingTestHelper.CanDoCommand(bt));
             BindingTestHelper.DoCommand(bt);
@@ -207,7 +214,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 "Button", "Command",
                 @"{b:DXCommand 
                     Execute='Do(@s.Margin);', 
-                    CanExecute='new $Thickness(@s.Margin.Bottom).Left == 1'}",
+                    CanExecute='new $Thickness(@s.Margin.Bottom).Left == 1'}", 
                 null, vm);
             Assert.AreEqual(false, BindingTestHelper.CanDoCommand(bt));
             Assert.AreEqual(0, vm.DoubleProp);
@@ -308,6 +315,23 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             BindingTestHelper.DoCommand(bt); BindingTestHelper.DoEvents(bt);
             Assert.AreEqual(true, CommandTests_a.GetAttachedProp(bt));
         }
+
+        [Test]
+        public void T684511() {
+            var vm = new CommandTests_b();
+            var bt = BindingTestHelper.BindAssert<Button>(
+                "Button", "Command",
+                @"{b:DXCommand Execute='DoException()'}",
+                null, vm);
+            Assert.DoesNotThrow(() => BindingTestHelper.DoCommand(bt));
+
+            bt = BindingTestHelper.BindAssert<Button>(
+                "Button", "Command",
+                @"{b:DXCommand Execute='DoException()', CatchExceptions=False}",
+                null, vm);
+            var e = Assert.Throws<TargetInvocationException>(() => BindingTestHelper.DoCommand(bt));
+            Assert.AreEqual("DoException", e.InnerException.Message);
+        }
     }
 
     public class CommandTests_a {
@@ -390,6 +414,9 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
         public void Do(Thickness thickness) {
             DoubleProp = thickness.Left;
+        }
+        public void DoException() {
+            throw new Exception("DoException");
         }
     }
 }
