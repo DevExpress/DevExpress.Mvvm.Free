@@ -1,9 +1,19 @@
 using System.Text.RegularExpressions;
 
+#if MVVM
 namespace DevExpress.Mvvm.Native {
     internal static class SplitStringHelper {
+#else
+namespace DevExpress.Data.Helpers {
+    public static class SplitStringHelper {
+#endif
+#if NETFX_CORE || DOTNET
+            static Regex reg1 = new Regex("(\\p{Ll})(\\p{Lu})");
+            static Regex reg2 = new Regex("(\\p{Lu}{2})(\\p{Lu}\\p{Ll}{2})");
+#else
         static Regex reg1 = new Regex("(\\p{Ll})(\\p{Lu})", RegexOptions.Compiled);
         static Regex reg2 = new Regex("(\\p{Lu}{2})(\\p{Lu}\\p{Ll}{2})", RegexOptions.Compiled);
+#endif
         public static string SplitPascalCaseString(string value) {
             if(value == null)
                 return string.Empty;

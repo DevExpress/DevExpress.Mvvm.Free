@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.Native;
+﻿using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
 using System;
 using System.Collections.Generic;
@@ -401,7 +401,7 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
             readonly IViewLocator viewLocator;
             readonly IStateSerializer stateSerializer;
 
-            public RegionItem(IModuleManagerImplementation manager, IModule module, object parameter, RegionItemInfo info)
+            public RegionItem(IModuleManagerImplementation manager, IModule module, object parameter, RegionItemInfo info) 
                 : this(manager.ViewModelLocator, manager.ViewLocator, manager.ViewModelStateSerializer,
                       module.Key, module.ViewModelFactory, module.ViewModelName, module.ViewName, module.ViewType, parameter)  {
                 if(info != null) {
@@ -409,7 +409,7 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
                 }
             }
             public RegionItem(IModuleManagerImplementation manager, RegionItemInfo info)
-                : this(manager.ViewModelLocator, manager.ViewLocator, manager.ViewModelStateSerializer,
+                : this(manager.ViewModelLocator, manager.ViewLocator, manager.ViewModelStateSerializer, 
                       info.Key, null, info.ViewModelName, info.ViewName, null, null) {
                 SetViewModelState(info.ViewModelState.With(x => x.State), info.ViewModelStateType);
             }
@@ -451,7 +451,13 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
             }
             void SetViewModelState(string state, string stateType) {
                 if(string.IsNullOrEmpty(state) || string.IsNullOrEmpty(stateType)) return;
-                object vmState = stateSerializer.DeserializeState(state, Type.GetType(stateType));
+                Type t;
+                try {
+                    t = Type.GetType(stateType, false);
+                } catch {
+                    t = null;
+                }
+                object vmState = stateSerializer.DeserializeState(state, t);
                 ViewModelState = vmState;
                 UpdateViewModelState();
             }
@@ -474,8 +480,12 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
             }
             void Init() {
                 object vm = null;
-                if(Factory != null) vm = Factory();
-                else if(ViewModelName != null) vm = viewModelLocator.ResolveViewModel(ViewModelName);
+                if (Factory != null) vm = Factory();
+                else if (ViewModelName != null) {
+                    vm = viewModelLocator.ResolveViewModel(ViewModelName);
+                    if (vm == null)
+                        ModuleInjectionException.CannotResolveVM(ViewModelName);
+                }
                 if(vm == null)
                     ModuleInjectionException.NullVM();
                 viewModelRef = new WeakReference(vm);

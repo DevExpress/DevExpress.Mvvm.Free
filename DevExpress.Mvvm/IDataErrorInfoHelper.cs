@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.Native;
+﻿using DevExpress.Mvvm.Native;
 using System;
 using System.Reflection;
 using System.Linq;
@@ -86,6 +86,8 @@ namespace DevExpress.Mvvm {
         static Attribute[] GetAllAttributes(MemberInfo member) {
             return MetadataHelper
                 .GetAllAttributes(member);
+                //.Where(a => a is DXValidationAttribute || a is System.ComponentModel.DataAnnotations.ValidationAttribute)
+                //.ToArray();
         }
     }
 }

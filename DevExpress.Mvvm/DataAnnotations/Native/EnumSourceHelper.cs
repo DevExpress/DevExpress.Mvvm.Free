@@ -65,6 +65,9 @@ namespace DevExpress.Mvvm.Native {
             Type enumType = Enum.GetUnderlyingType(value.GetType());
             return Convert.ChangeType(value, enumType, System.Globalization.CultureInfo.CurrentCulture);
         }
+#if !FREE
+        public
+#endif
  static Tuple<string, string> GetImageInfo(ImageAttribute image, DXImageAttribute dxImage, string defaultImageName, Func<string, bool, string> getKnownImageUriCallback) {
             if(image != null)
                 return Tuple.Create(image.ImageUri, (string)null);

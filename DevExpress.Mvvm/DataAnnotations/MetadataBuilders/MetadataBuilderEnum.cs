@@ -1,4 +1,4 @@
-namespace DevExpress.Mvvm.DataAnnotations {
+﻿namespace DevExpress.Mvvm.DataAnnotations {
     public interface IEnumMetadataProvider<T> where T : struct {
         void BuildMetadata(EnumMetadataBuilder<T> builder);
     }

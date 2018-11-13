@@ -1,6 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+#if NETFX_CORE
+using DevExpress.Mvvm.Native;
+#endif
 
 namespace DevExpress.Mvvm {
     public delegate void ActiveDocumentChangedEventHandler(object sender, ActiveDocumentChangedEventArgs e);

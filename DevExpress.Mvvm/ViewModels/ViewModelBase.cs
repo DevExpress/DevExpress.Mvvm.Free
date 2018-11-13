@@ -9,11 +9,19 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
+#if !NETFX_CORE
 using DevExpress.Mvvm.POCO;
 using System.Windows.Threading;
+#else
+using Windows.UI.Xaml;
+#endif
 
 namespace DevExpress.Mvvm {
+#if !NETFX_CORE
     public abstract class ViewModelBase : BindableBase, ISupportParentViewModel, ISupportServices, ISupportParameter, ICustomTypeDescriptor {
+#else
+    public abstract class ViewModelBase : BindableBase, ISupportParentViewModel, ISupportServices, ISupportParameter {
+#endif
         internal const string Error_ParentViewModel = "ViewModel cannot be parent of itself.";
         static readonly object NotSetParameter = new object();
         private object parameter = NotSetParameter;
@@ -24,8 +32,12 @@ namespace DevExpress.Mvvm {
                 if(ViewModelDesignHelper.IsInDesignModeOverride.HasValue)
                     return ViewModelDesignHelper.IsInDesignModeOverride.Value;
                 if(!isInDesignMode.HasValue) {
+#if NETFX_CORE
+                    isInDesignMode = Windows.ApplicationModel.DesignMode.DesignModeEnabled;
+#else
                     DependencyPropertyDescriptor property = DependencyPropertyDescriptor.FromProperty(DesignerProperties.IsInDesignModeProperty, typeof(FrameworkElement));
                     isInDesignMode = (bool)property.Metadata.DefaultValue;
+#endif
                 }
                 return isInDesignMode.Value;
             }
@@ -47,12 +59,22 @@ namespace DevExpress.Mvvm {
         IServiceContainer serviceContainer;
         IServiceContainer ISupportServices.ServiceContainer { get { return ServiceContainer; } }
         protected IServiceContainer ServiceContainer { get { return serviceContainer ?? (serviceContainer = CreateServiceContainer()); } }
+#if !NETFX_CORE
         bool IsPOCOViewModel { get { return this is IPOCOViewModel; } }
+#else
+        bool IsPOCOViewModel { get { return false; } }
+#endif
 
         public ViewModelBase() {
+#if !NETFX_CORE
             BuildCommandProperties();
+#endif
             if(IsInDesignMode) {
+#if NETFX_CORE
+                OnInitializeInDesignMode();//TODO
+#else
                 Dispatcher.CurrentDispatcher.BeginInvoke(new Action(OnInitializeInDesignMode));
+#endif
             } else {
                 OnInitializeInRuntime();
             }
@@ -94,6 +116,7 @@ namespace DevExpress.Mvvm {
         protected virtual T GetService<T>(string key, ServiceSearchMode searchMode) where T : class {
             return ServiceContainer.GetService<T>(key, searchMode);
         }
+#if !NETFX_CORE
 #region CommandAttributeSupport
         protected internal void RaiseCanExecuteChanged(Expression<Action> commandMethodExpression) {
             if(IsPOCOViewModel) {
@@ -144,7 +167,7 @@ namespace DevExpress.Mvvm {
 
                     MethodInfo canExecuteMethod = GetCanExecuteMethod(type, x, attribute, s => new CommandAttributeException(s), m => m.IsPublic);
                     var attributes = MetadataHelper.GetAllAttributes(x);
-                    return new CommandProperty(x, canExecuteMethod, name, attribute.GetUseCommandManager(), attributes, type);
+                    return new CommandProperty(x, canExecuteMethod, name, attribute.GetUseCommandManager(), attributes, type); 
                 })
                 .ToDictionary(x => x.Method);
             foreach(var property in commandProperties.Values) {
@@ -161,7 +184,7 @@ namespace DevExpress.Mvvm {
             if(CheckCommandMethodConditionValue(parameters.Length <= 1, method, Error_MethodCannotHaveMoreThanOneParameter, createException))
                 return false;
             bool isValidSingleParameter = (parameters.Length == 1) && (parameters[0].IsOut || parameters[0].ParameterType.IsByRef);
-            if(CheckCommandMethodConditionValue(!isValidSingleParameter, method, Error_MethodCannotHaveOutORRefParameters, createException))
+            if(CheckCommandMethodConditionValue(!isValidSingleParameter, method, Error_MethodCannotHaveOutORRefParameters, createException)) 
                 return false;
             if(CheckCommandMethodConditionValue(!method.IsGenericMethodDefinition, method, Error_MethodCannotShouldNotBeGeneric, createException))
                 return false;
@@ -220,7 +243,11 @@ namespace DevExpress.Mvvm {
         }
         #region CommandProperty
         class CommandProperty :
-            PropertyDescriptor
+#if !NETFX_CORE
+            PropertyDescriptor 
+#else
+            PropertyInfo
+#endif
         {
             readonly MethodInfo method;
             readonly MethodInfo canExecuteMethod;
@@ -255,6 +282,7 @@ namespace DevExpress.Mvvm {
         }
         #endregion
 
+#if !NETFX_CORE
         #region ICustomTypeDescriptor
         AttributeCollection ICustomTypeDescriptor.GetAttributes() {
             return TypeDescriptor.GetAttributes(this, true);
@@ -288,16 +316,20 @@ namespace DevExpress.Mvvm {
         }
         PropertyDescriptorCollection properties;
         PropertyDescriptorCollection ICustomTypeDescriptor.GetProperties() {
-            return properties ??
+            return properties ?? 
                 (properties = new PropertyDescriptorCollection(TypeDescriptor.GetProperties(this, true).Cast<PropertyDescriptor>().Concat(commandProperties.Values).ToArray()));
         }
         object ICustomTypeDescriptor.GetPropertyOwner(PropertyDescriptor pd) {
             return this;
         }
         #endregion
+#endif
 #endregion CommandAttributeSupport
+#endif
     }
+#if !NETFX_CORE
     [Serializable]
+#endif
     public class CommandAttributeException : Exception {
         public CommandAttributeException() { }
         public CommandAttributeException(string message)

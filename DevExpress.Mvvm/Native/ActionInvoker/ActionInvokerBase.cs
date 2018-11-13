@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using DevExpress.Mvvm.Native;
+#if !NETFX_CORE
 using System.Windows.Threading;
+#endif
 
 namespace DevExpress.Mvvm.Native {
     public abstract class ActionInvokerBase : IActionInvoker {
@@ -24,7 +26,11 @@ namespace DevExpress.Mvvm.Native {
             object target = Target;
             if(recipient != target)
                 return;
-            if(action != null && action.Method.Name != MethodName)
+#if !NETFX_CORE
+            if(action != null && action.Method.Name != MethodName) //TODO different static classes with methods with same name
+#else
+            if(action != null && action.GetMethodInfo().Name != MethodName)
+#endif
                 return;
             targetReference = null;
             ClearCore();

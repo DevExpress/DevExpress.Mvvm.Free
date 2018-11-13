@@ -1,4 +1,4 @@
-using DevExpress.Mvvm.DataAnnotations;
+﻿using DevExpress.Mvvm.DataAnnotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -156,7 +156,7 @@ namespace DevExpress.Mvvm.Native {
             IEnumerable<Attribute> IAttributesProvider.GetAttributes(string propertyName) {
                 if(string.IsNullOrEmpty(propertyName))
                     return Enumerable.Empty<Attribute>();
-                MemberInfo metadataProperty = (MemberInfo)metadataClassType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public)
+                MemberInfo metadataProperty = (MemberInfo)metadataClassType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public) 
                     ?? metadataClassType.GetMethod(propertyName, BindingFlags.Instance | BindingFlags.Public);
                 if(metadataProperty != null)
                     return metadataProperty.GetCustomAttributes(true).OfType<Attribute>();
@@ -218,6 +218,7 @@ namespace DevExpress.Mvvm.Native {
             return CompositeMetadataAttributesProvider.Create(
                 GetMetadataTypes(locator, componentType).GetProviders(componentType, true));
         }
+        //
         static IEnumerable<IAttributesProvider> GetProviders(this IEnumerable<Type> metadataTypes, Type type, bool forFiltering) {
             return metadataTypes.SelectMany(x => {
                 return forFiltering ? GetAllFilteringMetadataAttributes(x, type) : GetAllMetadataAttributes(x, type);
@@ -241,6 +242,7 @@ namespace DevExpress.Mvvm.Native {
             yield return GetFluentAPIFilteringAttributesFromStaticMethod(metadataClassType, componentType);
             yield return GetExternalAndFluentAPIFilteringAttributesCore(metadataClassType);
         }
+        //
         static readonly ConcurrentDictionary<Type, IAttributesProvider> Providers = new ConcurrentDictionary<Type, IAttributesProvider>();
         static readonly ConcurrentDictionary<Type, IAttributesProvider> FilteringProviders = new ConcurrentDictionary<Type, IAttributesProvider>();
         #region obsolete
@@ -295,18 +297,19 @@ namespace DevExpress.Mvvm.Native {
             IEnumerable<Type> hierarchy = componentType.Yield().Flatten(x => x.BaseType.YieldIfNotNull()).Reverse();
             IEnumerable<IAttributesProvider> result = new IAttributesProvider[0];
             foreach(var type in hierarchy) {
-                IEnumerable<Type> metadataClassType =
+                IEnumerable<Type> metadataClassType = 
                     (forFiltering ? GetFilteringMetadataClassType(type) : GetMetadataClassType(type))
                     .Return(x => new[] { x }, () => Enumerable.Empty<Type>());
                 IEnumerable<Type> externalMetadataClassTypes = GetMetadataTypes(MetadataLocator.Default, type);
                 result = result.Concat(metadataClassType.Concat(externalMetadataClassTypes).GetProviders(type, forFiltering));
-                (forFiltering
-                    ? GetFluentAPIFilteringAttributesFromStaticMethod(type, type)
+                (forFiltering 
+                    ? GetFluentAPIFilteringAttributesFromStaticMethod(type, type) 
                     : GetFluentAPIAttributesFromStaticMethod(type, type))
                 .Do(x => result = result.Concat(new[] { x }));
             }
             return CompositeMetadataAttributesProvider.Create(result);
         }
+        //
         public static IEnumerable<Attribute> GetFluentAPIAttributes(Type metadataClassType, Type componentType, string propertyName) {
             return GetFluentAPIAttributes(metadataClassType, componentType).
                 With(x => x.GetAttributes(propertyName));
@@ -339,11 +342,11 @@ namespace DevExpress.Mvvm.Native {
             return GetFluentAPIAttributesFromStaticMethodCore(metadataClassType, componentType, true);
         }
         static IAttributesProvider GetFluentAPIAttributesFromStaticMethodCore(Type metadataClassType, Type componentType, bool forFiltering) {
-            MethodInfo buildMetadataMethod =
-                GetBuildMetadataStaticMethods(metadataClassType, componentType,
+            MethodInfo buildMetadataMethod = 
+                GetBuildMetadataStaticMethods(metadataClassType, componentType, 
                     forFiltering ? (Func<Type, Type, bool>)IsFilteringMetadataBuilderType : (Func<Type, Type, bool>)IsMetadataBuilderType).
                 SingleOrDefault();
-            return buildMetadataMethod != null
+            return buildMetadataMethod != null 
                 ? InvokeBuildMetadataStaticMethod(buildMetadataMethod, componentType, forFiltering) : null;
         }
 
@@ -352,7 +355,25 @@ namespace DevExpress.Mvvm.Native {
                 ? new ExternalMetadataAttributesProvider(metadataClassType, componentType)
                 : null;
         }
+        static class NetCore3Detector {
+            static readonly bool isNetCore3;
+            static NetCore3Detector() { 
+                var assembly1 = typeof(RequiredAttribute).Assembly;
+                isNetCore3 = assembly1.GetName().Name == "System.ComponentModel.Annotations";
+            }
+            public static bool IsNetCore3() {
+                return isNetCore3;
+            }
+        }
         static Type GetMetadataClassType(Type componentType) {
+            if (NetCore3Detector.IsNetCore3()) return null;
+            return GetMetadataClassTypeCore(componentType);
+        }
+        static Type GetFilteringMetadataClassType(Type componentType) {
+            if (NetCore3Detector.IsNetCore3()) return null;
+            return GetFilteringMetadataClassTypeCore(componentType);
+        }
+        static Type GetMetadataClassTypeCore(Type componentType) {
             Type metadataTypeAttributeType = componentType.IsEnum ? typeof(EnumMetadataTypeAttribute) :
                 typeof(MetadataTypeAttribute);
             object[] metadataTypeAttributes = componentType.GetCustomAttributes(metadataTypeAttributeType, false);
@@ -360,18 +381,19 @@ namespace DevExpress.Mvvm.Native {
                 return null;
             return (Type)metadataTypeAttributes[0].GetType().GetProperty("MetadataClassType", BindingFlags.Instance | BindingFlags.Public).GetValue(metadataTypeAttributes[0], null);
         }
-        static Type GetFilteringMetadataClassType(Type componentType) {
+        static Type GetFilteringMetadataClassTypeCore(Type componentType) {
             if(componentType.IsEnum) return null;
             var attrs = componentType.GetCustomAttributes(false);
             if(attrs == null || !attrs.Any()) return null;
             object metadataTypeAttribute = attrs.SingleOrDefault(x => {
                 Type attrType = x.GetType();
-                return attrType.Name == FilterMetadataTypeAttributeHelper.FilteringMetadataTypeName
+                return attrType.Name == FilterMetadataTypeAttributeHelper.FilteringMetadataTypeName 
                 && attrType.Namespace == FilterMetadataTypeAttributeHelper.FilteringMetadataTypeNamespace;
             });
             if(metadataTypeAttribute == null) return null;
             return (Type)metadataTypeAttribute.GetType().GetProperty("MetadataClassType", BindingFlags.Instance | BindingFlags.Public).GetValue(metadataTypeAttribute, null);
         }
+        //
         const string BuildMetadataMethodName = "BuildMetadata";
         static IEnumerable<MethodInfo> GetBuildMetadataMethodsFromMatadataProvider(Type metadataClassType, Type componentType, Func<Type, Type, bool> isMetadataProviderType) {
             bool isPublic = metadataClassType.IsPublic || metadataClassType.IsNestedPublic;
@@ -404,6 +426,7 @@ namespace DevExpress.Mvvm.Native {
             method.Invoke(null, new[] { result });
             return result;
         }
+        //
         static bool IsMetadataProviderType(Type type, Type componentType) {
             return IsMetadataBuilderTypeCore(type, componentType, typeof(IMetadataProvider<>), typeof(IEnumMetadataProvider<>));
         }
@@ -440,6 +463,7 @@ namespace DevExpress.Mvvm.Native {
                 return true;
             return false;
         }
+        //
         static IAttributesProvider CreateMetadataBuilder(Type componentType) {
             Type metadataBuilderType = componentType.IsEnum ? typeof(EnumMetadataBuilder<>) : typeof(MetadataBuilder<>);
             metadataBuilderType = metadataBuilderType.MakeGenericType(componentType);
@@ -450,6 +474,7 @@ namespace DevExpress.Mvvm.Native {
             metadataBuilderType = metadataBuilderType.MakeGenericType(componentType);
             return (IAttributesProvider)Activator.CreateInstance(metadataBuilderType);
         }
+        //
         static IEnumerable<Type> GetMetadataTypes(IMetadataLocator locator, Type type) {
             return (locator ?? MetadataLocator.Create()).GetMetadataTypes(GetTypeOrGenericTypeDefinition(type))
                 .Return(x => x, () => Enumerable.Empty<Type>());
@@ -461,11 +486,13 @@ namespace DevExpress.Mvvm.Native {
             return LinqExtensions.Unfold(attr.GetType(), x => x.BaseType, x => x == typeof(Attribute));
         }
 
+#if FREE
         static class FilterMetadataTypeAttributeHelper {
             public const string FilteringMetadataTypeName = "FilterMetadataTypeAttribute";
             public const string FilteringMetadataTypeNamespace = "DevExpress.Utils.Filtering";
         }
         class FilteringMetadataBuilder<T> { }
         interface IFilteringMetadataProvider<T> { }
+#endif
     }
 }

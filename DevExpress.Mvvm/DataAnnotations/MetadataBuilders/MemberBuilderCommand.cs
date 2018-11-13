@@ -1,9 +1,9 @@
-using DevExpress.Mvvm.Native;
+﻿using DevExpress.Mvvm.Native;
 using System;
 using System.Linq.Expressions;
 
 namespace DevExpress.Mvvm.DataAnnotations {
-    public class CommandMethodMetadataBuilder<T> :
+    public class CommandMethodMetadataBuilder<T> : 
         CommandMetadataBuilderBase<T, CommandMethodMetadataBuilder<T>> {
         readonly string methodName;
         internal CommandMethodMetadataBuilder(MemberMetadataStorage storage, ClassMetadataBuilder<T> parent, string methodName)
@@ -27,4 +27,12 @@ namespace DevExpress.Mvvm.DataAnnotations {
         }
     }
 
+#if !FREE
+    public class CommandMetadataBuilder<T> : 
+        CommandMetadataBuilderBase<T, CommandMetadataBuilder<T>> {
+        internal CommandMetadataBuilder(MemberMetadataStorage storage, ClassMetadataBuilder<T> parent)
+            : base(storage, parent) {
+        }
+    }
+#endif
 }

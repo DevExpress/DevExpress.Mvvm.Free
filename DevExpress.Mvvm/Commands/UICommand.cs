@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
@@ -51,6 +51,7 @@ namespace DevExpress.Mvvm {
         public static List<UICommand> GenerateFromMessageButton(MessageButton dialogButtons, IMessageButtonLocalizer buttonLocalizer, MessageResult? defaultButton = null, MessageResult? cancelButton = null) {
             return GenerateFromMessageButton(dialogButtons, false, buttonLocalizer, defaultButton, cancelButton);
         }
+#if !NETFX_CORE
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static List<UICommand> GenerateFromMessageBoxButton(MessageBoxButton dialogButtons, IMessageBoxButtonLocalizer buttonLocalizer, MessageBoxResult? defaultButton = null, MessageBoxResult? cancelButton = null) {
             return GenerateFromMessageBoxButton(dialogButtons, buttonLocalizer.ToMessageButtonLocalizer(), defaultButton, cancelButton);
@@ -61,6 +62,7 @@ namespace DevExpress.Mvvm {
             MessageResult? cancelResult = cancelButton == null ? (MessageResult?)null : cancelButton.Value.ToMessageResult();
             return GenerateFromMessageButton(dialogButtons.ToMessageButton(), true, buttonLocalizer, defaultResult, cancelResult);
         }
+#endif
         static List<UICommand> GenerateFromMessageButton(MessageButton dialogButtons, bool usePlatformSpecificTag, IMessageButtonLocalizer buttonLocalizer, MessageResult? defaultButton, MessageResult? cancelButton) {
             List<UICommand> commands = new List<UICommand>();
             if(dialogButtons == MessageButton.OK) {
@@ -111,10 +113,52 @@ namespace DevExpress.Mvvm {
                 commands.Add(cancelCommand);
                 return commands;
             }
+#if NETFX_CORE
+            if(dialogButtons == MessageButton.AbortRetryIgnore) {
+                UICommand abortCommand = CreateDefaultButtonCommand(MessageResult.Abort, usePlatformSpecificTag, buttonLocalizer.Localize);
+                UICommand retryCommand = CreateDefaultButtonCommand(MessageResult.Retry, usePlatformSpecificTag, buttonLocalizer.Localize);
+                UICommand ignoreCommand = CreateDefaultButtonCommand(MessageResult.Ignore, usePlatformSpecificTag, buttonLocalizer.Localize);
+                abortCommand.IsDefault = defaultButton == null || defaultButton == MessageResult.Abort;
+                retryCommand.IsDefault = defaultButton == MessageResult.Retry;
+                ignoreCommand.IsDefault = defaultButton == MessageResult.Ignore;
+                abortCommand.IsCancel = cancelButton == MessageResult.Abort;
+                retryCommand.IsCancel = cancelButton == null || cancelButton == MessageResult.Retry;
+                ignoreCommand.IsCancel = cancelButton == null || cancelButton == MessageResult.Ignore;
+
+                commands.Add(abortCommand);
+                commands.Add(retryCommand);
+                commands.Add(ignoreCommand);
+                return commands;
+            }
+            if(dialogButtons == MessageButton.Close) {
+                UICommand closeCommand = CreateDefaultButtonCommand(MessageResult.Close, usePlatformSpecificTag, buttonLocalizer.Localize);
+                closeCommand.IsDefault = defaultButton == null || defaultButton == MessageResult.Close;
+                closeCommand.IsCancel = cancelButton == MessageResult.Close;
+
+                commands.Add(closeCommand);
+                return commands;
+            }
+            if(dialogButtons == MessageButton.RetryCancel) {
+                UICommand retryCommand = CreateDefaultButtonCommand(MessageResult.Retry, usePlatformSpecificTag, buttonLocalizer.Localize);
+                UICommand cancelCommand = CreateDefaultButtonCommand(MessageResult.Cancel, usePlatformSpecificTag, buttonLocalizer.Localize);
+                retryCommand.IsDefault = defaultButton == null || defaultButton == MessageResult.Retry;
+                cancelCommand.IsDefault = defaultButton == MessageResult.Cancel;
+                retryCommand.IsCancel = cancelButton == MessageResult.Retry;
+                cancelCommand.IsCancel = cancelButton == null || cancelButton == MessageResult.Cancel;
+
+                commands.Add(retryCommand);
+                commands.Add(cancelCommand);
+                return commands;
+            }
+#endif
             return commands;
         }
         static UICommand CreateDefaultButtonCommand(MessageResult result, bool usePlatformSpecificTag, Func<MessageResult, string> getButtonCaption) {
+#if !NETFX_CORE
             object tag = usePlatformSpecificTag ? result.ToMessageBoxResult() : (object)result;
+#else
+            object tag = (object)result;
+#endif
             return new DefaultButtonCommand(tag, getButtonCaption(result), tag);
         }
         #region IUICommand

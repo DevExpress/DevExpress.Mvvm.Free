@@ -1,12 +1,12 @@
-using DevExpress.Mvvm.Native;
+﻿using DevExpress.Mvvm.Native;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace DevExpress.Mvvm.DataAnnotations {
-    public abstract class MetadataBuilderBase<T, TMetadataBuilder> :
-        IAttributesProvider,
+    public abstract class MetadataBuilderBase<T, TMetadataBuilder> : 
+        IAttributesProvider, 
         IAttributeBuilderInternal<TMetadataBuilder>
         where TMetadataBuilder : MetadataBuilderBase<T, TMetadataBuilder> {
 
@@ -49,5 +49,23 @@ namespace DevExpress.Mvvm.DataAnnotations {
             return ExpressionHelper.GetArgumentMethodStrict(expression);
         }
 
+#if !FREE
+        public TMetadataBuilder DefaultEditor(object templateKey) {
+            IAttributeBuilderInternal<TMetadataBuilder> builder = this;
+            return builder.AddOrModifyAttribute((DefaultEditorAttribute a) => a.TemplateKey = templateKey);
+        }
+        public TMetadataBuilder GridEditor(object templateKey) {
+            IAttributeBuilderInternal<TMetadataBuilder> builder = this;
+            return builder.AddOrModifyAttribute((GridEditorAttribute a) => a.TemplateKey = templateKey);
+        }
+        public TMetadataBuilder LayoutControlEditor(object templateKey) {
+            IAttributeBuilderInternal<TMetadataBuilder> builder = this;
+            return builder.AddOrModifyAttribute((LayoutControlEditorAttribute a) => a.TemplateKey = templateKey);
+        }
+        public TMetadataBuilder PropertyGridEditor(object templateKey) {
+            IAttributeBuilderInternal<TMetadataBuilder> builder = this;
+            return builder.AddOrModifyAttribute((PropertyGridEditorAttribute a) => a.TemplateKey = templateKey);
+        }
+#endif
     }
 }

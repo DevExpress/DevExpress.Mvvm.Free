@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Text.RegularExpressions;
 
 namespace DevExpress.Mvvm.ModuleInjection {
     public class ModuleInjectionException : Exception {
@@ -10,6 +11,7 @@ namespace DevExpress.Mvvm.ModuleInjection {
         const string vmNotSupportServices = "This ViewModel does not implement the ISupportServices interface.";
         const string vmNotSupportParameter = "This ViewModel does not implement the ISupportParameter interface.";
         const string visualStateServiceName = "VisualStateService with the same Name already exists. If you are using several VisualStateServices in one View, be sure that they have different names.";
+        const string cannotResolveVM = "Cannot create a view model instance by the {0} type name. Setup ViewModelLocator.";
 
         public static void ModuleMissing(string regionName, string key) {
             throw new ModuleInjectionException(regionName, key, moduleMissing);
@@ -28,6 +30,9 @@ namespace DevExpress.Mvvm.ModuleInjection {
         }
         public static void VisualStateServiceName() {
             throw new ModuleInjectionException(null, null, visualStateServiceName);
+        }
+        public static void CannotResolveVM(string vmName) {
+            throw new ModuleInjectionException(null, null, string.Format(cannotResolveVM, vmName));
         }
 
         public static void CannotAttach() {

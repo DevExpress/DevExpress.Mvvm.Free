@@ -9,9 +9,15 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+#if MVVM
 namespace DevExpress.Mvvm.Native {
+#else
+namespace DevExpress.Internal {
+#endif
     [DebuggerStepThrough]
+#if MVVM
     public
+#endif
     static class MayBe {
         public static TR With<TI, TR>(this TI input, Func<TI, TR> evaluator)
             where TI : class
@@ -56,7 +62,9 @@ namespace DevExpress.Mvvm.Native {
             return input;
         }
     }
+#if MVVM
     public
+#endif
     static class DictionaryExtensions {
         public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, Func<TValue> createValueDelegate) {
             TValue result;
@@ -65,6 +73,14 @@ namespace DevExpress.Mvvm.Native {
             }
             return result;
         }
+        public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, Func<TKey, TValue> createValueDelegate) {
+            TValue result;
+            if(!dictionary.TryGetValue(key, out result)) {
+                dictionary[key] = (result = createValueDelegate(key));
+            }
+            return result;
+        }
+#if !NETFX_CORE
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key) {
             TValue result;
             dictionary.TryGetValue(key, out result);
@@ -76,14 +92,21 @@ namespace DevExpress.Mvvm.Native {
                 return result;
             return defaultValue;
         }
+#endif
     }
+#if MVVM
     public
+#endif
     static class EmptyArray<TElement> {
         public static readonly TElement[] Instance = new TElement[0];
     }
+#if MVVM
     public
+#endif
     struct UnitT { }
+#if MVVM
     public
+#endif
     static class LinqExtensions {
         public static bool IsEmptyOrSingle<T>(this IEnumerable<T> source) {
             return !source.Any() || !source.Skip(1).Any();
@@ -122,8 +145,8 @@ namespace DevExpress.Mvvm.Native {
         }
         public static TAccumulate AggregateUntil<T, TAccumulate>(this IEnumerable<T> source, TAccumulate seed, Func<TAccumulate, T, TAccumulate> func, Func<TAccumulate, bool> stop) {
             foreach(var item in source) {
-                seed = func(seed, item);
                 if(stop(seed)) break;
+                seed = func(seed, item);
             }
             return seed;
         }
@@ -136,7 +159,7 @@ namespace DevExpress.Mvvm.Native {
             yield return singleElement;
         }
         public static IEnumerable<T> YieldIfNotNull<T>(this T singleElement) {
-            if(singleElement != null)
+            if(singleElement != null) //-V3111
                 yield return singleElement;
         }
         public static IEnumerable<string> YieldIfNotEmpty(this string singleElement) {
@@ -169,6 +192,10 @@ namespace DevExpress.Mvvm.Native {
         static IEnumerable<T> FlattenCore<T>(this IEnumerable<T> source, Func<T, int, IEnumerable<T>> getItems, int level) {
             return source.SelectMany(item => item.Yield().Concat(getItems(item, level).FlattenCore(getItems, level + 1)));
         }
+        //public static IEnumerable<T> DepthSearch<T>(this T item, Func<T, IEnumerable<T>> getRelatedItems) {
+        //    var set = new HashSet<T>();
+        //    return item.Yield().Flatten(x => getRelatedItems(x).Where(y => set.Add(y)));
+        //}
         public static T MinByLast<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector) where TKey : IComparable {
             var comparer = Comparer<TKey>.Default;
             return source.Aggregate((x, y) => comparer.Compare(keySelector(x), keySelector(y)) < 0 ? x : y);
@@ -197,23 +224,29 @@ namespace DevExpress.Mvvm.Native {
             }
             return builder.ToString();
         }
+#if !NETFX_CORE
         public static IOrderedEnumerable<TSource> OrderBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, ListSortDirection sortDirection) {
             return sortDirection == ListSortDirection.Ascending ?
                 source.OrderBy(keySelector) :
                 source.OrderByDescending(keySelector);
         }
+#endif
         public static Func<T> Memoize<T>(this Func<T> getValue) {
             var lazy = new Lazy<T>(getValue);
             return () => lazy.Value;
         }
-        public static T Fix<T>(this Func<Func<T>, T> func) {
+        public static Func<TIn, TOut> Memoize<TIn, TOut>(this Func<TIn, TOut> getValue) {
+            var dict = new Dictionary<TIn, TOut>();
+            return x => dict.GetOrAdd(x, getValue);
+        }
+        public static T WithReturnValue<T>(this Func<Lazy<T>, T> func) {
             var t = default(T);
             var tHasValue = false;
-            t = func(() => {
+            t = func(new Lazy<T>(() => {
                 if(!tHasValue)
                     throw new InvalidOperationException("Fix");
                 return t;
-            });
+            }));
             tHasValue = true;
             return t;
         }
@@ -234,11 +267,296 @@ namespace DevExpress.Mvvm.Native {
             return (p1, p2) => actions.ForEach(x => x(p1, p2));
         }
         public static ReadOnlyObservableCollection<T> ToReadOnlyObservableCollection<T>(this IEnumerable<T> source) {
-            return new ReadOnlyObservableCollection<T>(new ObservableCollection<T>(source));
+            return new ReadOnlyObservableCollection<T>(source.ToObservableCollection());
+        }
+        public static ObservableCollection<T> ToObservableCollection<T>(this IEnumerable<T> source) {
+            return new ObservableCollection<T>(source);
+        }
+        public static ReadOnlyCollection<T> ToReadOnlyCollection<T>(this IEnumerable<T> source) {
+            return source.ToList().AsReadOnly();
         }
     }
-
+#if !NETFX_CORE && !FREE
+#if MVVM
     public
+#endif
+    static class DelegateExtensions {
+#region ThisOrEmpty
+        public static Action ThisOrEmpty(this Action action) {
+            return action ?? (() => { });
+        }
+        public static Action ThisOrDefault(this Action action, Action defaultAction) {
+            return action ?? (() => defaultAction());
+        }
+        public static Action<T> ThisOrDefault<T>(this Action<T> action, Action defaultAction) {
+            return action ?? (x => defaultAction());
+        }
+        public static Action<T1, T2> ThisOrDefault<T1, T2>(this Action<T1, T2> action, Action defaultAction) {
+            return action ?? ((x1, x2) => defaultAction());
+        }
+        public static Action<T1, T2, T3> ThisOrDefault<T1, T2, T3>(this Action<T1, T2, T3> action, Action defaultAction) {
+            return action ?? ((x1, x2, x3) => defaultAction());
+        }
+        internal static Func<TR> ThisOrDefault<TR>(this Func<TR> func, TR defaultValue) {
+            return func ?? (() => defaultValue);
+        }
+        internal static Func<T, TR> ThisOrDefault<T, TR>(this Func<T, TR> func, TR defaultValue) {
+            return func ?? (x => defaultValue);
+        }
+        internal static Func<T1, T2, TR> ThisOrDefault<T1, T2, TR>(this Func<T1, T2, TR> func, TR defaultValue) {
+            return func ?? ((x1, x2) => defaultValue);
+        }
+        internal static Func<T1, T2, T3, TR> ThisOrDefault<T1, T2, T3, TR>(this Func<T1, T2, T3, TR> func, TR defaultValue) {
+            return func ?? ((x1, x2, t3) => defaultValue);
+        }
+#endregion
+
+#region ignored args action
+        //internal static Action<TIgnored1, TIgnored2, TIgnored3> AddIgnoredArgs<TIgnored1, TIgnored2, TIgnored3>(this Action action, TIgnored1 typeMarker1, TIgnored2 typeMarker2, TIgnored3 typeMarker3) {
+        //    return (ignored1, ignored2, ignored3) => action();
+        //}
+#endregion
+
+#region ignored args func
+        //internal static Func<TIgnored, TR> AddIgnoredArg<TIgnored, TR>(this Func<TR> func, TIgnored typeMarker) {
+        //    return ignored => func();
+        //}
+        //internal static Func<TIgnored1, TIgnored2, TR> AddIgnoredArgs<TIgnored1, TIgnored2, TR>(this Func<TR> func, TIgnored1 typeMarker1, TIgnored2 typeMarker2) {
+        //    return (ignored1, ignored2) => func();
+        //}
+        //internal static Func<TIgnored, T, TR> AddIgnoredArg0<TIgnored, T, TR>(this Func<T, TR> func, TIgnored typeMarker) {
+        //    return (ignored, x) => func(x);
+        //}
+        //internal static Func<T, TIgnored, TR> AddIgnoredArg1<T, TIgnored, TR>(this Func<T, TR> func, TIgnored typeMarker) {
+        //    return (x, ignored) => func(x);
+        //}
+        //internal static Func<TIgnored, T1, T2, TR> AddIgnoredArg0<TIgnored, T1, T2, TR>(this Func<T1, T2, TR> func, TIgnored typeMarker) {
+        //    return (ignored, x1, x2) => func(x1, x2);
+        //}
+        //internal static Func<T1, TIgnored, T2, TR> AddIgnoredArg1<T1, TIgnored, T2, TR>(this Func<T1, T2, TR> func, TIgnored typeMarker) {
+        //    return (x1, ignored, x2) => func(x1, x2);
+        //}
+        //internal static Func<T1, T2, TIgnored, TR> AddIgnoredArg2<T1, T2, TIgnored, TR>(this Func<T1, T2, TR> func, TIgnored typeMarker) {
+        //    return (x1, x2, ignored) => func(x1, x2);
+        //}
+#endregion
+
+#region ChangeType
+        public static Action<TNew> ChangeArgType<T, TNew>(this Action<T> action, TNew ignore) where T : TNew {
+            if(action == null)
+                return null;
+            return x => action((T)x);
+        }
+        public static Action<TNew, T2> ChangeArgType0<T, TNew, T2>(this Action<T, T2> action, TNew ignore) where T : TNew {
+            if(action == null)
+                return null;
+            return (x, x2) => action((T)x, x2);
+        }
+        public static Action<TNew, T2, T3> ChangeArgType0<T, TNew, T2, T3>(this Action<T, T2, T3> action, TNew ignore) where T : TNew {
+            if(action == null)
+                return null;
+            return (x, x2, x3) => action((T)x, x2, x3);
+        }
+#endregion
+
+#region ToAction
+        public static Action ToAction<TResult>(this Func<TResult> f, Action<TResult> setResult) {
+            if(f == null)
+                return null;
+            return () => setResult(f());
+        }
+        public static Action<T> ToAction<T, TResult>(this Func<T, TResult> f, Action<TResult> setResult) {
+            if(f == null)
+                return null;
+            return x => setResult(f(x));
+        }
+        public static Action<T1, T2> ToAction<T1, T2, TResult>(this Func<T1, T2, TResult> f, Action<TResult> setResult) {
+            if(f == null)
+                return null;
+            return (x1, x2) => setResult(f(x1, x2));
+        }
+        public static Action<T1, T2, T3> ToAction<T1, T2, T3, TResult>(this Func<T1, T2, T3, TResult> f, Action<TResult> setResult) {
+            if(f == null)
+                return null;
+            return (x1, x2, x3) => setResult(f(x1, x2, x3));
+        }
+#endregion
+    }
+#if MVVM
+    public
+#endif
+    struct Stated<TState, T> {
+        public Stated(TState state, T value) {
+            State = state;
+            Value = value;
+        }
+        public readonly TState State;
+        public readonly T Value;
+    }
+#if MVVM
+    public
+#endif
+    static class Stated {
+        public static Stated<TState, T> WithState<T, TState>(this T value, TState state) {
+            return new Stated<TState, T>(state, value);
+        }
+        sealed class Ref<T> {
+            public T Value;
+            public Ref(T value) { Value = value; }
+        }
+        static IEnumerable<TOut> SelectManyCore<TIn, TOut, TState>(Ref<TState> state, IEnumerable<TIn> enumerable, Func<TIn, TState, Stated<TState, IEnumerable<TOut>>> selector) {
+            foreach(var i in enumerable) {
+                var step = selector(i, state.Value);
+                state.Value = step.State;
+                foreach(var o in step.Value)
+                    yield return o;
+            }
+        }
+        public static Stated<TState, TResult> SelectMany<TIn, TOut, TResult, TState>(this Stated<TState, IEnumerable<TIn>> statedEnumerable, Func<TIn, TState, Stated<TState, IEnumerable<TOut>>> selector, Func<IEnumerable<TOut>, TResult> consumer) {
+            var state = new Ref<TState>(statedEnumerable.State);
+            var result = consumer(SelectManyCore(state, statedEnumerable.Value, selector));
+            return result.WithState(state.Value);
+        }
+        public static IEnumerable<TOut> SelectMany<TIn, TOut, TState>(this Stated<TState, IEnumerable<TIn>> statedEnumerable, Func<TIn, TState, Stated<TState, IEnumerable<TOut>>> selector) {
+            var state = new Ref<TState>(statedEnumerable.State);
+            return SelectManyCore(state, statedEnumerable.Value, selector);
+        }
+        static IEnumerable<TOut> SelectCore<TIn, TOut, TState>(Ref<TState> state, IEnumerable<TIn> enumerable, Func<TIn, TState, Stated<TState, TOut>> selector) {
+            foreach(var i in enumerable) {
+                var step = selector(i, state.Value);
+                state.Value = step.State;
+                yield return step.Value;
+            }
+        }
+        public static Stated<TState, TResult> Select<TIn, TOut, TResult, TState>(this Stated<TState, IEnumerable<TIn>> statedEnumerable, Func<TIn, TState, Stated<TState, TOut>> selector, Func<IEnumerable<TOut>, TResult> consumer) {
+            var state = new Ref<TState>(statedEnumerable.State);
+            var result = consumer(SelectCore(state, statedEnumerable.Value, selector));
+            return result.WithState(state.Value);
+        }
+        public static IEnumerable<TOut> Select<TIn, TOut, TState>(this Stated<TState, IEnumerable<TIn>> statedEnumerable, Func<TIn, TState, Stated<TState, TOut>> selector) {
+            var state = new Ref<TState>(statedEnumerable.State);
+            return SelectCore(state, statedEnumerable.Value, selector);
+        }
+        static IEnumerable<TOut> SelectUntilCore<TIn, TOut, TState>(Ref<TState> state, IEnumerable<TIn> enumerable, Func<TIn, TState, Stated<TState, TOut>> selector, Func<TState, bool> stop) {
+            foreach(var i in enumerable) {
+                if(stop(state.Value)) break;
+                var step = selector(i, state.Value);
+                state.Value = step.State;
+                yield return step.Value;
+            }
+        }
+        public static Stated<TState, TResult> SelectUntil<TIn, TOut, TResult, TState>(this Stated<TState, IEnumerable<TIn>> statedEnumerable, Func<TIn, TState, Stated<TState, TOut>> selector, Func<TState, bool> stop, Func<IEnumerable<TOut>, TResult> consumer) {
+            var state = new Ref<TState>(statedEnumerable.State);
+            var result = consumer(SelectUntilCore(state, statedEnumerable.Value, selector, stop));
+            return result.WithState(state.Value);
+        }
+        public static IEnumerable<TOut> SelectUntil<TIn, TOut, TState>(this Stated<TState, IEnumerable<TIn>> statedEnumerable, Func<TIn, TState, Stated<TState, TOut>> selector, Func<TState, bool> stop) {
+            var state = new Ref<TState>(statedEnumerable.State);
+            return SelectUntilCore(state, statedEnumerable.Value, selector, stop);
+        }
+    }
+#if MVVM
+    public
+#endif
+    static class TreeExtensions {
+        public static TResult FoldTree<T, TResult>(T root, Func<T, IEnumerable<T>> getChildren, Func<T, IEnumerable<TResult>, TResult> combineWithChildren) {
+            var children = getChildren(root).Select(x => FoldTree(x, getChildren, combineWithChildren));
+            return combineWithChildren(root, children);
+        }
+
+        public static IEnumerable<T> FlattenFromWithinForward<T>(this IEnumerable<T> rootPath, Func<T, IList<T>> getChildren, Func<IList<T>, T, int> indedOf = null) where T : class {
+            return rootPath.FlattenFromWithin(getChildren, indedOf, (s, gc, io) => GetNextElementInHierarchyCore(s, gc, io, skipChildren: false));
+        }
+        public static IEnumerable<T> FlattenFromWithinBackward<T>(this IEnumerable<T> rootPath, Func<T, IList<T>> getChildren, Func<IList<T>, T, int> indedOf = null) where T : class {
+            return rootPath.FlattenFromWithin(getChildren, indedOf, GetPrevElementInHierarchyCore);
+        }
+        static IEnumerable<T> FlattenFromWithin<T>(this IEnumerable<T> rootPath, Func<T, IList<T>> getChildren, Func<IList<T>, T, int> indedOf, Func<IImmutableStack<T>, Func<T, IList<T>>, Func<IList<T>, T, int>, IImmutableStack<T>> getNextElement) where T : class {
+            indedOf = indedOf ?? ((list, item) => list.IndexOf(item));
+            var originalStack = rootPath.ToImmutableStack();
+            Func<IImmutableStack<T>, IImmutableStack<T>> next = x => {
+                var nextElement = getNextElement(x, getChildren, indedOf);
+                return nextElement.Peek() == originalStack.Peek() ? null : nextElement;
+            };
+            return LinqExtensions.Unfold(originalStack, next, x => x == null).Select(x => x.Peek());
+        }
+
+        static IImmutableStack<T> GetNextElementInHierarchyCore<T>(IImmutableStack<T> rootStack, Func<T, IList<T>> getChildren, Func<IList<T>, T, int> indedOf, bool skipChildren) where T : class {
+            var currentElement = rootStack.Peek();
+            var children = getChildren(currentElement);
+            if(!skipChildren && children.Any())
+                return rootStack.Push(children.First());
+
+            var parents = rootStack.Pop();
+            var parent = parents.FirstOrDefault();
+            if(parent == null)
+                return rootStack;
+
+            var neighbors = getChildren(parent);
+            var index = indedOf(neighbors, currentElement);
+            if(index < neighbors.Count - 1)
+                return parents.Push(neighbors[index + 1]);
+
+            return GetNextElementInHierarchyCore(parents, getChildren, indedOf, skipChildren: true);
+        }
+
+        static IImmutableStack<T> GetPrevElementInHierarchyCore<T>(IImmutableStack<T> rootStack, Func<T, IList<T>> getChildren, Func<IList<T>, T, int> indedOf) where T : class {
+            var currentElement = rootStack.Peek();
+
+            Func<T, IEnumerable<T>> getChildrenPath = element => LinqExtensions.Unfold(element, x => getChildren(x).LastOrDefault(), x => x == null);
+
+            var parents = rootStack.Pop();
+            var parent = parents.FirstOrDefault();
+            if(parent == null) {
+                return ImmutableStack.Empty<T>().PushMultiple(getChildrenPath(currentElement));
+            }
+
+            var neighbors = getChildren(parent);
+            var index = indedOf(neighbors, currentElement);
+            if(index > 0) {
+                return parents.PushMultiple(getChildrenPath(neighbors[index - 1]));
+            }
+
+            return parents;
+        }
+
+        public static TreeWrapper<TNew, TValue> TransformTree<T, TNew, TValue, TState>(
+            T root,
+            TState state,
+            Func<T, IEnumerable<T>> getChildren,
+            Func<TreeWrapper<TNew, TValue>[], T, TState, TValue> getValue,
+            Func<T, TNew> getItem,
+            Func<TState, T, TState> getFirstChildState,
+            Func<TState, T, TState> advanceChildState) {
+
+            var childrenState = getFirstChildState(state, root);
+            var children = getChildren(root)
+                .Select(child => {
+                    var result = TransformTree(child, childrenState, getChildren, getValue, getItem, getFirstChildState, advanceChildState);
+                    childrenState = advanceChildState(childrenState, child);
+                    return result;
+                })
+                .ToArray();
+            return new TreeWrapper<TNew, TValue>(getItem(root), getValue(children, root, state), children);
+        }
+    }
+#if MVVM
+    public
+#endif
+    struct TreeWrapper<T, TValue> {
+        public readonly T Item;
+        public readonly TValue Value;
+        public readonly TreeWrapper<T, TValue>[] Children;
+        public TreeWrapper(T item, TValue value, TreeWrapper<T, TValue>[] children) {
+            Item = item;
+            Value = value;
+            Children = children;
+        }
+    }
+#endif
+
+#if MVVM
+    public
+#endif
     sealed class TaskLinq<T> {
         public TaskLinq(Task<T> task, TaskLinq.Chain chain) {
             Task = task;
@@ -247,7 +565,9 @@ namespace DevExpress.Mvvm.Native {
         internal readonly Task<T> Task;
         internal readonly TaskLinq.Chain Chain;
     }
+#if MVVM
     public
+#endif
     static class TaskLinq {
         public static TaskLinq<T> Linq<T>(this Task<T> task, TaskScheduler scheduler = null) {
             return task.Linq(new Chain(scheduler));
@@ -287,8 +607,7 @@ namespace DevExpress.Mvvm.Native {
                         }
                     }
                 }
-                if(action != null)
-                    action();
+                action?.Invoke();
             }
             public void Run() {
                 Action action;
@@ -305,8 +624,7 @@ namespace DevExpress.Mvvm.Native {
                 } else {
                     return;
                 }
-                if(action != null)
-                    action();
+                action?.Invoke();
             }
         }
         public sealed class SchedulerFuture {
@@ -350,8 +668,7 @@ namespace DevExpress.Mvvm.Native {
                     CheckScheduler(scheduler);
                     return;
                 }
-                if(action != null)
-                    action(this.scheduler);
+                action?.Invoke(this.scheduler);
             }
             void CheckScheduler(TaskScheduler scheduler) {
                 if((this.scheduler == TaskScheduler.Default) == (scheduler == TaskScheduler.Default)) return;
@@ -397,8 +714,8 @@ namespace DevExpress.Mvvm.Native {
         }
         public static TaskLinq<T> On<T>(Func<Action<T>, Action> subscribe, Chain chain) {
             var taskSource = new TaskCompletionSource<T>();
-            LinqExtensions.Fix<Action>(unsubscribe => subscribe(x => {
-                unsubscribe()();
+            LinqExtensions.WithReturnValue<Action>(unsubscribe => subscribe(x => {
+                unsubscribe.Value();
                 taskSource.SetResult(x);
             }));
             return taskSource.Task.Linq(chain);

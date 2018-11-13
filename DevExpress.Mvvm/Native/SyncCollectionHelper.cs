@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -32,15 +32,15 @@ namespace DevExpress.Mvvm.Native {
                 case NotifyCollectionChangedAction.Move:
                     object insertItem = target[e.OldStartingIndex];
 
-                    target.RemoveAt(e.OldStartingIndex);
+                    target.RemoveAt(e.OldStartingIndex);                    
                     target.Insert(e.NewStartingIndex, insertItem);
                     break;
                 case NotifyCollectionChangedAction.Replace:
-                    RemoveItem(e.NewStartingIndex, target, clearItemAction);
+                    RemoveItem(e.NewStartingIndex, target, clearItemAction);                    
                     InsertItem(e.NewItems[0], target, source, convertItemAction, insertItemAction);
                     break;
             }
-        }
+        }        
         public static void PopulateCore(
             IList target,
             IEnumerable source,

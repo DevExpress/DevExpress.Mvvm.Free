@@ -1,4 +1,4 @@
-
+﻿
 namespace DevExpress.Mvvm.Native {
     public enum PropertyDataType {
         Custom,

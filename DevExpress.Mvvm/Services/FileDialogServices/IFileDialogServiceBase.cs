@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 namespace DevExpress.Mvvm {
     [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]

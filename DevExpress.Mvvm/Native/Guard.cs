@@ -1,8 +1,14 @@
 using System;
 using System.Collections.Generic;
 
+#if MVVM && !NETFX_CORE
 namespace DevExpress.Mvvm.Native {
     public static class GuardHelper {
+#else
+namespace DevExpress.Utils {
+    public static class Guard {
+#endif
+        //public static void ArgumentNotNull<T>(T value, string name) where T : class { // AM:  MS bug, jit failed in release configuration
         public static void ArgumentNotNull(object value, string name) {
             if (Object.ReferenceEquals(value, null))
                 ThrowArgumentNullException(name);
@@ -56,7 +62,7 @@ namespace DevExpress.Mvvm.Native {
                 ThrowArgumentException(name, value);
         }
         static void ThrowArgumentException(string propName, object val, Exception innerException = null) {
-            string valueStr =
+            string valueStr = 
                 Object.ReferenceEquals(val, string.Empty) ? "String.Empty" :
                 Object.ReferenceEquals(val, null) ? "null" :
                 val.ToString();

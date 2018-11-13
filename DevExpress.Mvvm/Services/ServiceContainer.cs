@@ -1,12 +1,17 @@
-using DevExpress.Mvvm.Native;
+﻿using DevExpress.Mvvm.Native;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+#if !NETFX_CORE
 using System.Windows;
 using System.Windows.Threading;
+#else
+using Windows.UI.Xaml;
+using Windows.ApplicationModel.Core;
+#endif
 
 namespace DevExpress.Mvvm {
     public abstract class ServiceContainerBase {
@@ -111,7 +116,11 @@ namespace DevExpress.Mvvm {
             return serviceWithoutKey ?? _services.LastOrDefault();
         }
         void CheckServiceType(Type type) {
+#if !NETFX_CORE
             if(!type.IsInterface) {
+#else
+            if(!type.IsInterface) {
+#endif
                 throw new ArgumentException("Services can be only accessed via interface types");
             }
         }
@@ -178,7 +187,16 @@ namespace DevExpress.Mvvm {
     class DefaultServiceContainer : ServiceContainer {
         public DefaultServiceContainer() : base(null) { }
         protected virtual ResourceDictionary GetApplicationResources() {
+#if !NETFX_CORE
             bool hasAccess = Application.Current.Return(x => x.Dispatcher.CheckAccess(), () => false);
+#else
+            bool hasAccess;
+            try {
+                hasAccess = Application.Current != null && CoreApplication.GetCurrentView().CoreWindow.Return(x => x.Dispatcher.HasThreadAccess, () => false);
+            } catch {
+                hasAccess = Application.Current != null && CoreApplication.MainView.CoreWindow.Return(x => x.Dispatcher.HasThreadAccess, () => false);
+            }
+#endif
             return hasAccess ? Application.Current.Resources : null;
         }
         Dictionary<string, object> GetApplicationResources(Type type) {

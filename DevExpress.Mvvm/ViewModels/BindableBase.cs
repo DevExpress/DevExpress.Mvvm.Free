@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq.Expressions;
 using DevExpress.Mvvm.Native;
+using System.Runtime.CompilerServices;
 
 namespace DevExpress.Mvvm {
     [System.Runtime.Serialization.DataContract]
@@ -18,7 +19,9 @@ namespace DevExpress.Mvvm {
             const string vblocalPrefix = "$VB$Local_";
             var member = memberExpression.Member;
             if(
+#if !NETFX_CORE
                 member.MemberType == System.Reflection.MemberTypes.Field &&
+#endif
                 member.Name != null &&
                 member.Name.StartsWith(vblocalPrefix))
                 return member.Name.Substring(vblocalPrefix.Length);
@@ -26,6 +29,11 @@ namespace DevExpress.Mvvm {
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+#if NETFX_CORE
+        protected T GetProperty<T>([CallerMemberName] string propertyName = null) {
+            return PropertyManager.GetProperty<T>(propertyName);
+        }
+#endif
         protected T GetProperty<T>(Expression<Func<T>> expression) {
             return PropertyManager.GetProperty<T>(GetPropertyName(expression));
         }
@@ -38,9 +46,58 @@ namespace DevExpress.Mvvm {
         protected bool SetProperty<T>(ref T storage, T value, Expression<Func<T>> expression) {
             return this.SetProperty<T>(ref storage, value, expression, null);
         }
+#if !NETFX_CORE
         protected bool SetProperty<T>(ref T storage, T value, string propertyName) {
+#else
+        protected bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = null) {
+#endif
             return this.SetProperty<T>(ref storage, value, propertyName, null);
         }
+#if NETFX_CORE
+        protected bool SetProperty<T>(ref T storage, T value, Action<T, T> changedCallback, [CallerMemberName] string propertyName = null) {
+            if(object.Equals(storage, value)) return false;
+            T oldValue = storage;
+            storage = value;
+            if(changedCallback != null)
+                changedCallback(oldValue, value);
+            RaisePropertiesChanged(propertyName);
+            return true;
+        }
+        protected bool SetProperty<T>(T value, Action changedCallback, [CallerMemberName] string propertyName = null) {
+            return PropertyManager.SetProperty<T>(propertyName, value, RaisePropertyChanged, changedCallback);
+        }
+        protected bool SetProperty<T>(T value, Action<T> changedCallback, [CallerMemberName] string propertyName = null) {
+            return PropertyManager.SetProperty<T>(propertyName, value, RaisePropertyChanged, changedCallback);
+        }
+        protected bool SetProperty<T>(T value, [CallerMemberName] string propertyName = null) {
+            return PropertyManager.SetProperty<T>(propertyName, value, RaisePropertyChanged, (Action)null);
+        }
+#else
+        protected T GetValue<T>([CallerMemberName] string propertyName = null) {
+            GuardPropertyName(propertyName);
+            return PropertyManager.GetProperty<T>(propertyName);
+        }
+        protected bool SetValue<T>(T value, [CallerMemberName] string propertyName = null) {
+            return SetValue(value, default(Action), propertyName);
+        }
+        protected bool SetValue<T>(T value, Action changedCallback, [CallerMemberName] string propertyName = null) {
+            return PropertyManager.SetProperty(propertyName, value, RaisePropertyChanged, changedCallback);
+        }
+        protected bool SetValue<T>(T value, Action<T> changedCallback, [CallerMemberName] string propertyName = null) {
+            return PropertyManager.SetProperty(propertyName, value, RaisePropertyChanged, changedCallback);
+        }
+        protected bool SetValue<T>(ref T storage, T value, [CallerMemberName] string propertyName = null) {
+            return SetValue(ref storage, value, default(Action), propertyName);
+        }
+        protected bool SetValue<T>(ref T storage, T value, Action changedCallback, [CallerMemberName] string propertyName = null) {
+            GuardPropertyName(propertyName);
+            return PropertyManager.SetProperty(ref storage, value, propertyName, RaisePropertyChanged, changedCallback);
+        }
+        static void GuardPropertyName(string propertyName) {
+            if(string.IsNullOrEmpty(propertyName))
+                throw new ArgumentNullException(nameof(propertyName));
+        }
+#endif
         protected bool SetProperty<T>(Expression<Func<T>> expression, T value) {
             return this.SetProperty(expression, value, (Action)null);
         }
@@ -53,12 +110,19 @@ namespace DevExpress.Mvvm {
             return PropertyManager.SetProperty<T>(propertyName, value, RaisePropertyChanged, changedCallback);
         }
 
+        #region RaisePropertyChanged
+#if !NETFX_CORE
         protected void RaisePropertyChanged(string propertyName) {
+#else
+        protected void RaisePropertyChanged([CallerMemberName] string propertyName = null) {
+#endif
             PropertyChanged.Do(x => x(this, new PropertyChangedEventArgs(propertyName)));
         }
+#if !NETFX_CORE
         protected void RaisePropertyChanged() {
             RaisePropertiesChanged(null);
         }
+#endif
         protected void RaisePropertyChanged<T>(Expression<Func<T>> expression) {
             RaisePropertyChanged(GetPropertyName(expression));
         }
@@ -93,6 +157,7 @@ namespace DevExpress.Mvvm {
             RaisePropertyChanged(expression4);
             RaisePropertyChanged(expression5);
         }
+        #endregion
 
         PropertyManager propertyManager;
         internal PropertyManager PropertyManager { get { return propertyManager ?? (propertyManager = CreatePropertyManager()); } }

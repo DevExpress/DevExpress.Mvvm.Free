@@ -1,4 +1,4 @@
-
+﻿
 namespace DevExpress.Mvvm {
     public interface ISupportSplashScreen {
         bool IsIndeterminate { get; set; }

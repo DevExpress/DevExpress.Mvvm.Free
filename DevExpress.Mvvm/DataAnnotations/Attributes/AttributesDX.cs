@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -183,9 +183,16 @@ namespace DevExpress.Mvvm.Native {
             this.isValidFunction = isValidFunction;
         }
         protected override bool IsValid(object value) {
-            if (valueType.IsValueType && value == null)
+            if (IsValueTypeAndNull(valueType, value))
                 return true;
             return isValidFunction(value);
+        }
+        internal static bool IsValueTypeAndNull(Type valueType, object value) {
+            bool isValueType = valueType.IsValueType;
+            bool isNullable = isValueType
+                && valueType.IsGenericType
+                && valueType.GetGenericTypeDefinition() == typeof(Nullable<>);
+            return isValueType && !isNullable && value == null;
         }
     }
     [AttributeUsageAttribute(AttributeTargets.All, Inherited = true, AllowMultiple = true)]
@@ -199,7 +206,7 @@ namespace DevExpress.Mvvm.Native {
         }
         protected override bool IsValid(object value) { return true; }
         protected override bool IsInstanceValid(object value, object instance) {
-            if (valueType.IsValueType && value == null)
+            if (CustomValidationAttribute.IsValueTypeAndNull(valueType, value))
                 return true;
             return isValidFunction(value, instance);
         }

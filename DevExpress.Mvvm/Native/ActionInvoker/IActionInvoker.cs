@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using DevExpress.Mvvm.Native;
+#if !NETFX_CORE
 using System.Windows.Threading;
+#endif
 
 namespace DevExpress.Mvvm.Native {
     public interface IActionInvoker {
