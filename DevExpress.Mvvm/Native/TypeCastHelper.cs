@@ -16,9 +16,7 @@ namespace DevExpress.Mvvm.Native {
             Type underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
             if(underlyingType.IsEnum && value is string) {
                 value = Enum.Parse(underlyingType, (string)value, false);
-            } else if(
-                value is IConvertible &&
-                !targetType.IsAssignableFrom(value.GetType())) {
+            } else if( value is IConvertible && !targetType.IsAssignableFrom(value.GetType())) {
                 value = Convert.ChangeType(value, underlyingType, CultureInfo.InvariantCulture);
             }
             if(value == null && targetType.IsValueType)

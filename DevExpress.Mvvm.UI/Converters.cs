@@ -279,33 +279,6 @@ namespace DevExpress.Mvvm.UI {
         public ObjectToObjectConverter() {
             Map = new ObservableCollection<MapItem>();
         }
-        static object ParseColor(string str) {
-            var rgb = new Regex("^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$");
-            var m = rgb.Match(str);
-            if(m.Success) {
-                return Color.FromArgb(255,
-                    System.Convert.ToByte(m.Groups[1].ToString(), 16),
-                    System.Convert.ToByte(m.Groups[2].ToString(), 16),
-                    System.Convert.ToByte(m.Groups[3].ToString(), 16));
-            }
-            var argb = new Regex("^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$");
-            m = argb.Match(str);
-            if(m.Success) {
-                return Color.FromArgb(
-                    System.Convert.ToByte(m.Groups[1].ToString(), 16),
-                    System.Convert.ToByte(m.Groups[2].ToString(), 16),
-                    System.Convert.ToByte(m.Groups[3].ToString(), 16),
-                    System.Convert.ToByte(m.Groups[4].ToString(), 16));
-            }
-            var pairs = from brush in typeof(Colors).GetProperties()
-                        where brush.PropertyType == typeof(Color)
-                        let Color = (Color)brush.GetValue(null, null)
-                        select new { brush.Name, Color };
-            var pair = pairs.FirstOrDefault(x => x.Name == str);
-            if(pair != null)
-                return pair.Color;
-            return null;
-        }
         internal static object Coerce(object value, Type targetType, bool ignoreImplicitXamlConversions = false) {
             if(value == null || targetType == typeof(object) || value.GetType() == targetType) return value;
             if(targetType.IsAssignableFrom(value.GetType())) return value;
@@ -319,36 +292,39 @@ namespace DevExpress.Mvvm.UI {
         internal static bool IsImplicitXamlConvertion(Type valueType, Type targetType) {
             if(targetType == typeof(Thickness))
                 return true;
-            if(targetType == typeof(ImageSource) && (valueType == typeof(string) || valueType == typeof(Uri)))
+            if (targetType == typeof(GridLength))
+                return true;
+            if (targetType == typeof(ImageSource) && (valueType == typeof(string) || valueType == typeof(Uri)))
                 return true;
             return false;
         }
         internal static object CoerceNonNullable(object value, Type targetType, bool ignoreImplicitXamlConversions) {
-            if(targetType == typeof(SolidColorBrush) ||
-                targetType == typeof(Brush) ||
-                targetType == typeof(Color)) {
-                object res = null;
-                if(value is Color) {
-                    res = (Color)value;
-                }
-                if(value is string) {
-                    res = ParseColor((string)value);
-                }
-                if(res != null) {
-                    if(targetType == typeof(Color))
-                        return res;
-                    return new SolidColorBrush { Color = (Color)res };
-                }
-            }
-            if(targetType == typeof(string)) {
+            if (!ignoreImplicitXamlConversions && IsImplicitXamlConvertion(value.GetType(), targetType))
+                return value;
+            if (targetType == typeof(string)) {
                 return value.ToString();
             }
-            if(targetType.IsEnum && value is string) {
+            if (targetType.IsEnum && value is string) {
                 return Enum.Parse(targetType, (string)value, false);
             }
-            if(!ignoreImplicitXamlConversions && IsImplicitXamlConvertion(value.GetType(), targetType))
+            if (targetType == typeof(Color)) {
+                var c = new ColorConverter();
+                if (c.IsValid(value))
+                    return c.ConvertFrom(value);
                 return value;
+            }
+            if (targetType == typeof(Brush) || targetType == typeof(SolidColorBrush)) {
+                var c = new BrushConverter();
+                if (c.IsValid(value))
+                    return c.ConvertFrom(value);
+                if(value is Color)
+                    return BrushesCache.GetBrush((Color)value);
+                return value;
+            }
+            var cc = TypeDescriptor.GetConverter(targetType);
             try {
+                if (cc != null && cc.IsValid(value))
+                    return cc.ConvertFrom(null, System.Globalization.CultureInfo.InvariantCulture, value);
                 return System.Convert.ChangeType(value, targetType, System.Globalization.CultureInfo.InvariantCulture);
             } catch {
                 return value;
@@ -556,6 +532,142 @@ namespace DevExpress.Mvvm.UI {
         }
         object IValueConverter.ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             return ConvertBack(value);
+        }
+    }
+
+    public static class DelegateConverterFactory {
+        public static IValueConverter CreateValueConverter(Func<object, object> convert, Func<object, object> convertBack = null) {
+            return new DelegateValueConverter<object, object>(convert, convertBack, true);
+        }
+        public static IValueConverter CreateValueConverter(Func<object, Type, object, CultureInfo, object> convert, Func<object, Type, object, CultureInfo, object> convertBack = null) {
+            return new DelegateValueConverter<object, object>(convert, convertBack, true);
+        }
+        public static IValueConverter CreateValueConverter<TIn, TOut>(Func<TIn, TOut> convert, Func<TOut, TIn> convertBack = null) {
+            return new DelegateValueConverter<TIn, TOut>(convert, convertBack, false);
+        }
+        public static IValueConverter CreateValueConverter<TIn, TOut>(Func<TIn, object, CultureInfo, TOut> convert, Func<TOut, object, CultureInfo, TIn> convertBack = null) {
+            return new DelegateValueConverter<TIn, TOut>(convert, convertBack, false);
+        }
+
+        public static IMultiValueConverter CreateMultiValueConverter(Func<object[], object> convert, Func<object, object[]> convertBack = null) {
+            return new DelegateMultiValueConverter(convert, convertBack, -1, true);
+        }
+        public static IMultiValueConverter CreateMultiValueConverter(Func<object[], Type, object, CultureInfo, object> convert, Func<object, Type[], object, CultureInfo, object[]> convertBack = null) {
+            return new DelegateMultiValueConverter(convert, convertBack, -1, true);
+        }
+        public static IMultiValueConverter CreateMultiValueConverter<TIn1, TIn2, TOut>(Func<TIn1, TIn2, TOut> convert, Func<TOut, Tuple<TIn1, TIn2>> convertBack = null) {
+            return new DelegateMultiValueConverter(x => convert((TIn1)x[0], (TIn2)x[1]), x => ToArray(convertBack((TOut)x)), 2, false);
+        }
+        public static IMultiValueConverter CreateMultiValueConverter<TIn1, TIn2, TIn3, TOut>(Func<TIn1, TIn2, TIn3, TOut> convert, Func<TOut, Tuple<TIn1, TIn2, TIn3>> convertBack = null) {
+            return new DelegateMultiValueConverter(x => convert((TIn1)x[0], (TIn2)x[1], (TIn3)x[2]), x => ToArray(convertBack((TOut)x)), 3, false);
+        }
+        public static IMultiValueConverter CreateMultiValueConverter<TIn1, TIn2, TIn3, TIn4, TOut>(Func<TIn1, TIn2, TIn3, TIn4, TOut> convert, Func<TOut, Tuple<TIn1, TIn2, TIn3, TIn4>> convertBack = null) {
+            return new DelegateMultiValueConverter(x => convert((TIn1)x[0], (TIn2)x[1], (TIn3)x[2], (TIn4)x[3]), x => ToArray(convertBack((TOut)x)), 4, false);
+        }
+        public static IMultiValueConverter CreateMultiValueConverter<TIn1, TIn2, TIn3, TIn4, TIn5, TOut>(Func<TIn1, TIn2, TIn3, TIn4, TIn5, TOut> convert, Func<TOut, Tuple<TIn1, TIn2, TIn3, TIn4, TIn5>> convertBack = null) {
+            return new DelegateMultiValueConverter(x => convert((TIn1)x[0], (TIn2)x[1], (TIn3)x[2], (TIn4)x[3], (TIn5)x[4]), x => ToArray(convertBack((TOut)x)), 5, false);
+        }
+        public static IMultiValueConverter CreateMultiValueConverter<TIn1, TIn2, TIn3, TIn4, TIn5, TIn6, TOut>(Func<TIn1, TIn2, TIn3, TIn4, TIn5, TIn6, TOut> convert, Func<TOut, Tuple<TIn1, TIn2, TIn3, TIn4, TIn5, TIn6>> convertBack = null) {
+            return new DelegateMultiValueConverter(x => convert((TIn1)x[0], (TIn2)x[1], (TIn3)x[2], (TIn4)x[3], (TIn5)x[4], (TIn6)x[5]), x => ToArray(convertBack((TOut)x)), 6, false);
+        }
+
+        static object[] ToArray<T1, T2>(Tuple<T1, T2> tuple) {
+            return new object[] { tuple.Item1, tuple.Item2 };
+        }
+        static object[] ToArray<T1, T2, T3>(Tuple<T1, T2, T3> tuple) {
+            return new object[] { tuple.Item1, tuple.Item2, tuple.Item3 };
+        }
+        static object[] ToArray<T1, T2, T3, T4>(Tuple<T1, T2, T3, T4> tuple) {
+            return new object[] { tuple.Item1, tuple.Item2, tuple.Item3, tuple.Item4 };
+        }
+        static object[] ToArray<T1, T2, T3, T4, T5>(Tuple<T1, T2, T3, T4, T5> tuple) {
+            return new object[] { tuple.Item1, tuple.Item2, tuple.Item3, tuple.Item4, tuple.Item5 };
+        }
+        static object[] ToArray<T1, T2, T3, T4, T5, T6>(Tuple<T1, T2, T3, T4, T5, T6> tuple) {
+            return new object[] { tuple.Item1, tuple.Item2, tuple.Item3, tuple.Item4, tuple.Item5, tuple.Item6 };
+        }
+
+        class DelegateValueConverter<TIn, TOut> : IValueConverter {
+            readonly Func<TIn, TOut> convert1;
+            readonly Func<TOut, TIn> convertBack1;
+            readonly Func<TIn, object, CultureInfo, TOut> convert2;
+            readonly Func<TOut, object, CultureInfo, TIn> convertBack2;
+            readonly Func<TIn, Type, object, CultureInfo, TOut> convert3;
+            readonly Func<TOut, Type, object, CultureInfo, TIn> convertBack3;
+            readonly bool allowUnsetValue;
+            public DelegateValueConverter(Func<TIn, TOut> convert, Func<TOut, TIn> convertBack, bool allowUnsetValue) {
+                this.convert1 = convert;
+                this.convertBack1 = convertBack;
+                this.allowUnsetValue = allowUnsetValue;
+            }
+            public DelegateValueConverter(Func<TIn, object, CultureInfo, TOut> convert, Func<TOut, object, CultureInfo, TIn> convertBack, bool allowUnsetValue) {
+                this.convert2 = convert;
+                this.convertBack2 = convertBack;
+                this.allowUnsetValue = allowUnsetValue;
+            }
+            public DelegateValueConverter(Func<TIn, Type, object, CultureInfo, TOut> convert, Func<TOut, Type, object, CultureInfo, TIn> convertBack, bool allowUnsetValue) {
+                this.convert3 = convert;
+                this.convertBack3 = convertBack;
+                this.allowUnsetValue = allowUnsetValue;
+            }
+            public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+                if (!allowUnsetValue && value == DependencyProperty.UnsetValue)
+                    return Binding.DoNothing;
+                if (convert1 != null)
+                    return convert1((TIn)value);
+                if (convert2 != null)
+                    return convert2((TIn)value, parameter, culture);
+                if (convert3 != null)
+                    return convert3((TIn)value, targetType, parameter, culture);
+                throw new InvalidOperationException();
+            }
+            public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+                if (convertBack1 != null)
+                    return convertBack1((TOut)value);
+                if (convertBack2 != null)
+                    return convertBack2((TOut)value, parameter, culture);
+                if (convertBack3 != null)
+                    return convertBack3((TOut)value, targetType, parameter, culture);
+                throw new InvalidOperationException();
+            }
+        }
+        class DelegateMultiValueConverter : IMultiValueConverter {
+            readonly Func<object[], object> convert1;
+            readonly Func<object, object[]> convertBack1;
+            readonly Func<object[], Type, object, CultureInfo, object> convert2;
+            readonly Func<object, Type[], object, CultureInfo, object[]> convertBack2;
+            readonly int valuesCount;
+            readonly bool allowUnsetValue;
+            public DelegateMultiValueConverter(Func<object[], object> convert, Func<object, object[]> convertBack, int valuesCount, bool allowUnsetValue) {
+                this.convert1 = convert;
+                this.convertBack1 = convertBack;
+                this.valuesCount = valuesCount;
+                this.allowUnsetValue = allowUnsetValue;
+            }
+            public DelegateMultiValueConverter(Func<object[], Type, object, CultureInfo, object> convert, Func<object, Type[], object, CultureInfo, object[]> convertBack, int valuesCount, bool allowUnsetValue) {
+                this.convert2 = convert;
+                this.convertBack2 = convertBack;
+                this.valuesCount = valuesCount;
+                this.allowUnsetValue = allowUnsetValue;
+            }
+            public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture) {
+                if (this.valuesCount > 0 && values.Count() != this.valuesCount)
+                    throw new TargetParameterCountException();
+                if(!allowUnsetValue && values.Any(x => x == DependencyProperty.UnsetValue))
+                    return Binding.DoNothing;
+                if (convert1 != null)
+                    return convert1(values);
+                if (convert2 != null)
+                    return convert2(values, targetType, parameter, culture);
+                throw new InvalidOperationException();
+            }
+            public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
+                if (convertBack1 != null)
+                    return convertBack1(value);
+                if (convertBack2 != null)
+                    return convertBack2(value, targetTypes, parameter, culture);
+                throw new InvalidOperationException();
+            }
         }
     }
 

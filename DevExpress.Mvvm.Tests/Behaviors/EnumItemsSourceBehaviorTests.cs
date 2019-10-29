@@ -393,5 +393,13 @@ namespace DevExpress.Mvvm.UI.Tests {
                 "ItemsSource dependency property required");
 
         }
+        [Test]
+        public void SvgImageExceptionTest() {
+            ListBox listBox = new ListBox();
+            EnumItemsSourceBehavior listBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum3) };
+            Interaction.GetBehaviors(listBox).Add(listBoxBehavior);
+            Assert.AreEqual(3, listBox.Items.Count);
+            Assert.Throws(typeof(ArgumentException), () => { var svgImageSource = ((EnumMemberInfo)listBox.Items.GetItemAt(1)).Image; });
+        }
     }
 }

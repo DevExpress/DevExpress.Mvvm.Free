@@ -139,7 +139,7 @@ namespace DevExpress.Mvvm.Tests {
         }
 
         [Test]
-        public void SubscribeUnsubsribe() {
+        public void SubscribeUnsubscribe() {
             SubscribeUnsubsribeCore(false, (e, args) => e.RaiseMyEvent(args), (e, sender, args) => e.RaiseMyEvent(sender, args),
                 (s, e) => s.Subscribe(e), (s, e) => s.SubscribeTwice(e), (s, e) => s.Unsubscribe(e));
             SubscribeUnsubsribeCore(true, (e, args) => e.RaiseMyEvent(args), (e, sender, args) => e.RaiseMyEvent(sender, args),
@@ -153,13 +153,22 @@ namespace DevExpress.Mvvm.Tests {
         void SubscribeUnsubsribeCore(bool passSender, Action<EventOwner, EventArgs> raiseMyEvent1, Action<EventOwner, object, EventArgs> raiseMyEvent2,
             Action<Subscriber, EventOwner> subscribe, Action<Subscriber, EventOwner> subscribeTwice, Action<Subscriber, EventOwner> unsubscribe) {
             var e = new EventOwner();
-            var s = new Subscriber();
             var sender = passSender ? new object() : e;
             var args = new PropertyChangedEventArgs("Test");
             Action raise = () => {
                 if(passSender) raiseMyEvent2(e, sender, args);
                 else raiseMyEvent1(e, args);
             };
+
+            WeakReference sRef = SubscribeUnsubsribeCoreAlloc(e, sender, args, raise, raiseMyEvent1, raiseMyEvent2, subscribe, subscribeTwice, unsubscribe);
+            MemoryLeaksHelper.CollectOptional(sRef);
+            MemoryLeaksHelper.EnsureCollected(sRef);
+            raise();
+        }
+        WeakReference SubscribeUnsubsribeCoreAlloc(EventOwner e, object sender, PropertyChangedEventArgs args, Action raise,
+            Action<EventOwner, EventArgs> raiseMyEvent1, Action<EventOwner, object, EventArgs> raiseMyEvent2,
+            Action<Subscriber, EventOwner> subscribe, Action<Subscriber, EventOwner> subscribeTwice, Action<Subscriber, EventOwner> unsubscribe) {
+            var s = new Subscriber();
 
             subscribe(s, e);
             raise();
@@ -203,12 +212,9 @@ namespace DevExpress.Mvvm.Tests {
 
             unsubscribe(s, e);
             subscribe(s, e);
-            WeakReference sRef = new WeakReference(s);
-            s = null;
-            MemoryLeaksHelper.CollectOptional(sRef);
-            MemoryLeaksHelper.EnsureCollected(sRef);
-            raise();
+            return new WeakReference(s);
         }
+
         [Test]
         public void Memory() {
             MemoryCore((s, e) => s.SubscribePublic(e, false), (s) => s.CheckPublic(), (e) => e.RaiseMyEvent(EventArgs.Empty));
@@ -232,17 +238,19 @@ namespace DevExpress.Mvvm.Tests {
             MemoryCore((s, e) => s.SibscribeAnonymousStatic(e, true), (s) => s.CheckStatic(), (e) => e.RaiseMyStaticEvent(EventArgs.Empty));
         }
         void MemoryCore(Action<Subscriber2, EventOwner> subscribe, Action<Subscriber2> check, Action<EventOwner> raise) {
-            var e = new EventOwner();
-            var s = new Subscriber2();
+            WeakReference sRef = MemoryCoreAlloc(subscribe, check, raise);
+            Collect();
+            Assert.AreEqual(false, sRef.IsAlive);
+        }
+        WeakReference MemoryCoreAlloc(Action<Subscriber2, EventOwner> subscribe, Action<Subscriber2> check, Action<EventOwner> raise) {
+            EventOwner e = new EventOwner();
+            Subscriber2 s = new Subscriber2();
             subscribe(s, e);
             Collect();
             raise(e);
             check(s);
             s.Clear();
-            WeakReference sRef = new WeakReference(s);
-            s = null;
-            Collect();
-            Assert.AreEqual(false, sRef.IsAlive);
+            return new WeakReference(s);
         }
 
         [Test]

@@ -42,7 +42,12 @@ namespace DevExpress.Utils {
         public static bool IsWinSupportsAcrylicEffect {
             get { return WinVersionInfo.ReleaseID >= 1803 && WinVersionInfo.CurrentBuild >= 17064; }
         }
-
+        public static bool IsWindows10Build1903OrHigher {
+            get { return WinVersionInfo.ReleaseID >= 1903; }
+        }
+        public static bool IsWindows10Build1809OrHigher {
+            get { return WinVersionInfo.ReleaseID >= 1809; }
+        }
         static bool TryGetReleaseAndBuildVersion(out WindowsVersionInfo vi) {
             bool success = false;
             vi = null;

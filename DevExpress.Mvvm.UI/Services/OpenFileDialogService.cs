@@ -88,14 +88,14 @@ namespace DevExpress.Mvvm.UI {
             OpenFileDialog.Filter = Filter;
             OpenFileDialog.FilterIndex = FilterIndex;
         }
-        protected override List<FileInfoWrapper> GetFileInfos() {
-            List<FileInfoWrapper> res = new List<FileInfoWrapper>();
+        protected override List<object> GetFileInfos() {
+            List<object> res = new List<object>();
             foreach(string fileName in OpenFileDialog.FileNames)
                 res.Add(FileInfoWrapper.Create(fileName));
             return res;
         }
-        IFileInfo IOpenFileDialogService.File { get { return GetFiles().FirstOrDefault(); } }
-        IEnumerable<IFileInfo> IOpenFileDialogService.Files { get { return GetFiles(); } }
+        IFileInfo IOpenFileDialogService.File { get { return (IFileInfo)GetFiles().FirstOrDefault(); } }
+        IEnumerable<IFileInfo> IOpenFileDialogService.Files { get { return GetFiles().Cast<IFileInfo>(); } }
         bool IOpenFileDialogService.ShowDialog(Action<CancelEventArgs> fileOK, string directoryName) {
             if(directoryName != null)
                 InitialDirectory = directoryName;

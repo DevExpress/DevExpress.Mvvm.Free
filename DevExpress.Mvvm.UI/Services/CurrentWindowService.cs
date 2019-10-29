@@ -7,6 +7,11 @@ using System;
 using DevExpress.Mvvm.Native;
 using System.Windows.Input;
 using System.ComponentModel;
+using DevExpress.Mvvm.UI;
+using DevExpress.Mvvm;
+using System.Collections.Generic;
+using System.Linq;
+
 
 namespace DevExpress.Mvvm.UI {
     [TargetTypeAttribute(typeof(UserControl))]
@@ -20,7 +25,7 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty ClosingCommandProperty =
             DependencyProperty.Register("ClosingCommand", typeof(ICommand), typeof(CurrentWindowService), new PropertyMetadata(null));
 
-        Window GetActualWindow() {
+        protected Window GetActualWindow() {
             if (ActualWindow == null)
                 UpdateActualWindow();
             return ActualWindow;

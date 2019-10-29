@@ -6,6 +6,8 @@ using System.ComponentModel;
 using System.Collections.Generic;
 using DevExpress.Mvvm.UI.Native;
 using System.Windows;
+using DxDialogResult = System.Windows.Forms.DialogResult;
+using DxFileDialogCustomPlaces = System.Windows.Forms.FileDialogCustomPlacesCollection;
 
 namespace DevExpress.Mvvm.UI.Tests {
     public abstract class FileDialogServiceBaseTests { }
@@ -105,7 +107,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 
             public string[] SafeFileNames { get; private set; }
 
-            public FileDialogCustomPlacesCollection CustomPlaces { get; private set; }
+            public DxFileDialogCustomPlaces CustomPlaces { get; private set; }
 
             public event CancelEventHandler FileOk;
             public event EventHandler HelpRequest { add { } remove { } }
@@ -113,7 +115,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             public void Reset() { }
             public void Dispose() { }
 
-            public DialogResult ShowDialog() {
+            public DxDialogResult ShowDialog() {
                 FileNames = new[] { "initFileName" };
                 var cancelEventArgs = new CancelEventArgs();
                 while(true) {
@@ -123,9 +125,9 @@ namespace DevExpress.Mvvm.UI.Tests {
                     if(!cancelEventArgs.Cancel)
                         break;
                 }
-                return DialogResult.OK;
+                return DxDialogResult.OK;
             }
-            public DialogResult ShowDialog(object owner) {
+            public DxDialogResult ShowDialog(object owner) {
                 return ShowDialog();
             }
         }

@@ -80,7 +80,7 @@ namespace DevExpress.Mvvm {
 
         #region RaisePropertyChanged
         protected void RaisePropertyChanged(string propertyName) {
-            PropertyChanged.Do(x => x(this, new PropertyChangedEventArgs(propertyName)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         protected void RaisePropertyChanged() {
             RaisePropertiesChanged(null);
@@ -157,7 +157,9 @@ namespace DevExpress.Mvvm.Native {
                 oldValue = (T)val;
             if(CompareValues<T>(oldValue, value))
                 return false;
-            propertyBag[propertyName] = value;
+            lock (propertyBag) {
+                propertyBag[propertyName] = value;
+            }
             return true;
         }
 
@@ -172,7 +174,7 @@ namespace DevExpress.Mvvm.Native {
             var res = SetPropertyCore(ref storage, value, propertyName);
             if(res) {
                 raiseNotification(propertyName);
-                changedCallback.Do(x => x());
+                changedCallback?.Invoke();
             }
             return res;
         }
@@ -186,14 +188,14 @@ namespace DevExpress.Mvvm.Native {
             return res;
         }
         protected virtual bool SetPropertyCore<T>(ref T storage, T value, string propertyName) {
-            if(PropertyManager.CompareValues<T>(storage, value))
+            if(CompareValues<T>(storage, value))
                 return false;
             storage = value;
             return true;
         }
 
         static bool CompareValues<T>(T storage, T value) {
-            return object.Equals(storage, value);
+            return Equals(storage, value);
         }
     }
 }

@@ -37,10 +37,10 @@ namespace DevExpress.Mvvm.DataAnnotations {
             return AddOrReplaceAttribute(new BindablePropertyAttribute());
         }
         public TBuilder OnPropertyChangedCall(Expression<Action<T>> onPropertyChangedExpression) {
-            return AddOrModifyAttribute<BindablePropertyAttribute>(x => x.OnPropertyChangedMethod = ClassMetadataBuilder<T>.GetMethod(onPropertyChangedExpression));
+            return AddOrModifyAttribute<BindablePropertyAttribute>(x => x.OnPropertyChangedMethod = ExpressionHelper.GetArgumentMethodStrict(onPropertyChangedExpression));
         }
         public TBuilder OnPropertyChangingCall(Expression<Action<T>> onPropertyChangingExpression) {
-            return AddOrModifyAttribute<BindablePropertyAttribute>(x => x.OnPropertyChangingMethod = ClassMetadataBuilder<T>.GetMethod(onPropertyChangingExpression));
+            return AddOrModifyAttribute<BindablePropertyAttribute>(x => x.OnPropertyChangingMethod = ExpressionHelper.GetArgumentMethodStrict(onPropertyChangingExpression));
         }
         public TBuilder ReturnsService(ServiceSearchMode searchMode = default(ServiceSearchMode)) {
             return ReturnsService(null, searchMode);

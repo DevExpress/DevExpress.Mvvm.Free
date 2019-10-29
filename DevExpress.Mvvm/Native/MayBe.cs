@@ -72,6 +72,7 @@ namespace DevExpress.Mvvm.Native {
             }
             return result;
         }
+#if !NETFX_CORE && (!DXCORE3 || MVVM)
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key) {
             TValue result;
             dictionary.TryGetValue(key, out result);
@@ -83,6 +84,7 @@ namespace DevExpress.Mvvm.Native {
                 return result;
             return defaultValue;
         }
+#endif
     }
     public
     static class EmptyArray<TElement> {
@@ -90,6 +92,10 @@ namespace DevExpress.Mvvm.Native {
     }
     public
     struct UnitT { }
+    public
+    sealed class VoidT {
+        VoidT() { }
+    }
     public
     static class LinqExtensions {
         public static bool IsEmptyOrSingle<T>(this IEnumerable<T> source) {
@@ -112,11 +118,12 @@ namespace DevExpress.Mvvm.Native {
                 action(t, index++);
         }
         public static void ForEach<TFirst, TSecond>(this IEnumerable<TFirst> first, IEnumerable<TSecond> second, Action<TFirst, TSecond> action) {
-            var en1 = first.GetEnumerator();
-            var en2 = second.GetEnumerator();
-            while(en1.MoveNext() && en2.MoveNext()) {
-                action(en1.Current, en2.Current);
-            }
+            using(var en1 = first.GetEnumerator())
+                using(var en2 = second.GetEnumerator()) {
+                    while(en1.MoveNext() && en2.MoveNext()) {
+                        action(en1.Current, en2.Current);
+                    }
+                }
         }
         public static int IndexOf<T>(this IEnumerable<T> source, Predicate<T> predicate) {
             int index = 0;
@@ -168,13 +175,33 @@ namespace DevExpress.Mvvm.Native {
                 source.SelectMany(x => getItems(x, level + 1)).ForEachCore(getItems, action, level + 1);
         }
         public static IEnumerable<T> Flatten<T>(this IEnumerable<T> source, Func<T, IEnumerable<T>> getItems) {
-            return source.SelectMany(item => item.Yield().Concat(getItems(item).Flatten(getItems)));
+            return source.Flatten((x, _) => getItems(x));
+        }
+        struct EnumeratorAndLevel<T> {
+            public readonly IEnumerator<T> En;
+            public readonly int Level;
+            public EnumeratorAndLevel(IEnumerator<T> en, int level) {
+                En = en;
+                Level = level;
+            }
         }
         public static IEnumerable<T> Flatten<T>(this IEnumerable<T> source, Func<T, int, IEnumerable<T>> getItems) {
-            return source.FlattenCore(getItems, 0);
-        }
-        static IEnumerable<T> FlattenCore<T>(this IEnumerable<T> source, Func<T, int, IEnumerable<T>> getItems, int level) {
-            return source.SelectMany(item => item.Yield().Concat(getItems(item, level).FlattenCore(getItems, level + 1)));
+            var stack = new Stack<EnumeratorAndLevel<T>>();
+            var root = source.GetEnumerator();
+            if(root.MoveNext())
+                stack.Push(new EnumeratorAndLevel<T>(root, 0));
+            while(stack.Count != 0) {
+                var top = stack.Peek();
+                var current = top.En.Current;
+                yield return current;
+                if(!top.En.MoveNext())
+                    stack.Pop();
+
+                var children = getItems(current, top.Level)?.GetEnumerator();
+                if(children?.MoveNext() == true) {
+                    stack.Push(new EnumeratorAndLevel<T>(children, top.Level + 1));
+                }
+            }
         }
         public static T MinByLast<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector) where TKey : IComparable {
             var comparer = Comparer<TKey>.Default;
@@ -189,20 +216,17 @@ namespace DevExpress.Mvvm.Native {
             return source.Aggregate((x, y) => comparer.Compare(keySelector(x), keySelector(y)) >= 0 ? x : y);
         }
         public static IEnumerable<T> InsertDelimiter<T>(this IEnumerable<T> source, T delimiter) {
-            var en = source.GetEnumerator();
-            if(en.MoveNext())
-                yield return en.Current;
-            while(en.MoveNext()) {
-                yield return delimiter;
-                yield return en.Current;
+            using(var en = source.GetEnumerator()) {
+                if(en.MoveNext())
+                    yield return en.Current;
+                while(en.MoveNext()) {
+                    yield return delimiter;
+                    yield return en.Current;
+                }
             }
         }
         public static string ConcatStringsWithDelimiter(this IEnumerable<string> source, string delimiter) {
-            var builder = new StringBuilder();
-            foreach(var str in source.InsertDelimiter(delimiter)) {
-                builder.Append(str);
-            }
-            return builder.ToString();
+            return string.Join(delimiter, source);
         }
         public static IOrderedEnumerable<TSource> OrderBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, ListSortDirection sortDirection) {
             return sortDirection == ListSortDirection.Ascending ?
@@ -231,7 +255,7 @@ namespace DevExpress.Mvvm.Native {
         public static bool AllEqual<T>(this IEnumerable<T> source, Func<T, T, bool> comparer = null) {
             if(!source.Any())
                 return true;
-            comparer = comparer ?? ((x, y) => Equals(x, y));
+            comparer = comparer ?? ((x, y) => EqualityComparer<T>.Default.Equals(x, y));
             var first = source.First();
             return source.Skip(1).All(x => comparer(x, first));
         }

@@ -22,6 +22,9 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty UseDispatcherProperty =
             DependencyProperty.Register("UseDispatcher", typeof(bool?), typeof(EventToCommandBase),
             new PropertyMetadata(null));
+        public static readonly DependencyProperty CommandTargetProperty =
+            DependencyProperty.Register("CommandTarget", typeof(IInputElement), typeof(EventToCommandBase),
+            new PropertyMetadata(null));
         public static readonly DependencyProperty DispatcherPriorityProperty =
             DependencyProperty.Register("DispatcherPriority", typeof(DispatcherPriority?), typeof(EventToCommandBase),
             new PropertyMetadata(null));
@@ -53,6 +56,10 @@ namespace DevExpress.Mvvm.UI {
                 }
                 return UseDispatcher.Value;
             }
+        }
+        public IInputElement CommandTarget {
+            get { return (IInputElement)GetValue(CommandTargetProperty); }
+            set { SetValue(CommandTargetProperty, value); }
         }
         public DispatcherPriority? DispatcherPriority {
             get { return (DispatcherPriority?)GetValue(DispatcherPriorityProperty); }
@@ -100,5 +107,18 @@ namespace DevExpress.Mvvm.UI {
         }
         protected virtual void OnCommandChanged() { }
         protected virtual void OnCommandParameterChanged() { }
+
+        protected bool CommandCanExecute(object commandParameter) {
+            if(Command is RoutedCommand)
+                return ((RoutedCommand)Command).CanExecute(commandParameter, CommandTarget);
+            return Command.CanExecute(commandParameter);
+        }
+        protected void CommandExecute(object commandParameter) {
+            if (Command is RoutedCommand) {
+                ((RoutedCommand)Command).Execute(commandParameter, CommandTarget);
+                return;
+            }
+            Command.Execute(commandParameter);
+        }
     }
 }

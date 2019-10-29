@@ -444,13 +444,16 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void ReleaseTarget_CanExecutePrivate() {
+            WeakReference reference = ReleaseTarget_CanExecutePrivateCore();
+            MemoryLeaksHelper.EnsureCollected(reference);
+        }
+        WeakReference ReleaseTarget_CanExecutePrivateCore() {
             MemoryViewModel commandContainer = new MemoryViewModel();
             WeakReference reference = new WeakReference(commandContainer);
             commandContainer.CreatePrivateCommand((x1, x2) => CreateCommand(x1, x2));
             commandContainer.CreateInternalCommand((x1, x2) => CreateCommand(x1, x2));
-            Assert.IsTrue(reference.IsAlive);
             commandContainer = null;
-            MemoryLeaksHelper.EnsureCollected(reference);
+            return reference;
         }
 
         [Test]

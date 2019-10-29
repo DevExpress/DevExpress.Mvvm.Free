@@ -1,70 +1,46 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{EFDD2122-DAB0-4F42-9DD6-1F450465C08C}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <ProjectGuid>{8E649F7E-FE4D-4924-BD45-F2B82C4512C3}</ProjectGuid>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <EnableDefaultItems>False</EnableDefaultItems>
+    <UseWPF>True</UseWPF>
+    <UseWindowsForms>True</UseWindowsForms>
+    <Configurations>Debug;Release</Configurations>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
     <RootNamespace>DevExpress.Mvvm.UI</RootNamespace>
     <AssemblyName>DevExpress.Mvvm.UI</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <LangVersion>6</LangVersion>
     <FileAlignment>512</FileAlignment>
-    <SccProjectName>SAK</SccProjectName>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccProvider>SAK</SccProvider>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
-    <BaseIntermediateOutputPath>obj.Wpf.Free</BaseIntermediateOutputPath>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
-  <PropertyGroup>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\DevExpress.Mvvm.Key\StrongKey.snk</AssemblyOriginatorKeyFile>
+    <IntermediateOutputPath>obj.NetCore.Desktop.Free</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\Bin\Framework4\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;MVVM;FREE;</DefineConstants>
+    <OutputPath>..\Bin\NETCoreDesktop\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;MVVM;DXCORE3;FREE;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\Bin\Framework4\</OutputPath>
-    <DefineConstants>TRACE;MVVM;FREE;</DefineConstants>
+    <OutputPath>..\Bin\NETCoreDesktop\</OutputPath>
+    <DefineConstants>TRACE;MVVM;DXCORE3;FREE;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DevExpress.Mvvm">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Bin\Framework4\DevExpress.Mvvm.dll</HintPath>
+      <HintPath>..\Bin\NETCoreDesktop\DevExpress.Mvvm.dll</HintPath>
     </Reference>
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data.Entity" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Management" />
-    <Reference Include="System.ServiceModel" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xaml" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Behaviors\CompositeCommandBehavior.cs" />
@@ -144,36 +120,16 @@
     </Compile>
     <Compile Include="Services\NotificationService\NotificationService.cs" />
     <Compile Include="Services\NotificationService\TemplatesHelper.cs" />
-    <Compile Include="Services\NotificationService\WinrtToastNotifier\Public.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Services\NotificationService\WinrtToastNotifier\ShellHelper.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Services\NotificationService\WinrtToastNotifier\ToastNotification.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Services\NotificationService\WinrtToastNotifier\ToastNotificationContent.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Services\NotificationService\WinrtToastNotifier\ToastNotifier.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Common.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Shell.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\ToastNotificationManager.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Windows.Data.Xml.Dom.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Windows.UI.Notifications.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\Public.cs" />
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\ShellHelper.cs" />
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\ToastNotification.cs" />
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\ToastNotificationContent.cs" />
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\ToastNotifier.cs" />
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Common.cs" />
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Shell.cs" />
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\ToastNotificationManager.cs" />
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Windows.Data.Xml.Dom.cs" />
+    <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\Windows.UI.Notifications.cs" />
     <Compile Include="Services\NotificationService\WinrtToastNotifier\WinApi\WindowsVersion.cs" />
     <Compile Include="Services\NotificationService\WpfPredefinedToastNotifications\Colors.cs" />
     <Compile Include="Services\NotificationService\WpfPredefinedToastNotifications\PredefinedToastNotificationVewModel.cs" />
@@ -204,11 +160,6 @@
     <Compile Include="ViewLocator\ViewLocator.cs" />
     <Compile Include="ViewModelSourceExtension.cs" />
     <Compile Include="LayoutTreeHelper.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="..\Bin\Framework4\DevExpress.Mvvm.UI.ApplicationJumpTaskLauncher.exe">
-      <Link>DevExpress.Mvvm.UI.ApplicationJumpTaskLauncher.exe</Link>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Page Include="Behaviors\EnumItemsSourceBehavior\EnumItemsSourceDefaultTemplate.xaml">
@@ -257,5 +208,10 @@
     <Compile Include="DXBinding\Tree.cs" />
     <Compile Include="DXBinding\TreeVisitor.cs" />
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="4.5.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="4.5.0" />
+    <PackageReference Include="System.ServiceModel.Http" Version="4.5.3" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.6.0" />
+  </ItemGroup>
 </Project>

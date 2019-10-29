@@ -67,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyVersion.cs" />
+    <Compile Include="JumpActionsManagerBase.cs" />
     <Compile Include="JumpActionsManagerClient.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

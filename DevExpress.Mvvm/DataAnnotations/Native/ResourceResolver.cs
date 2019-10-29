@@ -9,8 +9,10 @@ namespace DevExpress.Mvvm.Native {
         internal static ResourceManager AnnotationsResourceManager {
             get {
                 if(object.ReferenceEquals(annotationsResourceManager, null)) {
-                    ResourceManager manager = new ResourceManager("System.ComponentModel.DataAnnotations.Resources.DataAnnotationsResources", typeof(ValidationAttribute).Assembly);
-                    annotationsResourceManager = manager;
+                    if(typeof(ValidationAttribute).Assembly.FullName.StartsWith("System.ComponentModel.DataAnnotations,"))
+                        annotationsResourceManager = new ResourceManager("System.ComponentModel.DataAnnotations.Resources.DataAnnotationsResources", typeof(ValidationAttribute).Assembly);
+                    else
+                        annotationsResourceManager = new ResourceManager("FxResources.System.ComponentModel.Annotations.SR", typeof(ValidationAttribute).Assembly);
                 }
                 return annotationsResourceManager;
             }

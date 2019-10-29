@@ -2,7 +2,7 @@ using System;
 using System.Windows.Shell;
 using DevExpress.Mvvm.Native;
 using DevExpress.Utils;
-
+#if !DXCORE3
 namespace DevExpress.Mvvm.UI.Native {
     public static class ApplicationJumpItemWrapper {
         public static JumpItem Wrap(ApplicationJumpItemInfo applicationJumpItem) {
@@ -46,7 +46,7 @@ namespace DevExpress.Mvvm.UI.Native {
             ApplicationJumpPath = applicationJumpPath;
         }
         public ApplicationJumpPathInfo ApplicationJumpPath { get; private set; }
-        #region Equality
+#region Equality
         public static bool operator ==(ApplicationJumpPathWrap a, ApplicationJumpPathWrap b) {
             bool aIsNull = (object)a == null;
             bool bIsNull = (object)b == null;
@@ -63,7 +63,7 @@ namespace DevExpress.Mvvm.UI.Native {
         public override bool Equals(object obj) {
             return this == obj as ApplicationJumpPathWrap;
         }
-        #endregion
+#endregion
     }
     public class ApplicationJumpTaskWrap : JumpTask, IJumpAction {
         public ApplicationJumpTaskWrap(ApplicationJumpTaskInfo applicationJumpTask) {
@@ -71,7 +71,7 @@ namespace DevExpress.Mvvm.UI.Native {
             ApplicationJumpTask = applicationJumpTask;
         }
         public ApplicationJumpTaskInfo ApplicationJumpTask { get; private set; }
-        #region Equality
+#region Equality
         public static bool operator ==(ApplicationJumpTaskWrap a, ApplicationJumpTaskWrap b) {
             bool aIsNull = (object)a == null;
             bool bIsNull = (object)b == null;
@@ -88,8 +88,8 @@ namespace DevExpress.Mvvm.UI.Native {
         public override bool Equals(object obj) {
             return this == obj as ApplicationJumpTaskWrap;
         }
-        #endregion
-        #region IJumpAction
+#endregion
+#region IJumpAction
         string IJumpAction.CommandId { get { return ApplicationJumpTask.CommandId; } }
         string IJumpAction.ApplicationPath { get { return ApplicationJumpTask.ApplicationPath; } }
         string IJumpAction.Arguments { get { return ApplicationJumpTask.Arguments; } }
@@ -102,6 +102,7 @@ namespace DevExpress.Mvvm.UI.Native {
             IApplicationJumpTaskInfoInternal applicationJumpTask = ApplicationJumpTask;
             applicationJumpTask.Execute();
         }
-        #endregion
+#endregion
     }
 }
+#endif

@@ -96,6 +96,12 @@ namespace DevExpress.Mvvm {
         }
 #region CommandAttributeSupport
         protected internal void RaiseCanExecuteChanged(Expression<Action> commandMethodExpression) {
+            RaiseCanExecuteChangedCore(commandMethodExpression);
+        }
+        protected internal void RaiseCanExecuteChanged(Expression<Func<System.Threading.Tasks.Task>> commandMethodExpression) {
+            RaiseCanExecuteChangedCore(commandMethodExpression);
+        }
+        void RaiseCanExecuteChangedCore(LambdaExpression commandMethodExpression) {
             if(IsPOCOViewModel) {
                 POCOViewModelExtensions.RaiseCanExecuteChangedCore(this, commandMethodExpression);
             } else {
@@ -104,7 +110,6 @@ namespace DevExpress.Mvvm {
                 ).RaiseCanExecuteChanged();
             }
         }
-
         internal const string CommandNameSuffix = "Command";
         const string CanExecuteSuffix = "Can";
         const string Error_PropertyWithSameNameAlreadyExists = "Property with the same name already exists: {0}.";
@@ -144,7 +149,7 @@ namespace DevExpress.Mvvm {
 
                     MethodInfo canExecuteMethod = GetCanExecuteMethod(type, x, attribute, s => new CommandAttributeException(s), m => m.IsPublic);
                     var attributes = MetadataHelper.GetAllAttributes(x);
-                    return new CommandProperty(x, canExecuteMethod, name, attribute.GetUseCommandManager(), attributes, type);
+                    return new CommandProperty(x, canExecuteMethod, name, attribute.GetUseCommandManager(), attributes, type, attribute.AllowMultipleExecutionCore);
                 })
                 .ToDictionary(x => x.Method);
             foreach(var property in commandProperties.Values) {
@@ -203,20 +208,36 @@ namespace DevExpress.Mvvm {
             public static IDelegateCommand CreateCommand(object owner, MethodInfo method, MethodInfo canExecuteMethod, bool? useCommandManager, bool hasParameter) {
                 return new DelegateCommand<T>(
                     x => method.Invoke(owner, GetInvokeParameters(x, hasParameter)),
-                    x => canExecuteMethod != null ? (bool)canExecuteMethod.Invoke(owner, GetInvokeParameters(x, hasParameter)) : true, useCommandManager);
+                    GetCanExecute(owner, canExecuteMethod, hasParameter),
+                    useCommandManager
+                );
+            }
+            public static IDelegateCommand CreateAsyncCommand(object owner, MethodInfo method, MethodInfo canExecuteMethod, bool? useCommandManager, bool hasParameter, bool allowMultipleExecution) {
+                return new AsyncCommand<T>(
+                    x => (System.Threading.Tasks.Task)method.Invoke(owner, GetInvokeParameters(x, hasParameter)),
+                    GetCanExecute(owner, canExecuteMethod, hasParameter),
+                    allowMultipleExecution: allowMultipleExecution,
+                    useCommandManager: useCommandManager
+                );
+            }
+            static Func<T, bool> GetCanExecute(object owner, MethodInfo canExecuteMethod, bool hasParameter) {
+                return x => canExecuteMethod != null ? (bool)canExecuteMethod.Invoke(owner, GetInvokeParameters(x, hasParameter)) : true;
             }
             static object[] GetInvokeParameters(object parameter, bool hasParameter) {
                 return hasParameter ? new[] { parameter } : new object[0];
             }
-
         }
         readonly Dictionary<MethodInfo, IDelegateCommand> commands = new Dictionary<MethodInfo, IDelegateCommand>();
-        IDelegateCommand GetCommand(MethodInfo method, MethodInfo canExecuteMethod, bool? useCommandManager, bool hasParameter) {
-            return commands.GetOrAdd(method, () => CreateCommand(method, canExecuteMethod, useCommandManager, hasParameter));
+        IDelegateCommand GetCommand(MethodInfo method, MethodInfo canExecuteMethod, bool? useCommandManager, bool hasParameter, bool allowMultipleExecution) {
+            return commands.GetOrAdd(method, () => CreateCommand(method, canExecuteMethod, useCommandManager, hasParameter, allowMultipleExecution));
         }
-        IDelegateCommand CreateCommand(MethodInfo method, MethodInfo canExecuteMethod, bool? useCommandManager, bool hasParameter) {
+        IDelegateCommand CreateCommand(MethodInfo method, MethodInfo canExecuteMethod, bool? useCommandManager, bool hasParameter, bool allowMultipleExecution) {
+            bool isAsync = method.ReturnType == typeof(System.Threading.Tasks.Task);
             Type commandType = hasParameter ? method.GetParameters()[0].ParameterType : typeof(object);
-            return (IDelegateCommand)typeof(CreateCommandHelper<>).MakeGenericType(commandType).GetMethod("CreateCommand", BindingFlags.Static | BindingFlags.Public).Invoke(null, new object[] { this, method, canExecuteMethod, useCommandManager, hasParameter });
+            var args = new object[] { this, method, canExecuteMethod, useCommandManager, hasParameter };
+            return (IDelegateCommand)typeof(CreateCommandHelper<>).MakeGenericType(commandType)
+                .GetMethod(isAsync ? nameof(CreateCommandHelper<object>.CreateAsyncCommand) : nameof(CreateCommandHelper<object>.CreateCommand), BindingFlags.Static | BindingFlags.Public)
+                .Invoke(null, isAsync ? args.Concat(allowMultipleExecution.Yield<object>()).ToArray() : args);
         }
         #region CommandProperty
         class CommandProperty :
@@ -226,23 +247,25 @@ namespace DevExpress.Mvvm {
             readonly MethodInfo canExecuteMethod;
             readonly string name;
             readonly bool? useCommandManager;
+            readonly bool allowMultipleExecution;
             readonly bool hasParameter;
             readonly Attribute[] attributes;
             readonly Type reflectedType;
             public MethodInfo Method { get { return method; } }
             public MethodInfo CanExecuteMethod { get { return canExecuteMethod; } }
-            public CommandProperty(MethodInfo method, MethodInfo canExecuteMethod, string name, bool? useCommandManager, Attribute[] attributes, Type reflectedType)
+            public CommandProperty(MethodInfo method, MethodInfo canExecuteMethod, string name, bool? useCommandManager, Attribute[] attributes, Type reflectedType, bool allowMultipleExecution)
                 : base(name, attributes) {
                 this.method = method;
                 this.hasParameter = method.GetParameters().Length == 1;
                 this.canExecuteMethod = canExecuteMethod;
                 this.name = name;
                 this.useCommandManager = useCommandManager;
+                this.allowMultipleExecution = allowMultipleExecution;
                 this.attributes = attributes;
                 this.reflectedType = reflectedType;
             }
             IDelegateCommand GetCommand(object component) {
-                return ((ViewModelBase)component).GetCommand(method, canExecuteMethod, useCommandManager, hasParameter);
+                return ((ViewModelBase)component).GetCommand(method, canExecuteMethod, useCommandManager, hasParameter, allowMultipleExecution);
             }
             public override bool CanResetValue(object component) { return false; }
             public override Type ComponentType { get { return method.DeclaringType; } }

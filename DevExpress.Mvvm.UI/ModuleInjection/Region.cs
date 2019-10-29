@@ -334,11 +334,14 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             w.WindowStartupLocation = WindowStartupLocation;
             if(WindowStyle != null) w.Style = WindowStyle;
             if(WindowStyleSelector != null) w.Style = WindowStyleSelector.SelectStyle(vm, w);
-            if(SetWindowOwner && !IsMainWindow && AssociatedObject is FrameworkElement)
-                ViewServiceBase.UpdateWindowOwner(w, (FrameworkElement)AssociatedObject);
+            if(SetWindowOwner && !IsMainWindow && Application.Current != null) {
+                w.Owner =
+                    Application.Current.Windows.OfType<Window>().FirstOrDefault(x => x.IsActive)
+                    ?? Application.Current.MainWindow;
+            }
             if(!IsMainWindow && AssociatedObject is FrameworkElement)
                 ViewServiceBase.UpdateThemeName(w, (FrameworkElement)AssociatedObject);
-            if(IsMainWindow)
+            if(IsMainWindow && Application.Current != null)
                 Application.Current.MainWindow = w;
             return w;
         }

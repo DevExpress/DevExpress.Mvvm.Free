@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace DevExpress.Mvvm.DataAnnotations {
     public abstract class MemberMetadataBuilderBase<T, TBuilder, TParent> :
-        IPropertyMetadataBuilder, IAttributeBuilderInternal<TBuilder>
+        IPropertyMetadataBuilder, IAttributeBuilderInternal, IAttributeBuilderInternal<TBuilder>
         where TBuilder : MemberMetadataBuilderBase<T, TBuilder, TParent>
         where TParent : MetadataBuilderBase<T, TParent> {
 
@@ -28,6 +28,12 @@ namespace DevExpress.Mvvm.DataAnnotations {
         }
         TBuilder IAttributeBuilderInternal<TBuilder>.AddOrModifyAttribute<TAttribute>(Action<TAttribute> setAttributeValue) {
             return AddOrModifyAttribute(setAttributeValue);
+        }
+        void IAttributeBuilderInternal.AddOrReplaceAttribute<TAttribute>(TAttribute attribute) {
+            AddOrReplaceAttribute(attribute);
+        }
+        void IAttributeBuilderInternal.AddOrModifyAttribute<TAttribute>(Action<TAttribute> setAttributeValue) {
+            AddOrModifyAttribute(setAttributeValue);
         }
         internal TBuilder AddAttribute(Attribute attribute) {
             storage.AddAttribute(attribute);

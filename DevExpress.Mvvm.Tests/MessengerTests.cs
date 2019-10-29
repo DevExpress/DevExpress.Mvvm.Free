@@ -566,31 +566,34 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("test1", recipient1.Message);
             Assert.AreEqual("test2", recipient2.Message);
         }
-#endregion
-#region Memory
+        #endregion
+        #region Memory
         TestRecipient DeletingRecipientRecipient1;
         TestRecipient DeletingRecipientRecipient2;
+        string DeletingRecipientMessage1;
+        string DeletingRecipientMessage2;
         [Test]
         public void DeletingRecipient() {
-            DeletingRecipientRecipient1 = new TestRecipient();
-            DeletingRecipientRecipient2 = new TestRecipient();
-            string message1 = null;
-            string message2 = null;
-            Messenger.Default.Register<string>(DeletingRecipientRecipient1, x => message1 = x);
-            Messenger.Default.Register<string>(DeletingRecipientRecipient2, x => message2 = x);
+            Action alloc = () => {
+                DeletingRecipientRecipient1 = new TestRecipient();
+                DeletingRecipientRecipient2 = new TestRecipient();
+                Messenger.Default.Register<string>(DeletingRecipientRecipient1, x => DeletingRecipientMessage1 = x);
+                Messenger.Default.Register<string>(DeletingRecipientRecipient2, x => DeletingRecipientMessage2 = x);
+            };
+            alloc();
             Messenger.Default.Send("test");
-            Assert.AreEqual("test", message1);
-            Assert.AreEqual("test", message2);
+            Assert.AreEqual("test", DeletingRecipientMessage1);
+            Assert.AreEqual("test", DeletingRecipientMessage2);
             DeletingRecipientRecipient1 = null;
             GC.Collect();
             Messenger.Default.Send("test2");
-            Assert.AreEqual("test", message1);
-            Assert.AreEqual("test2", message2);
+            Assert.AreEqual("test", DeletingRecipientMessage1);
+            Assert.AreEqual("test2", DeletingRecipientMessage2);
             DeletingRecipientRecipient2 = null;
             GC.Collect();
             Messenger.Default.Send("test3");
-            Assert.AreEqual("test", message1);
-            Assert.AreEqual("test2", message2);
+            Assert.AreEqual("test", DeletingRecipientMessage1);
+            Assert.AreEqual("test2", DeletingRecipientMessage2);
         }
         [Test]
         public void MemoryTest0() {
@@ -643,6 +646,11 @@ namespace DevExpress.Mvvm.Tests {
             CollectRecipientCore(registerMethod, false, checkMessageMethod);
         }
         void CollectRecipientCore(Action<TestRecipient3> registerMethod, bool unregister, Action<TestRecipient3> checkMessageMethod) {
+            WeakReference recipientReference = CollectRecipientCoreAlloc(registerMethod, unregister, checkMessageMethod);
+            GC.Collect();
+            Assert.IsFalse(recipientReference.IsAlive);
+        }
+        WeakReference CollectRecipientCoreAlloc(Action<TestRecipient3> registerMethod, bool unregister, Action<TestRecipient3> checkMessageMethod) {
             TestRecipient3 recipient = new TestRecipient3();
             WeakReference recipientReference = new WeakReference(recipient);
             registerMethod(recipient);
@@ -652,12 +660,10 @@ namespace DevExpress.Mvvm.Tests {
             }
             if(unregister)
                 Messenger.Default.Unregister(recipient);
-            recipient = null;
-            GC.Collect();
-            Assert.IsFalse(recipientReference.IsAlive);
+            return recipientReference;
         }
-#endregion
-#region Extension Methods
+        #endregion
+        #region Extension Methods
         [Test]
         public void NullService() {
             IMessenger service = null;

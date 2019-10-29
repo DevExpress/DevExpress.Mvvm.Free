@@ -2,10 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm {
+    public enum DialogButtonAlignment {
+        Right,
+        Center,
+        Left,
+    }
+
     public class UICommand : BindableBase, IUICommand {
         object id = null;
         public object Id {
@@ -37,15 +44,47 @@ namespace DevExpress.Mvvm {
             get { return tag; }
             set { SetProperty(ref tag, value, () => Tag); }
         }
+        bool allowCloseWindow = true;
+        public bool AllowCloseWindow {
+            get { return allowCloseWindow; }
+            set { SetProperty(ref allowCloseWindow, value, () => AllowCloseWindow); }
+        }
 
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
+        public DialogButtonAlignment ActualAlignment {
+            get {
+                if(alignment != DialogButtonAlignment.Right)
+                    return alignment;
+                if(placement != Dock.Right && placement.Equals(Dock.Left))
+                    return DialogButtonAlignment.Left;
+                return alignment;
+            }
+        }
+
+        DialogButtonAlignment alignment = DialogButtonAlignment.Right;
+        public DialogButtonAlignment Alignment {
+            get { return alignment; }
+            set { SetProperty(ref alignment, value, () => Alignment); }
+        }
+
+        Dock placement = Dock.Right;
+
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
+        public Dock Placement {
+            get { return placement; }
+            set { SetProperty(ref placement, value, () => Placement); }
+        }
         public UICommand() { }
-        public UICommand(object id, object caption, ICommand command, bool isDefault, bool isCancel, object tag = null) {
+        public UICommand(object id, object caption, ICommand command, bool isDefault, bool isCancel, object tag = null, bool allowCloseWindow = true, Dock placement = Dock.Right, DialogButtonAlignment alignment = DialogButtonAlignment.Right) {
             this.id = id;
             this.caption = caption;
             this.command = command;
             this.isDefault = isDefault;
             this.isCancel = isCancel;
             this.tag = tag;
+            this.allowCloseWindow = allowCloseWindow;
+            this.placement = placement;
+            this.alignment = alignment;
         }
 
         public static List<UICommand> GenerateFromMessageButton(MessageButton dialogButtons, IMessageButtonLocalizer buttonLocalizer, MessageResult? defaultButton = null, MessageResult? cancelButton = null) {
@@ -120,8 +159,8 @@ namespace DevExpress.Mvvm {
         #region IUICommand
         EventHandler executed;
         event EventHandler IUICommand.Executed {
-            add { executed += value;  }
-            remove { executed -= value;            }
+            add { executed += value; }
+            remove { executed -= value; }
         }
         void IUICommand.RaiseExecuted() {
             if(executed != null)

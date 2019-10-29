@@ -1,11 +1,15 @@
+using DevExpress.Data;
 using DevExpress.Internal;
+using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.UI.Interactivity.Internal;
 using DevExpress.Mvvm.UI.Native;
 using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace DevExpress.Mvvm.UI {
     public enum NotificationSetting {
@@ -108,7 +112,6 @@ namespace DevExpress.Mvvm.UI {
                 return notifier.ShowAsync(notification, duration);
             }
         }
-
         public static readonly DependencyProperty UseWin8NotificationsIfAvailableProperty =
             DependencyProperty.Register("UseWin8NotificationsIfAvailable", typeof(bool), typeof(NotificationService), new PropertyMetadata(true,
                 (d, e) => ((NotificationService)d).OnUseWin8NotificationsIfAvailableChanged()));
@@ -154,7 +157,6 @@ namespace DevExpress.Mvvm.UI {
         }
         public static readonly DependencyProperty CustomNotificationScreenProperty =
             DependencyProperty.Register("CustomNotificationScreen", typeof(NotificationScreen), typeof(NotificationService), new PropertyMetadata(NotificationScreen.Primary));
-
         IPredefinedToastNotificationFactory predefinedNotificationsFactory;
         IPredefinedToastNotificationFactory PredefinedNotificationsFactory {
             get {
@@ -262,8 +264,7 @@ namespace DevExpress.Mvvm.UI {
             string text1,
             string text2,
             string text3,
-            ImageSource image = null)
-        {
+            ImageSource image = null) {
             IPredefinedToastNotificationContentFactory cf = PredefinedNotificationsFactory.CreateContentFactory();
             IPredefinedToastNotificationContent content = null;
             switch(PredefinedNotificationTemplate) {

@@ -16,6 +16,9 @@ using System.Security;
 using System.Security.Policy;
 using System.Linq;
 using DevExpress.Mvvm.Native;
+using System.Threading.Tasks;
+using System.ComponentModel;
+using System.Collections.Generic;
 
 namespace DevExpress.Mvvm.UI.Tests {
     internal class SplashScreenTestWindow : Window, ISplashScreen {
@@ -107,8 +110,8 @@ namespace DevExpress.Mvvm.UI.Tests {
             SplashScreenTestUserControl.Instance = null;
             SplashScreenTestUserControl.TemplateCreator = null;
             SplashScreenTestWindow.Instance = null;
-            var info = DXSplashScreen.SplashContainer.ActiveInfo;
-            var oldInfo = DXSplashScreen.SplashContainer.ActiveInfo;
+            var info = DXSplashScreen.SplashContainer?.ActiveInfo;
+            var oldInfo = DXSplashScreen.SplashContainer?.OldInfo;
             if(info != null && info.WaitEvent != null)
                 info.WaitEvent.Set();
             if(oldInfo != null && oldInfo.WaitEvent != null)
@@ -1045,8 +1048,9 @@ namespace DevExpress.Mvvm.UI.Tests {
                 };
             });
         }
-
+#if !DXCORE3
         [Test]
+#endif
         public void WindowShouldBeActivatedOnCloseSplashScreen_Test() {
             DXSplashScreenService service = CreateDefaultSplashScreenAndShow();
             var wnd = SplashScreenTestUserControl.Window;
@@ -1478,6 +1482,95 @@ namespace DevExpress.Mvvm.UI.Tests {
             DXSplashScreenService service = CreateDefaultSplashScreenAndShow(null, activateWindow: false, ownerSearchMode: SplashScreenOwnerSearchMode.OwnerOnly);
             Assert.AreEqual(SplashScreenHelper.WS_EX_TOOLWINDOW, SplashScreenHelper.Test_WindowStyleModifier);
         }
+        [Test]
+        public void IsSplashScreenActiveDep_Test01_T728696() {
+            ISplashScreenService s = new DXSplashScreenService { UseIndependentWindow = false, SplashScreenType = typeof(SplashScreenTestUserControl) };
+
+            Assert.IsFalse(s.IsSplashScreenActive);
+
+            var task = new Task(() => DXSplashScreen.Show(typeof(SplashScreenTestUserControl)));
+            task.Start();
+            EnqueueWait(() => task.IsCompleted);
+
+            SplashScreenTestUserControl.DoEvents();
+            Assert.IsTrue(s.IsSplashScreenActive);
+            DXSplashScreen.Close();
+            Assert.IsFalse(s.IsSplashScreenActive);
+        }
+        [Test, Ignore("Unstable")]
+        public void UpdateIsSplashScreenActiveOnHiddenWindow_Test00() {
+            UpdateIsSplashScreenActiveOnHiddenWindow_TestBase(false);
+        }
+        [Test, Ignore("Unstable")]
+        public void UpdateIsSplashScreenActiveOnHiddenWindow_Test01() {
+            UpdateIsSplashScreenActiveOnHiddenWindow_TestBase(true);
+        }
+        void UpdateIsSplashScreenActiveOnHiddenWindow_TestBase(bool useIndependentWindow) {
+            SplashScreenTestWindow1.StartVisibility = Visibility.Hidden;
+            ISplashScreenService s = new DXSplashScreenService { UseIndependentWindow = useIndependentWindow, SplashScreenType = typeof(SplashScreenTestWindow1) };
+            var descriptor = DependencyPropertyDescriptor.FromProperty(DXSplashScreenService.IsSplashScreenActiveProperty, typeof(DXSplashScreenService));
+            List<bool> eventValues = new List<bool>();
+            var handler = new EventHandler((o, e) => eventValues.Add(s.IsSplashScreenActive));
+            descriptor.AddValueChanged(s, handler);
+            try {
+                s.ShowSplashScreen();
+                EnqueueWait(() => eventValues.Count == 2);
+                Assert.IsTrue(eventValues[0]);
+                Assert.IsFalse(eventValues[1]);
+            } finally {
+                descriptor.RemoveValueChanged(s, handler);
+            }
+        }
+        [Test]
+        public void UpdateIsSplashScreenActiveOnHiddenWindow_Test02() {
+            SplashScreenTestWindow1.StartVisibility = Visibility.Collapsed;
+            ISplashScreenService s = new DXSplashScreenService { UseIndependentWindow = false, SplashScreenType = typeof(SplashScreenTestWindow1) };
+            s.ShowSplashScreen();
+            SplashScreenTestWindow.DoEvents();
+            Assert.IsTrue(s.IsSplashScreenActive);
+            s.HideSplashScreen();
+            EnqueueWait(() => !s.IsSplashScreenActive);
+            Assert.IsFalse(s.IsSplashScreenActive);
+        }
+        [Test]
+        public void UpdateIsSplashScreenActiveOnHiddenWindow_Test03() {
+            SplashScreenTestWindow1.StartVisibility = Visibility.Collapsed;
+            ISplashScreenService s = new DXSplashScreenService { UseIndependentWindow = true, SplashScreenType = typeof(SplashScreenTestWindow1) };
+            s.ShowSplashScreen();
+            SplashScreenTestWindow.DoEvents();
+            Assert.IsTrue(s.IsSplashScreenActive);
+            s.HideSplashScreen();
+            EnqueueWait(() => !s.IsSplashScreenActive);
+            Assert.IsFalse(s.IsSplashScreenActive);
+        }
+        [Test]
+        public void UpdateIsSplashScreenActiveOnHiddenWindow_Test04() {
+            ISplashScreenService s = new DXSplashScreenService { UseIndependentWindow = false, SplashScreenType = typeof(SplashScreenTestWindow) };
+            s.ShowSplashScreen();
+            SplashScreenTestWindow.DoEvents();
+            Assert.IsTrue(s.IsSplashScreenActive);
+
+            SplashScreenTestWindow.Instance.Dispatcher.BeginInvoke(new Action(() => SplashScreenTestWindow.Instance.Close()));
+            EnqueueWait(() => !s.IsSplashScreenActive);
+            Assert.IsFalse(s.IsSplashScreenActive);
+        }
+        [Test]
+        public void UpdateIsSplashScreenActiveOnHiddenWindow_Test05() {
+            ISplashScreenService s = new DXSplashScreenService { UseIndependentWindow = true, SplashScreenType = typeof(SplashScreenTestWindow) };
+            s.ShowSplashScreen();
+            SplashScreenTestWindow.DoEvents();
+            Assert.IsTrue(s.IsSplashScreenActive);
+
+            SplashScreenTestWindow.Instance.Dispatcher.BeginInvoke(new Action(() => SplashScreenTestWindow.Instance.Close()));
+            EnqueueWait(() => !s.IsSplashScreenActive);
+            Assert.IsFalse(s.IsSplashScreenActive);
+        }
+        class SplashScreenTestWindow1 : SplashScreenTestWindow {
+            internal static Visibility StartVisibility { get; set; } = Visibility.Hidden;
+            public SplashScreenTestWindow1() {
+                Visibility = StartVisibility;
+            }
+        }
 
         void AssertIsActive(DXSplashScreenService service, bool checkValue) {
             Assert.AreEqual(checkValue, ((ISplashScreenService)service).IsSplashScreenActive);
@@ -1487,7 +1580,8 @@ namespace DevExpress.Mvvm.UI.Tests {
             return SplashScreenTestsHelper.CreateDefaultSplashScreenAndShow(RealWindow, owner, ownerSearchMode, activateWindow, windowContent, closingMode);
         }
     }
-    [TestFixture]
+#if !DXCORE3
+    [TestFixture, Platform("NET")]
     public class DXSplashScreenServiceIsolatedAppDomainTests {
         Window RealWindow { get; set; }
 
@@ -1551,7 +1645,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
         }
     }
-
+#endif
     static class SplashScreenTestsHelper {
         public static void CloseDXSplashScreen() {
             JoinThread(DXSplashScreen.SplashContainer.With(x => x.OldInfo));

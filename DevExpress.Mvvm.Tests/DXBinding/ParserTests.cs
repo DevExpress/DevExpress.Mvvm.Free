@@ -170,6 +170,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
     }
 
+    [Platform("NET")]
     [TestFixture]
     public class BaseParserTests : BaseTestFixtureBase {
         [Test]
@@ -308,11 +309,13 @@ namespace DevExpress.Xpf.DXBinding.Tests {
 
             AssertArithmetic("typeof(int)", typeof(int));
         }
+#if !DXCORE3
         [Test]
         [SetCulture("ru-RU")]
         public virtual void ConstantWithCulture() {
             Constant();
         }
+#endif
         [Test]
         public virtual void Constant() {
             AssertConstant("4", NConstant.NKind.Integer, 4);
@@ -636,6 +639,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 x => typeof(Math));
         }
     }
+
+    [Platform("NET")]
     [TestFixture]
     public class BaseParserTests_CommandToMethod : BaseTestFixtureBase {
         [Test]
@@ -798,6 +803,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         public class Class_a4 : Class_a3 { }
         #endregion
     }
+
+    [Platform("NET")]
     [TestFixture]
     public class BaseParserTests_Dynamics : BaseParserTests {
         internal override IBindingCalculator CreateBindingCalculator(BindingTreeInfoTest info, TestErrorHandler errorHandler) {
@@ -910,6 +917,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             }
         }
     }
+
+    [Platform("NET")]
     public class BaseParserTests_Dynamics_CommandToMethod : BaseParserTests_CommandToMethod {
         internal override IBindingCalculator CreateBindingCalculator(BindingTreeInfoTest info, TestErrorHandler errorHandler) {
             return new BindingCalculatorDynamic(info.Expr, info.BackExpr, null, errorHandler);

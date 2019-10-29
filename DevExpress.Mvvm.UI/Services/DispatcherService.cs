@@ -1,5 +1,6 @@
 using DevExpress.Mvvm.UI.Interactivity;
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -22,25 +23,34 @@ namespace DevExpress.Mvvm.UI {
             DispatcherPriority = DispatcherPriority.Normal;
         }
 
-        public void BeginInvoke(Action action) {
-            if(delay == TimeSpan.Zero) {
-                BeginInvokeCore(action);
-                return;
-            }
+        public void Invoke(Action action) {
+            InvokeCore(action);
+        }
+        public Task BeginInvoke(Action action) {
+            return InvokeAsyncCore(action);
+        }
+
+        void InvokeCore(Action action) {
+            Dispatcher.Invoke(action);
+        }
+        Task InvokeAsyncCore(Action action) {
+            if(delay == TimeSpan.Zero)
+                return Dispatcher.BeginInvoke(action, DispatcherPriority).Task;
+
+            var source = new TaskCompletionSource<object>();
             DispatcherTimer timer = new DispatcherTimer(DispatcherPriority, Dispatcher);
             EventHandler onTimerTick = null;
             onTimerTick = (s, e) => {
                 timer.Tick -= onTimerTick;
                 timer.Stop();
-                BeginInvokeCore(action);
+                action.Invoke();
+                source.SetResult(null);
             };
+
             timer.Tick += onTimerTick;
             timer.Interval = delay;
             timer.Start();
-        }
-
-        void BeginInvokeCore(Action action) {
-            Dispatcher.BeginInvoke(action, DispatcherPriority, null);
+            return source.Task;
         }
         void OnDelayChanged() {
             delay = Delay;

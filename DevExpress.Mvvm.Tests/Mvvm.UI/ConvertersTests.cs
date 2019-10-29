@@ -7,6 +7,8 @@ using System.Linq;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using DevExpress.Mvvm.Native;
+using System.Windows.Controls;
+using DevExpress.Mvvm.POCO;
 using System;
 using System.Windows;
 using NUnit.Framework;
@@ -162,7 +164,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void BooleanToVisibilityConverter() {
-            var converter = new BooleanToVisibilityConverter();
+            var converter = new DevExpress.Mvvm.UI.BooleanToVisibilityConverter();
 
             Assert.AreEqual(Visibility.Visible, converter.Convert(true, typeof(Visibility), null, null));
             Assert.AreEqual(Visibility.Collapsed, converter.Convert(false, typeof(Visibility), null, null));
@@ -319,7 +321,7 @@ namespace DevExpress.Mvvm.Tests {
             Red, Green, Blue
         }
         [Test]
-        public void ObjectToObjectConverter() {
+        public void ObjectToObjectConverterTest() {
             var converter = new ObjectToObjectConverter();
 
             Assert.AreEqual(null, converter.Convert(10, typeof(object), null, null));
@@ -417,6 +419,8 @@ namespace DevExpress.Mvvm.Tests {
 
             converter.Map.Add(new MapItem { Source = null, Target = "nullvalue" });
             Assert.AreEqual("nullvalue", converter.Convert(null, typeof(string), null, null));
+            Assert.AreEqual(new GridLengthConverter().ConvertFrom(0.1), ObjectToObjectConverter.Coerce(0.1, typeof(GridLength), true));
+            Assert.AreEqual(new GridLengthConverter().ConvertFrom("0.1"), ObjectToObjectConverter.Coerce(0.1, typeof(GridLength), true));
         }
         [Test]
         public void BooleanSupport() {
@@ -632,6 +636,413 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(Visibility.Collapsed, converter.Convert(-1, null, null, null));
             Assert.AreEqual(Visibility.Collapsed, converter.Convert(1, null, null, null));
             Assert.AreEqual(Visibility.Collapsed, converter.Convert(2, null, null, null));
+        }
+
+        [Test]
+        public void T711615() {
+            var currentCulture = System.Threading.Thread.CurrentThread.CurrentCulture;
+            var currentUICulture = System.Threading.Thread.CurrentThread.CurrentUICulture;
+            try {
+                System.Globalization.CultureInfo cultureInfo = new System.Globalization.CultureInfo("de-DE");
+                System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
+                System.Threading.Thread.CurrentThread.CurrentUICulture = cultureInfo;
+                Assert.AreEqual(0.0, ObjectToObjectConverter.Coerce("0.0", typeof(double), true));
+            } finally {
+                System.Threading.Thread.CurrentThread.CurrentCulture = currentCulture;
+                System.Threading.Thread.CurrentThread.CurrentUICulture = currentUICulture;
+            }
+        }
+
+
+        [Test]
+        public void DelegateConverterTestBase() {
+            var c1 = DelegateConverterFactory.CreateValueConverter<string, string>(x => x + "1");
+            Assert.AreEqual("11", c1.Convert("1", null, null, null));
+            Assert.AreEqual("1", c1.Convert(null, null, null, null));
+            Assert.AreEqual(Binding.DoNothing, c1.Convert(DependencyProperty.UnsetValue, null, null, null));
+            Assert.Throws<InvalidCastException>(() => {
+                c1.Convert(new object(), null, null, null);
+            });
+            Assert.Throws<InvalidOperationException>(() => {
+                c1.ConvertBack(null, null, null, null);
+            });
+
+            var c2 = DelegateConverterFactory.CreateValueConverter<int, int>(x => x + 1);
+            Assert.AreEqual(2, c2.Convert(1, null, null, null));
+            Assert.AreEqual(Binding.DoNothing, c2.Convert(DependencyProperty.UnsetValue, null, null, null));
+            Assert.Throws<NullReferenceException>(() => {
+                c2.Convert(null, null, null, null);
+            });
+            Assert.Throws<InvalidCastException>(() => {
+                c2.Convert(new object(), null, null, null);
+            });
+            Assert.Throws<InvalidOperationException>(() => {
+                c2.ConvertBack(null, null, null, null);
+            });
+
+            var c3 = DelegateConverterFactory.CreateValueConverter<string, string>(x => x + "1", x => x + "2");
+            Assert.AreEqual("12", c3.ConvertBack("1", null, null, null));
+            Assert.AreEqual("2", c3.ConvertBack(null, null, null, null));
+            Assert.Throws<InvalidCastException>(() => {
+                c3.ConvertBack(new object(), null, null, null);
+            });
+            Assert.Throws<InvalidCastException>(() => {
+                c3.ConvertBack(DependencyProperty.UnsetValue, null, null, null);
+            });
+
+            var c4 = DelegateConverterFactory.CreateValueConverter(x => x.ToString() + "1", x => x.ToString() + "2" );
+            Assert.AreEqual("12", c3.ConvertBack("1", null, null, null));
+            Assert.AreEqual("2", c3.ConvertBack(null, null, null, null));
+            Assert.Throws<InvalidCastException>(() => {
+                c3.ConvertBack(new object(), null, null, null);
+            });
+            Assert.Throws<InvalidCastException>(() => {
+                c3.ConvertBack(DependencyProperty.UnsetValue, null, null, null);
+            });
+
+            int assertCount = 0;
+            Action<object, Type, object, CultureInfo> assert = (x, t, p, c) => {
+                Assert.AreEqual("1", x);
+                Assert.AreEqual(typeof(string), t);
+                Assert.AreEqual(1, p);
+                Assert.AreEqual(CultureInfo.InvariantCulture, c);
+                assertCount++;
+            };
+            var c5 = DelegateConverterFactory.CreateValueConverter((x, t, p, c) => { assert(x, t, p, c); return "1"; }, (x, t, p, c) => { assert(x, t, p, c); return "1"; });
+            Assert.AreEqual("1", c5.Convert("1", typeof(string), 1, CultureInfo.InvariantCulture));
+            Assert.AreEqual(1, assertCount);
+            Assert.AreEqual("1", c5.ConvertBack("1", typeof(string), 1, CultureInfo.InvariantCulture));
+            Assert.AreEqual(2, assertCount);
+
+            var c6 = DelegateConverterFactory.CreateValueConverter<string, string>((x, p, c) => { assert(x, typeof(string), p, c); return "1"; }, (x, p, c) => { assert(x, typeof(string), p, c); return "1"; });
+            Assert.AreEqual("1", c6.Convert("1", typeof(string), 1, CultureInfo.InvariantCulture));
+            Assert.AreEqual(3, assertCount);
+            Assert.AreEqual("1", c6.ConvertBack("1", typeof(string), 1, CultureInfo.InvariantCulture));
+            Assert.AreEqual(4, assertCount);
+
+
+            var c7 = DelegateConverterFactory.CreateValueConverter(x => x);
+            var c8 = DelegateConverterFactory.CreateValueConverter((x, t, p, c) => x);
+            Assert.AreEqual(DependencyProperty.UnsetValue, c7.Convert(DependencyProperty.UnsetValue, null, null, null));
+            Assert.AreEqual(DependencyProperty.UnsetValue, c8.Convert(DependencyProperty.UnsetValue, null, null, null));
+
+            var c9 = DelegateConverterFactory.CreateValueConverter<int, int>(x => x);
+            var c10 = DelegateConverterFactory.CreateValueConverter<int, int>((x, p, c) => x);
+            Assert.AreEqual(Binding.DoNothing, c9.Convert(DependencyProperty.UnsetValue, null, null, null));
+            Assert.AreEqual(Binding.DoNothing, c10.Convert(DependencyProperty.UnsetValue, null, null, null));
+        }
+        [Test]
+        public void DelegateMultiConverterTestBase() {
+            int assertCount = 0;
+            Action<object[], Type, object, CultureInfo> assert1 = (x, t, p, c) => {
+                Assert.AreEqual("1", x[0]);
+                Assert.AreEqual(typeof(string), t);
+                Assert.AreEqual(1, p);
+                Assert.AreEqual(CultureInfo.InvariantCulture, c);
+                assertCount++;
+            };
+            Action<object, Type[], object, CultureInfo> assertBack1 = (x, t, p, c) => {
+                Assert.AreEqual("1", x);
+                Assert.AreEqual(typeof(string), t[0]);
+                Assert.AreEqual(typeof(int), t[1]);
+                Assert.AreEqual(1, p);
+                Assert.AreEqual(CultureInfo.InvariantCulture, c);
+                assertCount++;
+            };
+            Action<object> assertBack = (x) => {
+                Assert.AreEqual("1", x);
+                assertCount++;
+            };
+            Action<string, int> assert2 = (x1, x2) => {
+                Assert.AreEqual("1", x1);
+                Assert.AreEqual(2, x2);
+                assertCount++;
+            };
+            Action<string, int, double> assert3 = (x1, x2, x3) => {
+                Assert.AreEqual("1", x1);
+                Assert.AreEqual(2, x2);
+                Assert.AreEqual(3.1, x3);
+                assertCount++;
+            };
+            Action<string, int, double, float> assert4 = (x1, x2, x3, x4) => {
+                Assert.AreEqual("1", x1);
+                Assert.AreEqual(2, x2);
+                Assert.AreEqual(3.1, x3);
+                Assert.AreEqual(4f, x4);
+                assertCount++;
+            };
+
+            object xx5 = new object();
+            Action<string, int, double, float, object> assert5 = (x1, x2, x3, x4, x5) => {
+                Assert.AreEqual("1", x1);
+                Assert.AreEqual(2, x2);
+                Assert.AreEqual(3.1, x3);
+                Assert.AreEqual(4f, x4);
+                Assert.AreEqual(xx5, x5);
+                assertCount++;
+            };
+
+            object xx6 = new object();
+            Action<string, int, double, float, object, object> assert6 = (x1, x2, x3, x4, x5, x6) => {
+                Assert.AreEqual("1", x1);
+                Assert.AreEqual(2, x2);
+                Assert.AreEqual(3.1, x3);
+                Assert.AreEqual(4f, x4);
+                Assert.AreEqual(xx5, x5);
+                Assert.AreEqual(xx6, x6);
+                assertCount++;
+            };
+
+            var c1 = DelegateConverterFactory.CreateMultiValueConverter((x, t, p, c) => { assert1(x, t, p, c); return "1"; }, (x, t, p, c) => { assertBack1(x, t, p, c); return new object[] { "1", 2 }; });
+            Assert.AreEqual("1", c1.Convert(new object[] { "1", 2 }, typeof(string), 1, CultureInfo.InvariantCulture));
+            Assert.AreEqual(1, assertCount);
+            Assert.AreEqual(new object[] { "1", 2 }, c1.ConvertBack("1", new[] { typeof(string), typeof(int) }, 1, CultureInfo.InvariantCulture));
+            Assert.AreEqual(2, assertCount);
+            c1 = null;
+
+            var c2 = DelegateConverterFactory.CreateMultiValueConverter<string, int, string>((x1, x2) => { assert2(x1, x2); return "1"; }, (x) => { assertBack(x); return Tuple.Create("1", 2); });
+            Assert.AreEqual("1", c2.Convert(new object[] { "1", 2 }, null, null, null));
+            Assert.AreEqual(3, assertCount);
+            Assert.AreEqual(new object[] { "1", 2 }, c2.ConvertBack("1", null, null, null));
+            Assert.AreEqual(4, assertCount);
+            c2 = null;
+
+            var c3 = DelegateConverterFactory.CreateMultiValueConverter<string, int, double, string>((x1, x2, x3) => { assert3(x1, x2, x3); return "1"; }, (x) => { assertBack(x); return Tuple.Create("1", 2, 3.1); });
+            Assert.AreEqual("1", c3.Convert(new object[] { "1", 2, 3.1 }, null, null, null));
+            Assert.AreEqual(5, assertCount);
+            Assert.AreEqual(new object[] { "1", 2, 3.1 }, c3.ConvertBack("1", null, null, null));
+            Assert.AreEqual(6, assertCount);
+            c3 = null;
+
+            var c4 = DelegateConverterFactory.CreateMultiValueConverter<string, int, double, float, string>((x1, x2, x3, x4) => { assert4(x1, x2, x3, x4); return "1"; }, (x) => { assertBack(x); return Tuple.Create("1", 2, 3.1, 4f); });
+            Assert.AreEqual("1", c4.Convert(new object[] { "1", 2, 3.1, 4f }, null, null, null));
+            Assert.AreEqual(7, assertCount);
+            Assert.AreEqual(new object[] { "1", 2, 3.1, 4f }, c4.ConvertBack("1", null, null, null));
+            Assert.AreEqual(8, assertCount);
+            c4 = null;
+
+            var c5 = DelegateConverterFactory.CreateMultiValueConverter<string, int, double, float, object, string>((x1, x2, x3, x4, x5) => { assert5(x1, x2, x3, x4, x5); return "1"; }, (x) => { assertBack(x); return Tuple.Create("1", 2, 3.1, 4f, xx5); });
+            Assert.AreEqual("1", c5.Convert(new object[] { "1", 2, 3.1, 4f, xx5 }, null, null, null));
+            Assert.AreEqual(9, assertCount);
+            Assert.AreEqual(new object[] { "1", 2, 3.1, 4f, xx5 }, c5.ConvertBack("1", null, null, null));
+            Assert.AreEqual(10, assertCount);
+            c5 = null;
+
+            var c6 = DelegateConverterFactory.CreateMultiValueConverter<string, int, double, float, object, object, string>((x1, x2, x3, x4, x5, x6) => { assert6(x1, x2, x3, x4, x5, x6); return "1"; }, (x) => { assertBack(x); return Tuple.Create("1", 2, 3.1, 4f, xx5, xx6); });
+            Assert.AreEqual("1", c6.Convert(new object[] { "1", 2, 3.1, 4f, xx5, xx6 }, null, null, null));
+            Assert.AreEqual(11, assertCount);
+            Assert.AreEqual(new object[] { "1", 2, 3.1, 4f, xx5, xx6 }, c6.ConvertBack("1", null, null, null));
+            Assert.AreEqual(12, assertCount);
+            Assert.Throws<System.Reflection.TargetParameterCountException>(() => {
+                c6.Convert(new object[] { "1", 2, 3.1, 4f, xx5 }, null, null, null);
+            });
+            c6 = null;
+
+            var c7 = DelegateConverterFactory.CreateMultiValueConverter(x => x[0]);
+            var c8 = DelegateConverterFactory.CreateMultiValueConverter((x, t, p, c) => x[0]);
+            Assert.AreEqual(DependencyProperty.UnsetValue, c7.Convert(new object[] { DependencyProperty.UnsetValue }, null, null, null));
+            Assert.AreEqual(DependencyProperty.UnsetValue, c8.Convert(new object[] { DependencyProperty.UnsetValue }, null, null, null));
+
+            var c9 = DelegateConverterFactory.CreateMultiValueConverter<int, int, int>((x1, x2) => x1);
+            Assert.AreEqual(Binding.DoNothing, c9.Convert(new object[] { DependencyProperty.UnsetValue, DependencyProperty.UnsetValue }, null, null, null));
+        }
+        [Test]
+        public void DelegateConverterTest() {
+            int count = 0;
+            var c = DelegateConverterFactory.CreateValueConverter<string, string>(x => { count++; return x + "1"; });
+
+            TextBlock control = new TextBlock() { Text = "a" };
+            Assert.AreEqual(0, count);
+            Assert.AreEqual("a", control.Text);
+
+            var b = new Binding("Prop") { Converter = c, Mode = BindingMode.OneWay };
+            BindingOperations.SetBinding(control, TextBlock.TextProperty, b);
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(string.Empty, control.Text);
+
+            control.DataContext = "1";
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(string.Empty, control.Text);
+
+            var vm = ViewModelSource.Create<VM>();
+            control.DataContext = vm;
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(1, count);
+            Assert.AreEqual("1", control.Text);
+
+            vm.Prop = "a";
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(2, count);
+            Assert.AreEqual("a1", control.Text);
+
+            control.DataContext = null;
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(2, count);
+            Assert.AreEqual(string.Empty, control.Text);
+        }
+        [Test]
+        public void DelegateConverterTest_SubProperty() {
+            int count = 0;
+            var c = DelegateConverterFactory.CreateValueConverter<string, string>(x => { count++; return x + "1"; });
+
+            TextBlock control = new TextBlock() { Text = "a" };
+            Assert.AreEqual(0, count);
+            Assert.AreEqual("a", control.Text);
+
+            var b = new Binding("SubVM.Prop") { Converter = c, Mode = BindingMode.OneWay };
+            BindingOperations.SetBinding(control, TextBlock.TextProperty, b);
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(string.Empty, control.Text);
+
+            var vm = ViewModelSource.Create<VM>();
+            control.DataContext = vm;
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(string.Empty, control.Text);
+
+            vm.SubVM = ViewModelSource.Create<VM>();
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(1, count);
+            Assert.AreEqual("1", control.Text);
+
+            vm.SubVM.Prop = "a";
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(2, count);
+            Assert.AreEqual("a1", control.Text);
+
+            control.DataContext = null;
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(2, count);
+            Assert.AreEqual(string.Empty, control.Text);
+        }
+        [Test]
+        public void DelegateConverterTest_NotNull() {
+            int count = 0;
+            var c = DelegateConverterFactory.CreateValueConverter<int, string>(x => { count++; return x.ToString() + "1"; });
+
+            TextBlock control = new TextBlock() { Text = "a" };
+            Assert.AreEqual(0, count);
+            Assert.AreEqual("a", control.Text);
+
+            var b = new Binding("NullableInt") { Converter = c, Mode = BindingMode.OneWay };
+            BindingOperations.SetBinding(control, TextBlock.TextProperty, b);
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(string.Empty, control.Text);
+
+            var vm = ViewModelSource.Create<VM>();
+            Assert.Throws<NullReferenceException>(() => {
+                control.DataContext = vm;
+                DispatcherHelper.DoEvents();
+            });
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(string.Empty, control.Text);
+
+            vm.NullableInt = 1;
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(1, count);
+            Assert.AreEqual("11", control.Text);
+
+            control.DataContext = null;
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(1, count);
+            Assert.AreEqual(string.Empty, control.Text);
+        }
+        [Test]
+        public void DelegateConverterTest_SubProperty_NotNull() {
+            int count = 0;
+            var c = DelegateConverterFactory.CreateValueConverter<int, string>(x => { count++; return x.ToString() + "1"; });
+
+            TextBlock control = new TextBlock() { Text = "a" };
+            Assert.AreEqual(0, count);
+            Assert.AreEqual("a", control.Text);
+
+            var b = new Binding("SubVM.NullableInt") { Converter = c, Mode = BindingMode.OneWay };
+            BindingOperations.SetBinding(control, TextBlock.TextProperty, b);
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(string.Empty, control.Text);
+
+            var vm = ViewModelSource.Create<VM>();
+            control.DataContext = vm;
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(string.Empty, control.Text);
+
+            Assert.Throws<NullReferenceException>(() => {
+                vm.SubVM = ViewModelSource.Create<VM>();
+                DispatcherHelper.DoEvents();
+            });
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(string.Empty, control.Text);
+
+            vm.SubVM.NullableInt = 1;
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(1, count);
+            Assert.AreEqual("11", control.Text);
+
+            control.DataContext = null;
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(1, count);
+            Assert.AreEqual(string.Empty, control.Text);
+        }
+        [Test]
+        public void DelegateConverterTest_ConvertBack() {
+            int count = 0;
+            int backCount = 0;
+            var c = DelegateConverterFactory.CreateValueConverter<string, string>(
+                x => { count++; return x + "1"; },
+                x => { backCount++; return "2"; });
+
+            TextBlock control = new TextBlock() { Text = "a" };
+            Assert.AreEqual(0, count);
+            Assert.AreEqual("a", control.Text);
+
+            var b = new Binding("Prop") { Converter = c, Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged };
+            BindingOperations.SetBinding(control, TextBlock.TextProperty, b);
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(0, backCount);
+            Assert.AreEqual(string.Empty, control.Text);
+            control.Text = "3";
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(0, backCount);
+            Assert.AreEqual("3", control.Text);
+
+            var vm = ViewModelSource.Create<VM>();
+            control.DataContext = vm;
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(1, count);
+            Assert.AreEqual(0, backCount);
+            Assert.AreEqual("1", control.Text);
+
+            control.Text = "3";
+            Assert.AreEqual(2, count);
+            Assert.AreEqual(1, backCount);
+            Assert.AreEqual("21", control.Text);
+            Assert.AreEqual("2", vm.Prop);
+
+            vm.Prop = "a";
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(3, count);
+            Assert.AreEqual(1, backCount);
+            Assert.AreEqual("a1", control.Text);
+            Assert.AreEqual("a", vm.Prop);
+
+            control.DataContext = null;
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(3, count);
+            Assert.AreEqual(1, backCount);
+            Assert.AreEqual(string.Empty, control.Text);
+        }
+
+        public class VM {
+            public virtual string Prop { get; set; }
+            public virtual int? NullableInt { get; set; }
+            public virtual VM SubVM { get; set; }
         }
     }
     public class ToStringConverter : IValueConverter {

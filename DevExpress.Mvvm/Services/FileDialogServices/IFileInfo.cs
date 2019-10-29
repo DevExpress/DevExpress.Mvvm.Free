@@ -2,23 +2,36 @@ using System;
 using System.IO;
 
 namespace DevExpress.Mvvm {
-    public interface IFileInfo {
-        string Name { get; }
+    public interface IFolderInfo {
+        string Path { get; }
+
         string DirectoryName { get; }
-        long Length { get; }
+        string Name { get; }
         bool Exists { get; }
+        FileAttributes Attributes { get; set; }
+
+        void MoveTo(string destinationDirectoryName);
+        void Delete();
+    }
+    public interface IFileInfo {
+        long Length { get; }
+
+        string DirectoryName { get; }
+        string Name { get; }
+        bool Exists { get; }
+        FileAttributes Attributes { get; set; }
+
+        void MoveTo(string destinationFileName);
+        void Delete();
 
         StreamWriter AppendText();
-        FileInfo CopyTo(string destFileName, bool overwrite);
+        FileInfo CopyTo(string destinationFileName, bool overwrite);
         FileStream Create();
         StreamWriter CreateText();
-        void Delete();
-        void MoveTo(string destFileName);
         FileStream Open(FileMode mode, FileAccess access, FileShare share);
         FileStream OpenRead();
         StreamReader OpenText();
         FileStream OpenWrite();
-        FileAttributes Attributes { get; set; }
     }
     public static class FileInfoExtensions {
         public static FileStream Open(this IFileInfo fileInfo, FileMode mode) {

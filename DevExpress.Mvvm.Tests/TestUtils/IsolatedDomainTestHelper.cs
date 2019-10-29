@@ -7,29 +7,52 @@ using System.Security.Policy;
 using System.IO;
 
 namespace DevExpress.Mvvm.UI.Tests {
-    class NewDomainTestHelper<T> : IDisposable {
-        AppDomain domain;
+    public class NewDomainTestHelper<T> : IDisposable {
+        class LoadedAssembliesHelper : MarshalByRefObject {
+            public bool IsAssemblyLoaded(string assemblyName) {
+                Assembly[] loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+                foreach(Assembly assembly in loadedAssemblies) {
+                    if(assembly.FullName.Contains(assemblyName))
+                        return true;
+                }
+                return false;
+            }
+        }
         public AppDomain AppDomain { get { return domain; } }
+        AppDomain domain;
         T testObject;
         public T TestObject { get { return testObject; } }
         public NewDomainTestHelper()
             : this(AppDomain.CurrentDomain.SetupInformation) {
         }
         public NewDomainTestHelper(AppDomainSetup setupInformation) {
+#if DXCORE3
+            domain = AppDomain.CreateDomain("TestDomain");
+#else
             domain = AppDomain.CreateDomain("TestDomain", AppDomain.CurrentDomain.Evidence, setupInformation);
+#endif
             testObject = (T)domain.CreateInstanceAndUnwrap(typeof(T).Assembly.FullName, typeof(T).FullName);
         }
         public NewDomainTestHelper(AppDomainSetup setupInformation, PermissionSet permissionSet, params StrongName[] fullTrustAssemblies) {
+#if DXCORE3
+            domain = AppDomain.CreateDomain("TestDomain");
+#else
             domain = AppDomain.CreateDomain("TestDomain", null, setupInformation, permissionSet, fullTrustAssemblies);
+#endif
             testObject = (T)domain.CreateInstanceAndUnwrap(typeof(T).Assembly.FullName, typeof(T).FullName);
         }
         public bool IsAssemblyLoaded(string assemblyName) {
+#if DXCORE3
+            LoadedAssembliesHelper helper = (LoadedAssembliesHelper)domain.CreateInstanceAndUnwrap(this.GetType().Assembly.FullName, typeof(LoadedAssembliesHelper).FullName);
+            return helper.IsAssemblyLoaded(assemblyName);
+#else
             Assembly[] loadedAssemblies = domain.GetAssemblies();
             foreach(Assembly assembly in loadedAssemblies) {
                 if(assembly.FullName.Contains(assemblyName))
                     return true;
             }
             return false;
+#endif
         }
         public void Dispose() {
             if(domain != null)
@@ -37,7 +60,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
     }
 
-    public static class IsolatedDomainTestHelper {
+        public static class IsolatedDomainTestHelper {
         class IsolatedDomainTester : MarshalByRefObject {
             public void Test(MethodInfo actionInfo, params object[] args) {
                 object target = Activator.CreateInstance(actionInfo.DeclaringType);
@@ -67,7 +90,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 
         static Assembly AppDomain_AssemblyResolve(object sender, ResolveEventArgs args) {
             if(args.Name.ToLower().Contains("nunit.framework"))
-                return Assembly.LoadFrom(Path.Combine(Environment.CurrentDirectory, "nunit.framework.2.6.dll"));
+                return Assembly.LoadFrom(Path.Combine(Environment.CurrentDirectory, "nunit.framework.dll"));
             return null;
         }
         public static void RunTest(Action test) {

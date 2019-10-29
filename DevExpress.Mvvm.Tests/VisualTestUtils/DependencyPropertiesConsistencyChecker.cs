@@ -1,3 +1,4 @@
+#if !DXCORE3
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -32,7 +33,7 @@ namespace DevExpress {
 
         static Assembly dom_AssemblyResolve(object sender, ResolveEventArgs args) {
             if(args.Name.ToLower().Contains("nunit.framework"))
-                return Assembly.LoadFrom(Path.Combine(Environment.CurrentDirectory, "nunit.framework.2.6.dll"));
+                return Assembly.LoadFrom(Path.Combine(Environment.CurrentDirectory, "nunit.framework.dll"));
             return null;
         }
         static void DoCheck() {
@@ -268,3 +269,4 @@ namespace DevExpress {
         }
     }
 }
+#endif

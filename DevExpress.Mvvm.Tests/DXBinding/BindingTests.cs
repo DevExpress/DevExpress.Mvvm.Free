@@ -16,6 +16,8 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Collections.ObjectModel;
+using DevExpress.Mvvm;
 
 namespace DevExpress.Xpf.DXBinding.Tests {
     static class BindingTestHelper {
@@ -26,13 +28,21 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             if(obj == null) return;
             obj.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { }));
         }
+        public static void DoEvents(FrameworkContentElement obj) {
+            if(obj == null) return;
+            obj.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { }));
+        }
         public static T BindAssert<T>(string objToBind, string property, string binding, object expected = null, object dataContext = null, bool assert = true) {
             string xaml = string.Format("<{0} {1}=\"{2}\" />", objToBind, property, binding);
             T res = LoadXaml<T>(xaml);
             if(dataContext != null && res is FrameworkElement)
                 (res as FrameworkElement).DataContext = dataContext;
+            if(dataContext != null && res is FrameworkContentElement)
+                (res as FrameworkContentElement).DataContext = dataContext;
             if(res is FrameworkElement)
                 DoEvents(res as FrameworkElement);
+            if(res is FrameworkContentElement)
+                DoEvents(res as FrameworkContentElement);
             if(assert) {
                 expected.Do(x => PropertyAssert(res, property, x));
             }
@@ -156,6 +166,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
     }
 
+    [Platform("NET")]
     [TestFixture]
     public class BindingDefaultMode {
          [Test]
@@ -164,6 +175,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
     }
 
+    [Platform("NET")]
     [TestFixture]
     public class BindingTests {
         [SetUp]
@@ -1015,7 +1027,19 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
                     "{b:DXBinding 'GetSelf2().NullableBoolean.Value'}", true, vm);
         }
+
+        [Test]
+        public virtual void T713377() {
+            var vm = new BindingTests_a() { DoubleProp = 0.1 };
+            GridLengthConverter c = new GridLengthConverter();
+            BindingTestHelper.BindAssert<RowDefinition>("RowDefinition", "Height",
+                "{b:DXBinding 'DoubleProp'}", c.ConvertFrom("0.1"), vm);
+            BindingTestHelper.BindAssert<RowDefinition>("RowDefinition", "Height",
+                "{b:DXBinding 'DoubleProp'}", c.ConvertFrom(0.1), vm);
+        }
     }
+
+    [Platform("NET")]
     [TestFixture]
     public class BindingTests_Dynamics : BindingTests {
         [SetUp]
@@ -1255,7 +1279,95 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 Assert.AreEqual("2", tb2.Text);
             });
         }
+
+        [Test]
+        public void T745460() {
+            string xaml = @"
+<DockPanel Visibility=""{DXBinding Expr='Items.Count > 0'}"" />
+";
+            var panel = BindingTestHelper.LoadXaml<DockPanel>(xaml);
+            BindingTestHelper.VisualTest(panel, () => {
+                Assert.AreEqual(Visibility.Visible, panel.Visibility);
+                var vm = new T745460_Class();
+                panel.DataContext = vm;
+                BindingTestHelper.DoEvents(panel);
+                Assert.AreEqual(Visibility.Visible, panel.Visibility);
+                vm.Items.Add("test");
+                BindingTestHelper.DoEvents(panel);
+                Assert.AreEqual(Visibility.Visible, panel.Visibility);
+            });
+        }
+        public class T745460_Class {
+            public ObservableCollection<string> Items { get; set; }
+            public T745460_Class() {
+                Items = new ObservableCollection<string>();
+            }
+        }
+
+        [Test]
+        public void T813754() {
+            var vm = new PerformanceTests_a() { DoubleProp = 2 };
+            var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Foreground",
+                "{b:DXBinding Expr='DoubleProp == 2 ? $Brushes.Yellow : $Brushes.Red'}", null, vm);
+            Assert.AreEqual(Colors.Yellow, (tb.Foreground as SolidColorBrush)?.Color);
+            vm.DoubleProp = 3;
+            BindingTestHelper.DoEvents(tb);
+            Assert.AreEqual(Colors.Red, (tb.Foreground as SolidColorBrush)?.Color);
+
+            vm = new PerformanceTests_a() { DoubleProp = 2 };
+            tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Foreground",
+                "{b:DXBinding Expr='DoubleProp == 2 ? $Colors.Yellow : $Colors.Red'}", null, vm);
+            Assert.AreEqual(Colors.Yellow, (tb.Foreground as SolidColorBrush)?.Color);
+            vm.DoubleProp = 3;
+            BindingTestHelper.DoEvents(tb);
+            Assert.AreEqual(Colors.Red, (tb.Foreground as SolidColorBrush)?.Color);
+        }
+
+        [Test]
+        public void T823303() {
+            var vm = new T823303_VM() { Prop = 1 };
+            var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text",
+               "{b:DXBinding Expr='Convert(Prop)', BackExpr='Prop=$test:T823303_VM.ConvertBack($int.Parse(@v))'}", null, vm);
+            Assert.AreEqual(1, vm.Prop);
+            Assert.AreEqual("100", tb.Text);
+            tb.Text = "200";
+            BindingTestHelper.DoEvents(tb);
+            Assert.AreEqual("200", tb.Text);
+            Assert.AreEqual(2, vm.Prop);
+
+            vm = new T823303_VM() { Prop = 1, Prop2 = 1 };
+            tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text",
+               "{b:DXBinding Expr='Prop2 + Convert(Prop)', BackExpr='Prop=$test:T823303_VM.ConvertBack($int.Parse(@v) - 1)'}", null, vm);
+            Assert.AreEqual(1, vm.Prop);
+            Assert.AreEqual("101", tb.Text);
+            tb.Text = "201";
+            BindingTestHelper.DoEvents(tb);
+            Assert.AreEqual("201", tb.Text);
+            Assert.AreEqual(2, vm.Prop);
+            var b = BindingOperations.GetMultiBinding(tb, TextBox.TextProperty);
+            var b1 = (Binding)b.Bindings[0];
+            var b2 = (Binding)b.Bindings[1];
+            var b3 = (Binding)b.Bindings[2];
+            Assert.AreEqual(true, b1.Mode == BindingMode.OneWay);
+            Assert.AreEqual(true, b1.Path.Path == "Prop2");
+            Assert.AreEqual(true, b2.Mode == BindingMode.OneWay);
+            Assert.AreEqual(true, b2.Path.Path == ".");
+            Assert.AreEqual(true, b3.Mode == BindingMode.TwoWay);
+            Assert.AreEqual(true, b3.Path.Path == "Prop");
+        }
     }
+    public class T823303_VM : BindableBase {
+        public int Prop { get { return GetValue<int>(); } set { SetValue(value); } }
+        public int Prop2 { get { return GetValue<int>(); } set { SetValue(value); } }
+        public int Convert(int x) {
+            return x * 100;
+        }
+        public static int ConvertBack(int x) {
+            return x / 100;
+        }
+    }
+
+    [Platform("NET")]
     [TestFixture]
     public class BindingTests_Performance {
         [SetUp]
@@ -1350,6 +1462,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             dxTime = results.Sum(x => x.Item1) / results.Count;
             standardTime = results.Sum(x => x.Item2) / results.Count;
         }
+
         [Ignore("Performance Test")]
         [Test]
         public virtual void PerformanceTest_Start() {

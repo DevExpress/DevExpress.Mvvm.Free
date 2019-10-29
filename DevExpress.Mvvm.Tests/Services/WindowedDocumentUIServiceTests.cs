@@ -172,7 +172,8 @@ namespace DevExpress.Mvvm.UI.Tests {
             document2.Close();
         }
 
-        [Test]
+#if !DXCORE3
+        [Test, Retry(3)]
         public void ActivateDocumentsWhenClosed() {
             Window.Show();
             DispatcherHelper.DoEvents();
@@ -195,7 +196,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             documents[1].Close();
             DispatcherHelper.DoEvents();
 
-            Assert.AreEqual(2, counter);
+            Assert.AreEqual(2, counter, "#1");
             Assert.AreEqual(iService.ActiveDocument, documents[3]);
             iService.ActiveDocument = documents[3];
             DispatcherHelper.DoEvents();
@@ -205,10 +206,11 @@ namespace DevExpress.Mvvm.UI.Tests {
             DispatcherHelper.DoEvents();
 
             Assert.AreEqual(iService.ActiveDocument, documents[2]);
-            Assert.AreEqual(2, counter);
+            Assert.AreEqual(2, counter, "#2");
             documents[0].Close();
             documents[2].Close();
         }
+#endif
 
 
         public class BindingTestClass : DependencyObject {

@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 
 namespace DevExpress.Xpf.DXBinding.Tests {
+    [Platform("NET")]
     [TestFixture]
     public class EventTests {
         [SetUp]
@@ -117,6 +118,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             bt.RaiseCustomEvent();
         }
     }
+
+    [Platform("NET")]
     [TestFixture]
     public class EventTests_Dynamic : EventTests {
         [SetUp]
@@ -154,6 +157,29 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(1, panel.Tag);
             visual.RaiseCustomRoutedEvent();
             Assert.AreEqual(2, panel.Tag);
+        }
+
+        [Test]
+        public void T709285() {
+            var vm = new T709285_VM();
+            ((T709285_VM_Base)vm).Prop = "1";
+            var bt = BindingTestHelper.BindAssert<EventTests_visual>(
+                "test:EventTests_visual",
+                "CustomRoutedEvent",
+                "{b:DXEvent Do(Prop)}", null, vm);
+            Assert.AreEqual(null, vm.ResProp);
+            bt.RaiseCustomRoutedEvent();
+            Assert.AreEqual("1", vm.ResProp);
+        }
+        public class T709285_VM_Base {
+            public object Prop { get; set; }
+        }
+        public class T709285_VM : T709285_VM_Base {
+            public new string Prop { get { return (string)base.Prop; } }
+            public string ResProp { get; private set; }
+            public void Do(string prop) {
+                ResProp = prop;
+            }
         }
     }
 

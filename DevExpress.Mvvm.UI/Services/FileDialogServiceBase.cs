@@ -14,6 +14,8 @@ using DevExpress.Utils;
 using DevExpress.Internal;
 using DevExpress.Xpf.Core.Native;
 using System.Windows.Interop;
+using DxFileCustomPlaces = System.Windows.Forms.FileDialogCustomPlacesCollection;
+using DxDialogResult = System.Windows.Forms.DialogResult;
 
 namespace DevExpress.Mvvm.UI.Native {
     public class Win32WindowWrapper : System.Windows.Forms.IWin32Window {
@@ -127,7 +129,11 @@ namespace DevExpress.Mvvm.UI {
                 get { return fileDialog.DefaultExt; }
                 set { fileDialog.DefaultExt = value; }
             }
-            FileDialogCustomPlacesCollection IFileDialog.CustomPlaces { get { return fileDialog.CustomPlaces; } }
+            DxFileCustomPlaces IFileDialog.CustomPlaces {
+                get {
+                    return fileDialog.CustomPlaces;
+                }
+            }
 
             void ICommonDialog.Reset() {
                 fileDialog.Reset();
@@ -139,9 +145,14 @@ namespace DevExpress.Mvvm.UI {
             public DialogResult ShowDialog(Window ownerWindow) {
                 return fileDialog.ShowDialog(new Win32WindowWrapper(ownerWindow));
             }
-            DialogResult ICommonDialog.ShowDialog(object ownerWindow) {
+            DxDialogResult ICommonDialog.ShowDialog(object ownerWindow) {
                 var window = ownerWindow as Window;
-                return window == null ? ShowDialog() : ShowDialog(window);
+                var dialogResult = window == null ? ShowDialog() : ShowDialog(window);
+                return Convert(dialogResult);
+            }
+            DxDialogResult ICommonDialog.ShowDialog() {
+                var dialogResult = ShowDialog();
+                return Convert(dialogResult);
             }
 
             void OnDialogFileOk(object sender, CancelEventArgs e) {
@@ -155,6 +166,26 @@ namespace DevExpress.Mvvm.UI {
 
             void IDisposable.Dispose() {
                 fileDialog.Dispose();
+            }
+            static DxDialogResult Convert(DialogResult result) {
+                switch (result) {
+                    case DialogResult.OK:
+                        return DxDialogResult.OK;
+                    case DialogResult.Cancel:
+                        return DxDialogResult.Cancel;
+                    case DialogResult.Abort:
+                        return DxDialogResult.Abort;
+                    case DialogResult.Retry:
+                        return DxDialogResult.Retry;
+                    case DialogResult.Ignore:
+                        return DxDialogResult.Ignore;
+                    case DialogResult.Yes:
+                        return DxDialogResult.Yes;
+                    case DialogResult.No:
+                        return DxDialogResult.No;
+                    default:
+                        return DxDialogResult.None;
+                }
             }
         }
 
@@ -255,12 +286,12 @@ namespace DevExpress.Mvvm.UI {
 
         public event CancelEventHandler FileOk;
         IFileDialog FileDialog;
-        IEnumerable<FileInfoWrapper> FilesCore;
+        IEnumerable<object> FilesCore;
         Action<CancelEventArgs> fileOK;
 
         public FileDialogServiceBase() {
             FileDialog = CreateFileDialogAdapter();
-            FilesCore = new List<FileInfoWrapper>();
+            FilesCore = new List<object>();
             FileDialog.FileOk += OnDialogFileOk;
             FileDialog.HelpRequest += OnDialogHelpRequest;
         }
@@ -278,7 +309,7 @@ namespace DevExpress.Mvvm.UI {
         protected abstract IFileDialog CreateFileDialogAdapter();
 
         protected abstract void InitFileDialog();
-        protected abstract List<FileInfoWrapper> GetFileInfos();
+        protected abstract List<object> GetFileInfos();
         void InitFileDialogCore() {
             FileDialog.CheckFileExists = CheckFileExists;
             FileDialog.AddExtension = AddExtension;
@@ -293,15 +324,23 @@ namespace DevExpress.Mvvm.UI {
             FileDialog.ValidateNames = ValidateNames;
 
             if(RestorePreviouslySelectedDirectory && FilesCore.Count() > 0)
-                FileDialog.InitialDirectory = FilesCore.First().FileInfo.DirectoryName;
+                FileDialog.InitialDirectory = GetPreviouslySelectedDirectory();
             else
                 FileDialog.InitialDirectory = InitialDirectory;
         }
+        string GetPreviouslySelectedDirectory() {
+            if(FilesCore.First() is IFileInfo)
+                return ((IFileInfo)FilesCore.First()).DirectoryName;
+            if(FilesCore.First() is IFolderInfo)
+                return ((IFolderInfo)FilesCore.First()).DirectoryName;
+            return null;
+        }
+
         void UpdateFiles() {
             var fileInfos = GetFileInfos();
             IList filesCore = (IList)FilesCore;
             filesCore.Clear();
-            foreach(FileInfoWrapper fileInfo in fileInfos)
+            foreach(var fileInfo in fileInfos)
                 filesCore.Add(fileInfo);
         }
         bool ConvertDialogResultToBoolean(DialogResult result) {
@@ -315,7 +354,7 @@ namespace DevExpress.Mvvm.UI {
         protected object GetFileDialog() {
             return FileDialog;
         }
-        protected IEnumerable<FileInfoWrapper> GetFiles() {
+        protected IEnumerable<object> GetFiles() {
             return FilesCore;
         }
         protected bool Show(Action<CancelEventArgs> fileOK) {
@@ -327,10 +366,10 @@ namespace DevExpress.Mvvm.UI {
             return res;
         }
         bool ShowCore() {
-            DialogResult result = ActualWindow == null ? FileDialog.ShowDialog() : FileDialog.ShowDialog(new Win32WindowWrapper(ActualWindow));
-            if(result == DialogResult.OK)
+            DxDialogResult result = ActualWindow == null ? FileDialog.ShowDialog() : FileDialog.ShowDialog(new Win32WindowWrapper(ActualWindow));
+            if(result == DxDialogResult.OK)
                 return true;
-            if(result == DialogResult.Cancel)
+            if(result == DxDialogResult.Cancel)
                 return false;
             throw new InvalidOperationException("The Dialog has returned a not supported value");
         }
@@ -342,58 +381,73 @@ namespace DevExpress.Mvvm.UI {
     }
     [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
     public class FileInfoWrapper : IFileInfo {
+        public static FileInfoWrapper CreateDirectoryWrapper(string directoryPath) {
+            return new FileInfoWrapper(new DirectoryInfo(directoryPath));
+        }
         public static FileInfoWrapper Create(string fileName) {
             return new FileInfoWrapper(new FileInfo(fileName));
         }
-        public FileInfo FileInfo { get; private set; }
+
+        public FileSystemInfo FileSystemInfo { get; }
+        public FileInfo FileInfo { get { return FileSystemInfo as FileInfo; } }
+        DirectoryInfo DirectoryInfo { get { return FileSystemInfo as DirectoryInfo; } }
+
         public FileInfoWrapper(FileInfo fileInfo) {
-            FileInfo = fileInfo;
+            FileSystemInfo = fileInfo;
         }
+        FileInfoWrapper(DirectoryInfo directoryInfo) {
+            FileSystemInfo = directoryInfo;
+        }
+
         StreamWriter IFileInfo.AppendText() {
-            return FileInfo.AppendText();
+            return Match(() => FileInfo.AppendText());
         }
         FileInfo IFileInfo.CopyTo(string destFileName, bool overwrite) {
-            return FileInfo.CopyTo(destFileName, overwrite);
+            return Match(() => FileInfo.CopyTo(destFileName, overwrite));
         }
         FileStream IFileInfo.Create() {
-            return FileInfo.Create();
+            return Match(() => FileInfo.Create());
         }
         StreamWriter IFileInfo.CreateText() {
-            return FileInfo.CreateText();
+            return Match(() => FileInfo.CreateText());
         }
         void IFileInfo.Delete() {
-            FileInfo.Delete();
+            FileSystemInfo.Delete();
         }
         string IFileInfo.DirectoryName {
-            get { return FileInfo.DirectoryName; }
+            get { return Match(() => FileInfo.DirectoryName, () => DirectoryInfo.Parent.FullName); }
         }
         bool IFileInfo.Exists {
-            get { return FileInfo.Exists; }
+            get { return FileSystemInfo.Exists; }
         }
         long IFileInfo.Length {
-            get { return FileInfo.Length; }
+            get { return FileInfo.Return(x => x.Length, () => 0); }
         }
         void IFileInfo.MoveTo(string destFileName) {
-            FileInfo.MoveTo(destFileName);
+            FileInfo.Do(x => x.MoveTo(destFileName));
         }
         string IFileInfo.Name {
-            get { return FileInfo.Name; }
+            get { return FileSystemInfo.Name; }
         }
         FileStream IFileInfo.Open(FileMode mode, FileAccess access, FileShare share) {
-            return FileInfo.Open(mode, access, share);
+            return Match(() => FileInfo.Open(mode, access, share));
         }
         FileStream IFileInfo.OpenRead() {
-            return FileInfo.OpenRead();
+            return Match(() => FileInfo.OpenRead());
         }
         StreamReader IFileInfo.OpenText() {
-            return FileInfo.OpenText();
+            return Match(() => FileInfo.OpenText());
         }
         FileStream IFileInfo.OpenWrite() {
-            return FileInfo.OpenWrite();
+            return Match(() => FileInfo.OpenWrite());
         }
         FileAttributes IFileInfo.Attributes {
-            get { return FileInfo.Attributes; }
-            set { FileInfo.Attributes = value; }
+            get { return FileSystemInfo.Attributes; }
+            set { FileSystemInfo.Attributes = value; }
+        }
+
+        T Match<T>(Func<T> file, Func<T> directory = null) where T: class {
+            return FileInfo.Return(_ => file(), () => directory?.Invoke());
         }
     }
 }

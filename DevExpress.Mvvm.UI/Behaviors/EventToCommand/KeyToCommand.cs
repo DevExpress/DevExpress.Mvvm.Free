@@ -16,8 +16,8 @@ namespace DevExpress.Mvvm.UI {
             EventNameProperty.OverrideMetadata(typeof(KeyToCommand), new PropertyMetadata("KeyUp"));
         }
         protected override void Invoke(object sender, object eventArgs) {
-            if(Command.CanExecute(CommandParameter))
-                Command.Execute(CommandParameter);
+            if(CommandCanExecute(CommandParameter))
+                CommandExecute(CommandParameter);
         }
         protected override bool CanInvoke(object sender, object eventArgs) {
             bool res = base.CanInvoke(sender, eventArgs);

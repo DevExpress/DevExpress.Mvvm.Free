@@ -249,6 +249,13 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(GetImageUri(source.ElementAt(0).Image).ToString(), UriPrefix + "icon1.ico");
             Assert.AreEqual(GetImageUri(source.ElementAt(1).Image).ToString(), UriPrefix + "icon2.ico");
         }
+        [Test]
+        public void SvgImageExceptionTest() {
+            var source = EnumSourceHelperCore.GetEnumSource(typeof(EnumWithSvgImage), true, null, false, EnumMembersSortMode.Default,
+                (x, y) => { throw new InvalidOperationException(); });
+            Assert.AreEqual(GetImageUri(source.ElementAt(0).Image).ToString(), UriPrefix + "icon1.ico");
+            Assert.Throws(typeof(ArgumentException), () => { var imageSource = source.ElementAt(1).Image; });
+        }
 
         [Test, NUnit.Framework.Description("T521914")]
         public void LazyInitTest() {

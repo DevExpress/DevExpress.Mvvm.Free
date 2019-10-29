@@ -16,6 +16,8 @@ x64/
 build/
 [Bb]in/
 [Oo]bj/
+obj.NetCore.Desktop.Free/
+obj.Wpf.Free/
 
 # Enable "build/" folder in the NuGet Packages folder since NuGet packages use it for MSBuild targets
 !packages/*/build/

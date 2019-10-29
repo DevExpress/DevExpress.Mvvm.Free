@@ -1,10 +1,13 @@
 using System;
 using System.Windows.Controls;
 using System.Windows;
+using System.Windows.Media.Animation;
 
 
 namespace DevExpress.Mvvm.UI {
     public class WaitIndicator : ContentControl {
+        public static int? DesiredFrameRate { get; set; }
+
         public static readonly DependencyProperty DeferedVisibilityProperty;
         public static readonly DependencyProperty ActualContentProperty;
         public static readonly DependencyProperty ShowShadowProperty;
@@ -12,6 +15,7 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty ContentPaddingProperty;
 
         static WaitIndicator() {
+            DesiredFrameRate = (int?)Timeline.DesiredFrameRateProperty.DefaultMetadata.DefaultValue;
             Type ownerType = typeof(WaitIndicator);
             DeferedVisibilityProperty = DependencyProperty.Register("DeferedVisibility", typeof(bool), ownerType, new PropertyMetadata(false, OnDeferedVisibilityPropertyChanged));
             ShowShadowProperty = DependencyProperty.Register("ShowShadow", typeof(bool), ownerType, new PropertyMetadata(true));

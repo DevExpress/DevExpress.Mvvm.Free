@@ -1,7 +1,9 @@
 using System;
+using System.Threading.Tasks;
 
 namespace DevExpress.Mvvm {
     public interface IDispatcherService {
-        void BeginInvoke(Action action);
+        Task BeginInvoke(Action action);
+        void Invoke(Action action);
     }
 }

@@ -122,14 +122,13 @@ namespace DevExpress.Utils {
             Assembly assemblyHelperAssembly = typeof(AssemblyHelper).Assembly;
             string assemblyFullName = assemblyHelperAssembly.FullName;
             if(NameContains(Assembly.GetExecutingAssembly().FullName, AssemblyInfo.SRAssemblyData)) return assemblyFullName;
-            if(NameContains(Assembly.GetExecutingAssembly().FullName, AssemblyInfo.SRAssemblyDemoDataCore)) return assemblyFullName;
             if(NameContains(Assembly.GetExecutingAssembly().FullName, AssemblyInfo.SRAssemblyXpfMvvm)) return assemblyFullName;
             throw new NotSupportedException(string.Format("Wrong DX assembly: {0}", assemblyFullName));
         }
-        public static Assembly GetAssembly(string assemblyFullName) {
-            Assembly assembly = AssemblyHelper.GetLoadedAssembly(assemblyFullName);
+        public static Assembly GetAssembly(string assemblyFullName, Func<string, Assembly> loadAssemblyHandler = null) {
+            Assembly assembly = GetLoadedAssembly(assemblyFullName);
             if(assembly != null) return assembly;
-            return Assembly.Load(assemblyFullName);
+            return loadAssemblyHandler?.Invoke(assemblyFullName) ?? Assembly.Load(assemblyFullName);
         }
         public static bool NameContains(string assemblyFullName, string assemblyName) {
             return AssertAssemblyName(assemblyFullName, assemblyName);

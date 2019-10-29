@@ -35,6 +35,11 @@ namespace DevExpress.Mvvm {
 }
 namespace DevExpress.Mvvm.Native {
     public static class ISupportStateHelper {
+        public static Type GetStateType(Type vmType) {
+            Type iSupportSerialization = GetISupportStateImplementation(vmType);
+            if(iSupportSerialization == null) return null;
+            return iSupportSerialization.GetGenericArguments().First();
+        }
         public static object GetState(object vm) {
             if(vm == null) return null;
             Type vmType = vm.GetType();

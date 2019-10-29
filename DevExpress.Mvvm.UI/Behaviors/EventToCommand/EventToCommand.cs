@@ -65,8 +65,8 @@ namespace DevExpress.Mvvm.UI {
                     commandParameter = EventArgsConverter.Convert(sender, eventArgs);
                 else commandParameter = eventArgs;
             }
-            if(Command.CanExecute(commandParameter))
-                Command.Execute(commandParameter);
+            if(CommandCanExecute(commandParameter))
+                CommandExecute(commandParameter);
         }
         protected override bool CanInvoke(object sender, object eventArgs) {
             bool res = base.CanInvoke(sender, eventArgs);
@@ -78,7 +78,7 @@ namespace DevExpress.Mvvm.UI {
             if(Command == null) return;
             FrameworkElement associatedFrameworkObject = Source as FrameworkElement;
             if(AllowChangingEventOwnerIsEnabled && associatedFrameworkObject != null) {
-                associatedFrameworkObject.IsEnabled = Command.CanExecute(CommandParameter);
+                associatedFrameworkObject.IsEnabled = CommandCanExecute(CommandParameter);
             }
         }
         void OnCommandCanExecuteChanged(object sender, EventArgs e) {

@@ -19,6 +19,9 @@ namespace DevExpress.Mvvm.Native {
             ISupportInitialize supportInitialize = null,
             Action<object> clearItemAction = null) {
 
+            GuardHelper.ArgumentNotNull(target, nameof(target));
+            GuardHelper.ArgumentNotNull(source, nameof(source));
+
             switch (e.Action) {
                 case NotifyCollectionChangedAction.Add:
                     DoAction(e.NewItems, (item) => InsertItem(item, target, source, convertItemAction, insertItemAction));

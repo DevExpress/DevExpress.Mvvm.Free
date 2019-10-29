@@ -44,6 +44,10 @@ namespace DevExpress.Mvvm.UI {
         Discard,
         Exception
     }
+    public enum UIThreadReleaseMode {
+        WaitForSplashScreenInitialized,
+        WaitForSplashScreenLoaded
+    }
 
     public class SplashScreenOwner {
         public static readonly DependencyProperty PreferVisualTreeForOwnerSearchProperty =

@@ -32,7 +32,8 @@ namespace DevExpress.Mvvm.Native {
 
                     var imageInfo = GetImageInfo(MetadataHelper.GetAttribute<ImageAttribute>(field), MetadataHelper.GetAttribute<DXImageAttribute>(field), null, getKnownImageUriCallback);
                     string imageUri = ViewModelBase.IsInDesignMode ? null : (imageInfo.Item1 ?? imageInfo.Item2);
-                    Func<ImageSource> getImage = () => imageUri.With(CanCreateSvgImageSource(getSvgImageSource, imageUri) ? getSvgImageSource : getImageSource);
+                    Func<ImageSource> getImage = () => imageUri.With(TryGetImageSource(CanCreateSvgImageSource(getSvgImageSource, imageUri)
+                        ? getSvgImageSource : getImageSource));
                     return new EnumMemberInfo(name, DataAnnotationsAttributeHelper.GetFieldDescription(field), useUnderlyingEnumValue ? GetUnderlyingEnumValue(value) : value,
                         showImage, showName, getImage, DataAnnotationsAttributeHelper.GetFieldOrder(field));
                 });
@@ -79,6 +80,15 @@ namespace DevExpress.Mvvm.Native {
         }
         static bool CanCreateSvgImageSource(Func<string, ImageSource> getSvgImageSource, string imageUri) {
             return getSvgImageSource != null && !string.IsNullOrEmpty(imageUri) && imageUri.EndsWith(".svg", StringComparison.InvariantCultureIgnoreCase);
+        }
+        static Func<string, ImageSource> TryGetImageSource(Func<string, ImageSource> getImageSource) {
+            return uri => {
+                try {
+                    return getImageSource(uri);
+                } catch {
+                    throw new ArgumentException(string.Format("The Uri {0} cannot be converted to an image.", uri));
+                }
+            };
         }
     }
 }

@@ -1,3 +1,4 @@
+using DevExpress.Mvvm.UI.Native;
 using System;
 using System.ComponentModel;
 using System.Windows;
@@ -159,7 +160,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             Target.Show();
         }
         public virtual MessageBoxResult ShowDialog() {
-            return ConvertDialogResult(Target.ShowDialog());
+            return ConvertDialogResult(WindowProxy.GetWindowSurrogate(Target).ShowDialog());
         }
         public virtual void Activate() {
             Target.Activate();

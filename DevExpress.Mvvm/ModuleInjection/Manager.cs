@@ -84,6 +84,7 @@ namespace DevExpress.Mvvm.ModuleInjection {
 }
 namespace DevExpress.Mvvm.ModuleInjection.Native {
     public interface IModuleManagerImplementation : IModuleManagerBase, IModuleManager, IModuleWindowManager {
+        bool KeepViewModelsAlive { get; }
         IViewModelLocator ViewModelLocator { get; }
         IViewLocator ViewLocator { get; }
         IStateSerializer ViewModelStateSerializer { get; }
@@ -110,11 +111,12 @@ namespace DevExpress.Mvvm.ModuleInjection {
         readonly bool isTestingMode;
         readonly List<ModuleWrapper> modules = new List<ModuleWrapper>();
         readonly List<IRegionImplementation> regions = new List<IRegionImplementation>();
-        public ModuleManager()
-            : this(null, null, null, true, false) { }
-        public ModuleManager(bool allowSaveRestoreLayout, bool isTestingMode)
-            : this(null, null, null, allowSaveRestoreLayout, isTestingMode) { }
-        public ModuleManager(IViewModelLocator viewModelLocator, IViewLocator viewLocator, IStateSerializer viewModelStateSerializer, bool allowSaveRestoreLayout, bool isTestingMode) {
+        public ModuleManager(bool keepViewModelsAlive = false)
+            : this(null, null, null, true, false, keepViewModelsAlive) { }
+        public ModuleManager(bool allowSaveRestoreLayout, bool isTestingMode, bool keepViewModelsAlive = false)
+            : this(null, null, null, allowSaveRestoreLayout, isTestingMode, keepViewModelsAlive) { }
+        public ModuleManager(IViewModelLocator viewModelLocator, IViewLocator viewLocator, IStateSerializer viewModelStateSerializer, bool allowSaveRestoreLayout, bool isTestingMode, bool keepViewModelsAlive = false) {
+            this.keepViewModelsAlive = keepViewModelsAlive;
             this.allowSaveRestoreLayout = allowSaveRestoreLayout;
             this.isTestingMode = isTestingMode;
             this.viewModelLocator = viewModelLocator;
@@ -375,6 +377,8 @@ namespace DevExpress.Mvvm.ModuleInjection {
         readonly IViewModelLocator viewModelLocator;
         readonly IViewLocator viewLocator;
         readonly IStateSerializer viewModelStateSerializer;
+        readonly bool keepViewModelsAlive;
+        bool IModuleManagerImplementation.KeepViewModelsAlive { get { return keepViewModelsAlive; } }
         IViewModelLocator IModuleManagerImplementation.ViewModelLocator { get { return viewModelLocator ?? Mvvm.ViewModelLocator.Default; } }
         IViewLocator IModuleManagerImplementation.ViewLocator { get { return viewLocator ?? ViewLocatorHelper.Default; } }
         IStateSerializer IModuleManagerImplementation.ViewModelStateSerializer { get { return viewModelStateSerializer ?? StateSerializer.Default; } }

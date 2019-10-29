@@ -95,6 +95,7 @@ namespace DevExpress.Xpf.DXBinding {
     }
     public abstract class DXBindingBase : DXMarkupExtensionBase {
         protected Binding CreateBinding(Operand operand, BindingMode mode) {
+
             var path = operand != null && !string.IsNullOrEmpty(operand.Path) ? operand.Path : ".";
             Binding res = new Binding(path) { Path = new PropertyPath(path), Mode = mode };
             if (operand == null) return res;
@@ -344,6 +345,7 @@ namespace DevExpress.Xpf.DXBinding {
         [TypeConverter(typeof(CultureInfoIetfLanguageTagConverter))]
         public CultureInfo ConverterCulture { get; set; }
         public object ConverterParameter { get; set; }
+        public bool AllowUnsetValue { get; set; }
 
         BindingMode ActualMode { get; set; }
         BindingTreeInfo TreeInfo { get; set; }
@@ -355,6 +357,7 @@ namespace DevExpress.Xpf.DXBinding {
             UpdateSourceTrigger = DefaultUpdateSourceTrigger ?? UpdateSourceTrigger.Default;
             Mode = BindingMode.Default;
             BindingGroupName = string.Empty;
+            AllowUnsetValue = false;
         }
         protected override void Error_Report(string msg) {
             DXBindingException.Report(this, msg);
@@ -467,7 +470,7 @@ namespace DevExpress.Xpf.DXBinding {
         DXBindingConverterBase CreateConverter() {
             if(ActualResolvingMode == DXBindingResolvingMode.LegacyStaticTyping)
                 return new DXBindingConverter(this, (BindingCalculator)Calculator);
-            return new DXBindingConverterDynamic(this, (BindingCalculatorDynamic)Calculator);
+            return new DXBindingConverterDynamic(this, (BindingCalculatorDynamic)Calculator, AllowUnsetValue);
         }
 
         class DXBindingConverter : DXBindingConverterBase {
@@ -526,10 +529,12 @@ namespace DevExpress.Xpf.DXBinding {
             readonly BindingTreeInfo treeInfo;
             readonly BindingCalculatorDynamic calculator;
             readonly IValueConverter externalConverter;
-            public DXBindingConverterDynamic(DXBindingExtension owner, BindingCalculatorDynamic calculator) : base(owner) {
+            readonly bool allowUnsetValue;
+            public DXBindingConverterDynamic(DXBindingExtension owner, BindingCalculatorDynamic calculator, bool allowUnsetValue) : base(owner) {
                 this.treeInfo = owner.TreeInfo;
                 this.calculator = calculator;
                 this.externalConverter = owner.Converter;
+                this.allowUnsetValue = allowUnsetValue;
             }
             List<WeakReference> valueRefs;
             protected override object Convert(object[] values, Type targetType) {
@@ -543,7 +548,8 @@ namespace DevExpress.Xpf.DXBinding {
                 if (treeInfo.IsEmptyBackExpr())
                     return Enumerable.Range(0, calculator.Operands.Count()).Select(x => value).ToArray();
                 var values = valueRefs.Select(x => x.Target).ToArray();
-                return calculator.ResolveBack(values, value).ToArray();
+                var res = calculator.ResolveBack(values, value).ToArray();
+                return res;
             }
             protected override object CoerceAfterConvert(object value, Type targetType, object parameter, CultureInfo culture) {
                 if (externalConverter != null)
@@ -561,6 +567,9 @@ namespace DevExpress.Xpf.DXBinding {
                     return externalConverter.ConvertBack(value, t, parameter, culture);
                 }
                 return base.CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
+            }
+            protected override bool CanConvert(object[] values) {
+                return allowUnsetValue || !ValuesContainUnsetValue(values);
             }
         }
     }

@@ -18,6 +18,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         [DllImport("user32.dll")]
         static extern int SendMessage(IntPtr hWnd, int wMsg, IntPtr wParam, IntPtr lParam);
 
+#if !DXCORE3
         public static void DoWithNotImplementedHrInit(Action action) {
             var iface = (ITaskbarList)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("56FDF344-FD6D-11d0-958A-006097C9A090")));
             DoWithPatchedVtable(iface, x => x.HrInit(), new HrInitCallback(HrInitNotImplemented), action);
@@ -38,6 +39,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             }
             GC.KeepAlive(func);
         }
+#endif
 
         static IntPtr PatchVtable(IntPtr vtable, int offset, IntPtr funcPtr) {
             var p = VirtualProtect(vtable, new UIntPtr((uint)Marshal.SizeOf<IntPtr>()), 0x40);

@@ -199,10 +199,39 @@ namespace DevExpress.DXBinding.Native {
         public static readonly BindingFlags StaticBindingFlags = BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy;
         public static readonly BindingFlags InstanceBindingFlags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy;
 
-        public static PropertyInfo FindProperty(Type instanceType, string propertyName, BindingFlags flags) {
+        public static PropertyInfo FindInstanceProperty(Type instanceType, string propertyName) {
+            Type t = instanceType;
+            PropertyInfo res;
+            while (t != null) {
+                res = t.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                if (res != null)
+                    return res;
+                t = t.BaseType;
+            }
+            return null;
+        }
+        public static FieldInfo FindInstanceField(Type instanceType, string fieldName) {
+            Type t = instanceType;
+            FieldInfo res;
+            while (t != null) {
+                res = t.GetField(fieldName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                if (res != null)
+                    return res;
+                t = t.BaseType;
+            }
+            return null;
+        }
+        public static PropertyInfo FindStaticProperty(Type instanceType, string propertyName) {
+            return instanceType.GetProperty(propertyName, StaticBindingFlags);
+        }
+        public static FieldInfo FindStaticField(Type instanceType, string fieldName) {
+            return instanceType.GetField(fieldName, StaticBindingFlags);
+        }
+
+        internal static PropertyInfo FindPropertyCore(Type instanceType, string propertyName, BindingFlags flags) {
             return instanceType.GetProperty(propertyName, flags);
         }
-        public static FieldInfo FindField(Type instanceType, string fieldName, BindingFlags flags) {
+        internal static FieldInfo FindFieldCore(Type instanceType, string fieldName, BindingFlags flags) {
             return instanceType.GetField(fieldName, flags);
         }
         internal static bool IsImplicitConversion(Type from, Type to) {
@@ -1020,12 +1049,12 @@ namespace DevExpress.DXBinding.Native {
             if (IsNull(from))
                 return null;
             var fromT = from.GetType();
-            var prop = MemberSearcher.FindProperty(fromT, n.Name, MemberSearcher.InstanceBindingFlags);
+            var prop = MemberSearcher.FindInstanceProperty(fromT, n.Name);
             if (prop != null) {
                 SetLastMember(prop, from);
                 return prop.GetValue(from, null);
             }
-            var field = MemberSearcher.FindField(fromT, n.Name, MemberSearcher.InstanceBindingFlags);
+            var field = MemberSearcher.FindInstanceField(fromT, n.Name);
             if (field != null) {
                 SetLastMember(field, from);
                 return field.GetValue(from);
@@ -1071,12 +1100,12 @@ namespace DevExpress.DXBinding.Native {
         }
         protected override object Type_StaticIdent(object from, NType n) {
             Type t = typeResolver(n);
-            var prop = MemberSearcher.FindProperty(t, n.Ident.Name, MemberSearcher.StaticBindingFlags);
+            var prop = MemberSearcher.FindStaticProperty(t, n.Ident.Name);
             if (prop != null) {
                 SetLastMember(prop, null);
                 return prop.GetValue(null, null);
             }
-            var field = MemberSearcher.FindField(t, n.Ident.Name, MemberSearcher.StaticBindingFlags);
+            var field = MemberSearcher.FindStaticField(t, n.Ident.Name);
             if (field != null) {
                 SetLastMember(field, null);
                 return field.GetValue(null);
@@ -1095,7 +1124,7 @@ namespace DevExpress.DXBinding.Native {
         protected override object Type_Attached(object from, NType n) {
             if (IsNull(from)) return null;
             Type t = typeResolver(n);
-            var field = MemberSearcher.FindField(t, n.Ident.Name + "Property", MemberSearcher.StaticBindingFlags);
+            var field = MemberSearcher.FindStaticField(t, n.Ident.Name + "Property");
             if (field == null) {
                 errorHandler.Report(ErrorHelper.Report001(n.Ident.Name + "Property", t), true);
                 return null;
@@ -1210,7 +1239,7 @@ namespace DevExpress.DXBinding.Native {
             : base(typeResolver, errorHandler, fullPack) {
             this.executeAssign = executeAssign;
             this.operandValues = operandValues;
-            this.assigns = new List<Tuple<Operand, object>>();
+            this.assigns = new Dictionary<Operand, object>();
         }
         protected override object GetOperandValue(Operand operand, NRelative.NKind? relativeSource) {
             if (relativeSource.HasValue) {
@@ -1222,12 +1251,15 @@ namespace DevExpress.DXBinding.Native {
                     default: throw new NotImplementedException();
                 }
             }
-            if (operand != null)
-                return operandValues[operand];
+            if (operand != null) {
+                if (operandValues.ContainsKey(operand))
+                    return operandValues[operand];
+                errorHandler.SetError();
+            }
             return null;
         }
 
-        List<Tuple<Operand, object>> assigns;
+        Dictionary<Operand, object> assigns;
         protected override object Assign(NAssign n, object value) {
             return executeAssign ? Assign_Execute(n, value) : Assign_NotExecute(n, value);
         }
@@ -1236,7 +1268,7 @@ namespace DevExpress.DXBinding.Native {
             if (!(n.Left is NIdentBase))
                 throw new InvalidOperationException();
             var op = VisitorOperand.ReduceIdent((NIdentBase)n.Left, x => typeResolver(x), out rest);
-            assigns.Add(new Tuple<Operand, object>(op, value));
+            assigns.Add(op, value);
             return null;
         }
         object Assign_Execute(NAssign n, object value) {
@@ -1267,13 +1299,18 @@ namespace DevExpress.DXBinding.Native {
             VisitorEvaluator me = new VisitorEvaluator(operandValues, typeResolver, errorHandler, true, false);
             return me.RootVisit(expr);
         }
-        public static IEnumerable<object> ResolveBack(NRoot expr, object backParam, IDictionary<Operand, object> operandValues, Func<NType, Type> typeResolver, IErrorHandler errorHandler) {
+        public static IEnumerable<object> ResolveBack(NRoot expr, object backParam, List<Operand> operands, IDictionary<Operand, object> operandValues, Func<NType, Type> typeResolver, IErrorHandler errorHandler) {
             VisitorEvaluator me = new VisitorEvaluator(operandValues, typeResolver, errorHandler, true, false);
             me.backParam = backParam;
             var res = me.RootVisit(expr);
             if (res.Count() == 1 && res.First() != null)
                 return res;
-            return me.assigns.Select(x => x.Item2);
+            var result =  operands.Select(x => {
+                object xx;
+                me.assigns.TryGetValue(x, out xx);
+                return xx;
+            }).ToArray();
+            return result;
         }
         public static void ResolveExecute(NRoot expr, object parameterParam, IDictionary<Operand, object> operandValues, Func<NType, Type> typeResolver, IErrorHandler errorHandler) {
             VisitorEvaluator me = new VisitorEvaluator(operandValues, typeResolver, errorHandler, false, true);
@@ -1359,7 +1396,7 @@ namespace DevExpress.DXBinding.Native {
                 .FirstOrDefault();
         }
         public IEnumerable<object> ResolveBack(object[] values, object backParam) {
-            return VisitorEvaluator.ResolveBack(backExpr, backParam, GetOperandsValues(values), x => GetResolvedType(x), ErrorHandler);
+            return VisitorEvaluator.ResolveBack(backExpr, backParam, Operands.ToList(), GetOperandsValues(values), x => GetResolvedType(x), ErrorHandler);
         }
         internal override IEnumerable<VisitorType.TypeInfo> GetTypeInfos() {
             return VisitorType.Resolve(expr, backExpr);
@@ -1508,9 +1545,9 @@ namespace DevExpress.DXBinding.Native {
             }
         }
         protected override Expression Ident(Expression from, NIdent n) {
-            var prop = MemberSearcher.FindProperty(from.Type, n.Name, BindingFlags.Public | BindingFlags.Instance);
+            var prop = MemberSearcher.FindPropertyCore(from.Type, n.Name, BindingFlags.Public | BindingFlags.Instance);
             if(prop == null) {
-                var field = MemberSearcher.FindField(from.Type, n.Name, BindingFlags.Public | BindingFlags.Instance);
+                var field = MemberSearcher.FindFieldCore(from.Type, n.Name, BindingFlags.Public | BindingFlags.Instance);
                 if(field == null) {
                     errorHandler.Report(ErrorHelper.Report001(n.Name, from.Type), true);
                     return null;

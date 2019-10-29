@@ -559,6 +559,36 @@ namespace DevExpress.Mvvm.UI.Tests {
             EnqueueTestComplete();
         }
 
+        [Test]
+        public void T718930() {
+            var bt = new Button();
+            var cb = new System.Windows.Input.CommandBinding() {
+                Command = System.Windows.Input.ApplicationCommands.Open
+            };
+            int exCount = 0;
+            int canCount = 0;
+            cb.Executed += (d, e) => { exCount++; };
+            cb.CanExecute += (d, e) => { canCount++; e.CanExecute = true; };
+            bt.CommandBindings.Add(cb);
+
+            var bt1 = new Button();
+            var etc = new EventToCommand() {
+                EventName = "Loaded",
+                Command = System.Windows.Input.ApplicationCommands.Open,
+                CommandTarget = bt
+            };
+            Interaction.GetBehaviors(bt1).Add(etc);
+
+            var root = new StackPanel();
+            root.Children.Add(bt);
+            root.Children.Add(bt1);
+            Window.Content = root;
+            Window.Show();
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(1, exCount);
+            Assert.AreEqual(2, canCount);
+        }
+
         public enum EventToCommandType { AssociatedObject, SourceName, SourceObject }
         public class EventToCommandTestClass : EventToCommand {
             public EventToCommandType Type { get; set; }

@@ -395,6 +395,7 @@ namespace DevExpress.Mvvm.Tests {
                 Assert.AreEqual(DataAnnotationsResourcesResolver.AnnotationsResourceManager.GetString(property.Name), property.GetValue(null, null));
             }
         }
+#if !DXCORE3
         [Test]
         public void RegexTest() {
             CheckRegex(typeof(PhoneAttribute), typeof(ValidationAttribute).Assembly.GetType(typeof(ValidationAttribute).Namespace + ".PhoneAttribute"));
@@ -409,6 +410,7 @@ namespace DevExpress.Mvvm.Tests {
         static string GetPatternFromRegex(Regex regex) {
             return (string)typeof(Regex).GetField("pattern", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(regex);
         }
+#endif
         #endregion
 
         #region MetadataHelper tests

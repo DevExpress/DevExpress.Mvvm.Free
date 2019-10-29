@@ -20,12 +20,13 @@ namespace DevExpress.Mvvm.DataAnnotations {
         protected internal PropertyMetadataBuilder<T, TProperty> PropertyCore<TProperty>(Expression<Func<T, TProperty>> propertyExpression) {
             return GetBuilder(propertyExpression, x => new PropertyMetadataBuilder<T, TProperty>(x, this));
         }
-        protected internal CommandMethodMetadataBuilder<T> CommandFromMethodCore(Expression<Action<T>> methodExpression) {
-            return CommandFromMethodInternal(methodExpression).AddOrModifyAttribute<CommandAttribute>();
-        }
         internal CommandMethodMetadataBuilder<T> CommandFromMethodInternal(Expression<Action<T>> methodExpression) {
-            string methodName = GetMethod(methodExpression).Name;
+            string methodName = ExpressionHelper.GetArgumentMethodStrict(methodExpression).Name;
             return GetBuilder(methodName, x => new CommandMethodMetadataBuilder<T>(x, this, methodName));
+        }
+        internal AsyncCommandMethodMetadataBuilder<T> CommandFromAsyncMethodInternal(Expression<Func<T, System.Threading.Tasks.Task>> asyncMethodExpression) {
+            string methodName = ExpressionHelper.GetArgumentFunctionStrict(asyncMethodExpression).Name;
+            return GetBuilder(methodName, x => new AsyncCommandMethodMetadataBuilder<T>(x, this, methodName));
         }
         protected static TBuilder DisplayNameCore<TBuilder>(TBuilder builder, string name) where TBuilder : ClassMetadataBuilder<T> {
             builder.AddOrReplaceAttribute(new DisplayNameAttribute(name));
@@ -40,7 +41,10 @@ namespace DevExpress.Mvvm.DataAnnotations {
             return PropertyCore<TProperty>(propertyName);
         }
         public CommandMethodMetadataBuilder<T> CommandFromMethod(Expression<Action<T>> methodExpression) {
-            return CommandFromMethodCore(methodExpression);
+            return CommandFromMethodInternal(methodExpression).AddOrModifyAttribute<CommandAttribute>();
+        }
+        public AsyncCommandMethodMetadataBuilder<T> CommandFromMethod(Expression<Func<T, System.Threading.Tasks.Task>> asyncMethodExpression) {
+            return CommandFromAsyncMethodInternal(asyncMethodExpression).AddOrModifyAttribute<CommandAttribute>();
         }
         public MetadataBuilder<T> DisplayName(string name) { return DisplayNameCore(this, name); }
     }

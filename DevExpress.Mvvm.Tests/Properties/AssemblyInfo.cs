@@ -2,15 +2,13 @@ using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using DevExpress.Internal;
-
 [assembly: AssemblyTitle("DevExpress.Mvvm.Tests")]
 [assembly: NUnit.Framework.Apartment(System.Threading.ApartmentState.STA)]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("DevExpress.Mvvm.Tests")]
-[assembly: AssemblyCopyright(AssemblyInfo.AssemblyCopyright)]
+[assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]

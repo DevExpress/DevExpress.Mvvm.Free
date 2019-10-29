@@ -26,13 +26,14 @@ namespace DevExpress.Mvvm.DataAnnotations {
             get { throw new NotSupportedException(); }
         }
         internal bool? GetUseCommandManager() { return useCommandManager; }
+        internal bool AllowMultipleExecutionCore { get; set; }
     }
     public class AsyncCommandAttribute : CommandAttribute {
-        public AsyncCommandAttribute(bool isAsincCommand)
-            : base(isAsincCommand) { }
+        public AsyncCommandAttribute(bool isAsyncCommand)
+            : base(isAsyncCommand) { }
         public AsyncCommandAttribute()
             : base() { }
-        public bool AllowMultipleExecution { get; set; }
+        public bool AllowMultipleExecution { get { return AllowMultipleExecutionCore; } set { AllowMultipleExecutionCore = value; } }
     }
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class ServicePropertyAttribute : Attribute {

@@ -352,22 +352,10 @@ namespace DevExpress.Mvvm.Native {
                 ? new ExternalMetadataAttributesProvider(metadataClassType, componentType)
                 : null;
         }
-        static class NetCore3Detector {
-            static readonly bool isNetCore3;
-            static NetCore3Detector() {
-                var assembly1 = typeof(RequiredAttribute).Assembly;
-                isNetCore3 = assembly1.GetName().Name == "System.ComponentModel.Annotations";
-            }
-            public static bool IsNetCore3() {
-                return isNetCore3;
-            }
-        }
         static Type GetMetadataClassType(Type componentType) {
-            if (NetCore3Detector.IsNetCore3()) return null;
             return GetMetadataClassTypeCore(componentType);
         }
         static Type GetFilteringMetadataClassType(Type componentType) {
-            if (NetCore3Detector.IsNetCore3()) return null;
             return GetFilteringMetadataClassTypeCore(componentType);
         }
         static Type GetMetadataClassTypeCore(Type componentType) {

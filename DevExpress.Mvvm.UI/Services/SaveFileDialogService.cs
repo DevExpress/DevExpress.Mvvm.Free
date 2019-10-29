@@ -79,13 +79,13 @@ namespace DevExpress.Mvvm.UI {
             SaveFileDialog.Filter = Filter;
             SaveFileDialog.FilterIndex = FilterIndex;
         }
-        protected override List<FileInfoWrapper> GetFileInfos() {
-            List<FileInfoWrapper> res = new List<FileInfoWrapper>();
+        protected override List<object> GetFileInfos() {
+            List<object> res = new List<object>();
             foreach(string fileName in SaveFileDialog.FileNames)
                 res.Add(FileInfoWrapper.Create(fileName));
             return res;
         }
-        IFileInfo ISaveFileDialogService.File { get { return GetFiles().FirstOrDefault(); } }
+        IFileInfo ISaveFileDialogService.File { get { return (IFileInfo)GetFiles().FirstOrDefault(); } }
         bool ISaveFileDialogService.ShowDialog(Action<CancelEventArgs> fileOK, string directoryName, string fileName) {
             if(directoryName != null)
                 InitialDirectory = directoryName;

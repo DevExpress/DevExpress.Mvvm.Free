@@ -155,7 +155,7 @@ namespace DevExpress.Mvvm.Tests {
         public void POCOViewModel_PrivateClassTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
                 ViewModelSource.Create<POCOViewModel_PrivateClass>();
-            }, x => Assert.AreEqual("Cannot create dynamic class for the internal class: POCOViewModel_PrivateClass.", x.Message));
+            }, x => Assert.AreEqual("Cannot create a dynamic class for the non-public class: POCOViewModel_PrivateClass.", x.Message));
         }
 
         public class POCOViewModel_TwoPropertyChangedMethods {
@@ -1517,6 +1517,40 @@ namespace DevExpress.Mvvm.Tests {
             DispatcherHelper.DoEvents();
             Assert.AreEqual(1, canExecuteChangedCount);
         }
+
+        public class POCOViewModel_AsyncCommandsInViewModelBaseDescendant_AsyncMethod : ViewModelBase {
+            public async Task Save() {
+                await Task.Factory.StartNew(() => SaveCallCount++);
+            }
+            public int SaveCallCount;
+        }
+        [Test]
+        public void AsyncCommandsInViewModelBaseDescendant_AsyncMethod() {
+            var viewModel = ViewModelSource.Create<POCOViewModel_AsyncCommandsInViewModelBaseDescendant_AsyncMethod>();
+            var command = (ICommand)TypeHelper.GetPropertyValue(viewModel, "SaveCommand");
+            Assert.IsNotNull(command);
+            int canExecuteChangedCount = 0;
+            command.CanExecuteChanged += (x, e) => canExecuteChangedCount++;
+            viewModel.RaiseCanExecuteChanged(() => viewModel.Save());
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(1, canExecuteChangedCount);
+        }
+        public class POCOViewModel_AsyncMethodCanExecute {
+            public async Task Save() {
+                await Task.Yield();
+            }
+        }
+        [Test]
+        public void POCOViewModel_AsyncMethodCanExecuteTest() {
+            var viewModel = ViewModelSource.Create<POCOViewModel_AsyncMethodCanExecute>();
+            var command = (ICommand)TypeHelper.GetPropertyValue(viewModel, "SaveCommand");
+            Assert.IsNotNull(command);
+            int canExecuteChangedCount = 0;
+            command.CanExecuteChanged += (x, e) => canExecuteChangedCount++;
+            viewModel.RaiseCanExecuteChanged(x => x.Save());
+            DispatcherHelper.DoEvents();
+            Assert.AreEqual(1, canExecuteChangedCount);
+        }
         #endregion
         #region non default constructors
         public class POCOViewModel_NonDefaultConstructors {
@@ -2095,6 +2129,69 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreSame(messageBoxMock1, viewModel.GetService<IMessageBoxService>("svc1"));
             Assert.AreSame(messageBoxMock2, viewModel.GetService<IMessageBoxService>("svc2"));
             TestHelper.AssertThrows<ViewModelSourceException>(() => new GetServiceViewModel().GetService<IMessageBoxService>("svc1"));
+        }
+
+        public interface IGenericService<T> { }
+        public interface IGeneric2Service<T1, T2> { }
+        public class GenericService1<T> : IGenericService<T> { }
+        public class GenericService2 : IGenericService<string> { }
+        public class GenericService3 : IGeneric2Service<string, string> { }
+        public class GenericService4<T> : IGeneric2Service<string, T> { }
+        public class POCOViewModel_GenericServices {
+            public virtual IGenericService<object> Service1 { get { return null; } }
+            public virtual IGenericService<string> Service2 { get { throw new NotImplementedException(); } }
+            public virtual IGeneric2Service<string, string> Service3 { get { throw new NotImplementedException(); } }
+            public virtual IGeneric2Service<string, List<int>> Service4 { get { throw new NotImplementedException(); } }
+            public virtual IGenericService<List<int>> Service5 { get { return null; } }
+        }
+        [Test]
+        public void GenericService_T694909() {
+            var viewModel = ViewModelSource.Create<POCOViewModel_GenericServices>();
+            Assert.IsNull(viewModel.Service1);
+            Assert.IsNull(viewModel.Service2);
+            Assert.IsNull(viewModel.Service3);
+            Assert.IsNull(viewModel.Service4);
+            Assert.IsNull(viewModel.Service5);
+            var service1 = new GenericService1<object>();
+            var service2 = new GenericService2();
+            var service3 = new GenericService3();
+            var service4 = new GenericService4<List<int>>();
+            var service5 = new GenericService1<List<int>>();
+
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(service1);
+            Assert.AreEqual(service1, viewModel.Service1);
+            Assert.IsNull(viewModel.Service2);
+            Assert.IsNull(viewModel.Service3);
+            Assert.IsNull(viewModel.Service4);
+            Assert.IsNull(viewModel.Service5);
+
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(service2);
+            Assert.AreEqual(service1, viewModel.Service1);
+            Assert.AreEqual(service2, viewModel.Service2);
+            Assert.IsNull(viewModel.Service3);
+            Assert.IsNull(viewModel.Service4);
+            Assert.IsNull(viewModel.Service5);
+
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(service3);
+            Assert.AreEqual(service1, viewModel.Service1);
+            Assert.AreEqual(service2, viewModel.Service2);
+            Assert.AreEqual(service3, viewModel.Service3);
+            Assert.IsNull(viewModel.Service4);
+            Assert.IsNull(viewModel.Service5);
+
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(service4);
+            Assert.AreEqual(service1, viewModel.Service1);
+            Assert.AreEqual(service2, viewModel.Service2);
+            Assert.AreEqual(service3, viewModel.Service3);
+            Assert.AreEqual(service4, viewModel.Service4);
+            Assert.IsNull(viewModel.Service5);
+
+            ((ISupportServices)viewModel).ServiceContainer.RegisterService(service5);
+            Assert.AreEqual(service1, viewModel.Service1);
+            Assert.AreEqual(service2, viewModel.Service2);
+            Assert.AreEqual(service3, viewModel.Service3);
+            Assert.AreEqual(service4, viewModel.Service4);
+            Assert.AreEqual(service5, viewModel.Service5);
         }
         #endregion
 

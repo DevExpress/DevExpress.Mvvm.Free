@@ -186,7 +186,7 @@ namespace DevExpress.Mvvm {
             if(appResources == null) return new Dictionary<string, object>();
             return appResources.Keys.OfType<string>()
                 .ToDictionary(x => x, x => appResources[x])
-                .Where(x => type.IsAssignableFrom(x.Value.GetType()))
+                .Where(x => x.Value != null && type.IsAssignableFrom(x.Value.GetType()))
                 .ToDictionary(x => x.Key, x => x.Value);
         }
         protected override object GetServiceCore(Type type, string key, ServiceSearchMode searchMode, out bool serviceHasKey) {

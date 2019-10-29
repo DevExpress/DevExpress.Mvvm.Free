@@ -164,6 +164,7 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
                 DoForeachUIRegion(x => x.Remove(item.ViewModel));
             }
             items.Remove(item);
+            item.RemoveViewModel();
         }
         public bool Contains(string key) {
             return GetItem(key) != null;
@@ -171,6 +172,7 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
         public void Clear() {
             SaveLogicalState();
             DoForeachUIRegion(x => x.Clear());
+            items.ForEach(x => x.RemoveViewModel());
             items.Clear();
             navigationKey = null;
             SelectedKey = null;
@@ -388,33 +390,37 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
         #region RegionItem
         class RegionItem {
             public string Key { get; private set; }
-            public object ViewModel { get { return viewModelRef != null ? viewModelRef.Target : null; } }
+            public object ViewModel { get { return viewModel ?? viewModelRef?.Target; } }
             Func<object> Factory { get; set; }
             string ViewModelName { get; set; }
             string ViewName { get; set; }
             Type ViewType { get; set; }
-            object ViewModelState { get; set; }
+            string ViewModelState { get; set; }
             object Parameter { get; set; }
 
             WeakReference viewModelRef;
+            object viewModel;
+            readonly bool keepViewModelAlive;
             readonly IViewModelLocator viewModelLocator;
             readonly IViewLocator viewLocator;
             readonly IStateSerializer stateSerializer;
 
             public RegionItem(IModuleManagerImplementation manager, IModule module, object parameter, RegionItemInfo info)
                 : this(manager.ViewModelLocator, manager.ViewLocator, manager.ViewModelStateSerializer,
-                      module.Key, module.ViewModelFactory, module.ViewModelName, module.ViewName, module.ViewType, parameter)  {
+                      module.Key, module.ViewModelFactory, module.ViewModelName, module.ViewName, module.ViewType, parameter, manager.KeepViewModelsAlive)  {
                 if(info != null) {
-                    SetViewModelState(info.ViewModelState.With(x => x.State), info.ViewModelStateType);
+                    SetViewModelState(info.ViewModelState.With(x => x.State));
                 }
             }
             public RegionItem(IModuleManagerImplementation manager, RegionItemInfo info)
                 : this(manager.ViewModelLocator, manager.ViewLocator, manager.ViewModelStateSerializer,
-                      info.Key, null, info.ViewModelName, info.ViewName, null, null) {
-                SetViewModelState(info.ViewModelState.With(x => x.State), info.ViewModelStateType);
+                      info.Key, null, info.ViewModelName, info.ViewName, null, null, manager.KeepViewModelsAlive) {
+                SetViewModelState(info.ViewModelState.With(x => x.State));
             }
             RegionItem(IViewModelLocator viewModelLocator, IViewLocator viewLocator, IStateSerializer stateSerializer,
-                string key, Func<object> factory, string viewModelName, string viewName, Type viewType, object parameter) {
+                string key, Func<object> factory, string viewModelName, string viewName, Type viewType, object parameter,
+                bool keepViewModelAlive) {
+                this.keepViewModelAlive = keepViewModelAlive;
                 this.viewModelLocator = viewModelLocator;
                 this.viewLocator = viewLocator;
                 this.stateSerializer = stateSerializer;
@@ -434,36 +440,32 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
                 RegionItemInfo res = new RegionItemInfo() {
                     Key = Key, ViewModelName = ViewModelName, ViewName = ViewName,
                 };
-                string state, stateType;
-                GetViewModelState(out state, out stateType);
-                res.ViewModelStateType = stateType;
+                string state;
+                GetViewModelState(out state);
+                res.ViewModelStateType = null;
                 res.ViewModelState = new SerializableState(state);
                 return res;
             }
-            void GetViewModelState(out string state, out string stateType) {
+            void GetViewModelState(out string state) {
                 state = null;
-                stateType = null;
                 if(ViewModel == null) return;
+                var vmStateType = ISupportStateHelper.GetStateType(ViewModel.GetType());
+                if(vmStateType == null) return;
                 object vmState = ISupportStateHelper.GetState(ViewModel);
                 if(vmState == null) return;
-                state = stateSerializer.SerializeState(vmState, vmState.GetType());
-                stateType = vmState.GetType().AssemblyQualifiedName;
+                state = stateSerializer.SerializeState(vmState, vmStateType);
             }
-            void SetViewModelState(string state, string stateType) {
-                if(string.IsNullOrEmpty(state) || string.IsNullOrEmpty(stateType)) return;
-                Type t;
-                try {
-                    t = Type.GetType(stateType, false);
-                } catch {
-                    t = null;
-                }
-                object vmState = stateSerializer.DeserializeState(state, t);
-                ViewModelState = vmState;
+            void SetViewModelState(string state) {
+                ViewModelState = state;
                 UpdateViewModelState();
             }
             void UpdateViewModelState() {
-                if(ViewModelState == null || ViewModel == null) return;
-                ISupportStateHelper.RestoreState(ViewModel, ViewModelState);
+                if(ViewModel == null) return;
+                if(string.IsNullOrEmpty(ViewModelState)) return;
+                var vmStateType = ISupportStateHelper.GetStateType(ViewModel.GetType());
+                if(vmStateType == null) return;
+                var state = stateSerializer.DeserializeState(ViewModelState, vmStateType);
+                ISupportStateHelper.RestoreState(ViewModel, state);
             }
 
             public string GetViewName() {
@@ -478,6 +480,9 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
                 }
                 service.Inject(ViewModel, ViewType);
             }
+            public void RemoveViewModel() {
+                viewModel = null;
+            }
             void Init() {
                 object vm = null;
                 if (Factory != null) vm = Factory();
@@ -488,7 +493,9 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
                 }
                 if(vm == null)
                     ModuleInjectionException.NullVM();
-                viewModelRef = new WeakReference(vm);
+                if(keepViewModelAlive)
+                    viewModel = vm;
+                else viewModelRef = new WeakReference(vm);
                 InitParameter();
                 if(string.IsNullOrEmpty(ViewModelName))
                     ViewModelName = viewModelLocator.GetViewModelTypeName(vm.GetType());

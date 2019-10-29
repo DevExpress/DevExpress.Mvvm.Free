@@ -1,0 +1,180 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+  <PropertyGroup>
+    <ProjectGuid>{7545BCBC-E63B-082A-2109-556174DE4D1A}</ProjectGuid>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <EnableDefaultItems>False</EnableDefaultItems>
+    <UseWPF>True</UseWPF>
+    <UseWindowsForms>True</UseWindowsForms>
+    <Configurations>Debug;Release</Configurations>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
+    <RootNamespace>DevExpress.Mvvm</RootNamespace>
+    <AssemblyName>DevExpress.Mvvm</AssemblyName>
+    <LangVersion>6</LangVersion>
+    <FileAlignment>512</FileAlignment>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\DevExpress.Mvvm.Key\StrongKey.snk</AssemblyOriginatorKeyFile>
+    <IntermediateOutputPath>obj.NetCore.Desktop.Free</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <WarningLevel>4</WarningLevel>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <ErrorReport>prompt</ErrorReport>
+    <OutputPath>..\Bin\NETCoreDesktop\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;MVVM;DXCORE3;FREE;</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <WarningLevel>4</WarningLevel>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <ErrorReport>prompt</ErrorReport>
+    <OutputPath>..\Bin\NETCoreDesktop\</OutputPath>
+    <DefineConstants>TRACE;MVVM;DXCORE3;FREE;</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyVersion.cs" />
+    <Compile Include="CellValue.cs" />
+    <Compile Include="CollectionBindingHelper.cs" />
+    <Compile Include="Commands\DelegateCommand.cs" />
+    <Compile Include="Commands\UICommand.cs" />
+    <Compile Include="DataAnnotationsResources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DataAnnotationsResources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="DataAnnotations\Attributes\AttributesDX.cs" />
+    <Compile Include="DataAnnotations\Attributes\AttributesEnum.cs" />
+    <Compile Include="DataAnnotations\Attributes\AttributesPOCO.cs" />
+    <Compile Include="DataAnnotations\Attributes\DXValidationAttribute.cs" />
+    <Compile Include="DataAnnotations\Attributes\MetadataTypeAttribute.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\Extensions.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MemberBuilderBase.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MemberBuilderCommand.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MemberBuilderCommandBase.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MemberBuilderEnum.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MemberBuilderProperty.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MemberBuilderPropertyBase.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MetadataBuilder.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MetadataBuilderBase.cs" />
+    <Compile Include="DataAnnotations\MetadataBuilders\MetadataBuilderEnum.cs" />
+    <Compile Include="DataAnnotations\MetadataLocator.cs" />
+    <Compile Include="DataAnnotations\Native\AttributeBuilderProviderBase.cs" />
+    <Compile Include="DataAnnotations\Native\AttributeHelper.cs" />
+    <Compile Include="DataAnnotations\Native\EnumSourceHelper.cs" />
+    <Compile Include="DataAnnotations\Native\FreeNative.cs" />
+    <Compile Include="DataAnnotations\Native\MetadataHelper.cs" />
+    <Compile Include="DataAnnotations\Native\PropertyValidator.cs" />
+    <Compile Include="DataAnnotations\Native\ResourceResolver.cs" />
+    <Compile Include="DesignTimeHelper.cs" />
+    <Compile Include="IDataErrorInfoHelper.cs" />
+    <Compile Include="ILockable.cs" />
+    <Compile Include="MessageBoxButtonLocalizer.cs" />
+    <Compile Include="ModuleInjection\Events.cs" />
+    <Compile Include="ModuleInjection\Exceptions.cs" />
+    <Compile Include="ModuleInjection\Manager.cs" />
+    <Compile Include="ModuleInjection\Module.cs" />
+    <Compile Include="ModuleInjection\Obsolete.cs" />
+    <Compile Include="ModuleInjection\Region.cs" />
+    <Compile Include="ModuleInjection\SerializationInfo.cs" />
+    <Compile Include="ModuleInjection\SerializationLogical.cs" />
+    <Compile Include="ModuleInjection\SerializationVisual.cs" />
+    <Compile Include="Native\ActionInvoker\ActionInvokerBase.cs" />
+    <Compile Include="Native\ActionInvoker\ActionInvokerFactories.cs" />
+    <Compile Include="Native\ActionInvoker\IActionInvoker.cs" />
+    <Compile Include="Native\ActionInvoker\SLWeakActionInvoker.cs" />
+    <Compile Include="Native\ActionInvoker\StaticActionInvoker.cs" />
+    <Compile Include="Native\ActionInvoker\WeakActionInvoker.cs" />
+    <Compile Include="Native\AssemblyHelper.cs" />
+    <Compile Include="Native\AsyncCommandFactory.cs" />
+    <Compile Include="Native\DelegateCommandFactory.cs" />
+    <Compile Include="Native\DesignTimeValuesProvider.cs" />
+    <Compile Include="Native\DPAccessModifierAttribute.cs" />
+    <Compile Include="Native\DynamicAssemblyHelper.cs" />
+    <Compile Include="Native\EventFireCounter.cs" />
+    <Compile Include="Native\ExpressionHelper.cs" />
+    <Compile Include="Native\Guard.cs" />
+    <Compile Include="Native\IClickable.cs" />
+    <Compile Include="Native\ICommand.cs" />
+    <Compile Include="Native\IUICommand.cs" />
+    <Compile Include="Native\ListAdapter.cs" />
+    <Compile Include="Native\MayBe.cs" />
+    <Compile Include="Native\MemberVisibility.cs" />
+    <Compile Include="Native\MemberVisibilityExtensions.cs" />
+    <Compile Include="Native\NativeConstants.cs" />
+    <Compile Include="Native\PropertyChangedHelper.cs" />
+    <Compile Include="Native\SplitStringHelper.cs" />
+    <Compile Include="Native\SyncCollectionHelper.cs" />
+    <Compile Include="Native\TypeCastHelper.cs" />
+    <Compile Include="Native\ViewModelDesignHelper.cs" />
+    <Compile Include="PropertyValueChangedEvent.cs" />
+    <Compile Include="Services\ApplicationJumpListService\ApplicationJumpItems.cs" />
+    <Compile Include="Services\ApplicationJumpListService\IApplicationJumpListService.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpItemInfoInternal.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpItemInfoSource.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpTaskInfoInternal.cs" />
+    <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpTaskInfoSource.cs" />
+    <Compile Include="Services\DialogService\DialogServiceExtensions.Wpf.cs" />
+    <Compile Include="Services\DialogService\IDialogService.cs" />
+    <Compile Include="Services\DialogService\DialogServiceExtensions.cs" />
+    <Compile Include="Services\DispatcherService\IDispatcherService.cs" />
+    <Compile Include="Services\FileDialogServices\IFileDialogServiceBase.cs" />
+    <Compile Include="Services\FileDialogServices\IFileInfo.cs" />
+    <Compile Include="Services\FileDialogServices\IFolderBrowserDialogService.cs" />
+    <Compile Include="Services\FileDialogServices\IOpenFileDialogService.cs" />
+    <Compile Include="Services\FileDialogServices\ISaveFileDialogService.cs" />
+    <Compile Include="Services\IServiceContainer.cs" />
+    <Compile Include="Services\ISupportNavigation.cs" />
+    <Compile Include="Services\ISupportParameter.cs" />
+    <Compile Include="Services\ISupportParentViewModel.cs" />
+    <Compile Include="Services\ISupportServices.cs" />
+    <Compile Include="Services\MessageBoxService\IMessageBoxService.cs" />
+    <Compile Include="Services\MessageBoxService\MessageBoxEnums.cs" />
+    <Compile Include="Services\MessageBoxService\MessageBoxServiceExtensions.Wpf.cs" />
+    <Compile Include="Services\MessengerService\FuzzyDictionary.cs" />
+    <Compile Include="Services\MessengerService\IMessenger.cs" />
+    <Compile Include="Services\MessageBoxService\MessageBoxServiceExtensions.cs" />
+    <Compile Include="Services\MessengerService\Messenger.cs" />
+    <Compile Include="Services\MessengerService\MessengerExtensions.cs" />
+    <Compile Include="Services\NavigationService\INavigationService.cs" />
+    <Compile Include="Services\NotificationService\INotificationService.cs" />
+    <Compile Include="Services\SplashScreenService\ISplashScreenService.cs" />
+    <Compile Include="Services\SplashScreenService\ISupportSplashScreen.cs" />
+    <Compile Include="Services\SplashScreenService\SplashScreenServiceExtensions.cs" />
+    <Compile Include="Services\TaskbarButtonService\ITaskbarButtonService.cs" />
+    <Compile Include="Services\TaskbarButtonService\Native\ITaskbarThumbButtonInfo.cs" />
+    <Compile Include="Services\WindowService\ICurrentWindowService.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\DocumentManagerService\DocumentManagerServiceExtensions.cs" />
+    <Compile Include="Services\DocumentManagerService\IDocument.cs" />
+    <Compile Include="Services\DocumentManagerService\IDocumentViewModel.cs" />
+    <Compile Include="Services\DocumentManagerService\IDocumentManagerService.cs" />
+    <Compile Include="Services\ServiceContainer.cs" />
+    <Compile Include="Services\WindowService\IWindowService.cs" />
+    <Compile Include="Services\WindowService\WindowServiceExtensions.cs" />
+    <Compile Include="TypeLocators\LocatorBase.cs" />
+    <Compile Include="TypeLocators\ViewLocator.cs" />
+    <Compile Include="TypeLocators\ViewModelLocator.cs" />
+    <Compile Include="ViewModels\BindableBase.cs" />
+    <Compile Include="ViewModels\ImmutableCollectionCore.cs" />
+    <Compile Include="ViewModels\NavigationViewModelBase.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="ViewModels\ViewModelSource.cs" />
+    <Compile Include="WeakEvent.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="DataAnnotationsResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DataAnnotationsResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup/>
+</Project>
+

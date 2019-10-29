@@ -1,7 +1,3 @@
-using DevExpress.Mvvm;
-using DevExpress.Mvvm.Native;
-using DevExpress.Mvvm.UI;
-using DevExpress.Mvvm.UI.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,12 +7,18 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-
-using WindowBase = System.Windows.Window;
 using System.Windows.Input;
+using DevExpress.Mvvm;
+using DevExpress.Mvvm.Native;
+using DevExpress.Mvvm.UI;
+using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.UI.Native;
+using WindowBase = System.Windows.Window;
 
 namespace DevExpress.Mvvm.UI {
     public enum WindowShowMode { Dialog, Default }
+    [TargetTypeAttribute(typeof(UserControl))]
+    [TargetTypeAttribute(typeof(Window))]
     public class WindowService : ViewServiceBase, IWindowService, IDocumentOwner {
         internal static Type GetDefaultWindowType(Style windowStyle) {
             return typeof(Window);

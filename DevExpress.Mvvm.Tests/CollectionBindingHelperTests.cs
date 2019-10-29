@@ -9,8 +9,12 @@ using NUnit.Framework;
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class CollectionBindingHelperTests {
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        static WeakReference CreateBinding(Func<IDisposable> binding) {
+            return new WeakReference(binding());
+        }
         static void CreateAndCheckBinding(Func<IDisposable> binding) {
-            WeakReference bindingRef = new WeakReference(binding());
+            WeakReference bindingRef = CreateBinding(binding);
         }
         [Test]
         public void AddItemsReverse() {

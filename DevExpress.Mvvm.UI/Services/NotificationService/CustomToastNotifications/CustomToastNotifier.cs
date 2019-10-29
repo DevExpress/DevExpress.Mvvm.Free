@@ -161,7 +161,6 @@ namespace DevExpress.Mvvm.UI.Native {
 
             ToastInfo info = toastsQueue[0];
             toastsQueue.RemoveAt(0);
-            info.win = new ToastWindow();
 
             var content = new ToastContentControl() { Toast = info.toast };
             content.Content = info.toast.ViewModel;
@@ -170,6 +169,13 @@ namespace DevExpress.Mvvm.UI.Native {
                 content.ContentTemplate = ContentTemplate ?? NotificationServiceTemplatesHelper.DefaultCustomToastTemplate;
             }
             content.ContentTemplateSelector = ContentTemplateSelector;
+
+            try {
+                info.win = new ToastWindow();
+            } catch {
+                content.TimeOutCommand.Execute(null);
+                return;
+            }
 
             info.win.Content = content;
             info.win.DataContext = info.toast.ViewModel;
@@ -184,8 +190,7 @@ namespace DevExpress.Mvvm.UI.Native {
 
             try {
                 info.win.Show();
-            }
-            catch(System.ComponentModel.Win32Exception) {
+            } catch(System.ComponentModel.Win32Exception) {
                 content.TimeOutCommand.Execute(null);
                 return;
             }

@@ -9,7 +9,7 @@ using System.Security.Permissions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
-
+using System.Collections.Generic;
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
     public class NotificationTests {

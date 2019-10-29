@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <UseWPF>true</UseWPF>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <AssemblyName>DevExpress.Mvvm.TestClasses.VB.Free</AssemblyName>
+    <RootNamespace>DevExpress.Mvvm.TestClasses.VB</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <FileAlignment>512</FileAlignment>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Configurations>Debug;</Configurations>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\DevExpress.Mvvm.Key\StrongKey.snk</AssemblyOriginatorKeyFile>
+    <DefaultItemExcludes>$(DefaultItemExcludes);**\*.vsf;**\*.vspscc;**\*.SCC;**\*.bak</DefaultItemExcludes>
+  </PropertyGroup>
+  <PropertyGroup>
+    <MyType>Empty</MyType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netcoreapp3.0|AnyCPU'">
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\Bin\NETCoreDesktop\</OutputPath>
+    <IntermediateOutputPath>obj.NetCore.Desktop.Free</IntermediateOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="DevExpress.Mvvm.v19.2">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Bin\NETCoreDesktop\DevExpress.Mvvm.v19.2.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CallerMemberNameViewModel.vb" />
+    <Compile Include="My Project\AssemblyInfo.vb" />
+    <Compile Include="My Project\Application.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Application.myapp</DependentUpon>
+    </Compile>
+    <Compile Include="VbPOCOViewModel.vb" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="My Project\Application.myapp">
+      <Generator>MyApplicationCodeGenerator</Generator>
+      <LastGenOutput>Application.Designer.vb</LastGenOutput>
+    </None>
+  </ItemGroup>
+</Project>

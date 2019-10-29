@@ -38,6 +38,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             }
         }
     }
+#if !DXCORE3
     [TestFixture]
     public class ApplicationJumpListServiceTests : BaseWpfFixture {
         TestJumpActionsManager jumpActionsManager;
@@ -387,4 +388,5 @@ namespace DevExpress.Mvvm.UI.Tests {
     public class TestApplicationJumpListService : ApplicationJumpListService {
         public TestApplicationJumpListService(INativeJumpList nativeJumpList, IJumpActionsManager jumpActionsManager) : base(nativeJumpList, jumpActionsManager) { }
     }
+#endif
 }

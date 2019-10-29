@@ -9,6 +9,8 @@ using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
 
+using DxDialogResult = System.Windows.Forms.DialogResult;
+
 namespace DevExpress.Mvvm.UI.Native {
     public interface IFolderBrowserDialog : ICommonDialog {
         string Description { get; set; }
@@ -48,12 +50,14 @@ namespace DevExpress.Mvvm.UI {
             void ICommonDialog.Reset() {
                 fileDialog.Reset();
             }
-            DialogResult ICommonDialog.ShowDialog() {
-                return fileDialog.ShowDialog();
+            DxDialogResult ICommonDialog.ShowDialog() {
+                var dialogResult = fileDialog.ShowDialog();
+                return Convert(dialogResult);
             }
-            DialogResult ICommonDialog.ShowDialog(object ownerWindow) {
+            DxDialogResult ICommonDialog.ShowDialog(object ownerWindow) {
                 var window = ownerWindow as Window;
-                return window == null ? fileDialog.ShowDialog() : fileDialog.ShowDialog(new Win32WindowWrapper(window));
+                var dialogResult = window == null ? fileDialog.ShowDialog() : fileDialog.ShowDialog(new Win32WindowWrapper(window));
+                return Convert(dialogResult);
             }
             event EventHandler ICommonDialog.HelpRequest {
                 add { fileDialog.HelpRequest += value; }
@@ -62,6 +66,26 @@ namespace DevExpress.Mvvm.UI {
 
             void IDisposable.Dispose() {
                 fileDialog.Dispose();
+            }
+            static DxDialogResult Convert(DialogResult result) {
+                switch (result) {
+                    case DialogResult.OK:
+                        return DxDialogResult.OK;
+                    case DialogResult.Cancel:
+                        return DxDialogResult.Cancel;
+                    case DialogResult.Abort:
+                        return DxDialogResult.Abort;
+                    case DialogResult.Retry:
+                        return DxDialogResult.Retry;
+                    case DialogResult.Ignore:
+                        return DxDialogResult.Ignore;
+                    case DialogResult.Yes:
+                        return DxDialogResult.Yes;
+                    case DialogResult.No:
+                        return DxDialogResult.No;
+                    default:
+                        return DxDialogResult.None;
+                }
             }
         }
 
@@ -118,6 +142,10 @@ namespace DevExpress.Mvvm.UI {
             return new FolderBrowserDialogAdapter();
         }
 
+        protected object GetFileDialog() {
+            return Dialog;
+        }
+
         string resultPath = string.Empty;
         string IFolderBrowserDialogService.ResultPath {
             get { return resultPath; }
@@ -132,9 +160,9 @@ namespace DevExpress.Mvvm.UI {
                 Dialog.SelectedPath = StartPath;
             var res = Dialog.ShowDialog();
             resultPath = Dialog.SelectedPath;
-            if(res == DialogResult.OK)
+            if(res == DxDialogResult.OK)
                 return true;
-            if(res == DialogResult.Cancel)
+            if(res == DxDialogResult.Cancel)
                 return false;
             throw new InvalidOperationException();
         }

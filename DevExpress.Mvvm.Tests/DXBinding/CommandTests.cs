@@ -9,6 +9,7 @@ using System.Windows;
 using System.Reflection;
 
 namespace DevExpress.Xpf.DXBinding.Tests {
+    [Platform("NET")]
     [TestFixture]
     public class CommandTests {
         [SetUp]
@@ -23,7 +24,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             BindingListener.Disable();
             BindingTestHelper.ClearResolvingMode();
         }
-        [Test]
+        [Test, Retry(3)]
         public virtual void OneExecute() {
             var vm = CommandTests_a.Create();
             var bt = BindingTestHelper.BindAssert<Button>("Button", "Command", "{b:DXCommand Do1()}", null, vm);
@@ -174,6 +175,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(1, CommandTests_a.DoValue);
         }
     }
+
+    [Platform("NET")]
     [TestFixture]
     public class CommandTests_Dynamic : CommandTests {
         [SetUp]

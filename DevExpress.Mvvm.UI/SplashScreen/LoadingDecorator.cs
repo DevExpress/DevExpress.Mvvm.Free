@@ -231,7 +231,7 @@ namespace DevExpress.Mvvm.UI {
             if(!UseSplashScreen || IsActive)
                 return;
 
-            SplashContainer.Show(CreateSplashScreenWindow, CreateSplashScreen, GetSplashScreenCreatorParams(), new object[] { SplashScreenTemplate, SplashScreenDataContext });
+            SplashContainer.Show(CreateSplashScreenWindow, CreateSplashScreen, GetSplashScreenCreatorParams(), new object[] { SplashScreenTemplate, SplashScreenDataContext }, null);
         }
         protected virtual void CloseSplashScreen() {
             if(!IsActive)
