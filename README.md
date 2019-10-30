@@ -18,6 +18,10 @@ NuGet
 The Free DevExpress MVVM Framework is available from [NuGet](https://www.nuget.org/packages/DevExpressMvvm).
 
 
+19.2.3 Release Notes
+====================
+DevExpress MVVM Framework now supports .NET Core 3.
+
 16.1.4 Release Notes
 ====================
 The UWP platform is no longer supported. If UWP is required, use the [nuget package version 15.2.5](https://www.nuget.org/packages/DevExpressMvvm/15.2.5).
