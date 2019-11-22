@@ -88,11 +88,51 @@ namespace DevExpress.Mvvm.Tests {
     public class POCOViewModel2 {
         public virtual string Property1 { get; set; }
     }
-    [TestFixture]
+
+    [CLSCompliant(false)]
+    [TestFixture(false)]
+    [TestFixture(true)]
     public class ViewModelSourceTests : BaseWpfFixture {
         #region errors
 #pragma warning disable 0618
         #region properties
+
+        bool _hasCustomInjectedAction;
+        private static bool actionCalled = false;
+
+        [SetUp]
+        public override void SetUp()
+        {
+            base.SetUp();
+            //because our field is static, we need to set the actionCalled value to false before each test runs.
+            actionCalled = false;
+        }
+
+        public ViewModelSourceTests(bool hasCustomInjectedAction)
+        {
+            _hasCustomInjectedAction = hasCustomInjectedAction;
+        }
+
+        public static void CustomInjectedAction(object oldProperty, object newProperty, object viewModel, string propertyName) 
+        {
+            actionCalled = true;
+        }
+
+        private object CreatePOCOViewModel(Type type)
+        {
+            return _hasCustomInjectedAction ? ViewModelSource.Create(type, CustomInjectedAction) : ViewModelSource.Create(type);
+        }
+
+        private T CreatePOCOViewModel<T>() where T : class, new()
+        {
+            return _hasCustomInjectedAction ? ViewModelSource.Create<T>(CustomInjectedAction) : ViewModelSource.Create<T>();
+        }
+
+        private T CreatePocoViewModel<T>(Expression<Func<T>> constructorExpression) where T : class
+        {
+            return _hasCustomInjectedAction ? ViewModelSource.Create(constructorExpression, CustomInjectedAction) : ViewModelSource.Create(constructorExpression);
+        }
+
         public class POCOViewModel_InvalidMetadata_BindableAttributeOnNotVirtualProeprty {
             [BindableProperty]
             public string Property { get; set; }
@@ -100,8 +140,28 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_InvalidMetadata_BindableAttributeOnNotVirtualProeprtyTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_InvalidMetadata_BindableAttributeOnNotVirtualProeprty>();
+                CreatePOCOViewModel<POCOViewModel_InvalidMetadata_BindableAttributeOnNotVirtualProeprty>();
             }, x => Assert.AreEqual("Cannot make non-virtual property bindable: Property.", x.Message));
+        }
+
+        public class POCOViewModel_Valid_CustomPropertyAction
+        {
+            public virtual string Property { get; set; }
+        }
+
+
+        [Test]
+        public void POCOViewModel_OnCreate_CallsInjectedMethod()
+        {
+            // only run when there is an injected method
+            if (_hasCustomInjectedAction) {
+
+                var viewModel = CreatePOCOViewModel<POCOViewModel_Valid_CustomPropertyAction>();
+
+                viewModel.Property = "new string";
+
+                Assert.IsTrue(actionCalled);
+            }
         }
 
         public class POCOViewModel_InvalidMetadata_BindableAttributeOnProeprtyWithInternalSetter {
@@ -111,7 +171,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_InvalidMetadata_BindableAttributeOnProeprtyWithInternalSetterTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_InvalidMetadata_BindableAttributeOnProeprtyWithInternalSetter>();
+                CreatePOCOViewModel<POCOViewModel_InvalidMetadata_BindableAttributeOnProeprtyWithInternalSetter>();
             }, x => Assert.AreEqual("Cannot make property with internal setter bindable: Property.", x.Message));
         }
 
@@ -122,7 +182,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_InvalidMetadata_BindableAttributeOnProeprtyWithoutSetterTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_InvalidMetadata_BindableAttributeOnProeprtyWithoutSetter>();
+                CreatePOCOViewModel<POCOViewModel_InvalidMetadata_BindableAttributeOnProeprtyWithoutSetter>();
             }, x => Assert.AreEqual("Cannot make property without setter bindable: Property.", x.Message));
         }
 
@@ -133,7 +193,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_InvalidMetadata_BindableAttributeOnProeprtyWithoutGetterTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_InvalidMetadata_BindableAttributeOnProeprtyWithoutGetter>();
+                CreatePOCOViewModel<POCOViewModel_InvalidMetadata_BindableAttributeOnProeprtyWithoutGetter>();
             }, x => Assert.AreEqual("Cannot make property without public getter bindable: Property.", x.Message));
         }
 
@@ -145,7 +205,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_SealedClassTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_SealedClass>();
+                CreatePOCOViewModel<POCOViewModel_SealedClass>();
             }, x => Assert.AreEqual("Cannot create dynamic class for the sealed class: POCOViewModel_SealedClass.", x.Message));
         }
 
@@ -154,7 +214,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_PrivateClassTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_PrivateClass>();
+                CreatePOCOViewModel<POCOViewModel_PrivateClass>();
             }, x => Assert.AreEqual("Cannot create a dynamic class for the non-public class: POCOViewModel_PrivateClass.", x.Message));
         }
 
@@ -166,7 +226,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_TwoPropertyChangedMethodsTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_TwoPropertyChangedMethods>();
+                CreatePOCOViewModel<POCOViewModel_TwoPropertyChangedMethods>();
             }, x => Assert.AreEqual("More than one property changed method: Property.", x.Message));
         }
 
@@ -177,7 +237,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_PrivateChangedMethodTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_PrivateChangedMethod>();
+                CreatePOCOViewModel<POCOViewModel_PrivateChangedMethod>();
             }, x => Assert.AreEqual("Property changed method should be public or protected: OnPropertyChanged.", x.Message));
         }
 
@@ -188,7 +248,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_InternalChangedMethodTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_InternalChangedMethod>();
+                CreatePOCOViewModel<POCOViewModel_InternalChangedMethod>();
             }, x => Assert.AreEqual("Property changed method should be public or protected: OnPropertyChanged.", x.Message));
         }
 
@@ -199,7 +259,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_TwoParametersInChangedMethodTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_TwoParametersInChangedMethod>();
+                CreatePOCOViewModel<POCOViewModel_TwoParametersInChangedMethod>();
             }, x => Assert.AreEqual("Property changed method cannot have more than one parameter: OnPropertyChanged.", x.Message));
         }
 
@@ -210,7 +270,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_FunctionAsChangedMethodTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_FunctionAsChangedMethod>();
+                CreatePOCOViewModel<POCOViewModel_FunctionAsChangedMethod>();
             }, x => Assert.AreEqual("Property changed method cannot have return type: OnPropertyChanged.", x.Message));
         }
 
@@ -222,7 +282,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_InvalidChangedMethodParameterTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_InvalidChangedMethodParameterType>();
+                CreatePOCOViewModel<POCOViewModel_InvalidChangedMethodParameterType>();
             }, x => Assert.AreEqual("Property changed method argument type should match property type: MyOnPropertyChanged.", x.Message));
         }
 
@@ -234,7 +294,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_InvalidChangedMethodNameTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_InvalidChangedMethodName>();
+                CreatePOCOViewModel<POCOViewModel_InvalidChangedMethodName>();
             }, x => Assert.AreEqual("Property changed method not found: MyOnPropertyChanged.", x.Message));
         }
         [MetadataType(typeof(POCOViewModel_InvalidFluentAPIChangedMethodMetadata))]
@@ -250,7 +310,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_InvalidFluentAPIChangedMethodTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_InvalidFluentAPIChangedMethod>();
+                CreatePOCOViewModel<POCOViewModel_InvalidFluentAPIChangedMethod>();
             }, x => Assert.AreEqual("Property changed method should be public or protected: MyOnPropertyChanged.", x.Message));
         }
 
@@ -266,7 +326,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void InvalidIPOCOViewModelImplementationTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<InvalidIPOCOViewModelImplementation>();
+                CreatePOCOViewModel<InvalidIPOCOViewModelImplementation>();
             }, x => Assert.AreEqual("Type cannot implement IPOCOViewModel: InvalidIPOCOViewModelImplementation.", x.Message));
         }
 
@@ -287,7 +347,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void INPCImplementor_NoPopertyChangedTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_INPCImplementor_NoPopertyChanged>();
+                CreatePOCOViewModel<POCOViewModel_INPCImplementor_NoPopertyChanged>();
             }, x => Assert.AreEqual("Class already supports INotifyPropertyChanged, but RaisePropertyChanged(string) method not found: POCOViewModel_INPCImplementor_NoPopertyChanged.", x.Message));
         }
 
@@ -302,7 +362,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void INPCImplementor_PrivatePopertyChangedTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_INPCImplementor_PrivatePopertyChanged>();
+                CreatePOCOViewModel<POCOViewModel_INPCImplementor_PrivatePopertyChanged>();
             }, x => Assert.AreEqual("Class already supports INotifyPropertyChanged, but RaisePropertyChanged(string) method not found: POCOViewModel_INPCImplementor_PrivatePopertyChanged.", x.Message));
         }
 
@@ -317,7 +377,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void INPCImplementor_ByRefPopertyChangedTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_INPCImplementor_ByRefPopertyChanged>();
+                CreatePOCOViewModel<POCOViewModel_INPCImplementor_ByRefPopertyChanged>();
             }, x => Assert.AreEqual("Class already supports INotifyPropertyChanged, but RaisePropertyChanged(string) method not found: POCOViewModel_INPCImplementor_ByRefPopertyChanged.", x.Message));
         }
 
@@ -332,7 +392,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void INPCImplementor_OutPopertyChangedTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_INPCImplementor_OutPopertyChanged>();
+                CreatePOCOViewModel<POCOViewModel_INPCImplementor_OutPopertyChanged>();
             }, x => Assert.AreEqual("Class already supports INotifyPropertyChanged, but RaisePropertyChanged(string) method not found: POCOViewModel_INPCImplementor_OutPopertyChanged.", x.Message));
         }
 
@@ -347,7 +407,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void INPCImplementor_NoArgPopertyChangedTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_INPCImplementor_NoArgPopertyChanged>();
+                CreatePOCOViewModel<POCOViewModel_INPCImplementor_NoArgPopertyChanged>();
             }, x => Assert.AreEqual("Class already supports INotifyPropertyChanged, but RaisePropertyChanged(string) method not found: POCOViewModel_INPCImplementor_NoArgPopertyChanged.", x.Message));
         }
 
@@ -361,7 +421,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_FinalPropertyTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_FinalProperty>();
+                CreatePOCOViewModel<POCOViewModel_FinalProperty>();
             }, x => Assert.AreEqual("Cannot override final property: Property.", x.Message));
         }
         #endregion
@@ -374,7 +434,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_MemberWithCommandNameTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_MemberWithCommandName>();
+                CreatePOCOViewModel<POCOViewModel_MemberWithCommandName>();
             }, x => Assert.AreEqual("Member with the same command name already exists: ShowCommand.", x.Message));
         }
         public class POCOViewModel_MemberWithCommandName2 {
@@ -384,7 +444,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void POCOViewModel_MemberWithCommandNameTest2() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOViewModel_MemberWithCommandName2>();
+                CreatePOCOViewModel<POCOViewModel_MemberWithCommandName2>();
             }, x => Assert.AreEqual("Member with the same command name already exists: ShowCommand.", x.Message));
         }
 
@@ -403,7 +463,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void CallRaiseCommandChangedMethodExtensionMethodForNotCommandMethod() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<CommandAttributeViewModel>().RaiseCanExecuteChanged(x => x.NoAttribute());
+                CreatePOCOViewModel<CommandAttributeViewModel>().RaiseCanExecuteChanged(x => x.NoAttribute());
             }, x => Assert.AreEqual("Command not found: NoAttributeCommand.", x.Message));
         }
 
@@ -416,7 +476,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void CommandAttribute_DuplicateNamesTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<DuplicateNamesViewModel>();
+                CreatePOCOViewModel<DuplicateNamesViewModel>();
             }, x => Assert.AreEqual("Member with the same command name already exists: MyCommand.", x.Message));
         }
 
@@ -427,7 +487,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void CommandAttribute_NotPublicMethodTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<NotPublicMethodViewModel>();
+                CreatePOCOViewModel<NotPublicMethodViewModel>();
             }, x => Assert.AreEqual("Method should be public: NotPublicMethod.", x.Message));
         }
 
@@ -438,7 +498,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void CommandAttribute_TooMuchArgumentsMethodTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<TooMuchArgumentsMethodViewModel>();
+                CreatePOCOViewModel<TooMuchArgumentsMethodViewModel>();
             }, x => Assert.AreEqual("Method cannot have more than one parameter: TooMuchArgumentsMethod.", x.Message));
         }
 
@@ -449,7 +509,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void CommandAttribute_OutParameterMethodTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<OutParameterMethodViewModel>();
+                CreatePOCOViewModel<OutParameterMethodViewModel>();
             }, x => Assert.AreEqual("Method cannot have out or reference parameter: OutParameterMethod.", x.Message));
         }
 
@@ -460,7 +520,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void CommandAttribute_RefParameterMethodTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<RefParameterMethodViewModel>();
+                CreatePOCOViewModel<RefParameterMethodViewModel>();
             }, x => Assert.AreEqual("Method cannot have out or reference parameter: RefParameterMethod.", x.Message));
         }
 
@@ -472,7 +532,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void CommandAttribute_CanExecuteParameterCountMismatchTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<CanExecuteParameterCountMismatchViewModel>();
+                CreatePOCOViewModel<CanExecuteParameterCountMismatchViewModel>();
             }, x => Assert.AreEqual("Can execute method has incorrect parameters: CanMethod.", x.Message));
         }
 
@@ -484,7 +544,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void CommandAttribute_CanExecuteParametersMismatchTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<CanExecuteParametersMismatchViewModel>();
+                CreatePOCOViewModel<CanExecuteParametersMismatchViewModel>();
             }, x => Assert.AreEqual("Can execute method has incorrect parameters: CanMethod.", x.Message));
         }
 
@@ -496,7 +556,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void CommandAttribute_CanExecuteParametersMismatchTest2() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<CanExecuteParametersMismatchViewModel2>();
+                CreatePOCOViewModel<CanExecuteParametersMismatchViewModel2>();
             }, x => Assert.AreEqual("Can execute method has incorrect parameters: CanMethod.", x.Message));
         }
 
@@ -508,7 +568,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void CommandAttribute_NotPublicCanExecuteTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<NotPublicCanExecuteViewModel>();
+                CreatePOCOViewModel<NotPublicCanExecuteViewModel>();
             }, x => Assert.AreEqual("Method should be public: CanMethod.", x.Message));
         }
 
@@ -519,7 +579,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void CommandAttribute_InvalidCanExecuteMethodNameTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<InvalidCanExecuteMethodNameViewModel>();
+                CreatePOCOViewModel<InvalidCanExecuteMethodNameViewModel>();
             }, x => Assert.AreEqual("Method not found: CanMethod_.", x.Message));
         }
         #endregion
@@ -532,7 +592,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void InternalCtorTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create(() => new InternalCtor(0));
+                CreatePocoViewModel(() => new InternalCtor(0));
             }, x => Assert.AreEqual("Constructor not found.", x.Message));
         }
 
@@ -542,7 +602,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void OnlyInternalCtorTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create(() => new OnlyInternalCtor(0));
+                CreatePocoViewModel(() => new OnlyInternalCtor(0));
             }, x => Assert.AreEqual("Type has no accessible constructors: OnlyInternalCtor.", x.Message));
         }
 
@@ -578,7 +638,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void Services_NotServiceTypeTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create(() => new Services_NotServiceType());
+                CreatePocoViewModel(() => new Services_NotServiceType());
             }, x => Assert.AreEqual("Service properties should have an interface type: Property.", x.Message));
         }
 
@@ -589,7 +649,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void Services_PropertyIsNotVirtualTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create(() => new Services_PropertyIsNotVirtual());
+                CreatePocoViewModel(() => new Services_PropertyIsNotVirtual());
             }, x => Assert.AreEqual("Property is not virtual: Property.", x.Message));
         }
 
@@ -603,7 +663,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void Services_PropertyIsSealedTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create(() => new Services_PropertyIsSealed());
+                CreatePocoViewModel(() => new Services_PropertyIsSealed());
             }, x => Assert.AreEqual("Cannot override final property: Property.", x.Message));
         }
 
@@ -614,7 +674,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void Services_PropertyHasSetterTest() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create(() => new Services_PropertyHasSetter());
+                CreatePocoViewModel(() => new Services_PropertyHasSetter());
             }, x => Assert.AreEqual("Property with setter cannot be Service Property: Property.", x.Message));
         }
         #endregion
@@ -622,7 +682,7 @@ namespace DevExpress.Mvvm.Tests {
         public class T370425VM { }
         [Test]
         public void T370425() {
-            var vm = ViewModelSource.Create<T370425VM>();
+            var vm = CreatePOCOViewModel<T370425VM>();
             AssertHelper.AssertThrows<InvalidOperationException>(() => ((ISupportParentViewModel)vm).ParentViewModel = vm,
                 e => Assert.AreEqual("ViewModel cannot be parent of itself.", e.Message));
         }
@@ -636,7 +696,7 @@ namespace DevExpress.Mvvm.Tests {
         public void DesignTimeGeneration() {
             ViewModelDesignHelper.IsInDesignModeOverride = true;
             try {
-                DesignTimeViewModel viewModel1 = ViewModelSource.Create<DesignTimeViewModel>();
+                DesignTimeViewModel viewModel1 = CreatePOCOViewModel<DesignTimeViewModel>();
                 Assert.AreNotEqual(typeof(DesignTimeViewModel), viewModel1.GetType());
             } finally {
                 ViewModelDesignHelper.IsInDesignModeOverride = null;
@@ -649,7 +709,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void OverridingPropertyTest() {
-            POCOViewModel viewModel = ViewModelSource.Create<POCOViewModel>();
+            POCOViewModel viewModel = CreatePOCOViewModel<POCOViewModel>();
             Assert.AreEqual(viewModel.GetType(), viewModel.GetType().GetProperty("Property1").DeclaringType);
 
             CheckBindableProperty(viewModel, x => x.Property1, (vm, x) => vm.Property1 = x, "x", "y");
@@ -695,27 +755,27 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void NPChangingExceptions() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                IPOCOViewModel iPOCOViewModel = (IPOCOViewModel)ViewModelSource.Create<POCOWithoutINPChanging>();
+                IPOCOViewModel iPOCOViewModel = (IPOCOViewModel)CreatePOCOViewModel<POCOWithoutINPChanging>();
                 iPOCOViewModel.RaisePropertyChanging(null);
             }, x => x.Message.AreEqual(string.Format(
                 ViewModelSourceException.Error_INotifyPropertyChangingIsNotImplemented,
                 typeof(POCOWithoutINPChanging).Name)));
 
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                IPOCOViewModel iPOCOViewModel = (IPOCOViewModel)ViewModelSource.Create<POCOImplementingINPChanging1>();
+                IPOCOViewModel iPOCOViewModel = (IPOCOViewModel)CreatePOCOViewModel<POCOImplementingINPChanging1>();
                 iPOCOViewModel.RaisePropertyChanging(null);
             }, x => x.Message.AreEqual(string.Format(
                 ViewModelSourceException.Error_INotifyPropertyChangingIsNotImplemented,
                 typeof(POCOImplementingINPChanging1).Name)));
 
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<POCOImplementingINPChanging2>();
+                CreatePOCOViewModel<POCOImplementingINPChanging2>();
             }, x => x.Message.AreEqual(string.Format(
                 ViewModelSourceException.Error_RaisePropertyChangingMethodNotFound,
                 typeof(POCOImplementingINPChanging2).Name)));
 
             AssertHelper.AssertDoesNotThrow(() => {
-                ViewModelSource.Create<POCOImplementingINPChanging3>();
+                CreatePOCOViewModel<POCOImplementingINPChanging3>();
             });
         }
 
@@ -742,7 +802,7 @@ namespace DevExpress.Mvvm.Tests {
             NPChangingTestCore(typeof(POCOWithINPChanging3), x => ((POCOWithINPChanging3)x).Property, (x, v) => ((POCOWithINPChanging3)x).Property = v);
         }
         void NPChangingTestCore(Type type, Func<object, int> getProperty, Action<object, int> setProperty) {
-            var vm = ViewModelSource.Create(type);
+            var vm = CreatePOCOViewModel(type);
             INotifyPropertyChanging inpc = (INotifyPropertyChanging)vm;
             int propertyChangingCounter = 0;
             int oldValue = 0;
@@ -761,7 +821,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void NPChangingTest2() {
-            var vm = ViewModelSource.Create<POCOWithINPChanging2>();
+            var vm = CreatePOCOViewModel<POCOWithINPChanging2>();
             INotifyPropertyChanging inpc = (INotifyPropertyChanging)vm;
             int propertyChangingCounter = 0;
             inpc.PropertyChanging += (d, e) => {
@@ -803,7 +863,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void PropertyChangedTest() {
-            POCOViewModel_PropertyChanged viewModel = ViewModelSource.Create<POCOViewModel_PropertyChanged>();
+            POCOViewModel_PropertyChanged viewModel = CreatePOCOViewModel<POCOViewModel_PropertyChanged>();
             ((INotifyPropertyChanged)viewModel).PropertyChanged += (o, e) => Assert.IsFalse(viewModel.OnProtectedChangedMethodWithParamChangedCalled);
             CheckBindableProperty(viewModel, x => x.ProtectedChangedMethodWithParam, (vm, x) => vm.ProtectedChangedMethodWithParam = x, "x", "y", (x, val) => {
                 Assert.IsTrue(x.OnProtectedChangedMethodWithParamChangedCalled);
@@ -822,7 +882,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void GetCommandFromFunction_VB() {
-            ViewModelWithFunctionCommandMethod viewModel = ViewModelSource.Create<ViewModelWithFunctionCommandMethod>();
+            ViewModelWithFunctionCommandMethod viewModel = CreatePOCOViewModel<ViewModelWithFunctionCommandMethod>();
 
             ParameterExpression parameter1 = Expression.Parameter(typeof(ViewModelWithFunctionCommandMethod), "x");
             MethodCallExpression methodCallExpression = Expression.Call((Expression)parameter1, typeof(ViewModelWithFunctionCommandMethod).GetMethod("Save", BindingFlags.Public | BindingFlags.Instance), new Expression[0]);
@@ -834,7 +894,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void PropertyChangedTest_VB() {
-            VbPOCOViewModel viewModel = ViewModelSource.Create<VbPOCOViewModel>();
+            VbPOCOViewModel viewModel = CreatePOCOViewModel<VbPOCOViewModel>();
             CheckBindableProperty(viewModel, x => x.AutoImlementedProperty, (vm, x) => vm.AutoImlementedProperty = x, 1, 2, (x, val) => Assert.AreEqual(val, x.AutoImlementedPropertyOldValue));
             CheckNotBindableProperty(viewModel, x => x.AutoImlementedNonVirtualProperty, (vm, x) => vm.AutoImlementedNonVirtualProperty = x, 1, 2);
             CheckBindableProperty(viewModel, x => x.AutoImlementedEntityProperty, (vm, x) => vm.AutoImlementedEntityProperty = x, new TestEntity(), new TestEntity());
@@ -878,7 +938,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void PropertyChangingTest() {
-            POCOViewModel_PropertyChanging viewModel = ViewModelSource.Create<POCOViewModel_PropertyChanging>();
+            POCOViewModel_PropertyChanging viewModel = CreatePOCOViewModel<POCOViewModel_PropertyChanging>();
             viewModel.Property1 = null;
             viewModel.Property1 = "x";
             Assert.AreEqual("x", viewModel.Property1NewValue);
@@ -905,7 +965,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void POCOViewModel_SubscribeInCtorTest() {
-            POCOViewModel_SubscribeInCtor viewModel = ViewModelSource.Create<POCOViewModel_SubscribeInCtor>();
+            POCOViewModel_SubscribeInCtor viewModel = CreatePOCOViewModel<POCOViewModel_SubscribeInCtor>();
             Assert.AreEqual(1, viewModel.propertyChangedCallCount);
         }
         #endregion
@@ -969,7 +1029,7 @@ namespace DevExpress.Mvvm.Tests {
 
         [Test]
         public void OverridingPropertyTest_Metadata() {
-            POCOViewModel_WithMetadata viewModel = ViewModelSource.Create<POCOViewModel_WithMetadata>();
+            POCOViewModel_WithMetadata viewModel = CreatePOCOViewModel<POCOViewModel_WithMetadata>();
             CheckNotBindableProperty(viewModel, x => x.NotBindableProperty, (vm, x) => vm.NotBindableProperty = x, "x", "y");
             CheckBindableProperty(viewModel, x => x.NotAutoImplementedProperty, (vm, x) => vm.NotAutoImplementedProperty = x, "x", "y");
             CheckBindableProperty(viewModel, x => x.CustomProperytChanged, (vm, x) => vm.CustomProperytChanged = x, "x", "y", (x, val) => Assert.AreEqual(val, x.CustomProperytChangedOldValue));
@@ -981,7 +1041,7 @@ namespace DevExpress.Mvvm.Tests {
 
         [Test]
         public void OverridingPropertyTest_Metadata_FluentAPI() {
-            POCOViewModel_WithMetadata_FluentAPI viewModel = ViewModelSource.Create<POCOViewModel_WithMetadata_FluentAPI>();
+            POCOViewModel_WithMetadata_FluentAPI viewModel = CreatePOCOViewModel<POCOViewModel_WithMetadata_FluentAPI>();
             CheckNotBindableProperty(viewModel, x => x.NotBindableProperty, (vm, x) => vm.NotBindableProperty = x, "x", "y");
             CheckBindableProperty(viewModel, x => x.NotAutoImplementedProperty, (vm, x) => vm.NotAutoImplementedProperty = x, "x", "y");
             CheckBindableProperty(viewModel, x => x.CustomProperytChanged, (vm, x) => vm.CustomProperytChanged = x, "x", "y", (x, val) => Assert.AreEqual(val, x.CustomProperytChangedOldValue));
@@ -1004,7 +1064,7 @@ namespace DevExpress.Mvvm.Tests {
 
         [Test]
         public void INPCPriorityTest() {
-            var vm = ViewModelSource.Create<INPCDefaultPriorityViewModel>();
+            var vm = CreatePOCOViewModel<INPCDefaultPriorityViewModel>();
             var inpc = (INotifyPropertyChanged)vm;
             inpc.PropertyChanged += (s, a) => {
                 Assert.AreEqual("Property", a.PropertyName);
@@ -1013,7 +1073,7 @@ namespace DevExpress.Mvvm.Tests {
             vm.Property = "value";
             Assert.AreEqual(vm.onChangedCalledCount, 1);
 
-            vm = ViewModelSource.Create<INPCOnChangedFirstPriorityViewModel>();
+            vm = CreatePOCOViewModel<INPCOnChangedFirstPriorityViewModel>();
             inpc = (INotifyPropertyChanged)vm;
             inpc.PropertyChanged += (s, a) => {
                 Assert.AreEqual("Property", a.PropertyName);
@@ -1027,7 +1087,7 @@ namespace DevExpress.Mvvm.Tests {
         #region IPOCOViewModelImplementation
         [Test]
         public void IPOCOViewModelImplementation() {
-            var viewModel = ViewModelSource.Create<POCOViewModel>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel>();
             string propertyName = null;
             ((INotifyPropertyChanged)viewModel).PropertyChanged += (o, e) => propertyName = e.PropertyName;
             ((IPOCOViewModel)viewModel).RaisePropertyChanged("Property1");
@@ -1041,7 +1101,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void GetSetParentViewModel() {
-            var viewModel = ViewModelSource.Create<POCOViewModel>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel>();
             Assert.IsNull(viewModel.GetParentViewModel<Button>());
             var b = new Button();
             Assert.AreSame(viewModel, viewModel.SetParentViewModel(b));
@@ -1085,7 +1145,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void ProtectedCanExecuteMethod() {
-            var viewModel = ViewModelSource.Create<ProtecteCanExecuteMethod>();
+            var viewModel = CreatePOCOViewModel<ProtecteCanExecuteMethod>();
             viewModel
                 .IsFalse(x => x.GetCommand(y => y.Method1()).CanExecute(null))
                 .Do(x => x.IsMethod1Enabled = true)
@@ -1134,7 +1194,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void CommandsGeneration() {
-            POCOCommandsViewModel viewModel = ViewModelSource.Create<POCOCommandsViewModel>();
+            POCOCommandsViewModel viewModel = CreatePOCOViewModel<POCOCommandsViewModel>();
             CheckCommand(viewModel, x => x.Show(), x => Assert.AreEqual(1, x.ShowCallCount));
             CheckCommand(viewModel, x => x.ShowAsync(), x => Assert.AreEqual(1, x.ShowAsyncCallCount), true);
             CheckCommand(viewModel, x => x.Save(), x => Assert.AreEqual(1, x.SaveCallCount));
@@ -1189,7 +1249,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void CommandsCanExecute() {
-            POCOCommandsCanExecute viewModel = ViewModelSource.Create<POCOCommandsCanExecute>();
+            POCOCommandsCanExecute viewModel = CreatePOCOViewModel<POCOCommandsCanExecute>();
             ICommand command = (ICommand)TypeHelper.GetPropertyValue(viewModel, "ShowCommand");
             Assert.IsFalse(command.CanExecute(null));
             viewModel.CanShowValue = true;
@@ -1231,7 +1291,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void AsyncCommandsCanExecute() {
-            POCOAsyncCommands viewModel = ViewModelSource.Create<POCOAsyncCommands>();
+            POCOAsyncCommands viewModel = CreatePOCOViewModel<POCOAsyncCommands>();
             IAsyncCommand asyncCommand = (IAsyncCommand)TypeHelper.GetPropertyValue(viewModel, "ShowCommand");
             Assert.IsFalse(asyncCommand.CanExecute(null));
             viewModel.CanShowValue = true;
@@ -1243,7 +1303,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void AsyncCommandAllowMultipleExecutionAttributeTest() {
-            POCOAsyncCommands viewModel = ViewModelSource.Create<POCOAsyncCommands>();
+            POCOAsyncCommands viewModel = CreatePOCOViewModel<POCOAsyncCommands>();
             AsyncCommand asyncCommand1 = (AsyncCommand)TypeHelper.GetPropertyValue(viewModel, "ShowCommand");
             Assert.IsFalse(asyncCommand1.AllowMultipleExecution);
             AsyncCommand<string> asyncCommand2 = (AsyncCommand<string>)TypeHelper.GetPropertyValue(viewModel, "OpenCommand");
@@ -1385,22 +1445,22 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test, Asynchronous]
         public void CommandAttribute_ViewModelTest() {
-            var viewModel = ViewModelSource.Create<CommandAttributeViewModel>();
+            var viewModel = CreatePOCOViewModel<CommandAttributeViewModel>();
             CommandAttribute_ViewModelTestCore(viewModel, x => viewModel.MethodWithCanExecute(), x => viewModel.MethodWithCustomCanExecute());
         }
         [Test, Asynchronous]
         public void CommandAttribute_ViewModelTest_FluentAPI() {
-            var viewModel = ViewModelSource.Create<CommandAttributeViewModel_FluentAPI>();
+            var viewModel = CreatePOCOViewModel<CommandAttributeViewModel_FluentAPI>();
             CommandAttribute_ViewModelTestCore(viewModel, x => viewModel.MethodWithCanExecute(), x => viewModel.MethodWithCustomCanExecute());
         }
         [Test, Asynchronous]
         public void CommandAttribute_ViewModelTest_ExternalMetadata() {
-            var viewModel = ViewModelSource.Create<CommandAttributeViewModel_ExternalMetadata>();
+            var viewModel = CreatePOCOViewModel<CommandAttributeViewModel_ExternalMetadata>();
             CommandAttribute_ViewModelTestCore(viewModel, x => viewModel.MethodWithCanExecute(), x => viewModel.MethodWithCustomCanExecute());
         }
         [Test, Asynchronous]
         public void AsyncCommandAttribute_ViewModelTest() {
-            var viewModel = ViewModelSource.Create<AsyncCommandAttributeViewModel>();
+            var viewModel = CreatePOCOViewModel<AsyncCommandAttributeViewModel>();
             CommandAttribute_ViewModelTestCore(viewModel, x => viewModel.MethodWithCanExecute(), x => viewModel.MethodWithCustomCanExecute(), true);
         }
 
@@ -1491,7 +1551,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void CommandsInViewModelBaseDescendant() {
-            var viewModel = ViewModelSource.Create<POCOViewModel_CommandsInViewModelBaseDescendant>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel_CommandsInViewModelBaseDescendant>();
             var command = CheckCommand(viewModel, x => x.Save(), x => Assert.AreEqual(1, x.SaveCallCount));
             Assert.IsNotNull(TypeHelper.GetPropertyValue(viewModel, "SaveCommand"));
             int canExecuteChangedCount = 0;
@@ -1508,7 +1568,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void AsyncCommandsInViewModelBaseDescendant() {
-            var viewModel = ViewModelSource.Create<POCOViewModel_AsyncCommandsInViewModelBaseDescendant>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel_AsyncCommandsInViewModelBaseDescendant>();
             var command = CheckCommand(viewModel, x => x.Save(), x => Assert.AreEqual(1, x.SaveCallCount), true);
             Assert.IsNotNull(TypeHelper.GetPropertyValue(viewModel, "SaveCommand"));
             int canExecuteChangedCount = 0;
@@ -1526,7 +1586,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void AsyncCommandsInViewModelBaseDescendant_AsyncMethod() {
-            var viewModel = ViewModelSource.Create<POCOViewModel_AsyncCommandsInViewModelBaseDescendant_AsyncMethod>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel_AsyncCommandsInViewModelBaseDescendant_AsyncMethod>();
             var command = (ICommand)TypeHelper.GetPropertyValue(viewModel, "SaveCommand");
             Assert.IsNotNull(command);
             int canExecuteChangedCount = 0;
@@ -1542,7 +1602,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void POCOViewModel_AsyncMethodCanExecuteTest() {
-            var viewModel = ViewModelSource.Create<POCOViewModel_AsyncMethodCanExecute>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel_AsyncMethodCanExecute>();
             var command = (ICommand)TypeHelper.GetPropertyValue(viewModel, "SaveCommand");
             Assert.IsNotNull(command);
             int canExecuteChangedCount = 0;
@@ -1600,36 +1660,36 @@ namespace DevExpress.Mvvm.Tests {
         int PropertyClojure = 253;
         [Test]
         public void NonDefaultConstructors2() {
-            var viewModel1 = ViewModelSource.Create(() => new POCOViewModel_NonDefaultConstructors());
+            var viewModel1 = CreatePocoViewModel(() => new POCOViewModel_NonDefaultConstructors());
             Assert.AreEqual("public", viewModel1.ConstructorInfo);
 
-            viewModel1 = ViewModelSource.Create(() => new POCOViewModel_NonDefaultConstructors() { Property1 = "p1", Property2 = "p2" });
+            viewModel1 = CreatePocoViewModel(() => new POCOViewModel_NonDefaultConstructors() { Property1 = "p1", Property2 = "p2" });
             Assert.AreEqual("public", viewModel1.ConstructorInfo);
             Assert.AreEqual("p1", viewModel1.Property1);
             Assert.AreEqual("p2", viewModel1.Property2);
 
-            viewModel1 = ViewModelSource.Create(() => new POCOViewModel_NonDefaultConstructors(13));
+            viewModel1 = CreatePocoViewModel(() => new POCOViewModel_NonDefaultConstructors(13));
             Assert.AreEqual("public with param: 13", viewModel1.ConstructorInfo);
 
-            viewModel1 = ViewModelSource.Create(() => new POCOViewModel_NonDefaultConstructors(7) { Property1 = "p1_", Property2 = "p2_" });
+            viewModel1 = CreatePocoViewModel(() => new POCOViewModel_NonDefaultConstructors(7) { Property1 = "p1_", Property2 = "p2_" });
             Assert.AreEqual("public with param: 7", viewModel1.ConstructorInfo);
             Assert.AreEqual("p1_", viewModel1.Property1);
             Assert.AreEqual("p2_", viewModel1.Property2);
 
             var localVariableClojure = 9;
-            viewModel1 = ViewModelSource.Create(() => new POCOViewModel_NonDefaultConstructors(localVariableClojure + 5));
+            viewModel1 = CreatePocoViewModel(() => new POCOViewModel_NonDefaultConstructors(localVariableClojure + 5));
             Assert.AreEqual("public with param: 14", viewModel1.ConstructorInfo);
 
-            viewModel1 = ViewModelSource.Create(() => new POCOViewModel_NonDefaultConstructors(fieldClojure));
+            viewModel1 = CreatePocoViewModel(() => new POCOViewModel_NonDefaultConstructors(fieldClojure));
             Assert.AreEqual("public with param: 117", viewModel1.ConstructorInfo);
 
-            viewModel1 = ViewModelSource.Create(() => new POCOViewModel_NonDefaultConstructors(PropertyClojure));
+            viewModel1 = CreatePocoViewModel(() => new POCOViewModel_NonDefaultConstructors(PropertyClojure));
             Assert.AreEqual("public with param: 253", viewModel1.ConstructorInfo);
 
-            viewModel1 = ViewModelSource.Create(() => new POCOViewModel_NonDefaultConstructors(9, "x"));
+            viewModel1 = CreatePocoViewModel(() => new POCOViewModel_NonDefaultConstructors(9, "x"));
             Assert.AreEqual("protected internal: 9x", viewModel1.ConstructorInfo);
 
-            viewModel1 = NonDefaultConstructors2Core(viewModel1, 13, "y");
+            viewModel1 = NonDefaultConstructors2Core(viewModel1, 13, "y", _hasCustomInjectedAction);
         }
         public class POCOViewModel_NonDefaultConstructors_ProtectedDefaultCtor {
             public string ConstructorInfo;
@@ -1637,8 +1697,10 @@ namespace DevExpress.Mvvm.Tests {
                 ConstructorInfo = "public";
             }
         }
-        private static POCOViewModel_NonDefaultConstructors NonDefaultConstructors2Core(POCOViewModel_NonDefaultConstructors viewModel1, int x, string y) {
-            viewModel1 = ViewModelSource.Create(() => new POCOViewModel_NonDefaultConstructors(x, y));
+        private static POCOViewModel_NonDefaultConstructors NonDefaultConstructors2Core(POCOViewModel_NonDefaultConstructors viewModel1, int x, string y, bool hasCustomInjectedMethod) {
+            viewModel1 = hasCustomInjectedMethod 
+                ? ViewModelSource.Create(() => new POCOViewModel_NonDefaultConstructors(x, y), CustomInjectedAction)
+                : ViewModelSource.Create(() => new POCOViewModel_NonDefaultConstructors(x, y));
             Assert.AreEqual("protected internal: 13y", viewModel1.ConstructorInfo);
             return viewModel1;
         }
@@ -1660,7 +1722,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void NonDefaultConstructors4() {
-            var viewModel = ViewModelSource.Create(() => new POCOViewModel_NonDefaultConstructors_NoDefaultCtor(13));
+            var viewModel = CreatePocoViewModel(() => new POCOViewModel_NonDefaultConstructors_NoDefaultCtor(13));
             Assert.AreEqual("public with param: 13", viewModel.ConstructorInfo);
         }
 
@@ -1802,7 +1864,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void InheritBindableBaseTest() {
-            var viewModel = ViewModelSource.Create<POCOViewModel_BindableBaseDescendant>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel_BindableBaseDescendant>();
             var interfaces = viewModel.GetType().GetInterfaces();
             CheckBindableProperty(viewModel, x => x.Property1, (vm, x) => vm.Property1 = x, "x", "y");
             CheckBindableProperty(viewModel, x => x.Property2, (vm, x) => vm.Property2 = x, "x", "y");
@@ -1824,7 +1886,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void INPCImplementorTest() {
-            var viewModel = ViewModelSource.Create<POCOViewModel_INPCImplementor>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel_INPCImplementor>();
             var interfaces = viewModel.GetType().GetInterfaces();
             CheckBindableProperty(viewModel, x => x.Property1, (vm, x) => vm.Property1 = x, "x", "y");
         }
@@ -1882,7 +1944,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void ServicesTest() {
-            var viewModel = ViewModelSource.Create<POCOViewModel_ServicesViaCustomImplementation>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel_ServicesViaCustomImplementation>();
             Assert.IsNull(viewModel.SomeService);
             Assert.AreEqual(viewModel.GetType(), viewModel.GetType().GetProperty("MessageBox").DeclaringType);
 
@@ -1923,7 +1985,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void ServicesTest_NoCustomImplementation() {
-            var viewModel = ViewModelSource.Create<POCOViewModel_Services>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel_Services>();
             Assert.AreEqual(viewModel.GetType(), viewModel.GetType().GetProperty("MessageBox").DeclaringType);
 
             var messageBoxMock = new IMessageBoxServiceMock();
@@ -1961,7 +2023,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void ServicesTest_Metadata() {
-            var viewModel = ViewModelSource.Create<POCOViewModel_Services_Metadata>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel_Services_Metadata>();
             Assert.AreEqual(viewModel.GetType(), viewModel.GetType().GetProperty("MessageBox").DeclaringType);
 
             var messageBoxMock1 = new IMessageBoxServiceMock();
@@ -2030,7 +2092,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void ServicesTest_Metadata_FluentAPI() {
-            var viewModel = ViewModelSource.Create<POCOViewModel_Services_Metadata_FluentAPI>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel_Services_Metadata_FluentAPI>();
             Assert.AreEqual(viewModel.GetType(), viewModel.GetType().GetProperty("MessageBox").DeclaringType);
 
             var messageBoxMock1 = new IMessageBoxServiceMock();
@@ -2061,7 +2123,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void ServicesTest_Metadata_External() {
-            var viewModel = ViewModelSource.Create<POCOViewModel_Services_Metadata_External>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel_Services_Metadata_External>();
             Assert.AreEqual(viewModel.GetType(), viewModel.GetType().GetProperty("MessageBox").DeclaringType);
 
             var messageBoxMock1 = new IMessageBoxServiceMock();
@@ -2094,8 +2156,8 @@ namespace DevExpress.Mvvm.Tests {
         public class GetServiceViewModel { }
         [Test]
         public void GetServiceMethodTest() {
-            var viewModel = ViewModelSource.Create<GetServiceViewModel>();
-            var parentViewModel = ViewModelSource.Create<GetServiceViewModel>();
+            var viewModel = CreatePOCOViewModel<GetServiceViewModel>();
+            var parentViewModel = CreatePOCOViewModel<GetServiceViewModel>();
             viewModel.SetParentViewModel(parentViewModel);
 
             Assert.IsNull(viewModel.GetService<IMessageBoxService>());
@@ -2112,8 +2174,8 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void GetServiceByNameMethodTest() {
-            var viewModel = ViewModelSource.Create<GetServiceViewModel>();
-            var parentViewModel = ViewModelSource.Create<GetServiceViewModel>();
+            var viewModel = CreatePOCOViewModel<GetServiceViewModel>();
+            var parentViewModel = CreatePOCOViewModel<GetServiceViewModel>();
             viewModel.SetParentViewModel(parentViewModel);
 
             Assert.IsNull(viewModel.GetService<IMessageBoxService>("svc1"));
@@ -2146,7 +2208,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void GenericService_T694909() {
-            var viewModel = ViewModelSource.Create<POCOViewModel_GenericServices>();
+            var viewModel = CreatePOCOViewModel<POCOViewModel_GenericServices>();
             Assert.IsNull(viewModel.Service1);
             Assert.IsNull(viewModel.Service2);
             Assert.IsNull(viewModel.Service3);
@@ -2198,7 +2260,7 @@ namespace DevExpress.Mvvm.Tests {
         #region IsInDesignMode
         [Test]
         public void IsInDesignModeTest() {
-            POCOViewModel_PropertyChanged viewModel = ViewModelSource.Create<POCOViewModel_PropertyChanged>();
+            POCOViewModel_PropertyChanged viewModel = CreatePOCOViewModel<POCOViewModel_PropertyChanged>();
             Assert.IsFalse(viewModel.IsInDesignMode());
             ViewModelDesignHelper.IsInDesignModeOverride = true;
             try {
@@ -2446,9 +2508,9 @@ namespace DevExpress.Mvvm.Tests {
 
         [Test]
         public void ImplementsDataErrorInfo() {
-            Assert.IsFalse(ViewModelSource.Create<SimpleDataErrorInfoClass>() is IDataErrorInfo);
+            Assert.IsFalse(CreatePOCOViewModel<SimpleDataErrorInfoClass>() is IDataErrorInfo);
 
-            var vm = ViewModelSource.Create<AttributedDataErrorInfoClass>();
+            var vm = CreatePOCOViewModel<AttributedDataErrorInfoClass>();
             var asInfo = vm as IDataErrorInfo;
 
             var hwvm = new HandwrittenDataErrorInfoClass();
@@ -2468,21 +2530,21 @@ namespace DevExpress.Mvvm.Tests {
 
         [Test]
         public void DoesntThowOnConflicts() {
-            ViewModelSource.Create<HasErrorPropertyClass>();
-            ViewModelSource.Create<HasStringIndexerClass>();
-            ViewModelSource.Create<HasIntIndexerClass>();
+            CreatePOCOViewModel<HasErrorPropertyClass>();
+            CreatePOCOViewModel<HasStringIndexerClass>();
+            CreatePOCOViewModel<HasIntIndexerClass>();
         }
 
         [Test]
         public void ThrowsIfAlreadyImplemented() {
             try {
-                ViewModelSource.Create<HandwrittenDataErrorInfoClass>();
+                CreatePOCOViewModel<HandwrittenDataErrorInfoClass>();
                 Assert.Fail();
             } catch(ViewModelSourceException) { } catch {
                 Assert.Fail();
             }
-            ViewModelSource.Create<HandwrittenDataErrorInfoClass2>();
-            ViewModelSource.Create<HandwrittenDataErrorInfoClass3>();
+            CreatePOCOViewModel<HandwrittenDataErrorInfoClass2>();
+            CreatePOCOViewModel<HandwrittenDataErrorInfoClass3>();
         }
 
         #endregion
@@ -2538,15 +2600,15 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void DependsOnErrors() {
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<DependsOnError1>();
+                CreatePOCOViewModel<DependsOnError1>();
             }, x => x.Message.AreEqual("The X property cannot depend on the Y property, because the latter is not bindable."));
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
-                ViewModelSource.Create<DependsOnError2>();
+                CreatePOCOViewModel<DependsOnError2>();
             }, x => x.Message.AreEqual("The X property cannot depend on the Z property, because the latter does not exist."));
         }
         [Test]
         public void DependsOnTest1() {
-            var vm = ViewModelSource.Create<DependsOnPOCO>();
+            var vm = CreatePOCOViewModel<DependsOnPOCO>();
             int propChangedCounter = 0;
             ((INotifyPropertyChanged)vm).PropertyChanged += (d, e) => propChangedCounter++;
             vm.X1 = 2;
@@ -2556,7 +2618,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void DependsOnTest2() {
-            var vm = ViewModelSource.Create<DependsOnPOCO2>();
+            var vm = CreatePOCOViewModel<DependsOnPOCO2>();
             int propChangedCounter = 0;
             ((INotifyPropertyChanged)vm).PropertyChanged += (d, e) => propChangedCounter++;
             vm.X1 = 2;
@@ -2587,7 +2649,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void DependsOnMetadataTest() {
-            var vm = ViewModelSource.Create<DependsOnMetadata>();
+            var vm = CreatePOCOViewModel<DependsOnMetadata>();
             int propChangedCounter = 0;
             ((INotifyPropertyChanged)vm).PropertyChanged += (d, e) => propChangedCounter++;
             vm.X = 2;
@@ -2597,7 +2659,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void DependsOnFluentAPITest() {
-            var vm = ViewModelSource.Create<DependsOnFluentAPI>();
+            var vm = CreatePOCOViewModel<DependsOnFluentAPI>();
             int propChangedCounter = 0;
             ((INotifyPropertyChanged)vm).PropertyChanged += (d, e) => propChangedCounter++;
             vm.X = 2;

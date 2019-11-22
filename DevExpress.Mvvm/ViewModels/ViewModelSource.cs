@@ -18,8 +18,8 @@ namespace DevExpress.Mvvm.Native {
         public static Type GetProxyType(Type type) {
             return DevExpress.Mvvm.POCO.ViewModelSource.GetPOCOType(type);
         }
-        public static object Create(Type type) {
-            return DevExpress.Mvvm.POCO.ViewModelSource.Create(type);
+        public static object Create(Type type, Action<object, object, object, string> customSetterAction = null) {
+            return DevExpress.Mvvm.POCO.ViewModelSource.Create(type, customSetterAction);
         }
         public static bool IsPOCOViewModelType(Type type) {
             return DevExpress.Mvvm.POCO.ViewModelSource.IsPOCOViewModelType(type);
@@ -72,60 +72,60 @@ namespace DevExpress.Mvvm.POCO {
             get { return factories ?? (factories = new Dictionary<Type, object>()); }
         }
 
-        public static T Create<T>() where T : class, new() {
-            return Factory(() => new T())();
+        public static T Create<T>(Action<object, object, object, string> customSetterAction = null) where T : class, new() {
+            return Factory(() => new T(), customSetterAction)();
         }
-        public static T Create<T>(Expression<Func<T>> constructorExpression) where T : class {
+        public static T Create<T>(Expression<Func<T>> constructorExpression, Action<object, object, object, string> customSetterAction = null) where T : class {
             ValidateCtorExpression(constructorExpression, false);
-            var actualAxpression = GetCtorExpression(constructorExpression, typeof(T), false);
+            var actualAxpression = GetCtorExpression(constructorExpression, typeof(T), false, customSetterAction);
             return Expression.Lambda<Func<T>>(actualAxpression).Compile()();
         }
         #region GetFactory
-        public static Func<TResult> Factory<TResult>(Expression<Func<TResult>> constructorExpression) where TResult : class {
-            return GetFactoryCore(constructorExpression, typeof(TResult));
+        public static Func<TResult> Factory<TResult>(Expression<Func<TResult>> constructorExpression, Action<object, object, object, string> customSetterAction = null) where TResult : class {
+            return GetFactoryCore(constructorExpression, typeof(TResult), customSetterAction);
         }
-        public static Func<T1, TResult> Factory<T1, TResult>(Expression<Func<T1, TResult>> constructorExpression) where TResult : class {
-            return GetFactoryCore(constructorExpression, typeof(TResult));
+        public static Func<T1, TResult> Factory<T1, TResult>(Expression<Func<T1, TResult>> constructorExpression, Action<object, object, object, string> customSetterAction = null) where TResult : class {
+            return GetFactoryCore(constructorExpression, typeof(TResult), customSetterAction);
         }
-        public static Func<T1, T2, TResult> Factory<T1, T2, TResult>(Expression<Func<T1, T2, TResult>> constructorExpression) where TResult : class {
-            return GetFactoryCore(constructorExpression, typeof(TResult));
+        public static Func<T1, T2, TResult> Factory<T1, T2, TResult>(Expression<Func<T1, T2, TResult>> constructorExpression, Action<object, object, object, string> customSetterAction = null) where TResult : class {
+            return GetFactoryCore(constructorExpression, typeof(TResult), customSetterAction);
         }
-        public static Func<T1, T2, T3, TResult> Factory<T1, T2, T3, TResult>(Expression<Func<T1, T2, T3, TResult>> constructorExpression) where TResult : class {
-            return GetFactoryCore(constructorExpression, typeof(TResult));
+        public static Func<T1, T2, T3, TResult> Factory<T1, T2, T3, TResult>(Expression<Func<T1, T2, T3, TResult>> constructorExpression, Action<object, object, object, string> customSetterAction = null) where TResult : class {
+            return GetFactoryCore(constructorExpression, typeof(TResult), customSetterAction);
         }
-        public static Func<T1, T2, T3, T4, TResult> Factory<T1, T2, T3, T4, TResult>(Expression<Func<T1, T2, T3, T4, TResult>> constructorExpression) where TResult : class {
-            return GetFactoryCore(constructorExpression, typeof(TResult));
+        public static Func<T1, T2, T3, T4, TResult> Factory<T1, T2, T3, T4, TResult>(Expression<Func<T1, T2, T3, T4, TResult>> constructorExpression, Action<object, object, object, string> customSetterAction = null) where TResult : class {
+            return GetFactoryCore(constructorExpression, typeof(TResult), customSetterAction);
         }
-        public static Func<T1, T2, T3, T4, T5, TResult> Factory<T1, T2, T3, T4, T5, TResult>(Expression<Func<T1, T2, T3, T4, T5, TResult>> constructorExpression) where TResult : class {
-            return GetFactoryCore(constructorExpression, typeof(TResult));
+        public static Func<T1, T2, T3, T4, T5, TResult> Factory<T1, T2, T3, T4, T5, TResult>(Expression<Func<T1, T2, T3, T4, T5, TResult>> constructorExpression, Action<object, object, object, string> customSetterAction = null) where TResult : class {
+            return GetFactoryCore(constructorExpression, typeof(TResult), customSetterAction);
         }
-        public static Func<T1, T2, T3, T4, T5, T6, TResult> Factory<T1, T2, T3, T4, T5, T6, TResult>(Expression<Func<T1, T2, T3, T4, T5, T6, TResult>> constructorExpression) where TResult : class {
-            return GetFactoryCore(constructorExpression, typeof(TResult));
+        public static Func<T1, T2, T3, T4, T5, T6, TResult> Factory<T1, T2, T3, T4, T5, T6, TResult>(Expression<Func<T1, T2, T3, T4, T5, T6, TResult>> constructorExpression, Action<object, object, object, string> customSetterAction = null) where TResult : class {
+            return GetFactoryCore(constructorExpression, typeof(TResult), customSetterAction);
         }
-        public static Func<T1, T2, T3, T4, T5, T6, T7, TResult> Factory<T1, T2, T3, T4, T5, T6, T7, TResult>(Expression<Func<T1, T2, T3, T4, T5, T6, T7, TResult>> constructorExpression) where TResult : class {
-            return GetFactoryCore(constructorExpression, typeof(TResult));
+        public static Func<T1, T2, T3, T4, T5, T6, T7, TResult> Factory<T1, T2, T3, T4, T5, T6, T7, TResult>(Expression<Func<T1, T2, T3, T4, T5, T6, T7, TResult>> constructorExpression, Action<object, object, object, string> customSetterAction = null) where TResult : class {
+            return GetFactoryCore(constructorExpression, typeof(TResult), customSetterAction);
         }
-        public static Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult> Factory<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(Expression<Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult>> constructorExpression) where TResult : class {
-            return GetFactoryCore(constructorExpression, typeof(TResult));
+        public static Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult> Factory<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(Expression<Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult>> constructorExpression, Action<object, object, object, string> customSetterAction = null) where TResult : class {
+            return GetFactoryCore(constructorExpression, typeof(TResult), customSetterAction);
         }
-        public static Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult> Factory<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult>(Expression<Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult>> constructorExpression) where TResult : class {
-            return GetFactoryCore(constructorExpression, typeof(TResult));
+        public static Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult> Factory<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult>(Expression<Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult>> constructorExpression, Action<object, object, object, string> customSetterAction = null) where TResult : class {
+            return GetFactoryCore(constructorExpression, typeof(TResult), customSetterAction);
         }
-        public static Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult> Factory<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult>(Expression<Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult>> constructorExpression) where TResult : class {
-            return GetFactoryCore(constructorExpression, typeof(TResult));
+        public static Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult> Factory<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult>(Expression<Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult>> constructorExpression, Action<object, object, object, string> customSetterAction = null) where TResult : class {
+            return GetFactoryCore(constructorExpression, typeof(TResult), customSetterAction);
         }
         #endregion
 
         #region helpers
-        static TDelegate GetFactoryCore<TDelegate>(Expression<TDelegate> constructorExpression, Type resultType) {
+        static TDelegate GetFactoryCore<TDelegate>(Expression<TDelegate> constructorExpression, Type resultType, Action<object, object, object, string> customSetterAction) {
             ValidateCtorExpression(constructorExpression, true);
-            return GetFactoryCore<TDelegate>(() => CreateFactory(constructorExpression, resultType));
+            return GetFactoryCore<TDelegate>(() => CreateFactory(constructorExpression, resultType, customSetterAction));
         }
         internal static TDelegate GetFactoryCore<TDelegate>(Func<TDelegate> createFactoryDelegate) {
             return (TDelegate)Factories.GetOrAdd(typeof(TDelegate), () => createFactoryDelegate());
         }
-        static TDelegate CreateFactory<TDelegate>(Expression<TDelegate> constructorExpression, Type resultType) {
-            var actualAxpression = GetCtorExpression(constructorExpression, resultType, true);
+        static TDelegate CreateFactory<TDelegate>(Expression<TDelegate> constructorExpression, Type resultType, Action<object, object, object, string> customSetterAction) {
+            var actualAxpression = GetCtorExpression(constructorExpression, resultType, true, customSetterAction);
             return Expression.Lambda<TDelegate>(actualAxpression, constructorExpression.Parameters).Compile();
         }
 
@@ -148,8 +148,8 @@ namespace DevExpress.Mvvm.POCO {
             }
             throw new ViewModelSourceException(ViewModelSourceException.Error_ConstructorExpressionCanOnlyBeOfNewExpressionType);
         }
-        static Expression GetCtorExpression(LambdaExpression constructorExpression, Type resultType, bool useOnlyParameters) {
-            Type type = GetPOCOType(resultType);
+        static Expression GetCtorExpression(LambdaExpression constructorExpression, Type resultType, bool useOnlyParameters, Action<object, object, object, string> customSetterAction) {
+            Type type = GetPOCOType(resultType, customSetterAction);
             NewExpression newExpression = constructorExpression.Body as NewExpression;
             if(newExpression != null) {
                 return GetNewExpression(type, newExpression);
@@ -165,8 +165,8 @@ namespace DevExpress.Mvvm.POCO {
             var actualCtor = GetConstructor(type, newExpression.Constructor.GetParameters().Select(x => x.ParameterType).ToArray());
             return Expression.New(actualCtor, newExpression.Arguments);
         }
-        internal static object Create(Type type) {
-            Type pocoType = GetPOCOType(type);
+        internal static object Create(Type type, Action<object, object, object, string> customSetterAction = null) {
+            Type pocoType = GetPOCOType(type, customSetterAction);
             var defaultCtor = pocoType.GetConstructor(new Type[0]);
             if(defaultCtor != null)
                 return defaultCtor.Invoke(null);
@@ -184,6 +184,13 @@ namespace DevExpress.Mvvm.POCO {
         public static Type GetPOCOType(Type type, ViewModelSourceBuilderBase builder = null) {
             Func<Type> createType = () => CreateType(type, builder);
             if(builder == null) builder = ViewModelSourceBuilderBase.Default;
+            return builder == ViewModelSourceBuilderBase.Default ? Types.GetOrAdd(type, createType) : createType();
+        }
+
+        private static Type GetPOCOType(Type type, Action<object, object, object, string> customSetterAction, ViewModelSourceBuilderBase builder = null)
+        {
+            Func<Type> createType = () => CreateType(type, builder, customSetterAction);
+            if (builder == null) builder = ViewModelSourceBuilderBase.Default;
             return builder == ViewModelSourceBuilderBase.Default ? Types.GetOrAdd(type, createType) : createType();
         }
         internal static ConstructorInfo GetConstructor(Type proxyType, Type[] argsTypes) {
@@ -211,14 +218,14 @@ namespace DevExpress.Mvvm.POCO {
             }
         }
         #endregion
-        static Type CreateType(Type type, ViewModelSourceBuilderBase builder) {
+        static Type CreateType(Type type, ViewModelSourceBuilderBase builder, Action<object, object, object, string> customSetterAction = null) {
             CheckType(type, true);
             TypeBuilder typeBuilder = BuilderType.CreateTypeBuilder(type);
             BuilderType.BuildConstructors(type, typeBuilder);
             MethodInfo raisePropertyChanged, raisePropertyChanging;
             BuilderINPC.ImplementINPC(type, typeBuilder, out raisePropertyChanged, out raisePropertyChanging);
             BuilderIPOCOViewModel.ImplementIPOCOViewModel(type, typeBuilder, raisePropertyChanged, raisePropertyChanging);
-            builder.BuildBindableProperties(type, typeBuilder, raisePropertyChanged, raisePropertyChanging);
+            builder.BuildBindableProperties(type, typeBuilder, raisePropertyChanged, raisePropertyChanging, customSetterAction);
             BuildCommands(type, typeBuilder);
             ImplementISupportServices(type, typeBuilder);
             ImplementISupportParentViewModel(type, typeBuilder);
@@ -615,12 +622,12 @@ namespace DevExpress.Mvvm.POCO {
         static ViewModelSourceBuilderBase _default;
         internal static ViewModelSourceBuilderBase Default { get { return _default ?? (_default = new ViewModelSourceBuilderBase()); } }
 
-        public void BuildBindableProperties(Type type, TypeBuilder typeBuilder, MethodInfo raisePropertyChangedMethod, MethodInfo raisePropertyChangingMethod) {
+        public void BuildBindableProperties(Type type, TypeBuilder typeBuilder, MethodInfo raisePropertyChangedMethod, MethodInfo raisePropertyChangingMethod, Action<object, object, object, string> customSetterAction) {
             var bindableProps = GetBindableProperties(type);
             var propertyRelations = GetPropertyRelations(type, bindableProps);
             foreach(var propertyInfo in bindableProps) {
                 var newProperty = BuilderBindableProperty.BuildBindableProperty(type, typeBuilder,
-                    propertyInfo, raisePropertyChangedMethod, raisePropertyChangingMethod,
+                    propertyInfo, raisePropertyChangedMethod, raisePropertyChangingMethod, customSetterAction,
                     DictionaryExtensions.GetValueOrDefault(propertyRelations, propertyInfo.Name, null));
                 BuildBindablePropertyAttributes(propertyInfo, newProperty);
             }
@@ -945,7 +952,7 @@ namespace DevExpress.Mvvm.POCO {
     }
     static class BuilderBindableProperty {
         public static PropertyBuilder BuildBindableProperty(Type type, TypeBuilder typeBuilder, PropertyInfo propertyInfo,
-            MethodInfo raisePropertyChangedMethod, MethodInfo raisePropertyChangingMethod, IEnumerable<string> relatedProperties) {
+            MethodInfo raisePropertyChangedMethod, MethodInfo raisePropertyChangingMethod, Action<object, object, object, string> customSetterAction, IEnumerable<string> relatedProperties) {
 
             var getter = BuildBindablePropertyGetter(typeBuilder, propertyInfo.GetGetMethod());
             typeBuilder.DefineMethodOverride(getter, propertyInfo.GetGetMethod());
@@ -957,6 +964,7 @@ namespace DevExpress.Mvvm.POCO {
                 raisePropertyChangingMethod,
                 propertyChangedMethod,
                 propertyChangingMethod,
+                customSetterAction,
                 relatedProperties,
                 onChangedFirst);
             typeBuilder.DefineMethodOverride(setter, propertyInfo.GetSetMethod(true));
@@ -976,7 +984,7 @@ namespace DevExpress.Mvvm.POCO {
             gen.Emit(OpCodes.Ret);
             return method;
         }
-        static MethodBuilder BuildBindablePropertySetter(TypeBuilder type, PropertyInfo property, MethodInfo raisePropertyChangedMethod, MethodInfo raisePropertyChangingMethod, MethodInfo propertyChangedMethod, MethodInfo propertyChangingMethod, IEnumerable<string> relatedProperties, bool onChangedFirst) {
+        static MethodBuilder BuildBindablePropertySetter(TypeBuilder type, PropertyInfo property, MethodInfo raisePropertyChangedMethod, MethodInfo raisePropertyChangingMethod, MethodInfo propertyChangedMethod, MethodInfo propertyChangingMethod, Action<object, object, object, string> customSetterAction, IEnumerable<string> relatedProperties, bool onChangedFirst) {
             var setMethod = property.GetSetMethod(true);
             MethodAttributes methodAttributes = (setMethod.IsPublic ? MethodAttributes.Public : MethodAttributes.Family) | MethodAttributes.Virtual | MethodAttributes.HideBySig;
             MethodBuilder method = type.DefineMethod(setMethod.Name, methodAttributes);
@@ -1020,11 +1028,43 @@ namespace DevExpress.Mvvm.POCO {
                 EmitRaisePropertyChangedOrChanging(gen, raisePropertyChangedMethod, property.Name);
                 EmitPropertyChanged(gen, propertyChangedMethod);
             }
+
+            if (customSetterAction != null)
+            {
+                EmitCustomChangedMethod(gen, customSetterAction, property.Name, shouldBoxValues, property);
+            }
+
             EmitRaiseRelatedPropertyChanged(gen, raisePropertyChangedMethod, relatedProperties);
             gen.MarkLabel(returnLabel);
             gen.Emit(OpCodes.Ret);
             return method;
         }
+
+        static void EmitCustomChangedMethod(ILGenerator gen, Action<object, object, object, string> customChangedMethod, string pName, bool shouldBoxValues, PropertyInfo property)
+        {
+
+            if (customChangedMethod == null) return;
+            var methodInfo = customChangedMethod.Method;
+
+            if (methodInfo == null) return;
+            gen.Emit(OpCodes.Ldloc_0);
+            if (shouldBoxValues)
+            {
+                gen.Emit(OpCodes.Box, property.PropertyType);
+            }
+
+            gen.Emit(OpCodes.Ldarg_1);
+            if (shouldBoxValues)
+            {
+                gen.Emit(OpCodes.Box, property.PropertyType);
+            }
+
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Ldstr, pName);
+            gen.Emit(OpCodes.Call, methodInfo);
+
+        }
+
         static void EmitRaiseRelatedPropertyChanged(ILGenerator gen, MethodInfo m, IEnumerable<string> relatedProperties) {
             if(relatedProperties == null) return;
             foreach(string prop in relatedProperties)

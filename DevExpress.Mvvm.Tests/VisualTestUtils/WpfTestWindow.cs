@@ -71,7 +71,7 @@ namespace DevExpress {
         }
 
         [SetUp]
-        public void SetUp() {
+        public virtual void SetUp() {
             SetUpCore();
         }
 
