@@ -17,6 +17,10 @@ NuGet
 ====================
 The Free DevExpress MVVM Framework is available from [NuGet](https://www.nuget.org/packages/DevExpressMvvm).
 
+Pull Requests
+====================
+This repository mirrors the full version of the DevExpress MVVM framework included in DevExpress WPF installation packages. For this reason, we do not accept any pull requests to this repository.
+If you have an idea how to improve our MVVM Framework, please contact us via our [support center](https://www.devexpress.com/Support/Center/Question/Create).
 
 19.2.3 Release Notes
 ====================
