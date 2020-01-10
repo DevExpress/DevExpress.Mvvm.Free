@@ -1,10 +1,7 @@
-DevExpress.Mvvm.Free
-====================
+# DevExpress.Mvvm.Free
 DevExpress MVVM Framework is a set of components helping to work in the Model-View-ViewModel pattern in WPF.
 
-
-Documentation
-====================
+# Documentation
 There are two versions of the DevExpress MVVM Framework:
 * The version that is included to the DevExpress WPF component suite.
 * The free version that is very similar to the first one. The only difference is that it does not contain some capabilities that are only needed when the framework is used with DevExpress components.
@@ -13,24 +10,68 @@ Although DevExpress provides [documentation](https://documentation.devexpress.co
 
 The free DevExpress MVVM version is a separate assembly that is not compatible with the version included in the DevExpress WPF component suite.
 
-NuGet
-====================
+# NuGet
 The Free DevExpress MVVM Framework is available from [NuGet](https://www.nuget.org/packages/DevExpressMvvm).
 
-Pull Requests
-====================
+# Pull Requests
 This repository mirrors the full version of the DevExpress MVVM framework included in DevExpress WPF installation packages. For this reason, we do not accept any pull requests to this repository.
 If you have an idea how to improve our MVVM Framework, please contact us via our [support center](https://www.devexpress.com/Support/Center/Question/Create).
 
-19.2.3 Release Notes
-====================
-DevExpress MVVM Framework now supports .NET Core 3.
+# Release Notes
+### 19.2.3
+* DevExpress MVVM Framework now supports .NET Core 3.
+* [T817657](https://www.devexpress.com/Support/Center/Question/Details/T817657/the-idispatcherservice-interface-has-been-changed) - The IDispatcherService interface has been changed
 
-16.1.4 Release Notes
-====================
-The UWP platform is no longer supported. If UWP is required, use the [nuget package version 15.2.5](https://www.nuget.org/packages/DevExpressMvvm/15.2.5).
+### 18.2.3
+* [Async Commands](https://docs.devexpress.com/WPF/17354/mvvm-framework/commands/asynchronous-commands) Enhancements. Our POCO ViewModels and ViewModelBase descendants can now automatically generate Async Commands for methods marked with the async keyword. You can also reference your async method when invalidating an auto-generated Async Command.
 
+```C#
+[AsyncCommand(UseCommandManager = false)]
+public async Task Calculate() {
+    for(int i = 0; i <= 100; i++) {
+        Progress = i;
+        await Task.Delay(20);
+    }
+}
+void UpdateCalculateCommand() {
+    this.RaiseCanExecuteChanged(x => x.Calculate());
+}
+```
 
-15.2.5 Release Notes
-====================
-The Silverlight platform is no longer supported. If Silverlight is required, use the [nuget package version 15.1.4](https://www.nuget.org/packages/DevExpressMvvm/15.1.4).
+* Dynamic Binding Converters - New API. The new [DelegateConverterFactory](https://docs.devexpress.com/WPF/DevExpress.Mvvm.UI.DelegateConverterFactory) class provides a set of functions to create IValueConverter and IMutliValueConverter instances based on passed delegates.
+
+* Both the [BindableBase](https://docs.devexpress.com/WPF/17350/mvvm-framework/viewmodels/bindablebase) and [ViewModelBase](https://docs.devexpress.com/WPF/17351/mvvm-framework/viewmodels/viewmodelbase) classes now offer a more simplified syntax for getters and setters:
+
+```C#
+public string FullName {
+    get { return GetValue<string>(); }
+    set { SetValue(value, OnFullNameChanged); }
+}
+
+string fullName;
+public string FullName {
+    get { return fullName; }
+    set { SetValue(ref fullName, value, OnFullNameChanged); }
+}
+```
+
+* [CompositeCommandBehavior](https://docs.devexpress.com/WPF/18124/mvvm-framework/behaviors/predefined-set/compositecommandbehavior) - our new CanExecuteCondition property specifies whether the command target should be disabled when the CanExecute method of one of the commands returns true.
+
+### 18.1.3
+* [BC4250](https://www.devexpress.com/Support/Center/Question/Details/BC4250/dxbinding-dxcommand-dxevent-moved-to-a-new-engine-with-dynamic-typization) - The [DXBinding](https://docs.devexpress.com/WPF/115770/mvvm-framework/dxbinding), DXEvent, and DXCommand extensions use a new expression evaluation engine by default. Expressions are now initialized up to 2 times faster. The new Expression Evaluation Engine provides the following features:
+  * Dynamic Typing
+  * No casting is required to compare or return values
+  * Ability to create objects using the ‘new’ operator
+  * Ability to assign values using the equals (=) operator in DXCommand and DXEvent
+
+### 16.2.3
+* New [Module Injection Framework (MIF)](https://docs.devexpress.com/WPF/118614/mvvm-framework/mif). MIF makes it easier to develop, test, maintain, and deploy modular applications built with loosely coupled modules. The frameworks's key features include:
+  * Automatic persistence of the application's logical state and layout.
+  * Code separation into logical modules coupled with straightforward navigation.
+  * Unit Testing.
+
+### 16.1.4
+* The UWP platform is no longer supported. If UWP is required, use the [nuget package version 15.2.5](https://www.nuget.org/packages/DevExpressMvvm/15.2.5).
+
+### 15.2.5
+* The Silverlight platform is no longer supported. If Silverlight is required, use the [nuget package version 15.1.4](https://www.nuget.org/packages/DevExpressMvvm/15.1.4).
