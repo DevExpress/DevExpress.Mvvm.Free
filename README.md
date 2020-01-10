@@ -58,7 +58,7 @@ public string FullName {
 * [CompositeCommandBehavior](https://docs.devexpress.com/WPF/18124/mvvm-framework/behaviors/predefined-set/compositecommandbehavior) - our new CanExecuteCondition property specifies whether the command target should be disabled when the CanExecute method of one of the commands returns true.
 
 ### 18.1.3
-* [BC4250](https://www.devexpress.com/Support/Center/Question/Details/BC4250/dxbinding-dxcommand-dxevent-moved-to-a-new-engine-with-dynamic-typization) - The [DXBinding](https://docs.devexpress.com/WPF/115770/mvvm-framework/dxbinding), DXEvent, and DXCommand extensions use a new expression evaluation engine by default. Expressions are now initialized up to 2 times faster. The new Expression Evaluation Engine provides the following features:
+* [BC4250](https://www.devexpress.com/Support/Center/Question/Details/BC4250/dxbinding-dxcommand-dxevent-moved-to-a-new-engine-with-dynamic-typization) - The [DXBinding, DXEvent, and DXCommand](https://docs.devexpress.com/WPF/115770/mvvm-framework/dxbinding) extensions use a new expression evaluation engine by default. Expressions are now initialized up to 2 times faster. The new Expression Evaluation Engine provides the following features:
   * Dynamic Typing
   * No casting is required to compare or return values
   * Ability to create objects using the ‘new’ operator
