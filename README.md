@@ -1,14 +1,12 @@
 # DevExpress.Mvvm.Free
-DevExpress MVVM Framework is a set of components helping to work in the Model-View-ViewModel pattern in WPF.
+DevExpress MVVM Framework is a set of components that simplify the implementation of the Model-View-ViewModel pattern in WPF.
 
 # Documentation
 There are two versions of the DevExpress MVVM Framework:
-* The version that is included to the DevExpress WPF component suite.
-* The free version that is very similar to the first one. The only difference is that it does not contain some capabilities that are only needed when the framework is used with DevExpress components.
+* The DevExpress.Mvvm version is included to the DevExpress WPF component suite and designed for use with the DevExpress WPF controls.
+* The DevExpress.Mvvm.Free version is designed for use with the standard or third-party controls.
 
-Although DevExpress provides [documentation](https://documentation.devexpress.com/#WPF/CustomDocument15112) for the first version only, you can use this documentation even if you use the free version.
-
-The free DevExpress MVVM version is a separate assembly that is not compatible with the version included in the DevExpress WPF component suite.
+The DevExpress.Mvvm.Free version is a mirror of the DevExpress.Mvvm framework, so you can use the [documentation](https://documentation.devexpress.com/#WPF/CustomDocument15112) for both versions. Note that the free version of the framework is not compatible with the DevExpress WPF suite.
 
 # NuGet
 The Free DevExpress MVVM Framework is available from [NuGet](https://www.nuget.org/packages/DevExpressMvvm).
