@@ -7,6 +7,7 @@ There are two versions of the DevExpress MVVM Framework:
 * The DevExpress.Mvvm.Free version is designed for use with the standard or third-party controls.
 
 The DevExpress.Mvvm.Free version is a mirror of the DevExpress.Mvvm framework, so you can use the [documentation](https://documentation.devexpress.com/#WPF/CustomDocument15112) for both versions.
+
 Note that the free version of the framework is not compatible with the DevExpress WPF suite.
 
 # NuGet
