@@ -1,3 +1,4 @@
+using System.ComponentModel;
 
 namespace DevExpress.Mvvm {
     public interface ISupportSplashScreen {

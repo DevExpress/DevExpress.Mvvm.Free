@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
-
 namespace DevExpress.Mvvm {
     class CommandManagerHelper {
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
@@ -82,7 +81,7 @@ namespace DevExpress.Mvvm {
         void ICommand.Execute(object parameter) {
             Execute(GetGenericParameter(parameter));
         }
-        static T GetGenericParameter(object parameter, bool suppressCastException = false) {
+        internal static T GetGenericParameter(object parameter, bool suppressCastException = false) {
             parameter = TypeCastHelper.TryCast(parameter, typeof(T));
             if(parameter == null || parameter is T) return (T)parameter;
             if(suppressCastException) return default(T);
@@ -179,6 +178,7 @@ namespace DevExpress.Mvvm {
         CancellationTokenSource cancellationTokenSource;
         bool shouldCancel = false;
         internal Task executeTask;
+        bool isLegacyExecuting;
         DispatcherOperation completeTaskOperation;
 
         public bool AllowMultipleExecution {
@@ -241,26 +241,48 @@ namespace DevExpress.Mvvm {
             return base.CanExecute(parameter);
         }
         public override void Execute(T parameter) {
-            if(!CanExecute(parameter))
-                return;
-            if(executeMethod == null) return;
+            ExecuteCommon(parameter, true);
+        }
+        public Task ExecuteAsync(T parameter) {
+            return ExecuteCommon(parameter, false);
+        }
+        Task ExecuteCommon(T parameter, bool legacy) {
+            if(!CanExecute(parameter) || executeMethod == null)
+                return Task.FromResult<object>(null);
             IsExecuting = true;
-            Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
             CancellationTokenSource = new CancellationTokenSource();
+            return legacy ? ExecuteCoreLegacy(parameter) : ExecuteCore(parameter);
+        }
+        Task ExecuteCore(T parameter) {
+            executeTask = executeMethod(parameter).ContinueWith(x => {
+                IsExecuting = false;
+                ShouldCancel = false;
+                if(x.IsFaulted)
+                    throw x.Exception.InnerException;
+            }, TaskScheduler.FromCurrentSynchronizationContext());
+            return executeTask;
+        }
+        Task ExecuteCoreLegacy(T parameter) {
+            isLegacyExecuting = true;
+            Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
             executeTask = executeMethod(parameter).ContinueWith(x => {
                 completeTaskOperation = dispatcher.BeginInvoke(new Action(() => {
+                    isLegacyExecuting = false;
                     IsExecuting = false;
                     ShouldCancel = false;
                     completeTaskOperation = null;
                 }));
             });
+            return executeTask;
         }
         public void Wait(TimeSpan timeout) {
-            if(executeTask == null || !IsExecuting) return;
-            executeTask.Wait(timeout);
+            if(!IsExecuting) return;
+            if(!isLegacyExecuting)
+                throw new NotSupportedException("The Wait method is not supported when you execute a command with the ExecuteAsync method. Use async/await syntax instead.");
+            executeTask.Do(x => x.Wait(timeout));
             completeTaskOperation.Do(x => x.Wait(timeout));
         }
-        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public void Cancel() {
             if(!CanCancel()) return;
             ShouldCancel = true;
@@ -272,6 +294,9 @@ namespace DevExpress.Mvvm {
         void OnIsExecutingChanged() {
             CancelCommand.RaiseCanExecuteChanged();
             RaiseCanExecuteChanged();
+        }
+        Task IAsyncCommand.ExecuteAsync(object parameter) {
+            return ExecuteAsync(GetGenericParameter(parameter));
         }
     }
 

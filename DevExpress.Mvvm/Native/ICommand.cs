@@ -1,6 +1,8 @@
 using DevExpress.Mvvm.Native;
 using System;
+using System.ComponentModel;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace DevExpress.Mvvm.Native {
@@ -9,12 +11,13 @@ namespace DevExpress.Mvvm.Native {
     }
     public interface IAsyncCommand : IDelegateCommand {
         bool IsExecuting { get; }
-        [Obsolete("Use the IsCancellationRequested property instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never), Obsolete("Use the IsCancellationRequested property instead.")]
         bool ShouldCancel { get; }
         CancellationTokenSource CancellationTokenSource { get; }
         bool IsCancellationRequested { get; }
         ICommand CancelCommand { get; }
         void Wait(TimeSpan timeout);
+        Task ExecuteAsync(object parameter);
     }
 }
 namespace DevExpress.Mvvm {

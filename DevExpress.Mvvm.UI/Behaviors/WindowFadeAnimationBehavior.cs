@@ -75,13 +75,19 @@ namespace DevExpress.Mvvm.UI {
             window.Loaded -= OnWindowLoaded;
         }
 
-        void OnWindowLoaded(object sender, RoutedEventArgs e) {
-            Window w = (Window)sender;
-            w.Loaded -= OnWindowLoaded;
-            if(FadeInDuration.TotalMilliseconds == 0) return;
+        internal bool ManualFadeIn { get; set; }
+        internal bool FadeIn(Window w) {
+            if (FadeInDuration.TotalMilliseconds == 0) return false;
             fadeInAnimaiton = CreateStoryboard(w, 0, 1, FadeInDuration);
             fadeInAnimaiton.Completed += (d, ee) => fadeInAnimaiton = null;
             fadeInAnimaiton.Begin();
+            return true;
+        }
+        void OnWindowLoaded(object sender, RoutedEventArgs e) {
+            Window w = (Window)sender;
+            w.Loaded -= OnWindowLoaded;
+            if(!ManualFadeIn)
+                FadeIn(w);
         }
         void OnWindowClosing(object sender, CancelEventArgs e) {
             if(e.Cancel)
@@ -92,7 +98,7 @@ namespace DevExpress.Mvvm.UI {
             }
             Window w = (Window)sender;
             w.Closing -= OnWindowClosing;
-            if(FadeOutDuration.TotalMilliseconds == 0) return;
+            if(FadeOutDuration.TotalMilliseconds == 0 || w.Opacity == 0) return;
             Storyboard st = CreateStoryboard(w, 1, 0, FadeOutDuration);
             st.Completed += (d, ee) => w.Close();
             e.Cancel = true;

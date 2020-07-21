@@ -9,9 +9,11 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Windows.Interop;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace DevExpress.Mvvm.UI {
     public static class DXSplashScreen {
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static bool UseLegacyLocationLogic { get; set; }
         public static bool UseDefaultAltTabBehavior { get; set; }
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
@@ -109,7 +111,7 @@ namespace DevExpress.Mvvm.UI {
                 throw new InvalidOperationException(DXSplashScreenExceptions.Exception3);
             SplashContainer.SetState(state);
         }
-        public static void CallSplashScreenMethod<T>(Action<T> action) {
+        public static void CallSplashScreenMethod<T>(Action<T> action) where T : Window {
             if(!IsActive)
                 throw new InvalidOperationException(DXSplashScreenExceptions.Exception3);
             SplashContainer.CallSplashScreenMethod<T>(action);
@@ -124,7 +126,7 @@ namespace DevExpress.Mvvm.UI {
         }
 
         static Window CreateDefaultSplashScreenWindow(object parameter) {
-            return new SplashScreenWindow() {
+            return new SplashScreenWindowImpl() {
                 WindowStyle = WindowStyle.None,
                 ResizeMode = ResizeMode.NoResize,
                 AllowsTransparency = true,
@@ -222,7 +224,7 @@ namespace DevExpress.Mvvm.UI {
                         Application.Current.Do(x => x.DispatcherUnhandledException += OnAppUnhandledException);
                     }
                 }
-                ActiveInfo.EnsureCallbacksContainer();
+                ActiveInfo.ResetInfo();
                 ActiveInfo.InternalThread = new Thread(InternalThreadEntryPoint);
                 ActiveInfo.InternalThread.SetApartmentState(ApartmentState.STA);
                 beforeStartThreadAction?.Invoke();
@@ -262,14 +264,14 @@ namespace DevExpress.Mvvm.UI {
                 if(!ActiveInfo.Callbacks.PushSetStateCallback(state))
                     InvokeOnSplashScreenDispatcher(new Action<SplashScreenInfo, object>(SetStateCore), new object[] { ActiveInfo, state });
             }
-            public void CallSplashScreenMethod<T>(Action<T> action) {
+            public void CallSplashScreenMethod<T>(Action<T> action) where T : Window {
                 if(ViewModelBase.IsInDesignMode)
                     return;
                 if(!IsActive)
                     throw new InvalidOperationException(DXSplashScreenExceptions.Exception3);
                 if(ActiveInfo.Callbacks.PushSplashScreenMethodCallback(action))
                     return;
-                EnsureCallSplashScreenMethodParameter<T>(ActiveInfo.SplashScreen);
+
                 InvokeOnSplashScreenDispatcher(action, ActiveInfo.SplashScreen);
             }
             void InvokeOnSplashScreenDispatcher(Delegate method, params object[] args) {
@@ -289,7 +291,6 @@ namespace DevExpress.Mvvm.UI {
                 object windowCreatorParameter = ((object[])parameter)[2];
                 object splashScreenCreatorParameter = ((object[])parameter)[3];
                 var lockMode = (UIThreadReleaseMode?)SplashScreenHelper.FindParameter(parameter, UIThreadReleaseMode);
-                object syncRoot = ((ICollection)(new Style()).Resources).SyncRoot;
                 var info = SplashScreenHelper.FindParameter<SplashScreenInfo>(parameter) ?? ActiveInfo;
 #if DEBUGTEST || DEBUG
                 if(info.WaitEvent != null)
@@ -298,11 +299,10 @@ namespace DevExpress.Mvvm.UI {
                 info.SplashScreen = windowCreator(windowCreatorParameter);
                 info.Dispatcher = info.SplashScreen.Dispatcher;
                 info.Callbacks.Initialize();
-                if(!Monitor.TryEnter(syncRoot)) {
+                if(SplashScreenHelper.IsResourcesLocked()) {
                     lockMode = null;
                     SyncEvent.Set();
-                } else
-                    Monitor.Exit(syncRoot);
+                }
 
                 splashScreenCreator.Do(x => info.SplashScreen.Content = x(splashScreenCreatorParameter));
                 SetProgressStateCore(info, true);
@@ -404,12 +404,6 @@ namespace DevExpress.Mvvm.UI {
                 }
             }
 
-            internal static void EnsureCallSplashScreenMethodParameter<T>(Window parameter) {
-                if(!(parameter is ISplashScreen))
-                    throw new InvalidOperationException(DXSplashScreenExceptions.Exception4);
-                if(!typeof(T).IsAssignableFrom(parameter.GetType()))
-                    throw new InvalidOperationException(DXSplashScreenExceptions.Exception5);
-            }
             static void SetProgressStateCore(SplashScreenInfo info, bool isIndeterminate) {
                 if(!(info.SplashScreen is ISplashScreen))
                     return;
@@ -461,19 +455,27 @@ namespace DevExpress.Mvvm.UI {
                 public bool IsActive { get { return InternalThread != null; } }
 #if DEBUGTEST || DEBUG
                 internal volatile AutoResetEvent WaitEvent = null;
+                internal Task ClosingTask => closingTask?.Task;
+                TaskCompletionSource<bool> closingTask;
 #endif
 
-                public void EnsureCallbacksContainer() {
+                public void ResetInfo() {
                     if(Callbacks == null)
                         Callbacks = new SplashScreenCallbacks(this);
 
                     Callbacks.Policy = NotInitializedStateMethodCallPolicy;
+#if DEBUGTEST || DEBUG
+                    if(closingTask != null && !closingTask.Task.IsCompleted)
+                        closingTask.SetResult(true);
+                    closingTask = new TaskCompletionSource<bool>();
+#endif
                 }
                 internal void ActivateOwner() {
                     if(SplashScreen.IsActive)
-                        Owner.Do(x => x.ActivateWindow());
+                        Owner.Do(x => x.ActivateWindow(false));
                 }
                 internal void ReleaseResources() {
+                    InternalThread = null;
                     Callbacks.Dispose();
                     Callbacks = null;
                     Owner = null;
@@ -482,27 +484,28 @@ namespace DevExpress.Mvvm.UI {
                     RelationInfo = null;
                     SplashScreen.Content = null;
                     SplashScreen = null;
-                    InternalThread = null;
 #if DEBUGTEST || DEBUG
                     WaitEvent = null;
+                    if(closingTask != null && !closingTask.Task.IsCompleted)
+                        closingTask.SetResult(true);
 #endif
                 }
                 internal void InitializeOwner(object parameter) {
                     RelationInfo = SplashScreenHelper.FindParameter<WindowContainer>(parameter, null).Return(x => x.CreateOwnerContainer(), null)
                         ?? SplashScreenHelper.FindParameter<WindowRelationInfo>(parameter, null);
                     Owner = RelationInfo.With(x => x.Parent);
-                    RelationInfo.Do(x => x.AttachChild(SplashScreen, false));
+                    RelationInfo.Do(x => x.AttachChild(SplashScreen, false, false));
                 }
             }
         }
-        internal class SplashScreenWindow : Window {
+        internal class SplashScreenWindowImpl : Window {
             const int WM_SYSCOMMAND = 0x0112;
             const int SC_CLOSE = 0xF060;
 
             public bool IsActiveOnClosing { get; private set; }
             protected IntPtr Handle { get; set; }
 
-            public SplashScreenWindow() {
+            public SplashScreenWindowImpl() {
                 ShowActivated = false;
                 Loaded += OnWindowLoaded;
             }
@@ -672,7 +675,6 @@ namespace DevExpress.Mvvm.UI {
                 this.callback = callback;
             }
             public override void Execute(SplashScreenContainer.SplashScreenInfo info) {
-                SplashScreenContainer.EnsureCallSplashScreenMethodParameter<T>(info.SplashScreen);
                 object window = info.SplashScreen;
                 callback.Invoke((T)window);
             }

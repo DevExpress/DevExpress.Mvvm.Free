@@ -5,14 +5,11 @@ using System.IO;
 using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm {
-    public interface ISaveFileDialogService {
-        string Filter { get; set; }
-        int FilterIndex { get; set; }
+    public interface ISaveFileDialogService : IFileDialogServiceBase {
         string DefaultExt { get; set; }
         string DefaultFileName { get; set; }
         bool ShowDialog(Action<CancelEventArgs> fileOK, string directoryName, string fileName);
         IFileInfo File { get; }
-        string Title { get; set; }
     }
     public static class SaveFileDialogServiceExtensions {
         public static bool ShowDialog(this ISaveFileDialogService service, Action<CancelEventArgs> fileOK = null, IFileInfo fileInfo = null) {

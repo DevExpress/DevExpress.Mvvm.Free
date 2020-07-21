@@ -9,12 +9,21 @@
             <Setter.Value>
                 <ControlTemplate TargetType="local:EnumMemberInfoPresenter">
                     <StackPanel Orientation="Horizontal" ToolTip="{Binding Path=EnumMemberInfo.Description, RelativeSource={RelativeSource TemplatedParent}}">
-                        <Image x:Name="PART_Image" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="None"/>
+                        <Image x:Name="PART_Image" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
                         <TextBlock Text="{Binding Path=EnumMemberInfo.Name, RelativeSource={RelativeSource TemplatedParent}}" VerticalAlignment="Center" Margin="4,0,0,0"/>
                     </StackPanel>
                     <ControlTemplate.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding Path=EnumMemberInfo.ImageWidth, RelativeSource={RelativeSource Self}}" Value="{x:Static sys:Double.NaN}"/>
+                                <Condition Binding="{Binding Path=EnumMemberInfo.ImageHeight, RelativeSource={RelativeSource Self}}" Value="{x:Static sys:Double.NaN}"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="PART_Image" Property="Stretch" Value="None"/>
+                        </MultiDataTrigger>
                         <DataTrigger Binding="{Binding Path=EnumMemberInfo.ShowImage, RelativeSource={RelativeSource Self}}" Value="True">
                             <Setter TargetName="PART_Image" Property="Source" Value="{Binding Path=EnumMemberInfo.Image, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <Setter TargetName="PART_Image" Property="Width" Value="{Binding Path=EnumMemberInfo.ImageWidth, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <Setter TargetName="PART_Image" Property="Height" Value="{Binding Path=EnumMemberInfo.ImageHeight, RelativeSource={RelativeSource TemplatedParent}}"/>
                         </DataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

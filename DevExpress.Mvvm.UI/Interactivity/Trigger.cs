@@ -120,9 +120,16 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             if(!IsAttached) return;
             if(Source != null && !forceResolving)
                 return;
+            object source;
+            if(ResolveSource(out source, AssociatedObject, useVisualTree))
+                Source = source;
+        }
+
+        internal bool ResolveSource(out object result, DependencyObject associatedObject, bool? useVisualTree = null) {
+            result = null;
             if(SourceObject != null) {
-                Source = SourceObject;
-                return;
+                result = SourceObject;
+                return true;
             }
             bool useVisualTreeCore = useVisualTree ?? false;
             var sourceObjectBinding = GetBindingExp(this, SourceObjectProperty);
@@ -130,17 +137,19 @@ namespace DevExpress.Mvvm.UI.Interactivity {
                 string elementName = null;
                 if(sourceObjectBinding.ParentBinding != null)
                     elementName = sourceObjectBinding.ParentBinding.ElementName;
-                if(!string.IsNullOrEmpty(elementName))
-                    Source = FindObject(AssociatedObject, elementName, useVisualTreeCore);
-                return;
+                if(!string.IsNullOrEmpty(elementName)) {
+                    result = FindObject(associatedObject, elementName, useVisualTreeCore);
+                    return true;
+                }
+                return false;
             }
             var sourceNameBinding = GetBindingExp(this, SourceNameProperty);
             if(!string.IsNullOrEmpty(SourceName) || sourceNameBinding != null) {
-                Source = FindObject(AssociatedObject, SourceName, useVisualTreeCore);
-                return;
+                result = FindObject(associatedObject, SourceName, useVisualTreeCore);
+                return true;
             }
-            Source = AssociatedObject;
-            return;
+            result = associatedObject;
+            return true;
         }
         void OnSourceNameChanged() {
             ResolveSource(true);

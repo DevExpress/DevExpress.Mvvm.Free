@@ -26,9 +26,9 @@
     <IntermediateOutputPath>obj.NetCore.Desktop.Free</IntermediateOutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DevExpress.Mvvm.v19.2">
+    <Reference Include="DevExpress.Mvvm">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Bin\NETCoreDesktop\DevExpress.Mvvm.v19.2.dll</HintPath>
+      <HintPath>..\Bin\NETCoreDesktop\DevExpress.Mvvm.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

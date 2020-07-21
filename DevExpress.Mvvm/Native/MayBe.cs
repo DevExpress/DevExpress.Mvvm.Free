@@ -277,6 +277,16 @@ namespace DevExpress.Mvvm.Native {
         public static ReadOnlyCollection<T> ToReadOnlyCollection<T>(this IEnumerable<T> source) {
             return source.ToList().AsReadOnly();
         }
+        public static IEnumerable<T> InsertDelimiter<T>(this IEnumerable<T> source, Func<T> delimiter) {
+            var firstItem = true;
+            foreach(var item in source) {
+                if(firstItem)
+                    firstItem = false;
+                else
+                    yield return delimiter();
+                yield return item;
+            }
+        }
     }
 
     public

@@ -44,12 +44,12 @@ namespace DevExpress.Mvvm.Native {
             return string.Format(CultureInfo.CurrentCulture, error, name, this.Length);
         }
         protected override bool IsValid(object value) {
-            if(Length == 0 || Length < -1)
+            if(Length == 0 || Length < MaxAllowableLength)
                 throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, DataAnnotationsResourcesResolver.MaxLengthAttribute_InvalidMaxLength));
             if(value != null) {
                 string stringValue = value as string;
                 int valueLength = stringValue != null ? stringValue.Length : ((Array)value).Length;
-                if(Length != -1)
+                if(Length != MaxAllowableLength)
                     return valueLength <= Length;
             }
             return true;

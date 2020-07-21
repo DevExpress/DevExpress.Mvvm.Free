@@ -8,6 +8,7 @@ using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Data;
 
 namespace DevExpress.Mvvm.UI {
 
@@ -42,7 +43,7 @@ namespace DevExpress.Mvvm.UI {
             SplashScreenTemplateProperty = DependencyProperty.Register("SplashScreenTemplate", typeof(DataTemplate), typeof(LoadingDecorator),
                 new PropertyMetadata(null, (d, e) => ((LoadingDecorator)d).OnSplashScreenTemplateChanged()));
             SplashScreenDataContextProperty = DependencyProperty.Register("SplashScreenDataContext", typeof(object), typeof(LoadingDecorator),
-                new PropertyMetadata(null));
+                new PropertyMetadata(null, (d, e) => ((LoadingDecorator)d).SplashScreenDataContextChanged()));
             IsSplashScreenShownProperty = DependencyProperty.Register("IsSplashScreenShown", typeof(bool?), typeof(LoadingDecorator),
                 new PropertyMetadata(null, (d, e) => ((LoadingDecorator)d).OnIsSplashScreenShownChanged()));
             OwnerLockProperty = DependencyProperty.Register("OwnerLock", typeof(SplashScreenLock), typeof(LoadingDecorator),
@@ -114,7 +115,7 @@ namespace DevExpress.Mvvm.UI {
                 OnLoadingChildChanged();
             }
         }
-        protected bool IsActive { get { return splashContainer != null && splashContainer.IsActive; } }
+        protected internal bool IsActive { get { return splashContainer != null && splashContainer.IsActive; } }
         DXSplashScreen.SplashScreenContainer splashContainer = null;
         DXSplashScreen.SplashScreenContainer SplashContainer {
             get {
@@ -130,9 +131,20 @@ namespace DevExpress.Mvvm.UI {
             Unloaded += OnUnloaded;
         }
 
+        bool IsLoadedEx { get; set; }
+        protected override void OnInitialized(EventArgs e) {
+            base.OnInitialized(e);
+            OnLoadingChildChanged(false);
+            if(IsActive && IsSplashScreenShown == null)
+                Dispatcher.InvokeAsync(() => {
+                    if(!IsLoadedEx && IsSplashScreenShown == null) {
+                        CloseSplashScreen();
+                    }
+                }, DispatcherPriority.Loaded);
+        }
         void OnIsSplashScreenShownChanged() {
             if(IsSplashScreenShown == true) {
-                if(IsLoaded)
+                if(IsInitialized)
                     ShowSplashScreen();
                 else
                     SplashScreenHelper.InvokeAsync(this, () => { if(IsSplashScreenShown == true) ShowSplashScreen(); }, DispatcherPriority.Render);
@@ -147,15 +159,17 @@ namespace DevExpress.Mvvm.UI {
             SplashScreenTemplate.Do(x => x.Seal());
         }
         void OnLoaded(object sender, RoutedEventArgs e) {
-            if(!IsLoaded)
+            IsLoadedEx = true;
+            if (!IsLoaded)
                 return;
 
             Loaded -= OnLoaded;
             if(ViewModelBase.IsInDesignMode)
                 return;
-            OnLoadingChildChanged();
+            OnLoadingChildChanged(true);
         }
         void OnUnloaded(object sender, RoutedEventArgs e) {
+            IsLoadedEx = false;
             CloseSplashScreenOnLoading();
         }
         void ValidateLoadingChild() {
@@ -167,18 +181,26 @@ namespace DevExpress.Mvvm.UI {
             LoadingChildTemplate.Do(x => x.Seal());
             OnLoadingChildChanged();
         }
-        void OnLoadingChildChanged() {
+        void OnLoadingChildChanged(bool loadChild = true) {
             if(ViewModelBase.IsInDesignMode) {
                 LoadChildInDesignTime();
                 return;
             }
             Child = null;
-            if((LoadingChild == null && LoadingChildTemplate == null) || !IsLoaded)
+            if((LoadingChild == null && LoadingChildTemplate == null) || !IsInitialized)
                 return;
-            if(IsSplashScreenShown == null && IsVisible)
-                ShowSplashScreen();
+            if(CanAutoShow()) {
+                if (!IsVisible && IsLoadedEx)
+                    CloseSplashScreen();
+                else
+                    ShowSplashScreen();
+            }
 
-            SplashScreenHelper.InvokeAsync(this, LoadChild);
+            if(loadChild)
+                SplashScreenHelper.InvokeAsync(this, LoadChild);
+        }
+        bool CanAutoShow() {
+            return IsSplashScreenShown == null && (IsLoadedEx || !BindingOperations.IsDataBound(this, IsSplashScreenShownProperty));
         }
         void LoadChild() {
             if(LoadingChild != null) {
@@ -257,15 +279,13 @@ namespace DevExpress.Mvvm.UI {
             IList<TimeSpan> durations = SplashScreenHelper.FindParameters<TimeSpan>(parameter);
             FlowDirection flowDirection = SplashScreenHelper.FindParameter<FlowDirection>(parameter);
             Style windowStyle = SplashScreenHelper.FindParameter<Style>(parameter);
-            var window = new LoadingDecoratorWindowFree(owner, lockMode);
-            if(windowStyle != null)
+            useFadeEffect = useFadeEffect && durations.Any(x => x.TotalMilliseconds > 0);
+            var window = new LoadingDecoratorWindowFree(owner, lockMode, useFadeEffect, durations[0], durations[1]);
+            if (windowStyle != null)
                 window.Style = windowStyle;
             else
                 window.ApplyDefaultSettings();
             window.SetCurrentValue(FlowDirectionProperty, flowDirection);
-            if(useFadeEffect && durations.Any(x => x.TotalMilliseconds > 0))
-                Interaction.GetBehaviors(window).Add(new WindowFadeAnimationBehavior() { FadeInDuration = durations[0], FadeOutDuration = durations[1] });
-
             return window;
         }
         static object CreateSplashScreen(object parameter) {
@@ -288,20 +308,41 @@ namespace DevExpress.Mvvm.UI {
             }
         }
 
-        internal class LoadingDecoratorWindowFree : DXSplashScreen.SplashScreenWindow {
+        internal class LoadingDecoratorWindowFree : DXSplashScreen.SplashScreenWindowImpl {
             protected ContainerLocker ParentLocker { get; private set; }
-            public LoadingDecoratorWindowFree(WindowArrangerContainer parentContainer, SplashScreenLock lockMode) {
+            WindowArrangerContainer ParentContainer { get; set; }
+            WindowFadeAnimationBehavior AnimationBehavior { get; set; }
+            LoadingDecorator LoadingDecorator { get { return (LoadingDecorator)ParentContainer.WindowObject; } }
+            bool isCloseRequested = false;
+
+            public LoadingDecoratorWindowFree(WindowArrangerContainer parentContainer, SplashScreenLock lockMode, bool useFadeEffect, TimeSpan fadeInDuration, TimeSpan fadeOutDuration) {
+                ParentContainer = parentContainer;
+                if (useFadeEffect) {
+                    AnimationBehavior = new WindowFadeAnimationBehavior() { FadeInDuration = fadeInDuration, FadeOutDuration = fadeOutDuration };
+                    Interaction.GetBehaviors(this).Add(AnimationBehavior);
+                }
                 WindowStartupLocation = WindowStartupLocation.Manual;
-                SetWindowStartupPosition(parentContainer.ControlStartupPosition.IsEmpty ? parentContainer.WindowStartupPosition : parentContainer.ControlStartupPosition);
+                if (!LoadingDecorator.IsLoadedEx) {
+                    Opacity = 0d;
+                    LoadingDecorator.Loaded += OnLoadingDecoratorLoaded;
+                    if (AnimationBehavior != null)
+                        AnimationBehavior.ManualFadeIn = true;
+                }
+                var startupLocation = parentContainer.GetControlStartupRect(SplashScreenLocation.CenterContainer);
+                if(startupLocation.IsEmpty)
+                    startupLocation = parentContainer.GetControlStartupRect(SplashScreenLocation.CenterWindow);
+                SetWindowStartupPosition(startupLocation);
                 CreateLocker(parentContainer, lockMode);
                 ClearValue(ShowActivatedProperty);
             }
-
+            protected override void OnClosing(System.ComponentModel.CancelEventArgs e) {
+                base.OnClosing(e);
+                isCloseRequested = true;
+            }
             protected override void OnClosed(EventArgs e) {
                 ReleaseLocker();
                 base.OnClosed(e);
             }
-
             internal void ApplyDefaultSettings() {
                 WindowStyle = WindowStyle.None;
                 ResizeMode = ResizeMode.NoResize;
@@ -328,6 +369,18 @@ namespace DevExpress.Mvvm.UI {
             }
             void CreateLocker(WindowContainer parentContainer, SplashScreenLock lockMode) {
                 ParentLocker = new ContainerLocker(parentContainer, lockMode);
+            }
+            void OnLoadingDecoratorLoaded(object sender, RoutedEventArgs e) {
+                if(isCloseRequested)
+                    return;
+
+                LoadingDecorator.Loaded -= OnLoadingDecoratorLoaded;
+                LoadingDecorator.Dispatcher.InvokeAsync(() => {
+                    Dispatcher.InvokeAsync(() => {
+                        if (!isCloseRequested && AnimationBehavior == null || !AnimationBehavior.FadeIn(this))
+                            Opacity = 1d;
+                    });
+                }, DispatcherPriority.Render);
             }
         }
     }

@@ -10,6 +10,8 @@ using System.Windows.Media;
 using System.Windows.Input;
 using System.Threading;
 using DevExpress.Mvvm.UI.Native;
+using System.Collections;
+using System.Reflection;
 
 
 namespace DevExpress.Mvvm.UI {
@@ -99,27 +101,22 @@ namespace DevExpress.Mvvm.UI {
                 Initialize();
         }
 
-        public void Release(bool activateWindowIfNeeded) {
+        public bool Release(bool activateWindowIfNeeded) {
             if(Container == null)
-                return;
+                return false;
 
             Container.Initialized -= OnOwnerInitialized;
             var container = Container;
             Container = null;
             if(lockMode == SplashScreenLock.None)
-                return;
+                return false;
 
             if(container.Form != null && container.Form.IsDisposed) {
                 UnlockContainer(container);
             } else
-                SplashScreenHelper.InvokeAsync(container, () => {
-                    bool activateWindow = activateWindowIfNeeded && !SplashScreenHelper.ApplicationHasActiveWindow();
-                    UnlockContainer(container);
-                    if(activateWindow)
-                        container.ActivateWindow();
-                    else if(Keyboard.FocusedElement == null)
-                        SplashScreenHelper.GetApplicationActiveWindow(false).Do(x => x.Focus());
-                }, DispatcherPriority.Render);
+                ActivateWindow(container, activateWindowIfNeeded, false, x => UnlockContainer(x));
+
+            return true;
         }
 
         void OnOwnerInitialized(object sender, EventArgs e) {
@@ -129,6 +126,19 @@ namespace DevExpress.Mvvm.UI {
         void Initialize() {
             if(Container != null)
                 SplashScreenHelper.InvokeAsync(Container, () => LockContainer(Container, lockMode), DispatcherPriority.Send, AsyncInvokeMode.AllowSyncInvoke);
+        }
+        internal static void ActivateWindow(WindowContainer container, bool activateWindowIfNeeded, bool applicationStatupActivation, Action<WindowContainer> beforeActivateCallback) {
+            if(container == null)
+                return;
+
+            SplashScreenHelper.InvokeAsync(container, () => {
+                bool activateWindow = applicationStatupActivation || (activateWindowIfNeeded && !SplashScreenHelper.ApplicationHasActiveWindow());
+                beforeActivateCallback?.Invoke(container);
+                if(activateWindow)
+                    container.ActivateWindow(applicationStatupActivation);
+                else if(Keyboard.FocusedElement == null)
+                    SplashScreenHelper.GetApplicationActiveWindow(false).Do(x => x.Focus());
+            }, DispatcherPriority.Background);
         }
 
         #region Lock logic
@@ -227,14 +237,16 @@ namespace DevExpress.Mvvm.UI {
             : base(parent, childLocation, arrangeMode) { }
 
         protected override void SubscribeChildEventsOverride() {
+            base.SubscribeChildEventsOverride();
             CompositionTarget.Rendering += OnChildRendering;
         }
         protected override void SubscribeParentEventsOverride() {
+            base.SubscribeParentEventsOverride();
             if(childLocation != SplashScreenLocation.CenterScreen)
                 CompositionTarget.Rendering += OnParentRendering;
         }
         void OnChildRendering(object sender, EventArgs e) {
-            if(IsReleased) {
+            if(SkipArrange) {
                 CompositionTarget.Rendering -= OnChildRendering;
                 return;
             }
@@ -243,7 +255,7 @@ namespace DevExpress.Mvvm.UI {
                 UpdateChildLocation();
         }
         void OnParentRendering(object sender, EventArgs e) {
-            if(IsReleased) {
+            if(SkipArrange) {
                 CompositionTarget.Rendering -= OnParentRendering;
                 return;
             }
@@ -356,18 +368,7 @@ namespace DevExpress.Mvvm.UI {
         }
         protected override void CompleteInitializationOverride() {
             if(Child.Window.Dispatcher.CheckAccess()) {
-                switch(childLocation) {
-                    case SplashScreenLocation.CenterContainer:
-                        nextParentPos = ((WindowArrangerContainer)Parent).ControlStartupPosition;
-                        break;
-                    case SplashScreenLocation.CenterWindow:
-                        nextParentPos = ((WindowArrangerContainer)Parent).WindowStartupPosition;
-                        break;
-                    case SplashScreenLocation.CenterScreen:
-                        var screen = System.Windows.Forms.Screen.FromHandle(Parent.Handle);
-                        nextParentPos = new Rect(new Point(screen.WorkingArea.X, screen.WorkingArea.Y), new Size(screen.WorkingArea.Width, screen.WorkingArea.Height));
-                        break;
-                }
+                nextParentPos = ((WindowArrangerContainerBase)Parent).GetControlStartupRect(childLocation);
             }
         }
         protected void UpdateParentLocation() {
@@ -384,8 +385,7 @@ namespace DevExpress.Mvvm.UI {
                     nextParentPos = ActualIsParentClosed ? Rect.Empty : ((WindowArrangerContainer)Parent).GetWindowRect();
                     break;
                 case SplashScreenLocation.CenterScreen:
-                    var screen = System.Windows.Forms.Screen.FromHandle(Parent.Handle);
-                    nextParentPos = new Rect(new Point(screen.WorkingArea.X, screen.WorkingArea.Y), new Size(screen.WorkingArea.Width, screen.WorkingArea.Height));
+                    nextParentPos = WindowArrangerContainerBase.GetScreenRect(Parent.Handle);
                     break;
             }
         }
@@ -398,28 +398,15 @@ namespace DevExpress.Mvvm.UI {
             }
             Rect bounds = nextParentPos;
             var window = Child.Window;
-            if(!IsZero(window.ActualWidth) && !IsZero(window.ActualHeight)) {
+            if(!SplashScreenHelper.IsZero(window.ActualWidth) && !SplashScreenHelper.IsZero(window.ActualHeight)) {
                 if(childLocation == SplashScreenLocation.CenterScreen)
-                    bounds = GetDpiBasedBounds(bounds, window);
+                    bounds = SplashScreenHelper.GetDpiBasedBounds(bounds, Child.Handle);
                 var newPosition = new Point(bounds.X + (bounds.Width - window.ActualWidth) * 0.5, bounds.Y + (bounds.Height - window.ActualHeight) * 0.5);
                 window.Left = Math.Round(newPosition.X);
                 window.Top = Math.Round(newPosition.Y);
                 lastChildPos = new Rect(window.Left, window.Top, window.Width, window.Height);
                 lastParentPos = bounds;
             }
-        }
-        static bool IsZero(double value) {
-            return value == 0d || double.IsNaN(value);
-        }
-        static Rect GetDpiBasedBounds(Rect bounds, Visual visual) {
-            var presentationSource = PresentationSource.FromVisual(visual);
-            if(presentationSource != null) {
-                return new Rect(bounds.X / presentationSource.CompositionTarget.TransformToDevice.M11,
-                    bounds.Y / presentationSource.CompositionTarget.TransformToDevice.M22,
-                    bounds.Width / presentationSource.CompositionTarget.TransformToDevice.M11,
-                    bounds.Height / presentationSource.CompositionTarget.TransformToDevice.M22);
-            }
-            return bounds;
         }
     }
     internal class WindowRelationInfo {
@@ -429,17 +416,19 @@ namespace DevExpress.Mvvm.UI {
         public bool IsReleased { get; private set; }
         public bool ActualIsParentClosed { get { return isParentClosed || (Parent != null && Parent.IsWindowClosedBeforeInit); } }
         bool isParentClosed;
+        bool childInitBeforeParent;
 
         protected internal WindowRelationInfo(WindowContainer parent) {
             AttachParent(parent);
         }
         protected WindowRelationInfo() { }
 
-        public void AttachChild(Window child, bool isChildHandleRequired) {
+        public void AttachChild(Window child, bool isChildHandleRequired, bool forceCreateHandle) {
             if(Child != null)
                 throw new ArgumentException("Child property is already set");
 
-            Child = new WindowContainer(child, isChildHandleRequired);
+            childInitBeforeParent = !Parent.IsContainerLoaded;
+            Child = new WindowContainer(child, isChildHandleRequired, forceCreateHandle);
             ChildAttachedOverride();
             CompleteContainerInitialization(Child);
         }
@@ -505,9 +494,15 @@ namespace DevExpress.Mvvm.UI {
             if(IsReleased)
                 return;
 
-            SplashScreenHelper.SetParent(Child.Window, Parent.Handle);
+            var parentHandle = Parent.Handle;
+            SplashScreenHelper.SetParent(Child.Window, parentHandle);
+            if(Child.Window.IsVisible && childInitBeforeParent) {
+                Child.EnsureHandle();
+                if(Child.Handle != IntPtr.Zero)
+                    SplashScreenHelper.InsertWindowAfter(Child.Handle, SplashScreenHelper.GetPrevWindow(parentHandle));
+            }
         }
-        #endregion
+#endregion
 
         void SubscribeChildEvents() {
             if(Child == null || Child.Window == null)
@@ -546,22 +541,39 @@ namespace DevExpress.Mvvm.UI {
 
         public event EventHandler ParentClosed;
     }
-    internal class WindowArrangerContainer : WindowContainer {
-        public Rect ControlStartupPosition { get; private set; }
-        public Rect WindowStartupPosition { get; private set; }
+    internal class WindowArrangerContainer : WindowArrangerContainerBase {
         public SplashScreenArrangeMode ArrangeMode { get; set; }
         SplashScreenLocation arrangeLocation;
 
         public WindowArrangerContainer(DependencyObject parentObject, SplashScreenLocation arrangeLocation)
-            : base(parentObject) {
+            : base(parentObject, true, false) {
             this.arrangeLocation = arrangeLocation;
         }
 
         public override WindowRelationInfo CreateOwnerContainer() {
-            return DXSplashScreen.UseLegacyLocationLogic
-                ? (WindowRelationInfo)new WindowArranger(this, arrangeLocation, ArrangeMode)
-                : new CompositionTargetBasedArranger(this, arrangeLocation, ArrangeMode);
+            return new CompositionTargetBasedArranger(this, arrangeLocation, ArrangeMode);
         }
+    }
+    internal class WindowArrangerContainerBase : WindowContainer {
+        static Rect UNDEFINED_POSITION = new Rect(0, 0, 0, 0);
+        Rect controlStartupPosition;
+        Rect windowStartupPosition;
+        Rect ownerScreen = Rect.Empty;
+        Rect ownerPosition = Rect.Empty;
+
+        internal WindowArrangerContainerBase(WindowContainer container) : base(container) { }
+        public WindowArrangerContainerBase(DependencyObject windowObject) : base(windowObject) { }
+        public WindowArrangerContainerBase(DependencyObject windowObject, bool isHandleRequired, bool forceCreateHandle)
+            : base(windowObject, isHandleRequired, forceCreateHandle) {
+            if(!IsInitialized) {
+                if(Window != null && Window.Owner != null) {
+                    ownerPosition = GetRealRect(Window.Owner);
+                    ownerScreen = GetScreenRect(new WindowInteropHelper(Window.Owner).Handle);
+                } else
+                    ownerPosition = ownerScreen = GetScreenRect(IntPtr.Zero);
+            }
+        }
+
         public Rect GetWindowRect() {
             if(Form != null)
                 return new Rect(Form.Left, Form.Top, Form.Width, Form.Height);
@@ -577,26 +589,71 @@ namespace DevExpress.Mvvm.UI {
         }
 
         protected override void CompleteInitializationOverride() {
-            ControlStartupPosition = GetControlRect();
-            WindowStartupPosition = GetWindowRect();
+            controlStartupPosition = GetControlRect();
+            windowStartupPosition = GetWindowRect();
+        }
+
+        internal Rect GetControlStartupRect(SplashScreenLocation startupLocation) {
+            Rect result = Rect.Empty;
+            if(startupLocation == SplashScreenLocation.CenterContainer)
+                result = controlStartupPosition;
+            else if(startupLocation == SplashScreenLocation.CenterWindow)
+                result = windowStartupPosition;
+
+            if(!result.IsEmpty) {
+                if(result == UNDEFINED_POSITION && ownerPosition != Rect.Empty)
+                    return ownerPosition;
+
+                return result;
+            }
+
+            if(!IsInitialized && ownerScreen != Rect.Empty)
+                return ownerScreen;
+
+            return GetScreenRect(Handle);
+        }
+        internal static Rect GetScreenRect(IntPtr handle) {
+            var screen = System.Windows.Forms.Screen.FromHandle(handle);
+            return new Rect(new Point(screen.WorkingArea.X, screen.WorkingArea.Y), new Size(screen.WorkingArea.Width, screen.WorkingArea.Height));
         }
     }
     internal class WindowContainer {
         public DependencyObject WindowObject { get; private set; }
-        public Window Window { get; private set; }
+        public Window Window { get; protected set; }
         public System.Windows.Forms.Form Form { get; private set; }
         public IntPtr Handle { get; private set; }
         public bool IsInitialized { get; private set; }
         public bool IsWindowClosedBeforeInit { get; private set; }
         public int ManagedThreadId { get; private set; }
+        internal bool IsContainerLoaded { get; private set; }
         protected FrameworkElement FrameworkObject { get; private set; }
         bool isHandleRequired;
+        bool forceCreateHandle;
 
-        public WindowContainer(DependencyObject windowObject) : this(windowObject, true) { }
-        public WindowContainer(DependencyObject windowObject, bool isHandleRequired) {
+        internal WindowContainer(WindowContainer container) {
+            if(container.IsInitialized) {
+                WindowObject = container.WindowObject;
+                Window = container.Window;
+                Form = container.Form;
+                Handle = container.Handle;
+                IsWindowClosedBeforeInit = container.IsWindowClosedBeforeInit;
+                ManagedThreadId = container.ManagedThreadId;
+                IsContainerLoaded = container.IsContainerLoaded;
+                CompleteInitialization();
+            } else {
+                forceCreateHandle = container.forceCreateHandle;
+                isHandleRequired = container.isHandleRequired;
+                WindowObject = container.WindowObject;
+                FrameworkObject = WindowObject as FrameworkElement;
+                Initialize();
+            }
+        }
+        public WindowContainer(DependencyObject windowObject) : this(windowObject, true, true) { }
+        public WindowContainer(DependencyObject windowObject, bool isHandleRequired, bool forceCreateHandle) {
             if(windowObject == null)
                 throw new ArgumentNullException("WindowObject");
 
+            this.forceCreateHandle = forceCreateHandle;
             this.isHandleRequired = isHandleRequired;
             WindowObject = windowObject;
             FrameworkObject = WindowObject as FrameworkElement;
@@ -606,13 +663,31 @@ namespace DevExpress.Mvvm.UI {
         public virtual WindowRelationInfo CreateOwnerContainer() {
             return new WindowRelationInfo(this);
         }
-        public void ActivateWindow() {
-            SplashScreenHelper.InvokeAsync(this, ActivateWindowCore, DispatcherPriority.Send, AsyncInvokeMode.AllowSyncInvoke);
+        public void ActivateWindow(bool forceActivate) {
+            SplashScreenHelper.InvokeAsync(this, () => ActivateWindowCore(forceActivate), DispatcherPriority.Send, AsyncInvokeMode.AllowSyncInvoke);
+        }
+        internal WindowState GetWindowState() {
+            WindowState result = WindowState.Normal;
+            if(Window != null)
+                result = Window.IsVisible ? Window.WindowState : WindowState.Minimized;
+            else if(Form != null)
+                result = (WindowState)Form.WindowState;
+
+            return result;
+        }
+        internal void EnsureHandle() {
+            if(Handle != IntPtr.Zero)
+                return;
+
+            IntPtr handle;
+            if(Window != null && EnsureWindowHandle(out handle)) {
+                Handle = handle;
+            }
         }
         protected virtual void CompleteInitializationOverride() { }
 
-        void ActivateWindowCore() {
-            if(Window != null && !Window.IsActive && Window.IsVisible && !SplashScreenHelper.ApplicationHasActiveWindow())
+        void ActivateWindowCore(bool forceActivate) {
+            if(Window != null && Window.IsVisible && (forceActivate || (!Window.IsActive && !SplashScreenHelper.ApplicationHasActiveWindow())))
                 Window.Activate();
         }
         void Initialize() {
@@ -635,6 +710,7 @@ namespace DevExpress.Mvvm.UI {
                 return;
 
             Form = System.Windows.Forms.Control.FromChildHandle(source.Handle).With(x => x.FindForm());
+            IsContainerLoaded = true;
             if(Form != null) {
                 Handle = Form.Handle;
                 ManagedThreadId = (int)(Form.Invoke(new Func<int>(() => Thread.CurrentThread.ManagedThreadId)));
@@ -661,6 +737,17 @@ namespace DevExpress.Mvvm.UI {
                 ManagedThreadId = Window.Dispatcher.Thread.ManagedThreadId;
                 CompleteInitialization();
             }
+            if(Window.IsLoaded) {
+                IsContainerLoaded = Window.IsLoaded;
+            } else {
+                Window.Loaded -= OnWindowLoaded;
+                Window.Loaded += OnWindowLoaded;
+            }
+        }
+        void OnWindowLoaded(object sender, RoutedEventArgs e) {
+            var w = (Window)sender;
+            IsContainerLoaded = true;
+            w.Loaded -= OnWindowLoaded;
         }
 
         Window FindOwner() {
@@ -686,6 +773,15 @@ namespace DevExpress.Mvvm.UI {
             handle = IntPtr.Zero;
             WindowInteropHelper helper = new WindowInteropHelper(Window);
             if(helper.Handle == IntPtr.Zero) {
+                bool waitForInitialized = !(Window.Visibility == Visibility.Visible && !Window.IsVisible && Window.IsInitialized);
+                if(waitForInitialized) {
+                    waitForInitialized = !forceCreateHandle;
+                }
+
+                if(waitForInitialized) {
+                    Window.SourceInitialized += OnWindowSourceInitialized;
+                    return false;
+                }
                 try {
                     helper.EnsureHandle();
                 } catch(InvalidOperationException) {
@@ -703,8 +799,8 @@ namespace DevExpress.Mvvm.UI {
             Initialize();
         }
         void CompleteInitialization() {
-            CompleteInitializationOverride();
             IsInitialized = true;
+            CompleteInitializationOverride();
             Initialized.Do(x => x(this, EventArgs.Empty));
         }
         void OnControlLoaded(object sender, RoutedEventArgs e) {
@@ -724,8 +820,22 @@ namespace DevExpress.Mvvm.UI {
         static extern int GetWindowLong(IntPtr hWnd, int nIndex);
         [DllImport("user32.dll")]
         static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+        [DllImport("user32.dll")]
+        static extern IntPtr GetWindow(IntPtr hwnd, int nCmd);
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowPos", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, WindowPosOptions uFlags);
+
+#if DXCORE3
+        static SplashScreenHelper() {
+            setOwnerMethod = typeof(Window).GetMethod("SetOwnerHandle", BindingFlags.Instance | BindingFlags.NonPublic);
+        }
+        static MethodInfo setOwnerMethod;
+#endif
         internal const int WS_EX_TRANSPARENT = 0x00000020;
         internal const int WS_EX_TOOLWINDOW = 0x00000080;
+        internal const int WS_EX_TOPMOST = 0x0008;
         const int GWL_EXSTYLE = (-20);
         const int GWL_HWNDPARENT = -8;
 #if DEBUGTEST || DEBUG
@@ -741,13 +851,16 @@ namespace DevExpress.Mvvm.UI {
                 InvokeAsync(container.Form, action, mode);
         }
         public static void InvokeAsync(DispatcherObject dispatcherObject, Action action, DispatcherPriority priority = DispatcherPriority.Normal, AsyncInvokeMode mode = AsyncInvokeMode.AsyncOnly) {
-            if(dispatcherObject == null || dispatcherObject.Dispatcher == null)
+            RunOnDispatcher(dispatcherObject?.Dispatcher, action, priority, mode);
+        }
+        public static void RunOnDispatcher(Dispatcher dispatcher, Action action, DispatcherPriority priority = DispatcherPriority.Normal, AsyncInvokeMode mode = AsyncInvokeMode.AsyncOnly) {
+            if(dispatcher == null)
                 return;
 
-            if(mode == AsyncInvokeMode.AllowSyncInvoke && dispatcherObject.Dispatcher.CheckAccess())
+            if(mode == AsyncInvokeMode.AllowSyncInvoke && dispatcher.CheckAccess())
                 action.Invoke();
             else
-                dispatcherObject.Dispatcher.BeginInvoke(action, priority);
+                dispatcher.BeginInvoke(action, priority);
 
         }
         public static void InvokeAsync(System.Windows.Forms.Control dispatcherObject, Action action, AsyncInvokeMode mode = AsyncInvokeMode.AsyncOnly) {
@@ -759,6 +872,16 @@ namespace DevExpress.Mvvm.UI {
             else
                 dispatcherObject.BeginInvoke(action);
 
+        }
+        public static bool IsResourcesLocked() {
+            object syncRoot = ((ICollection)(new Style()).Resources).SyncRoot;
+            bool resourcesLocked = false;
+            if(!Monitor.TryEnter(syncRoot)) {
+                resourcesLocked = true;
+            } else
+                Monitor.Exit(syncRoot);
+
+            return resourcesLocked;
         }
         public static T FindParameter<T>(object parameter, T fallbackValue = default(T)) {
             if(parameter is T)
@@ -789,7 +912,13 @@ namespace DevExpress.Mvvm.UI {
                 return;
 
             if(window.IsVisible) {
+#if DXCORE3
+                try {
+                    setOwnerMethod?.Invoke(window, new object[] { parentHandle });
+                } catch { }
+#else
                 SetWindowLong(new WindowInteropHelper(window).Handle, GWL_HWNDPARENT, parentHandle);
+#endif
             } else {
                 WindowInteropHelper windowInteropHelper = new WindowInteropHelper(window);
                 windowInteropHelper.Owner = parentHandle;
@@ -834,13 +963,95 @@ namespace DevExpress.Mvvm.UI {
             SetWindowLong(wndHelper.Handle, GWL_EXSTYLE, exStyle | styleModifier);
             return true;
         }
+        [SecuritySafeCritical]
+        internal static void PatchWindowStyleEx(Window window) {
+            if(!HasAccess(window) || window.WindowStyle != WindowStyle.None)
+                return;
+
+            var wndHelper = new WindowInteropHelper(window);
+            if(wndHelper.Handle != IntPtr.Zero) {
+                int exStyle = GetWindowLong(wndHelper.Handle, GWL_EXSTYLE);
+                SetWindowLong(wndHelper.Handle, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW);
+            }
+        }
         static int GetToolWindowStyle(Window window) {
-            return !DXSplashScreen.UseDefaultAltTabBehavior && window.WindowStyle == WindowStyle.None && window is DXSplashScreen.SplashScreenWindow
+            return !DXSplashScreen.UseDefaultAltTabBehavior && window.WindowStyle == WindowStyle.None && window is DXSplashScreen.SplashScreenWindowImpl
                 ? WS_EX_TOOLWINDOW
                 : 0;
         }
         internal static bool HasAccess(Window window) {
             return !DXSplashScreen.DisableThreadingProblemsDetection || (window != null && window.Dispatcher != null && window.Dispatcher.CheckAccess());
+        }
+
+        internal static bool IsZero(double value) {
+            return value == 0d || double.IsNaN(value);
+        }
+        internal static Rect GetDpiBasedBounds(Rect bounds, IntPtr hwnd) {
+            if(hwnd == IntPtr.Zero)
+                return bounds;
+
+            var presentationSource = HwndSource.FromHwnd(hwnd);
+            if(presentationSource != null) {
+                return new Rect(bounds.X / presentationSource.CompositionTarget.TransformToDevice.M11,
+                    bounds.Y / presentationSource.CompositionTarget.TransformToDevice.M22,
+                    bounds.Width / presentationSource.CompositionTarget.TransformToDevice.M11,
+                    bounds.Height / presentationSource.CompositionTarget.TransformToDevice.M22);
+            }
+            return bounds;
+        }
+
+        public static void SetWindowVisible(IntPtr handle, bool isVisible) {
+            if(handle == IntPtr.Zero)
+                return;
+
+            SetWindowPos(handle, IntPtr.Zero, isVisible ? WindowPosOptions.SHOWWINDOW : WindowPosOptions.HIDEWINDOW);
+        }
+        public static void InsertWindowAfter(IntPtr handle, IntPtr afterHandle) {
+            if(handle == IntPtr.Zero)
+                return;
+
+            SetWindowPos(handle, afterHandle, WindowPosOptions.NONE);
+        }
+        [SecuritySafeCritical]
+        public static IntPtr GetNextWindow(IntPtr handle) {
+            return GetWindow(handle, (int)GetWindowCommands.HWND_NEXT);
+        }
+        [SecuritySafeCritical]
+        public static IntPtr GetPrevWindow(IntPtr handle) {
+            return GetWindow(handle, (int)GetWindowCommands.HWND_PREV);
+        }
+        [SecuritySafeCritical]
+        static void SetWindowPos(IntPtr child, IntPtr inzertAfter, WindowPosOptions options) {
+            SetWindowPos(child, inzertAfter, 0, 0, 0, 0, WindowPosOptions.NOMOVE | WindowPosOptions.NOSIZE | WindowPosOptions.NOACTIVATE | options);
+        }
+        [SecuritySafeCritical]
+        public static bool IsWindowTopMost(IntPtr hwnd) {
+            int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            return (exStyle & WS_EX_TOPMOST) == WS_EX_TOPMOST;
+        }
+        [Flags]
+        enum WindowPosOptions {
+            NOSENDCHANGING = 0x0400,
+            NOOWNERZORDER = 0x0200,
+            NOCOPYBITS = 0x0100,
+            HIDEWINDOW = 0x0080,
+            SHOWWINDOW = 0x0040,
+            FRAMECHANGED = 0x0020,
+            NOACTIVATE = 0x0010,
+            NOREDRAW = 0x0008,
+            NOZORDER = 0x0004,
+            NOMOVE = 0x0002,
+            NOSIZE = 0x0001,
+            NONE = 0x00
+        }
+        enum GetWindowCommands {
+            CHILD = 5,
+            ENABLED_POPUP = 6,
+            HWND_FIRST = 0,
+            HWND_LAST = 1,
+            HWND_NEXT = 2,
+            HWND_PREV = 3,
+            OWNER = 4,
         }
     }
 }

@@ -7,10 +7,21 @@ using DevExpress.Internal.WinApi.Windows.UI.Notifications;
 namespace DevExpress.Internal.WinApi {
 #pragma warning disable 169
     [CLSCompliant(false)]
-    public struct EventRegistrationToken {
-        UInt64 value;
+    public struct EventRegistrationToken : IEquatable<EventRegistrationToken> {
+        readonly ulong value;
+        public EventRegistrationToken(ulong value) {
+            this.value = value;
+        }
+        public bool Equals(EventRegistrationToken other) {
+            return (value == other.value);
+        }
+        public override bool Equals(object obj) {
+            return (obj is EventRegistrationToken) && Equals((EventRegistrationToken)obj);
+        }
+        public override int GetHashCode() {
+            return value.GetHashCode();
+        }
     }
-
     [Guid("AF86E2E0-B12D-4c6a-9C5A-D7AA65101E90")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IInspectable {
@@ -45,11 +56,11 @@ namespace DevExpress.Internal.WinApi {
         public static void CheckHRESULT(int hResult) {
             if(hResult < 0) throw new Exception("Failed with HRESULT: " + hResult.ToString("X"));
         }
-        public static void Safe(Action action, Action<System.Runtime.InteropServices.COMException> onError = null) {
+        public static void Safe(Action action, Action<COMException> onError = null) {
             try {
                 action();
             }
-            catch(System.Runtime.InteropServices.COMException ce) {
+            catch(COMException ce) {
                 if(onError != null) onError(ce);
             }
         }
@@ -82,7 +93,6 @@ namespace DevExpress.Internal.WinApi {
             #endregion SecurityCritical
         }
     }
-
     [CLSCompliant(false)]
     public static class ErrorHelper {
         public static void VerifySucceeded(UInt32 hResult) {

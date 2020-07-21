@@ -89,7 +89,9 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Manager.Register("R", new Module("1", () => vm = new VMTest() { Value = "Test" }));
             Manager.Inject("R", "1");
             ContentControl c = new ContentControl();
+            c.BeginInit();
             UIRegion.SetRegion(c, "R");
+            c.EndInit();
 
             Manager.Save(out logicalState, out visualState);
             Manager.Restore(logicalState, visualState);
@@ -130,6 +132,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         public void DisableEnable() {
             ContentControl c1 = new ContentControl();
             ContentControl c2 = new ContentControl();
+            c1.BeginInit();
+            c1.EndInit();
+            c2.BeginInit();
+            c2.EndInit();
             UIRegion.SetRegion(c1, "R1");
             UIRegion.SetRegion(c2, "R2");
             Manager.Register("R1", new Module("1", () => new VMTest()));

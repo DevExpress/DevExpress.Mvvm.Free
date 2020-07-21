@@ -17,7 +17,7 @@ namespace DevExpress.Data {
                 InstallShortcut(exePath, shortcutPath, applicationId, iconPath);
         }
         public static void TryCreateShortcut(string applicationId, string name, string iconPath, Type activatorType) {
-            TryCreateShortcut(null, applicationId, iconPath, activatorType);
+            TryCreateShortcut(null, applicationId, name, iconPath, activatorType);
         }
         public static void TryCreateShortcut(string exePath, string applicationId, string name, string iconPath, Type activatorType) {
             exePath = PatchExePath(exePath);
@@ -99,7 +99,7 @@ namespace DevExpress.Data {
             return exePath;
         }
         static string GetRegistryKeyName(Type activatorType) {
-            return string.Format("SOFTWARE\\Classes\\CLSID\\{{{0}}}\\LocalServer32", activatorType.GUID);
+            return string.Format("SOFTWARE\\Classes\\CLSID\\{{{0}}}\\LocalServer32", activatorType.GUID.ToString());
         }
         public static void UnregisterComServer(Type activatorType) {
             string keyName = GetRegistryKeyName(activatorType);

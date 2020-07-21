@@ -1,5 +1,6 @@
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.Xpf;
 using System;
 using System.Linq;
 using System.Reflection;

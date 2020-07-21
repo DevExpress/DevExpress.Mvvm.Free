@@ -501,6 +501,12 @@ namespace DevExpress.Mvvm.UI.Tests {
             toast = (NotificationService.MvvmCustomNotification)service.CreateCustomNotification(null);
             Assert.AreEqual(1, toast.duration);
         }
+        [Test, Description("T892461")]
+        public void CreateApplicationWindowNotification() {
+            var service = new NotificationService();
+            service.CustomNotificationScreen = NotificationScreen.ApplicationWindow;
+            service.CreateCustomNotification(null);
+        }
 
     }
 }

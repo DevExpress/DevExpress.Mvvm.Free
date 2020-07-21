@@ -1,3 +1,4 @@
+using DevExpress.Mvvm.Xpf;
 using NUnit.Framework;
 using System;
 

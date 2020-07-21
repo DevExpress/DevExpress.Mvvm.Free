@@ -350,7 +350,6 @@ namespace DevExpress.Mvvm {
 
             const string _viewInjectionManager_PreInjectRequiresKey = "The PreInject procedure requires key to be not null and serializable.";
             const string _viewInjectionManager_InjectRequiresPreInject = "This Injection procedure requires the PreInjection method to be called before.";
-            const string _viewInjectionManager_KeyShouldBeSerializable = "A key should be serializable.";
             const string _viewInjectionManager_CannotInjectNullViewModel = "Cannot inject a view model, because it is null.";
             const string _viewInjectionManager_CannotResolveViewModel = "ViewModelLocator cannot resolve a view model (the view model name is {0}).";
             const string _viewInjectionService_ViewModelAlreadyExists = "A view model with the same key already exists.";

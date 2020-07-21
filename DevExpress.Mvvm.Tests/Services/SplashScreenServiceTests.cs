@@ -40,6 +40,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Content = WindowContent = new Button();
             SetCurrentValue(ShowInTaskbarProperty, false);
         }
+
         void ISplashScreen.Progress(double value) {
             Progress = value;
         }
@@ -331,13 +332,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             CloseDXSplashScreen();
             Assert.IsNull(DXSplashScreen.SplashContainer.OldInfo.InternalThread);
             Assert.IsNull(DXSplashScreen.SplashContainer.OldInfo.SplashScreen);
-        }
-        [Test, Order(12)]
-        public void TestQ338517_2() {
-            DXSplashScreen.Show<SplashScreenTestWindow>();
-            Assert.Throws<InvalidOperationException>(() => {
-                DXSplashScreen.CallSplashScreenMethod<UserControl>(x => x.Tag = "Test");
-            });
         }
         [Test, Order(13)]
         public void SplashScreenOwner_Test00() {

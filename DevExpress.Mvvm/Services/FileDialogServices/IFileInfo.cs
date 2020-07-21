@@ -2,20 +2,7 @@ using System;
 using System.IO;
 
 namespace DevExpress.Mvvm {
-    public interface IFolderInfo {
-        string Path { get; }
-
-        string DirectoryName { get; }
-        string Name { get; }
-        bool Exists { get; }
-        FileAttributes Attributes { get; set; }
-
-        void MoveTo(string destinationDirectoryName);
-        void Delete();
-    }
-    public interface IFileInfo {
-        long Length { get; }
-
+    public interface IFileSystemInfo {
         string DirectoryName { get; }
         string Name { get; }
         bool Exists { get; }
@@ -23,6 +10,12 @@ namespace DevExpress.Mvvm {
 
         void MoveTo(string destinationFileName);
         void Delete();
+    }
+    public interface IFolderInfo : IFileSystemInfo {
+        string Path { get; }
+    }
+    public interface IFileInfo : IFileSystemInfo {
+        long Length { get; }
 
         StreamWriter AppendText();
         FileInfo CopyTo(string destinationFileName, bool overwrite);
@@ -33,6 +26,7 @@ namespace DevExpress.Mvvm {
         StreamReader OpenText();
         FileStream OpenWrite();
     }
+
     public static class FileInfoExtensions {
         public static FileStream Open(this IFileInfo fileInfo, FileMode mode) {
             Verify(fileInfo);
@@ -42,9 +36,9 @@ namespace DevExpress.Mvvm {
             Verify(fileInfo);
             return fileInfo.Open(mode, access, FileShare.None);
         }
-        public static FileInfo CopyTo(this IFileInfo fileInfo, string destFileName) {
+        public static FileInfo CopyTo(this IFileInfo fileInfo, string destinationFileName) {
             Verify(fileInfo);
-            return fileInfo.CopyTo(destFileName, false);
+            return fileInfo.CopyTo(destinationFileName, false);
         }
         public static string GetFullName(this IFileInfo fileInfo) {
             Verify(fileInfo);

@@ -6,6 +6,7 @@ using DevExpress.Mvvm.UI.Native;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows;
@@ -49,9 +50,12 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         public object SelectedViewModel { get { return (object)GetValue(SelectedViewModelProperty); } protected set { SetValue(SelectedViewModelPropertyKey, value); } }
         public bool SetParentViewModel { get { return (bool)GetValue(SetParentViewModelProperty); } set { SetValue(SetParentViewModelProperty, value); } }
         public object ParentViewModel { get { return (object)GetValue(ParentViewModelProperty); } set { SetValue(ParentViewModelProperty, value); } }
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public bool WaitForInitialization { get; set; }
 
         public UIRegionBase() {
             viewModels = new ObservableCollection<object>();
+            WaitForInitialization = true;
         }
         protected DOTargetWrapper Target { get; private set; }
         protected internal IModuleManagerImplementation ActualModuleManager { get { return ModuleManager ?? DevExpress.Mvvm.ModuleInjection.ModuleManager.DefaultImplementation; } }
@@ -95,11 +99,14 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             base.OnAttached();
             Target = new DOTargetWrapper(AssociatedObject);
             if(Target.IsNull) ModuleInjectionException.CannotAttach();
-            OnInitialized();
+            if(Target.IsInitialized || !WaitForInitialization)
+                OnInitialized();
+            else Target.Initialized += OnTargetInitialized;
             Target.DataContextChanged += OnTargetDataContextChanged;
         }
         protected override void OnDetaching() {
             Target.DataContextChanged -= OnTargetDataContextChanged;
+            Target.Initialized -= OnTargetInitialized;
             OnUninitializing();
             Target = null;
             base.OnDetaching();
@@ -115,6 +122,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         }
         void OnTargetDataContextChanged(object sender, DependencyPropertyChangedEventArgs e) {
             InitViewModels();
+        }
+        void OnTargetInitialized(object sender, EventArgs e) {
+            Target.Initialized -= OnTargetInitialized;
+            OnInitialized();
         }
 
         #region IUIRegion

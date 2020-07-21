@@ -39,6 +39,10 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
             }
             return res;
         }
+        public static object GetEventTriggerSource(EventTrigger trigger, DependencyObject associatedObject) {
+            object source;
+            return trigger.ResolveSource(out source, associatedObject, null) ? source : null;
+        }
     }
     public enum InteractionBehaviorInDesignMode { Default, AsWellAsNotInDesignMode }
 

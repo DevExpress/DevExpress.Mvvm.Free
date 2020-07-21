@@ -304,7 +304,7 @@ namespace DevExpress.Mvvm.UI {
             if(windowType != null)
                 res = (Window)Activator.CreateInstance(windowType);
             else if(windowStyle != null)
-                res = new DXSplashScreen.SplashScreenWindow();
+                res = new DXSplashScreen.SplashScreenWindowImpl();
             else
                 res = DXSplashScreen.DefaultSplashScreenWindowCreator(parameter);
 

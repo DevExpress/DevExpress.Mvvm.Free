@@ -27,8 +27,10 @@ namespace DevExpress.Mvvm {
             }
         }
         public void Raise(object sender, TEventArgs e) {
+            var wHs = weakHandlers.ToList();
+            var toRemove = wHs.Where(x => !Invoke(x, sender, e)).ToList();
             lock(weakHandlers) {
-                weakHandlers.RemoveAll(x => !Invoke(x, sender, e));
+                toRemove.ForEach(x => weakHandlers.Remove(x));
             }
         }
 

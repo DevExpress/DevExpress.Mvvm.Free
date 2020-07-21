@@ -279,11 +279,12 @@ namespace DevExpress.Mvvm.UI {
         public ObjectToObjectConverter() {
             Map = new ObservableCollection<MapItem>();
         }
-        internal static object Coerce(object value, Type targetType, bool ignoreImplicitXamlConversions = false) {
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static object Coerce(object value, Type targetType, bool ignoreImplicitXamlConversions = false, bool convertIntToEnum = false) {
             if(value == null || targetType == typeof(object) || value.GetType() == targetType) return value;
             if(targetType.IsAssignableFrom(value.GetType())) return value;
             var nullableType = Nullable.GetUnderlyingType(targetType);
-            var coerced = CoerceNonNullable(value, nullableType ?? targetType, ignoreImplicitXamlConversions);
+            var coerced = CoerceNonNullable(value, nullableType ?? targetType, ignoreImplicitXamlConversions, convertIntToEnum);
             if(nullableType != null) {
                 return Activator.CreateInstance(targetType, coerced);
             }
@@ -298,14 +299,22 @@ namespace DevExpress.Mvvm.UI {
                 return true;
             return false;
         }
-        internal static object CoerceNonNullable(object value, Type targetType, bool ignoreImplicitXamlConversions) {
+        internal static object CoerceNonNullable(object value, Type targetType, bool ignoreImplicitXamlConversions, bool convertIntToEnum) {
             if (!ignoreImplicitXamlConversions && IsImplicitXamlConvertion(value.GetType(), targetType))
                 return value;
             if (targetType == typeof(string)) {
                 return value.ToString();
             }
-            if (targetType.IsEnum && value is string) {
-                return Enum.Parse(targetType, (string)value, false);
+            if (targetType.IsEnum) {
+                if(value is string)
+                    return Enum.Parse(targetType, (string)value, false);
+                if(convertIntToEnum) {
+                    try {
+                        var res = Enum.ToObject(targetType, value);
+                        if(Enum.IsDefined(targetType, res))
+                            return res;
+                    } catch { }
+                }
             }
             if (targetType == typeof(Color)) {
                 var c = new ColorConverter();

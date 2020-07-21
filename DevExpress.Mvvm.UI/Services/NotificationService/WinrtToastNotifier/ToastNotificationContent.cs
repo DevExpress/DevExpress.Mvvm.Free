@@ -60,7 +60,6 @@ namespace DevExpress.Internal {
             IXmlNode srcAttribute;
             int res = imageNode.Attributes.GetNamedItem("src", out srcAttribute);
             ComFunctions.CheckHRESULT(res);
-
             SetNodeValueString(imagePath, xmldoc, srcAttribute);
         }
         public void SetAppLogoImageCrop(ImageCropType appLogoImageCrop) {
@@ -152,7 +151,7 @@ namespace DevExpress.Internal {
             string tempPath = Path.GetTempPath();
             string result = string.Empty;
             do {
-                result = string.Format("{0}{1}.png", tempPath, Guid.NewGuid());
+                result = tempPath + Guid.NewGuid().ToString() + ".png";
             }
             while(File.Exists(result));
             return result;
@@ -176,8 +175,11 @@ namespace DevExpress.Internal {
                 return;
             if(!IsSupportedExtension(info.Extension))
                 throw new ArgumentException("Unsupported file type");
-            if(info.Length > 1024 * 200)
-                throw new ArgumentException("File must have size less or equal to 200 KB");
+            if(info.Length > 1024 * 200) {
+                if(!Utils.WindowsVersionProvider.IsWin10FallCreatorsUpdateOrHigher) {
+                    throw new ArgumentException("File must have size less or equal to 200 KB");
+                }
+            }
         }
         static bool IsLoopingSound(PredefinedSound sound) {
             return sound >= PredefinedSound.Notification_Looping_Alarm;
@@ -254,8 +256,9 @@ namespace DevExpress.Internal {
         static void UpdateText(IXmlDocument xmldoc, IPredefinedToastNotificationInfo info) {
             IXmlNodeList nodes = GetNodes(xmldoc, "text");
             Debug.Assert(nodes.Length >= info.Lines.Length);
-            for(uint i = 0; i < info.Lines.Length; i++)
-                SetNodeValueString(info.Lines[i], xmldoc, GetNode(nodes, i));
+            for(uint i = 0; i < info.Lines.Length; i++) {
+                SetNodeValueString(info.Lines[i] ?? string.Empty, xmldoc, GetNode(nodes, i));
+            }
         }
         static void UpdateAttributionText(IXmlDocument xmldoc, IPredefinedToastNotificationInfo info) {
             IPredefinedToastNotificationInfoGeneric infoGeneric = info as IPredefinedToastNotificationInfoGeneric;

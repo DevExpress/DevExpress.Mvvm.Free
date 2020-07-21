@@ -26,8 +26,10 @@ namespace DevExpress.Mvvm.Native {
             : base(target, action) {
         }
         protected override void Execute(object parameter) {
-            if(ActionMethod != null && ActionTargetReference.IsAlive) {
-                ActionMethod.Invoke(ActionTargetReference.Target, new object[] { (T)parameter });
+            MethodInfo method = ActionMethod;
+            object target = ActionTargetReference.Target;
+            if(method != null && target != null) {
+                method.Invoke(target, new object[] { (T)parameter });
             }
         }
     }
@@ -36,8 +38,10 @@ namespace DevExpress.Mvvm.Native {
             : base(target, action) {
         }
         protected override void Execute(object parameter) {
-            if(ActionMethod != null && ActionTargetReference.IsAlive) {
-                ActionMethod.Invoke(ActionTargetReference.Target, null);
+            MethodInfo method = ActionMethod;
+            object target = ActionTargetReference.Target;
+            if(method != null && target != null) {
+                method.Invoke(target, null);
             }
         }
     }

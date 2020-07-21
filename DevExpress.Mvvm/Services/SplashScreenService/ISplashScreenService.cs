@@ -1,4 +1,5 @@
-using System.Threading.Tasks;
+using System.ComponentModel;
+
 namespace DevExpress.Mvvm {
     public interface ISplashScreenService {
         void ShowSplashScreen(string documentType);

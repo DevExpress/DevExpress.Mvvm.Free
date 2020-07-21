@@ -80,6 +80,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.IsFalse(behavior.UseNumericEnumValue);
             Assert.IsTrue(behavior.SplitNames);
             Assert.IsNull(behavior.NameConverter);
+            Assert.IsNull(behavior.ImageSize);
             Assert.AreEqual(EnumMembersSortMode.Default, behavior.SortMode);
         }
         [Test]
@@ -393,6 +394,32 @@ namespace DevExpress.Mvvm.UI.Tests {
                 "ItemsSource dependency property required");
 
         }
+        void ImageSizeTestCore<T>() where T: Image {
+            var listBox = new ListBox();
+            var listBoxBehavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum1), AllowImages = false };
+            Interaction.GetBehaviors(listBox).Add(listBoxBehavior);
+            Window.Content = listBox;
+            Window.Show();
+            Window.UpdateLayout();
+
+            Action<double, double, Stretch> test = (width, height, stretch) => {
+                var imageObject = LayoutTreeHelper.GetVisualChildren(listBox).SingleOrDefault(x => x is T);
+                Assert.IsNotNull(imageObject);
+                var image = (T)imageObject;
+                Assert.AreEqual(width, image.Width);
+                Assert.AreEqual(height, image.Height);
+                Assert.AreEqual(stretch, image.Stretch);
+            };
+            test(double.NaN, double.NaN, Stretch.None);
+
+            listBoxBehavior.AllowImages = true;
+            Window.UpdateLayout();
+            test(double.NaN, double.NaN, Stretch.None);
+
+            listBoxBehavior.ImageSize = new Size(18, 21);
+            Window.UpdateLayout();
+            test(18, 21, Stretch.Uniform);
+        }
         [Test]
         public void SvgImageExceptionTest() {
             ListBox listBox = new ListBox();
@@ -400,6 +427,10 @@ namespace DevExpress.Mvvm.UI.Tests {
             Interaction.GetBehaviors(listBox).Add(listBoxBehavior);
             Assert.AreEqual(3, listBox.Items.Count);
             Assert.Throws(typeof(ArgumentException), () => { var svgImageSource = ((EnumMemberInfo)listBox.Items.GetItemAt(1)).Image; });
+        }
+        [Test]
+        public void ImageSizeTest() {
+            ImageSizeTestCore<Image>();
         }
     }
 }

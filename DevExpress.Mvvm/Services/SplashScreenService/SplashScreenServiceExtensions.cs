@@ -1,5 +1,5 @@
 using System;
-using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace DevExpress.Mvvm {
     public static class SplashScreenServiceExtensions {

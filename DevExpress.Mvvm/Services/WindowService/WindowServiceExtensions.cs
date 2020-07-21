@@ -1,7 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.ComponentModel;
+using System.Windows;
 
 namespace DevExpress.Mvvm {
     public static class WindowServiceExtensions {
@@ -17,9 +16,17 @@ namespace DevExpress.Mvvm {
             VerifyService(service);
             service.Show(documentType, null, parameter, parentViewModel);
         }
-        static void VerifyService(IWindowService service) {
+        internal static void VerifyService(IWindowService service) {
             if(service == null)
                 throw new ArgumentNullException("service");
+        }
+    }
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static class WindowServicePlatformExtensions {
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static void SetWindowState(this IWindowService service, WindowState state) {
+            WindowServiceExtensions.VerifyService(service);
+            service.WindowState = DXWindowStateConverter.ToDXWindowState(state);
         }
     }
 }

@@ -84,6 +84,7 @@ namespace DevExpress.Xpf.DXBinding {
                 this.serviceProvider = null;
                 this.targetProvider = null;
                 this.xamlTypeResolver = null;
+                this.xamlSchemaContextProvider = null;
             }
         }
         protected abstract object ProvideValueCore();
@@ -97,33 +98,43 @@ namespace DevExpress.Xpf.DXBinding {
         protected Binding CreateBinding(Operand operand, BindingMode mode) {
 
             var path = operand != null && !string.IsNullOrEmpty(operand.Path) ? operand.Path : ".";
-            Binding res = new Binding(path) { Path = new PropertyPath(path), Mode = mode };
+            Binding res = new Binding();
+            res.Mode = mode;
+            try {
+                res.Path = new PropertyPath(path);
+            }  catch (Exception e) {
+                ErrorHandler.Report(e.Message, false);
+            }
             if (operand == null) return res;
-            switch (operand.Source) {
-                case Operand.RelativeSource.Context:
-                    break;
-                case Operand.RelativeSource.Ancestor:
-                    res.RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor) {
-                        AncestorType = operand.AncestorType,
-                        AncestorLevel = operand.AncestorLevel,
-                    };
-                    break;
-                case Operand.RelativeSource.Self:
-                    res.RelativeSource = new RelativeSource(RelativeSourceMode.Self);
-                    break;
-                case Operand.RelativeSource.Parent:
-                    res.RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent);
-                    break;
-                case Operand.RelativeSource.Element:
-                    res.ElementName = operand.ElementName;
-                    break;
-                case Operand.RelativeSource.Resource:
-                    res.Source = GetStaticResource(operand.ResourceName);
-                    break;
-                case Operand.RelativeSource.Reference:
-                    res.Source = new Reference(operand.ReferenceName).ProvideValue(ServiceProvider);
-                    break;
-                default: throw new InvalidOperationException();
+            try {
+                switch(operand.Source) {
+                    case Operand.RelativeSource.Context:
+                        break;
+                    case Operand.RelativeSource.Ancestor:
+                        res.RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor) {
+                            AncestorType = operand.AncestorType,
+                            AncestorLevel = operand.AncestorLevel,
+                        };
+                        break;
+                    case Operand.RelativeSource.Self:
+                        res.RelativeSource = new RelativeSource(RelativeSourceMode.Self);
+                        break;
+                    case Operand.RelativeSource.Parent:
+                        res.RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent);
+                        break;
+                    case Operand.RelativeSource.Element:
+                        res.ElementName = operand.ElementName;
+                        break;
+                    case Operand.RelativeSource.Resource:
+                        res.Source = GetStaticResource(operand.ResourceName);
+                        break;
+                    case Operand.RelativeSource.Reference:
+                        res.Source = new Reference(operand.ReferenceName).ProvideValue(ServiceProvider);
+                        break;
+                    default: throw new InvalidOperationException();
+                }
+            } catch (Exception e) {
+                ErrorHandler.Report(e.Message, false);
             }
             return res;
         }
@@ -285,6 +296,7 @@ namespace DevExpress.Xpf.DXBinding {
             object[] IMultiValueConverter.ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
                 value = CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
                 object[] res = ConvertBack(value, targetTypes);
+                res = CoerceAfterConvertBack(res, targetTypes, parameter, culture);
                 for(int i = 0; i < res.Count(); i++)
                     res[i] = ConvertToTargetType(res[i], targetTypes[i]);
                 return res.ToArray();
@@ -302,6 +314,9 @@ namespace DevExpress.Xpf.DXBinding {
                 return value;
             }
             protected virtual object CoerceBeforeConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
+                return value;
+            }
+            protected virtual object[] CoerceAfterConvertBack(object[] value, Type[] targetTypes, object parameter, CultureInfo culture) {
                 return value;
             }
 
@@ -567,6 +582,11 @@ namespace DevExpress.Xpf.DXBinding {
                     return externalConverter.ConvertBack(value, t, parameter, culture);
                 }
                 return base.CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
+            }
+            protected override object[] CoerceAfterConvertBack(object[] value, Type[] targetTypes, object parameter, CultureInfo culture) {
+                for(int i = 0; i < value.Count(); i++)
+                    value[i] = ObjectToObjectConverter.Coerce(value[i], targetTypes[i], true);
+                return base.CoerceAfterConvertBack(value, targetTypes, parameter, culture);
             }
             protected override bool CanConvert(object[] values) {
                 return allowUnsetValue || !ValuesContainUnsetValue(values);

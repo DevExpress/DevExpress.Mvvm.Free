@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DevExpress.Data.Controls.WinrtToastNotifier.WinApi;
 using DevExpress.Internal.WinApi;
 using DevExpress.Internal.WinApi.Windows.UI.Notifications;
 
@@ -36,7 +35,7 @@ namespace DevExpress.Internal {
             }
         }
         public double ImageSize {
-            get { return WindowsVersion.IsWin10AnniversaryOrNewer ? 48 : 90; }
+            get { return DevExpress.Utils.WindowsVersionProvider.IsWin10AnniversaryUpdateOrHigher ? 48 : 90; }
         }
         public virtual IPredefinedToastNotificationContentFactory CreateContentFactory() {
             return new WinRTToastNotificationContentFactory();

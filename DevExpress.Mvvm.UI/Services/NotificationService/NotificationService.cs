@@ -254,7 +254,7 @@ namespace DevExpress.Mvvm.UI {
             get { return DevExpress.Internal.WinApi.ToastNotificationManager.AreToastNotificationsSupported; }
         }
         public INotification CreateCustomNotification(object viewModel) {
-            Window window = CustomNotificationScreen == UI.NotificationScreen.ApplicationWindow ?
+            Window window = AssociatedObject != null && CustomNotificationScreen == NotificationScreen.ApplicationWindow ?
                 Window.GetWindow(AssociatedObject) : null;
             return new MvvmCustomNotification(viewModel, CustomNotifier, window,
                 (int)Math.Max(0, Math.Min(int.MaxValue, CustomNotificationDuration.TotalMilliseconds)));

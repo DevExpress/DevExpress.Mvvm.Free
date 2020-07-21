@@ -1,15 +1,16 @@
+
 namespace DevExpress.Internal {
  internal static class AssemblyInfo {
-    public const string AssemblyCopyright = "Copyright (c) 2000-2019 Developer Express Inc.";
+    public const string AssemblyCopyright = "Copyright © 2000-2020 Developer Express Inc.";
     public const string AssemblyCompany = "Developer Express Inc.";
 
-    public const int VersionId = 192;
-    public const int VersionIdMinor = 19201;
-    public const string VersionShort = "19.2";
+    public const int VersionId = 202;
+    public const int VersionIdMinor = 20201;
+    public const string VersionShort = "20.2";
     public const string Version = VersionShort + ".0.0";
     public const string FileVersion = Version;
-    public const string MarketingVersion = "v2019 vol 2";
-    public const string VirtDirSuffix = "_v19_2";
+    public const string MarketingVersion = "v2020 vol 2";
+    public const string VirtDirSuffix = "_v20_2";
 
     public const string PublicKeyToken = "79868b8147b5eae4";
     public const string PublicKey = "0024000004800000940000000602000000240000525341310004000001000100dd3415ad127e2479d518586804419e99231acd687f889e897fb021bec3d90d53781811bb9d569e032d00362413298930c553dfd43a24e699c6a3d4922824f3c987fc01524b94059de1ccfbef1ff6aedc86055d56c4c3c92c550c84a1410b0c0e891e8f2f0fa193e1532f25727ae634055808129b901bdc24cb517e95fb8815b5";
@@ -28,6 +29,7 @@ namespace DevExpress.Internal {
     public const string SRAssemblyAgScheduler = "DevExpress.Xpf.Scheduler" + VSuffix;
     public const string SRAssemblyAssemblyLoader = "DevExpress.Xpf.AssemblyLoader" + VSuffix;
     public const string SRAssemblyXpfSpellChecker = "DevExpress.Xpf.SpellChecker" + VSuffix;
+    public const string SRAssemblyXpfOffice = "DevExpress.Xpf.Office" + VSuffix;
     public const string SRAssemblyXpfRichEdit = "DevExpress.Xpf.RichEdit" + VSuffix;
     public const string SRAssemblyXpfSpreadsheet = "DevExpress.Xpf.Spreadsheet" + VSuffix;
     public const string SRAssemblyXpfScheduler = "DevExpress.Xpf.Scheduler" + VSuffix;
@@ -77,6 +79,7 @@ namespace DevExpress.Internal {
     public const string SRAssemblyXpfLayoutCore = "DevExpress.Xpf.Layout" + VSuffix + ".Core";
     public const string SRAssemblyDXCharts = "DevExpress.Xpf.Charts" + VSuffix;
     public const string SRAssemblyChartDesigner = "DevExpress.Charts.Designer" + VSuffix;
+    public const string SRAssemblyChartDesignerFull = "DevExpress.Charts.Designer" + VSuffix + FullAssemblyVersionExtension;
 
     public const string SRAssemblyDXGauges = "DevExpress.Xpf.Gauges" + VSuffix;
     public const string SRAssemblyDXMap = "DevExpress.Xpf.Map" + VSuffix;
@@ -84,7 +87,11 @@ namespace DevExpress.Internal {
     public const string SRAssemblyDXTreeMap = "DevExpress.Xpf.TreeMap" + VSuffix;
 
     public const string SRAssemblyData = "DevExpress.Data" + VSuffix;
-    public const string SRAssemblyDemoData = "DevExpress.DemoData" + VSuffix;
+ public const string SRAssemblyDataTests = "DevExpress.Data.Tests";
+ public const string SRAssemblyDataDesktop = "DevExpress.Data.Desktop" + VSuffix;
+    public const string SRAssemblyDataDesktopFull = "DevExpress.Data.Desktop" + VSuffix + FullAssemblyVersionExtension;
+    public const string SRAssemblyDataDesktopTests = "DevExpress.Data.Desktop.Tests";
+ public const string SRAssemblyDemoData = "DevExpress.DemoData" + VSuffix;
     public const string SRAssemblyPrintingCore = "DevExpress.Printing" + VSuffix + ".Core";
     public const string SRAssemblyRichEditCore = "DevExpress.RichEdit" + VSuffix + ".Core";
     public const string SRAssemblyOfficeCore = "DevExpress.Office" + VSuffix + ".Core";
@@ -97,6 +104,7 @@ namespace DevExpress.Internal {
     public const string SRAssemblyRichEditLayoutEngineTests = SRAssemblyRichEditLayoutEngine + TestsSuffix;
 
     public const string SRDocumentationLink = "http://documentation.devexpress.com/";
+    public const string SRNewDocumentationLink = "http://docs.devexpress.com/";
 #if DXCORE3
     public const string InstallationRegistryKeyBase = "SOFTWARE\\DevExpress\\.NET Core Desktop Libraries\\";
 #else
@@ -279,6 +287,7 @@ namespace DevExpress.Internal {
         SRAssemblyReportServerWeb = "DevExpress.ReportServer" + VSuffix + ".Web",
         SRAssemblyReportServerDataAccess = "DevExpress.ReportServer" + VSuffix + ".DataAccess",
         SRAssemblyReportsCodeCompletion = SRAssemblyReports + ".CodeCompletion",
+        SRAssemblyReportsCodeCompletionFull = SRAssemblyReportsCodeCompletion + FullAssemblyVersionExtension,
         SRAssemblyReportsCodeCompletionTests = SRAssemblyReportsCodeCompletion + ".Tests",
 
         SRAssemblyRichEdit = "DevExpress.XtraRichEdit" + VSuffix,
@@ -298,6 +307,7 @@ namespace DevExpress.Internal {
         SRAssemblySchedulerExtensions = "DevExpress.XtraScheduler" + VSuffix + ".Extensions",
         SRAssemblySchedulerSynchronizationGoogle = "DevExpress.XtraScheduler" + VSuffix + ".GoogleCalendar",
         SRAssemblySchedulerReporting = "DevExpress.XtraScheduler" + VSuffix + ".Reporting",
+        SRAssemblySchedulerCoreReporting = "DevExpress.XtraScheduler" + VSuffix + ".Core.Reporting",
         SRAssemblySchedulerReportingTests = "DevExpress.XtraScheduler.Reporting.Tests",
         SRAssemblySchedulerReportingExtensions = "DevExpress.XtraScheduler" + VSuffix + ".Reporting.Extensions",
         SRAssemblyChartsCore = "DevExpress.Charts" + VSuffix + ".Core",
@@ -305,6 +315,7 @@ namespace DevExpress.Internal {
         SRAssemblyCharts = "DevExpress.XtraCharts" + VSuffix,
         SRAssemblyChartsExtensions = "DevExpress.XtraCharts" + VSuffix + ".Extensions",
         SRAssemblyChartsWizard = "DevExpress.XtraCharts" + VSuffix + ".Wizard" + FullAssemblyVersionExtension,
+        SRAssemblyChartsWizardShort = "DevExpress.XtraCharts" + VSuffix + ".Wizard",
         SRAssemblyChartsDesign = "DevExpress.XtraCharts" + VSuffixDesign,
         SRAssemblyChartsWebDesign = "DevExpress.XtraCharts" + VSuffix + ".Web.Design" + FullAssemblyVersionExtension,
         SRAssemblyChartsUI = "DevExpress.XtraCharts" + VSuffix + ".UI",
@@ -365,6 +376,7 @@ namespace DevExpress.Internal {
         SRAssemblyUtilsUIFull = SRAssemblyUtilsUI + FullAssemblyVersionExtension,
         SRAssemblyDashboardCore = "DevExpress.Dashboard" + VSuffix + ".Core",
         SRAssemblyDashboardWin = "DevExpress.Dashboard" + VSuffix + ".Win",
+        SRAssemblyDashboardWinFull = SRAssemblyDashboardWin + FullAssemblyVersionExtension,
         SRAssemblyDashboardXpf = "DevExpress.Xpf.Dashboard" + VSuffix,
         SRAssemblyDashboardWpf = "DevExpress.Dashboard" + VSuffix + ".Wpf",
         SRAssemblyDashboardWeb = "DevExpress.Dashboard" + VSuffix + ".Web",
@@ -377,6 +389,7 @@ namespace DevExpress.Internal {
         SRAssemblyDashboardAspNetCore3Tests = "DevExpress.Dashboard" + VSuffix + ".AspNetCore3.Tests",
         SRAssemblyDashboardWpfDesign = "DevExpress.Dashboard" + VSuffix + ".Wpf.Design",
         SRAssemblyDashboardWinDesign = "DevExpress.Dashboard" + VSuffix + ".Win.Design",
+        SRAssemblyDashboardWinDesignFull = SRAssemblyDashboardWinDesign + FullAssemblyVersionExtension,
         SRAssemblyDashboardWebDesign = "DevExpress.Dashboard" + VSuffix + ".Web.Design",
         SRAssemblyDashboardWebDesignFull = SRAssemblyDashboardWebDesign + FullAssemblyVersionExtension,
         SRAssemblyMapCore = "DevExpress.Map" + VSuffix + ".Core",
@@ -388,6 +401,8 @@ namespace DevExpress.Internal {
         SRAssemblyTreeMapCore = "DevExpress.TreeMap" + VSuffix + ".Core",
         SRAssemblyTreeMap = "DevExpress.XtraTreeMap" + VSuffix,
         SRAssemblyTreeMapDesign = "DevExpress.XtraTreeMap" + VSuffixDesign + FullAssemblyVersionExtension,
+        SRAssemblyTreeMapUI = "DevExpress.XtraTreeMap" + VSuffix + ".UI",
+        SRAssemblyDataVisualizationCore = "DevExpress.DataVisualization" + VSuffix + ".Core",
         SRAssemblyDataAccess = "DevExpress.DataAccess" + VSuffix,
         SRAssemblyDataAccessFull = SRAssemblyDataAccess + FullAssemblyVersionExtension,
         SRAssemblyDataAccessUI = "DevExpress.DataAccess" + VSuffix + ".UI",
@@ -397,6 +412,8 @@ namespace DevExpress.Internal {
         SRAssemblyCodeParser = "DevExpress.CodeParser" + VSuffix,
         SRAssemblyPdfCore = "DevExpress.Pdf" + VSuffix + ".Core",
         SRAssemblyPdfDrawing = "DevExpress.Pdf" + VSuffix + ".Drawing",
+        SRAssemblyPdfSkiaRenderer = "DevExpress.Pdf" + VSuffix + ".SkiaRenderer",
+        SRAssemblyPdfSkiaRendererFull = SRAssemblyPdfSkiaRenderer + FullAssemblyVersionExtension,
         SRAssemblyXtraPdfViewer = "DevExpress.XtraPdfViewer" + VSuffix,
         SRAssemblyXtraPdfViewerDesign = "DevExpress.XtraPdfViewer" + VSuffix + ".Design",
         SRAssemblyXtraPdfViewerDesignFull = SRAssemblyXtraPdfViewerDesign + FullAssemblyVersionExtension,

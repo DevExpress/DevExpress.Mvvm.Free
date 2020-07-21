@@ -364,6 +364,23 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(Visibility.Visible, converter.Convert(null, typeof(Visibility), null, null));
             Assert.AreEqual(Visibility.Visible, converter.Convert(10, typeof(Visibility), null, null));
             Assert.AreEqual(Visibility.Collapsed, converter.Convert(0, typeof(Visibility), null, null));
+
+            Assert.AreEqual(Visibility.Visible, ObjectToObjectConverter.Coerce(0, typeof(Visibility), false, true));
+            Assert.AreEqual(Visibility.Collapsed, ObjectToObjectConverter.Coerce(2, typeof(Visibility), false, true));
+            Assert.AreEqual(3, ObjectToObjectConverter.Coerce(3, typeof(Visibility), false, true));
+            Assert.AreEqual(Visibility.Visible, ObjectToObjectConverter.Coerce(0, typeof(Visibility), true, true));
+            Assert.AreEqual(Visibility.Collapsed, ObjectToObjectConverter.Coerce(2, typeof(Visibility), true, true));
+            Assert.AreEqual(3, ObjectToObjectConverter.Coerce(3, typeof(Visibility), true, true));
+            Assert.AreEqual(Visibility.Visible, ObjectToObjectConverter.Coerce((byte)0, typeof(Visibility), false, true));
+            Assert.AreEqual(Visibility.Collapsed, ObjectToObjectConverter.Coerce((long)2, typeof(Visibility), false, true));
+            Assert.AreEqual(3, ObjectToObjectConverter.Coerce(3, typeof(Visibility), false, true));
+            Assert.AreEqual(1.1, ObjectToObjectConverter.Coerce(1.1, typeof(Visibility), false, true));
+
+            converter = new ObjectToObjectConverter();
+            converter.DefaultTarget = Visibility.Collapsed;
+            Assert.AreEqual(Visibility.Collapsed, converter.Convert(0, typeof(Visibility), null, null));
+            Assert.AreEqual(Visibility.Collapsed, converter.Convert(2, typeof(Visibility), null, null));
+            Assert.AreEqual(Visibility.Collapsed, converter.Convert(3, typeof(Visibility), null, null));
         }
         [Test]
         public void ObjectToObjectColorBrushConvertion() {

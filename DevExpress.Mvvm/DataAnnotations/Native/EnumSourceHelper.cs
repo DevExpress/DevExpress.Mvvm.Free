@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -20,7 +21,7 @@ namespace DevExpress.Mvvm.Native {
         }
         public static IEnumerable<EnumMemberInfo> GetEnumSource(Type enumType, bool useUnderlyingEnumValue = true, IValueConverter nameConverter = null,
             bool splitNames = false, EnumMembersSortMode sortMode = EnumMembersSortMode.Default, Func<string, bool, string> getKnownImageUriCallback = null,
-            bool showImage = true, bool showName = true, Func<string, ImageSource> getSvgImageSource = null) {
+            bool showImage = true, bool showName = true, Func<string, ImageSource> getSvgImageSource = null, Size? imageSize = null) {
             if(enumType == null || !enumType.IsEnum)
                 return Enumerable.Empty<EnumMemberInfo>();
             Func<string, ImageSource> getImageSource = uri => (ImageSource)new ImageSourceConverter().ConvertFrom(uri);
@@ -35,7 +36,7 @@ namespace DevExpress.Mvvm.Native {
                     Func<ImageSource> getImage = () => imageUri.With(TryGetImageSource(CanCreateSvgImageSource(getSvgImageSource, imageUri)
                         ? getSvgImageSource : getImageSource));
                     return new EnumMemberInfo(name, DataAnnotationsAttributeHelper.GetFieldDescription(field), useUnderlyingEnumValue ? GetUnderlyingEnumValue(value) : value,
-                        showImage, showName, getImage, DataAnnotationsAttributeHelper.GetFieldOrder(field));
+                        showImage, showName, getImage, imageSize, DataAnnotationsAttributeHelper.GetFieldOrder(field));
                 });
             switch(sortMode) {
                 case EnumMembersSortMode.DisplayName:
@@ -94,8 +95,9 @@ namespace DevExpress.Mvvm.Native {
 }
 namespace DevExpress.Mvvm {
     public static class EnumSourceHelper {
-        public static IEnumerable<EnumMemberInfo> GetEnumSource(Type enumType, bool useUnderlyingEnumValue = true, IValueConverter nameConverter = null, bool splitNames = false, EnumMembersSortMode sortMode = EnumMembersSortMode.Default, Func<string, ImageSource> getSvgImageSource = null) {
-            return EnumSourceHelperCore.GetEnumSource(enumType, useUnderlyingEnumValue, nameConverter, splitNames, sortMode, null, getSvgImageSource: getSvgImageSource);
+        public static IEnumerable<EnumMemberInfo> GetEnumSource(Type enumType, bool useUnderlyingEnumValue = true, IValueConverter nameConverter = null, bool splitNames = false,
+            EnumMembersSortMode sortMode = EnumMembersSortMode.Default, Func<string, ImageSource> getSvgImageSource = null, Size? imageSize = null) {
+            return EnumSourceHelperCore.GetEnumSource(enumType, useUnderlyingEnumValue, nameConverter, splitNames, sortMode, null, getSvgImageSource: getSvgImageSource, imageSize: imageSize);
         }
     }
     public class EnumMemberInfo {
@@ -105,11 +107,16 @@ namespace DevExpress.Mvvm {
         public EnumMemberInfo(string value, string description, object id, ImageSource image, bool showImage, bool showName, int? order = null)
             : this(value, description, id, showImage, showName, () => image, order) {
         }
-        public EnumMemberInfo(string value, string description, object id, bool showImage, bool showName, Func<ImageSource> getImage, int? order = null) {
+        public EnumMemberInfo(string value, string description, object id, bool showImage, bool showName, Func<ImageSource> getImage, int? order = null)
+            : this(value, description, id, showImage, showName, getImage, null, order) {
+        }
+        public EnumMemberInfo(string value, string description, object id, bool showImage, bool showName, Func<ImageSource> getImage, Size? imageSize, int? order = null) {
             this.Name = value;
             this.Description = description;
             this.Id = id;
             this.image = new Lazy<ImageSource>(getImage);
+            this.ImageWidth = imageSize.HasValue ? imageSize.Value.Width : double.NaN;
+            this.ImageHeight = imageSize.HasValue ? imageSize.Value.Height : double.NaN;
             this.ShowImage = showImage;
             this.ShowName = showName;
             this.Order = order;
@@ -121,6 +128,8 @@ namespace DevExpress.Mvvm {
         public object Id { get; private set; }
         public string Description { get; private set; }
         public ImageSource Image { get { return image.Value; } }
+        public double ImageWidth { get; private set; }
+        public double ImageHeight { get; private set; }
         public bool ShowImage { get; private set; }
         public int? Order { get; private set; }
         public override string ToString() {

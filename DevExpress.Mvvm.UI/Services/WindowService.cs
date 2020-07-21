@@ -13,6 +13,7 @@ using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI.Native;
+using DevExpress.Mvvm.Xpf;
 using WindowBase = System.Windows.Window;
 
 namespace DevExpress.Mvvm.UI {
@@ -162,9 +163,12 @@ namespace DevExpress.Mvvm.UI {
                 window.Closing -= OnWindowClosing;
             window.Close();
         }
-        void IWindowService.SetWindowState(WindowState state) {
-            if(window != null)
-                window.RealWindow.WindowState = state;
+        DXWindowState IWindowService.WindowState {
+            get { return DXWindowStateConverter.ToDXWindowState(window?.RealWindow.WindowState ?? WindowState.Normal); }
+            set {
+                if(window != null)
+                    window.RealWindow.WindowState = DXWindowStateConverter.ToWindowState(value);
+            }
         }
     }
 }

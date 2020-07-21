@@ -63,6 +63,8 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(false, service.Multiselect);
 
             IOpenFileDialogService iService = service;
+            Assert.AreEqual(false, iService.Multiselect);
+
             Assert.IsNull(iService.File);
             Assert.AreEqual(0, iService.Files.Count());
         }

@@ -28,54 +28,60 @@ namespace DevExpress.Mvvm {
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected T GetProperty<T>(Expression<Func<T>> expression) {
-            return PropertyManager.GetProperty<T>(GetPropertyName(expression));
+            return GetPropertyCore<T>(GetPropertyName(expression));
         }
-        protected bool SetProperty<T>(ref T storage, T value, string propertyName, Action changedCallback) {
-            return PropertyManager.SetProperty<T>(ref storage, value, propertyName, RaisePropertyChanged, changedCallback);
+        protected virtual bool SetProperty<T>(ref T storage, T value, string propertyName, Action changedCallback) {
+            VerifyAccess();
+            if(CompareValues<T>(storage, value))
+                return false;
+            storage = value;
+            RaisePropertyChanged(propertyName);
+            changedCallback?.Invoke();
+            return true;
         }
         protected bool SetProperty<T>(ref T storage, T value, Expression<Func<T>> expression, Action changedCallback) {
-            return this.SetProperty(ref storage, value, GetPropertyName(expression), changedCallback);
+            return SetProperty(ref storage, value, GetPropertyName(expression), changedCallback);
         }
         protected bool SetProperty<T>(ref T storage, T value, Expression<Func<T>> expression) {
-            return this.SetProperty<T>(ref storage, value, expression, null);
+            return SetProperty<T>(ref storage, value, expression, null);
         }
         protected bool SetProperty<T>(ref T storage, T value, string propertyName) {
             return this.SetProperty<T>(ref storage, value, propertyName, null);
         }
         protected T GetValue<T>([CallerMemberName] string propertyName = null) {
             GuardPropertyName(propertyName);
-            return PropertyManager.GetProperty<T>(propertyName);
+            return GetPropertyCore<T>(propertyName);
         }
         protected bool SetValue<T>(T value, [CallerMemberName] string propertyName = null) {
             return SetValue(value, default(Action), propertyName);
         }
         protected bool SetValue<T>(T value, Action changedCallback, [CallerMemberName] string propertyName = null) {
-            return PropertyManager.SetProperty(propertyName, value, RaisePropertyChanged, changedCallback);
+            return SetPropertyCore(propertyName, value, changedCallback);
         }
         protected bool SetValue<T>(T value, Action<T> changedCallback, [CallerMemberName] string propertyName = null) {
-            return PropertyManager.SetProperty(propertyName, value, RaisePropertyChanged, changedCallback);
+            return SetPropertyCore(propertyName, value, changedCallback);
         }
         protected bool SetValue<T>(ref T storage, T value, [CallerMemberName] string propertyName = null) {
             return SetValue(ref storage, value, default(Action), propertyName);
         }
         protected bool SetValue<T>(ref T storage, T value, Action changedCallback, [CallerMemberName] string propertyName = null) {
             GuardPropertyName(propertyName);
-            return PropertyManager.SetProperty(ref storage, value, propertyName, RaisePropertyChanged, changedCallback);
+            return SetProperty(ref storage, value, propertyName, changedCallback);
         }
         static void GuardPropertyName(string propertyName) {
             if(string.IsNullOrEmpty(propertyName))
                 throw new ArgumentNullException(nameof(propertyName));
         }
         protected bool SetProperty<T>(Expression<Func<T>> expression, T value) {
-            return this.SetProperty(expression, value, (Action)null);
+            return SetProperty(expression, value, (Action)null);
         }
         protected bool SetProperty<T>(Expression<Func<T>> expression, T value, Action changedCallback) {
             string propertyName = GetPropertyName(expression);
-            return PropertyManager.SetProperty<T>(propertyName, value, RaisePropertyChanged, changedCallback);
+            return SetPropertyCore(propertyName, value, changedCallback);
         }
         protected bool SetProperty<T>(Expression<Func<T>> expression, T value, Action<T> changedCallback) {
             string propertyName = GetPropertyName(expression);
-            return PropertyManager.SetProperty<T>(propertyName, value, RaisePropertyChanged, changedCallback);
+            return SetPropertyCore(propertyName, value, changedCallback);
         }
 
         #region RaisePropertyChanged
@@ -121,81 +127,56 @@ namespace DevExpress.Mvvm {
         }
         #endregion
 
-        PropertyManager propertyManager;
-        internal PropertyManager PropertyManager { get { return propertyManager ?? (propertyManager = CreatePropertyManager()); } }
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        protected virtual PropertyManager CreatePropertyManager() {
-            return new PropertyManager();
-        }
-    }
-}
-namespace DevExpress.Mvvm.Native {
-    public class PropertyManager {
-        internal Dictionary<string, object> propertyBag = new Dictionary<string, object>();
-        public bool SetProperty<T>(string propertyName, T value, Action<string> raiseNotification, Action changedCallback) {
-            T oldValue;
-            var res = SetPropertyCore(propertyName, value, out oldValue);
-            if(res) {
-                raiseNotification(propertyName);
-                changedCallback.Do(x => x());
-            }
-            return res;
-        }
-        public bool SetProperty<T>(string propertyName, T value, Action<string> raiseNotification, Action<T> changedCallback) {
-            T oldValue;
-            var res = SetPropertyCore(propertyName, value, out oldValue);
-            if(res) {
-                raiseNotification(propertyName);
-                changedCallback.Do(x => x(oldValue));
-            }
-            return res;
-        }
-        protected virtual bool SetPropertyCore<T>(string propertyName, T value, out T oldValue) {
-            oldValue = default(T);
+        #region property bag
+        Dictionary<string, object> _propertyBag;
+        Dictionary<string, object> PropertyBag => _propertyBag ?? (_propertyBag = new Dictionary<string, object>());
+#if DEBUG
+        internal Dictionary<string, object> PropertyBagForTests => PropertyBag;
+#endif
+        T GetPropertyCore<T>(string propertyName) {
             object val;
-            if(propertyBag.TryGetValue(propertyName, out val))
-                oldValue = (T)val;
-            if(CompareValues<T>(oldValue, value))
-                return false;
-            lock (propertyBag) {
-                propertyBag[propertyName] = value;
-            }
-            return true;
-        }
-
-        public T GetProperty<T>(string propertyName) {
-            object val;
-            if(propertyBag.TryGetValue(propertyName, out val))
+            if(PropertyBag.TryGetValue(propertyName, out val))
                 return (T)val;
             return default(T);
         }
-        public bool SetProperty<T>(ref T storage, T value, string propertyName, Action<string> raiseNotification, Action changedCallback) {
-            T oldValue = storage;
-            var res = SetPropertyCore(ref storage, value, propertyName);
+
+        bool SetPropertyCore<T>(string propertyName, T value, Action changedCallback) {
+            T oldValue;
+            var res = SetPropertyCore(propertyName, value, out oldValue);
             if(res) {
-                raiseNotification(propertyName);
                 changedCallback?.Invoke();
             }
             return res;
         }
-        public bool SetProperty<T>(ref T storage, T value, string propertyName, Action<string> raiseNotification, Action<T> changedCallback) {
-            T oldValue = storage;
-            var res = SetPropertyCore(ref storage, value, propertyName);
+        bool SetPropertyCore<T>(string propertyName, T value, Action<T> changedCallback) {
+            T oldValue;
+            var res = SetPropertyCore(propertyName, value, out oldValue);
             if(res) {
-                raiseNotification(propertyName);
-                changedCallback.Do(x => x(oldValue));
+                changedCallback?.Invoke(oldValue);
             }
             return res;
         }
-        protected virtual bool SetPropertyCore<T>(ref T storage, T value, string propertyName) {
-            if(CompareValues<T>(storage, value))
+        protected virtual bool SetPropertyCore<T>(string propertyName, T value, out T oldValue) {
+            VerifyAccess();
+            oldValue = default(T);
+            object val;
+            if(PropertyBag.TryGetValue(propertyName, out val))
+                oldValue = (T)val;
+            if(CompareValues<T>(oldValue, value))
                 return false;
-            storage = value;
+            lock(PropertyBag) {
+                PropertyBag[propertyName] = value;
+            }
+            RaisePropertyChanged(propertyName);
             return true;
+        }
+
+        protected virtual void VerifyAccess() {
         }
 
         static bool CompareValues<T>(T storage, T value) {
             return Equals(storage, value);
         }
+#endregion
     }
 }

@@ -151,7 +151,6 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-    <None Include="Views\EventToCommandTestView.SL.xaml" />
     <Page Include="Views\EventToCommandTestView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

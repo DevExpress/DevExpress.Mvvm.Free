@@ -127,7 +127,7 @@ namespace DevExpress.Mvvm {
             return CanExecuteSuffix + commandMethod.Name;
         }
         internal static T GetAttribute<T>(MethodInfo method) {
-            return MetadataHelper.GetAllAttributes(method).OfType<T>().FirstOrDefault();
+            return MetadataHelper.GetAllAttributes(method, inherit: true).OfType<T>().FirstOrDefault();
         }
 
         [ThreadStatic]
@@ -142,7 +142,7 @@ namespace DevExpress.Mvvm {
         }
         static Dictionary<MethodInfo, CommandProperty> CreateCommandProperties(Type type) {
             Dictionary<MethodInfo, CommandProperty> commandProperties = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                .Where(x => GetAttribute<CommandAttribute>(x) != null).ToArray()
+                .Where(x => GetAttribute<CommandAttribute>(x)?.IsCommand ?? false).ToArray()
                 .Select(x => {
                     CommandAttribute attribute = GetAttribute<CommandAttribute>(x);
                     string name = attribute.Name ?? (x.Name.EndsWith(CommandNameSuffix) ? x.Name : GetCommandName(x));

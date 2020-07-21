@@ -136,9 +136,18 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         [Test]
         public void Exception() {
             ContentControl c = new ContentControl();
+            c.BeginInit();
+            c.EndInit();
             UIRegion.SetRegion(c, "R");
             ModuleManager.DefaultManager.Register("R", new Module("1", typeof(VM1).FullName, null));
             Assert.Throws<LocatorException>(() => ModuleManager.DefaultManager.Inject("R", "1"),
+                "ViewModelLocator cannot resolve the \"VM1\" type.");
+
+            c = new ContentControl();
+            UIRegion.SetRegion(c, "R1");
+            ModuleManager.DefaultManager.Register("R1", new Module("1", typeof(VM1).FullName, null));
+            ModuleManager.DefaultManager.Inject("R1", "1");
+            Assert.Throws<LocatorException>(() => { c.BeginInit(); c.EndInit(); },
                 "ViewModelLocator cannot resolve the \"VM1\" type.");
 
             ModuleManager.DefaultManager.Register("R", new Module("2", typeof(VM2).FullName, null));
@@ -148,6 +157,8 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         [Test]
         public void ViewModelConstructor() {
             ContentControl c = new ContentControl();
+            c.BeginInit();
+            c.EndInit();
             UIRegion.SetRegion(c, "R");
 
             ModuleManager.DefaultManager.RegisterOrInjectOrNavigate("R", new Module("2", typeof(VM2).FullName, null));
@@ -177,6 +188,8 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         [Test]
         public void PassingParameter() {
             Grid c = new Grid();
+            c.BeginInit();
+            c.EndInit();
             UIRegion.SetRegion(c, "R");
 
             ModuleManager.DefaultManager.Register("R", new Module("1", () => new VMISupportParameter()));

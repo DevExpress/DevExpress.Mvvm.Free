@@ -14,6 +14,8 @@ namespace DevExpress.Mvvm {
         bool SupportMultiDottedExtensions { get; set; }
         string Title { get; set; }
         bool ValidateNames { get; set; }
+        string Filter { get; set; }
+        int FilterIndex { get; set; }
 
         void Reset();
     }

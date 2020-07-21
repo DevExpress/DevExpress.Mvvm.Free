@@ -10,7 +10,7 @@ using System.Globalization;
 namespace DevExpress.Mvvm.UI {
     public static class ViewHelper {
         internal const string Error_CreateViewMissArguments = "It is impossible to create a view based on passed parameters. ViewTemplate/ViewTemplateSelector or DocumentType should be set.";
-        internal const string HelpLink_CreateViewMissArguments = "https://documentation.devexpress.com/#WPF/CustomDocument17469";
+        internal const string HelpLink_CreateViewMissArguments = "https://docs.devexpress.com/WPF/17469/mvvm-framework/services/view-creation-mechanisms";
         [Obsolete("This method is obsolete. Use other method overloads.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public static object CreateAndInitializeView(IViewLocator viewLocator, string documentType, object parameter, object parentViewModel = null, bool useParameterAsViewModel = false, DataTemplate viewTemplate = null, DataTemplateSelector viewTemplateSelector = null) {

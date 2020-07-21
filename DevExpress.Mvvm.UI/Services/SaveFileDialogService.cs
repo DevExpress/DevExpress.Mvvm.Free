@@ -39,10 +39,7 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("OverwritePrompt", typeof(bool), typeof(SaveFileDialogService), new PropertyMetadata(true));
         public static readonly DependencyProperty DefaultExtProperty =
             DependencyProperty.Register("DefaultExt", typeof(string), typeof(SaveFileDialogService), new PropertyMetadata(string.Empty));
-        public static readonly DependencyProperty FilterProperty =
-            DependencyProperty.Register("Filter", typeof(string), typeof(SaveFileDialogService), new PropertyMetadata(string.Empty));
-        public static readonly DependencyProperty FilterIndexProperty =
-            DependencyProperty.Register("FilterIndex", typeof(int), typeof(SaveFileDialogService), new PropertyMetadata(1));
+
         public bool CreatePrompt {
             get { return (bool)GetValue(CreatePromptProperty); }
             set { SetValue(CreatePromptProperty, value); }
@@ -54,14 +51,6 @@ namespace DevExpress.Mvvm.UI {
         public string DefaultExt {
             get { return (string)GetValue(DefaultExtProperty); }
             set { SetValue(DefaultExtProperty, value); }
-        }
-        public string Filter {
-            get { return (string)GetValue(FilterProperty); }
-            set { SetValue(FilterProperty, value); }
-        }
-        public int FilterIndex {
-            get { return (int)GetValue(FilterIndexProperty); }
-            set { SetValue(FilterIndexProperty, value); }
         }
 
         ISaveFileDialog SaveFileDialog { get { return (ISaveFileDialog)GetFileDialog(); } }

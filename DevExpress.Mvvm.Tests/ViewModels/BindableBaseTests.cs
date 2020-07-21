@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 
 namespace DevExpress.Mvvm.Tests {
@@ -195,25 +197,25 @@ namespace DevExpress.Mvvm.Tests {
             viewModel.PropertyChanged += (o, e) => { propertyChangedCount++; propName = e.PropertyName; };
 
             Assert.AreEqual(0, viewModel.IntProperty);
-            Assert.IsFalse(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
+            Assert.IsFalse(viewModel.PropertyBagForTests.ContainsKey("IntProperty"));
 
             viewModel.IntProperty = 0;
             Assert.AreEqual(0, viewModel.IntProperty);
-            Assert.IsFalse(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
+            Assert.IsFalse(viewModel.PropertyBagForTests.ContainsKey("IntProperty"));
             Assert.AreEqual(false, viewModel.IntPropertySetValueResult.Value);
             Assert.AreEqual(0, propertyChangedCount);
             Assert.AreEqual(null, propName);
 
             viewModel.IntProperty = 9;
             Assert.AreEqual(9, viewModel.IntProperty);
-            Assert.IsTrue(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
+            Assert.IsTrue(viewModel.PropertyBagForTests.ContainsKey("IntProperty"));
             Assert.AreEqual(true, viewModel.IntPropertySetValueResult.Value);
             Assert.AreEqual(1, propertyChangedCount);
             Assert.AreEqual("IntProperty", propName);
 
             viewModel.IntProperty = 0;
             Assert.AreEqual(0, viewModel.IntProperty);
-            Assert.IsTrue(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
+            Assert.IsTrue(viewModel.PropertyBagForTests.ContainsKey("IntProperty"));
             Assert.AreEqual(true, viewModel.IntPropertySetValueResult.Value);
             Assert.AreEqual(2, propertyChangedCount);
             Assert.AreEqual("IntProperty", propName);
@@ -247,6 +249,83 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(true, obj.PropOld);
             obj.Prop = false;
             Assert.AreEqual(true, obj.PropOld);
+        }
+
+        [Test]
+        public void NoNestedReferenceObjects() {
+            var bindable = new BindableBaseTest() { SomeProperty2 = 117 };
+            var values = typeof(BindableBase)
+                .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .Select(x => new { x.Name, Value = x.GetValue(bindable) })
+                .ToArray();
+            Assert.True(values.All(x => x.Value == null));
+        }
+
+        [Test]
+        public void T845633() {
+            var vm = new T845633_VM();
+            Assert.AreEqual(null, vm.V);
+            vm.V = false;
+            Assert.AreEqual(false, vm.V);
+            vm.V = true;
+            Assert.AreEqual(true, vm.V);
+            vm.V = false;
+            Assert.AreEqual(false, vm.V);
+            vm.V = 1;
+            Assert.AreEqual(1, vm.V);
+
+            Assert.AreEqual(null, vm.V1);
+            vm.V1 = false;
+            Assert.AreEqual(null, vm.V1);
+            vm.V1 = true;
+            Assert.AreEqual(true, vm.V1);
+            vm.V1 = false;
+            Assert.AreEqual(false, vm.V1);
+            Assert.Throws<InvalidCastException>(() => vm.V1 = 1);
+        }
+        public class T845633_VM : BindableBase {
+            public virtual dynamic V { get { return GetValue<dynamic>(); } set { SetValue<dynamic>(value, nameof(V)); } }
+            public virtual dynamic V1 { get { return GetValue<dynamic>(); } set { SetValue(value, nameof(V1)); } }
+        }
+        class SetPropertyOverridesClass : BindableBase {
+            int storageProperty;
+            public int StorageProperty {
+                get => storageProperty;
+                set => SetValue(ref storageProperty, value);
+            }
+            public int BagProperty {
+                get => GetValue<int>();
+                set => SetValue(value);
+            }
+            public int StorageSetCount;
+            protected override bool SetProperty<T>(ref T storage, T value, string propertyName, Action changedCallback) {
+                StorageSetCount++;
+                return base.SetProperty(ref storage, value, propertyName, changedCallback);
+            }
+            public int BagSetCount;
+            protected override bool SetPropertyCore<T>(string propertyName, T value, out T oldValue) {
+                BagSetCount++;
+                return base.SetPropertyCore(propertyName, value, out oldValue);
+            }
+        }
+        [Test(Description = "T906177")]
+        public void SetPropertyOverrides() {
+            var bindable = new SetPropertyOverridesClass();
+            bindable.StorageProperty = 9;
+            Assert.AreEqual(1, bindable.StorageSetCount);
+            Assert.AreEqual(0, bindable.BagSetCount);
+
+            bindable.StorageProperty = 9;
+            Assert.AreEqual(2, bindable.StorageSetCount);
+            Assert.AreEqual(0, bindable.BagSetCount);
+
+            bindable.BagProperty = 13;
+            Assert.AreEqual(2, bindable.StorageSetCount);
+            Assert.AreEqual(1, bindable.BagSetCount);
+
+            bindable.BagProperty = 13;
+            Assert.AreEqual(2, bindable.StorageSetCount);
+            Assert.AreEqual(2, bindable.BagSetCount);
         }
     }
     class BindableBaseTest : BindableBase {
@@ -448,25 +527,25 @@ namespace DevExpress.Mvvm.Tests {
             viewModel.PropertyChanged += (o, e) => { propertyChangedCount++; propName = e.PropertyName; };
 
             Assert.AreEqual(0, viewModel.IntProperty);
-            Assert.IsFalse(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
+            Assert.IsFalse(viewModel.PropertyBagForTests.ContainsKey("IntProperty"));
 
             viewModel.IntProperty = 0;
             Assert.AreEqual(0, viewModel.IntProperty);
-            Assert.IsFalse(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
+            Assert.IsFalse(viewModel.PropertyBagForTests.ContainsKey("IntProperty"));
             Assert.AreEqual(false, viewModel.IntPropertySetValueResult.Value);
             Assert.AreEqual(0, propertyChangedCount);
             Assert.AreEqual(null, propName);
 
             viewModel.IntProperty = 9;
             Assert.AreEqual(9, viewModel.IntProperty);
-            Assert.IsTrue(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
+            Assert.IsTrue(viewModel.PropertyBagForTests.ContainsKey("IntProperty"));
             Assert.AreEqual(true, viewModel.IntPropertySetValueResult.Value);
             Assert.AreEqual(1, propertyChangedCount);
             Assert.AreEqual("IntProperty", propName);
 
             viewModel.IntProperty = 0;
             Assert.AreEqual(0, viewModel.IntProperty);
-            Assert.IsTrue(viewModel.PropertyManager.propertyBag.ContainsKey("IntProperty"));
+            Assert.IsTrue(viewModel.PropertyBagForTests.ContainsKey("IntProperty"));
             Assert.AreEqual(true, viewModel.IntPropertySetValueResult.Value);
             Assert.AreEqual(2, propertyChangedCount);
             Assert.AreEqual("IntProperty", propName);

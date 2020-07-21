@@ -217,6 +217,10 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("RestorePreviouslySelectedDirectory", typeof(bool), typeof(FileDialogServiceBase), new PropertyMetadata(true));
         public static readonly DependencyProperty HelpRequestCommandProperty =
             DependencyProperty.Register("HelpRequestCommand", typeof(ICommand), typeof(FileDialogServiceBase), new PropertyMetadata(null));
+        public static readonly DependencyProperty FilterProperty =
+            DependencyProperty.Register("Filter", typeof(string), typeof(FileDialogServiceBase), new PropertyMetadata(string.Empty));
+        public static readonly DependencyProperty FilterIndexProperty =
+            DependencyProperty.Register("FilterIndex", typeof(int), typeof(FileDialogServiceBase), new PropertyMetadata(1));
 
         public bool CheckFileExists {
             get { return (bool)GetValue(CheckFileExistsProperty); }
@@ -269,6 +273,14 @@ namespace DevExpress.Mvvm.UI {
         public bool RestorePreviouslySelectedDirectory {
             get { return (bool)GetValue(RestorePreviouslySelectedDirectoryProperty); }
             set { SetValue(RestorePreviouslySelectedDirectoryProperty, value); }
+        }
+        public string Filter {
+            get { return (string)GetValue(FilterProperty); }
+            set { SetValue(FilterProperty, value); }
+        }
+        public int FilterIndex {
+            get { return (int)GetValue(FilterIndexProperty); }
+            set { SetValue(FilterIndexProperty, value); }
         }
 
         public ICommand HelpRequestCommand {
@@ -411,22 +423,22 @@ namespace DevExpress.Mvvm.UI {
         StreamWriter IFileInfo.CreateText() {
             return Match(() => FileInfo.CreateText());
         }
-        void IFileInfo.Delete() {
+        void IFileSystemInfo.Delete() {
             FileSystemInfo.Delete();
         }
-        string IFileInfo.DirectoryName {
+        string IFileSystemInfo.DirectoryName {
             get { return Match(() => FileInfo.DirectoryName, () => DirectoryInfo.Parent.FullName); }
         }
-        bool IFileInfo.Exists {
+        bool IFileSystemInfo.Exists {
             get { return FileSystemInfo.Exists; }
         }
         long IFileInfo.Length {
             get { return FileInfo.Return(x => x.Length, () => 0); }
         }
-        void IFileInfo.MoveTo(string destFileName) {
+        void IFileSystemInfo.MoveTo(string destFileName) {
             FileInfo.Do(x => x.MoveTo(destFileName));
         }
-        string IFileInfo.Name {
+        string IFileSystemInfo.Name {
             get { return FileSystemInfo.Name; }
         }
         FileStream IFileInfo.Open(FileMode mode, FileAccess access, FileShare share) {
@@ -441,7 +453,7 @@ namespace DevExpress.Mvvm.UI {
         FileStream IFileInfo.OpenWrite() {
             return Match(() => FileInfo.OpenWrite());
         }
-        FileAttributes IFileInfo.Attributes {
+        FileAttributes IFileSystemInfo.Attributes {
             get { return FileSystemInfo.Attributes; }
             set { FileSystemInfo.Attributes = value; }
         }

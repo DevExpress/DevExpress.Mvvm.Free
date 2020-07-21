@@ -185,6 +185,18 @@ namespace DevExpress.Mvvm.UI.Native {
             return GetVisualAndLogicalChildren(obj, base.GetNestedObjects(obj), DependencyObjectsOnly, acceptedVisuals);
         }
     }
+    public class SerializationVisualEnumerator : VisualTreeEnumerator {
+        Func<DependencyObject, bool> nestedChildrenPredicate;
+        public SerializationVisualEnumerator(DependencyObject dObject, Func<DependencyObject, bool> nestedChildrenPredicate)
+            : base(dObject) {
+            this.nestedChildrenPredicate = nestedChildrenPredicate;
+        }
+        protected override IEnumerator GetNestedObjects(object obj) {
+            if (nestedChildrenPredicate((DependencyObject)obj))
+                return base.GetNestedObjects(obj);
+            return Enumerable.Empty<object>().GetEnumerator();
+        }
+    }
     public class SerializationEnumerator : LogicalTreeEnumerator {
         Func<DependencyObject, bool> nestedChildrenPredicate;
         protected override bool DependencyObjectsOnly {

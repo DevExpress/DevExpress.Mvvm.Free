@@ -2,8 +2,6 @@ using DevExpress.Mvvm.UI.Native;
 using DevExpress.Mvvm.UI.Interactivity;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System;
 using DevExpress.Mvvm.Native;
 using System.Windows.Input;
 using System.ComponentModel;
@@ -11,7 +9,6 @@ using DevExpress.Mvvm.UI;
 using DevExpress.Mvvm;
 using System.Collections.Generic;
 using System.Linq;
-
 
 namespace DevExpress.Mvvm.UI {
     [TargetTypeAttribute(typeof(UserControl))]
@@ -31,6 +28,14 @@ namespace DevExpress.Mvvm.UI {
             return ActualWindow;
         }
 
+        DXWindowState ICurrentWindowService.WindowState {
+            get { return DXWindowStateConverter.ToDXWindowState(GetActualWindow()?.WindowState ?? WindowState.Normal); }
+            set {
+                var w = GetActualWindow();
+                if(w != null)
+                    w.WindowState = DXWindowStateConverter.ToWindowState(value);
+            }
+        }
         void ICurrentWindowService.Close() {
             GetActualWindow().Do(x => x.Close());
         }
@@ -39,9 +44,6 @@ namespace DevExpress.Mvvm.UI {
         }
         void ICurrentWindowService.Hide() {
             GetActualWindow().Do(x => x.Hide());
-        }
-        void ICurrentWindowService.SetWindowState(WindowState state) {
-            GetActualWindow().Do(x => x.WindowState = state);
         }
         void ICurrentWindowService.Show() {
             GetActualWindow().Do(x => x.Show());

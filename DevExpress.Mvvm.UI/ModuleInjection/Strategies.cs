@@ -158,7 +158,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             SelectedViewModel = null;
         }
         ContentPresenter FindChild(object viewModel) {
-            return Wrapper.Children.Cast<ContentPresenter>().FirstOrDefault(x => x.Content == viewModel);
+            return Wrapper.Children.OfType<ContentPresenter>().FirstOrDefault(x => x.Content == viewModel);
         }
     }
     public class ContentPresenterStrategy<T, TWrapper> : CommonStrategyBase<T, TWrapper>

@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using DevExpress.Mvvm.POCO;
 
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
@@ -458,6 +459,76 @@ namespace DevExpress.Mvvm.Tests {
             var vm = new TestViewModel();
             AssertHelper.AssertThrows<InvalidOperationException>(() => ((ISupportParentViewModel)vm).ParentViewModel = vm,
                 e => Assert.AreEqual("ViewModel cannot be parent of itself.", e.Message));
+        }
+
+        public class T900549_VM_Base : ViewModelBase {
+            public int CountBase { get; private set; }
+            [Command]
+            public virtual void Test() { CountBase++; }
+            [Command]
+            public virtual void Test2() { CountBase++; }
+        }
+        public class T900549_VM : T900549_VM_Base {
+            public int Count { get; private set; }
+            public override void Test() {
+                base.Test();
+                Count++;
+            }
+            [Command(false)]
+            public override void Test2() {
+                base.Test2();
+            }
+        }
+
+        [MetadataType(typeof(T900549_VM_Base_FluentAPI_Metadata))]
+        public class T900549_VM_Base_FluentAPI : ViewModelBase {
+            public int CountBase { get; private set; }
+            public virtual void Test() { CountBase++; }
+            public virtual void Test2() { CountBase++; }
+        }
+        [MetadataType(typeof(T900549_VM_FluentAPI_Metadata))]
+        public class T900549_VM_FluentAPI : T900549_VM_Base_FluentAPI {
+            public int Count { get; private set; }
+            public override void Test() {
+                base.Test();
+                Count++;
+            }
+            public override void Test2() {
+                base.Test2();
+            }
+        }
+
+        public class T900549_VM_Base_FluentAPI_Metadata : IMetadataProvider<T900549_VM_Base_FluentAPI> {
+            void IMetadataProvider<T900549_VM_Base_FluentAPI>.BuildMetadata(MetadataBuilder<T900549_VM_Base_FluentAPI> builder) {
+                builder.CommandFromMethod(x => x.Test());
+                builder.CommandFromMethod(x => x.Test2());
+            }
+        }
+        public class T900549_VM_FluentAPI_Metadata : IMetadataProvider<T900549_VM_FluentAPI> {
+            void IMetadataProvider<T900549_VM_FluentAPI>.BuildMetadata(MetadataBuilder<T900549_VM_FluentAPI> builder) {
+                builder.CommandFromMethod(x => x.Test2()).DoNotCreateCommand();
+            }
+        }
+
+        [Test]
+        public void T900549() {
+            var vm = new T900549_VM();
+            var bt = new Button() { DataContext = vm };
+            bt.SetBinding(Button.CommandProperty, new Binding("TestCommand"));
+            bt.Command.Execute(null);
+            Assert.AreEqual(1, vm.Count);
+            Assert.AreEqual(1, vm.CountBase);
+            bt.SetBinding(Button.CommandProperty, new Binding("Test2Command"));
+            Assert.AreEqual(null, bt.Command);
+
+            var vm1 = new T900549_VM_FluentAPI();
+            var bt1 = new Button() { DataContext = vm1 };
+            bt1.SetBinding(Button.CommandProperty, new Binding("TestCommand"));
+            bt1.Command.Execute(null);
+            Assert.AreEqual(1, vm1.Count);
+            Assert.AreEqual(1, vm1.CountBase);
+            bt1.SetBinding(Button.CommandProperty, new Binding("Test2Command"));
+            Assert.AreEqual(null, bt1.Command);
         }
     }
     public class TestViewModel : ViewModelBase {

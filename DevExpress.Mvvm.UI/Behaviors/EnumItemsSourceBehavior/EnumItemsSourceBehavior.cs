@@ -42,11 +42,18 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty AllowImagesProperty =
             DependencyProperty.Register("AllowImages", typeof(bool), typeof(EnumItemsSourceBehavior),
             new FrameworkPropertyMetadata(true, (d, e) => ((EnumItemsSourceBehavior)d).ChangeAssociatedObjectItemsSource()));
+        public static readonly DependencyProperty ImageSizeProperty =
+            DependencyProperty.Register("ImageSize", typeof(Size?), typeof(EnumItemsSourceBehavior),
+                new FrameworkPropertyMetadata(default(Size?), (d, e) => ((EnumItemsSourceBehavior)d).ChangeAssociatedObjectItemsSource()));
         #endregion
 
         public bool AllowImages {
             get { return (bool)GetValue(AllowImagesProperty); }
             set { SetValue(AllowImagesProperty, value); }
+        }
+        public Size? ImageSize {
+            get { return (Size?)GetValue(ImageSizeProperty); }
+            set { SetValue(ImageSizeProperty, value); }
         }
         public DataTemplate ItemTemplate {
             get { return (DataTemplate)GetValue(ItemTemplateProperty); }
@@ -78,10 +85,13 @@ namespace DevExpress.Mvvm.UI {
                 PropertyDescriptor descriptor = TypeDescriptor.GetProperties(this.AssociatedObject).Find("ItemsSource", true);
                 if (descriptor == null)
                     throw new Exception("ItemsSource dependency property required");
-                else
+                else {
+                    var imageSize = ImageSize.HasValue ? new Size(ImageSize.Value.Width, ImageSize.Value.Height) : (Size?)null;
                     descriptor.SetValue(this.AssociatedObject, EnumSourceHelperCore.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter,
                         SplitNames, SortMode, null, showImage: AllowImages
-                        ));
+                        ,
+                        imageSize: imageSize));
+                }
             }
         }
         void ChangeItemTemplate() {

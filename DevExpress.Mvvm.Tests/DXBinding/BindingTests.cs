@@ -1355,6 +1355,57 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual(true, b3.Mode == BindingMode.TwoWay);
             Assert.AreEqual(true, b3.Path.Path == "Prop");
         }
+
+        [Test]
+        public void T845107() {
+            string xaml = @"
+    <StackPanel>
+        <ContentControl x:Name=""cp1"" Tag=""1"">
+            <ContentControl.ContentTemplate>
+                <DataTemplate>
+                    <TextBlock Text=""{Binding Tag, Source={x:Reference cp1}}"" />
+                </DataTemplate>
+            </ContentControl.ContentTemplate>
+        </ContentControl>
+        <ContentControl x:Name=""cp2"">
+            <ContentControl.ContentTemplate>
+                <DataTemplate>
+                    <TextBlock Text=""{DXBinding '@Reference(cp2).Tag'}"" />
+                </DataTemplate>
+            </ContentControl.ContentTemplate>
+        </ContentControl>
+    </StackPanel>";
+            var panel = BindingTestHelper.LoadXaml<StackPanel>(xaml);
+            BindingTestHelper.VisualTest(panel, () => {
+                var cp1 = (ContentControl)panel.Children[0];
+                var cp2 = (ContentControl)panel.Children[1];
+                var tb1 = LayoutTreeHelper.GetVisualChildren(cp1).OfType<TextBlock>().First();
+                var tb2 = LayoutTreeHelper.GetVisualChildren(cp2).OfType<TextBlock>().First();
+                Assert.AreEqual("1", tb1.Text);
+                Assert.AreEqual("", tb2.Text);
+            });
+        }
+
+        [Test]
+        public void T883163() {
+            var vm = new T883163_VM() { Value1 = 1, Value2 = 2 };
+            var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag",
+               "{b:DXBinding Expr='Value1 + Value2', BackExpr='Value1=@v; Value2=@v', Mode=TwoWay}", null, vm);
+            Assert.AreEqual(1, vm.Value1);
+            Assert.AreEqual(2, vm.Value2);
+            Assert.AreEqual(3, tb.Tag);
+            Assert.AreEqual(true, tb.Tag is int);
+            tb.Tag = (decimal)3;
+            BindingTestHelper.DoEvents(tb);
+            Assert.AreEqual(3, vm.Value1);
+            Assert.AreEqual(3, vm.Value2);
+            Assert.AreEqual(6, tb.Tag);
+            Assert.AreEqual(true, tb.Tag is int);
+        }
+        public class T883163_VM : BindableBase {
+            public int Value1 { get { return GetValue<int>(); } set { SetValue(value); } }
+            public int Value2 { get { return GetValue<int>(); } set { SetValue(value); } }
+        }
     }
     public class T823303_VM : BindableBase {
         public int Prop { get { return GetValue<int>(); } set { SetValue(value); } }

@@ -93,7 +93,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             BindingTestHelper.DoCommand(bt);
             Assert.AreEqual(2, vm.Do3Value);
         }
-        [Test]
+        [Test, Retry(3)]
         public virtual void CommandInStyleSetter() {
             string xaml1 = @"
 <Grid>

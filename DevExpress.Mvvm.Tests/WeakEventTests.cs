@@ -270,5 +270,26 @@ namespace DevExpress.Mvvm.Tests {
             GC.WaitForPendingFinalizers();
             GC.GetTotalMemory(true);
         }
+
+        [Test]
+        public void T846808() {
+            var eventOwner = new EventOwner();
+            int c1 = 0;
+            int c2 = 0;
+            EventHandler h1 = null;
+            EventHandler h2 = null;
+            h1 = (s, e) => { c1++; eventOwner.MyEvent -= h1; };
+            h2 = (s, e) => { c2++; };
+
+            eventOwner.MyEvent += h1;
+            eventOwner.MyEvent += h2;
+            eventOwner.RaiseMyEvent(EventArgs.Empty);
+            Assert.AreEqual(1, c1);
+            Assert.AreEqual(1, c2);
+
+            eventOwner.RaiseMyEvent(EventArgs.Empty);
+            Assert.AreEqual(1, c1);
+            Assert.AreEqual(2, c2);
+        }
     }
 }

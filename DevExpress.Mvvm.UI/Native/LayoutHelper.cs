@@ -3,6 +3,7 @@ using System.Collections;
 using System.Windows;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
@@ -205,11 +206,11 @@ namespace DevExpress.Mvvm.UI.Native {
         public static FrameworkElement FindElementByName(FrameworkElement treeRoot, string name) {
             return FindElement(treeRoot, element => element.Name == name);
         }
-        public static FrameworkElement FindElementByType(FrameworkElement treeRoot, Type type) {
-            return FindElement(treeRoot, element => element.GetType() == type);
+        public static FrameworkElement FindElementByType(FrameworkElement treeRoot, Type type, Func<FrameworkElement, bool> handler = null) {
+            return FindElement(treeRoot, element => element.GetType() == type && (handler?.Invoke(element) ?? true));
         }
-        public static T FindElementByType<T>(FrameworkElement treeRoot) where T : FrameworkElement {
-            return (T)FindElementByType(treeRoot, typeof(T));
+        public static T FindElementByType<T>(FrameworkElement treeRoot, Func<FrameworkElement, bool> handler = null) where T : FrameworkElement {
+            return (T)FindElementByType(treeRoot, typeof(T), handler);
         }
 
         public static bool IsChildElement(DependencyObject root, DependencyObject element) {

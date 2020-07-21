@@ -1,4 +1,5 @@
 using DevExpress.Mvvm;
+using System.ComponentModel;
 
 namespace DevExpress.Mvvm.UI {
     public class SplashScreenViewModel : ViewModelBase, ISupportSplashScreen {
