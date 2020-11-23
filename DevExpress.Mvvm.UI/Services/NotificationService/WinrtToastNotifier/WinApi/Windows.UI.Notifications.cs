@@ -115,7 +115,7 @@ namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
         void IInspectableStub2();
         void IInspectableStub3();
         void f6();
-        int CreateToastNotifierWithId([In, MarshalAs(47)] string applicationId, out IToastNotifier notifier);
+        int CreateToastNotifierWithId([In] HSTRING applicationId, out IToastNotifier notifier);
         IXmlDocument GetTemplateContent(ToastTemplateType type);
     }
 
@@ -162,7 +162,7 @@ namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        HResult GetArguments([Out, MarshalAs(47)] out string args);
+        HResult GetArguments([Out] out HSTRING args);
     }
     [ComImport]
     [Guid("53E31837-6600-4A81-9395-75CFFE746F94")]

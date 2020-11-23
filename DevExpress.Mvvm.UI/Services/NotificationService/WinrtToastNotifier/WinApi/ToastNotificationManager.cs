@@ -1,7 +1,7 @@
+using DevExpress.Internal.WinApi.Windows.UI.Notifications;
+using DevExpress.Utils;
 using System;
 using System.Security;
-using DevExpress.Utils;
-using DevExpress.Internal.WinApi.Windows.UI.Notifications;
 
 namespace DevExpress.Internal.WinApi {
     [CLSCompliant(false)]
@@ -41,12 +41,13 @@ namespace DevExpress.Internal.WinApi {
             return GetXml((Window.Data.Xml.Dom.IXmlNodeSerializer)GetDocument(info));
         }
         internal static string GetXml(Window.Data.Xml.Dom.IXmlNodeSerializer content) {
-            string xml;
+            HSTRING xml;
             content.GetXml(out xml);
-            return xml;
+            return xml.GetString();
         }
         internal static void LoadXml(Window.Data.Xml.Dom.IXmlDocumentIO content, string xml) {
-            content.LoadXml(xml);
+            using(var hString_xml = HSTRING.FromString(xml))
+                content.LoadXml(hString_xml);
         }
         internal static IToastNotificationAdapter CreateToastNotificationAdapter(string appID) {
             return AreToastNotificationsSupported ?
@@ -72,14 +73,18 @@ namespace DevExpress.Internal.WinApi {
                 return result;
             }
             void IToastNotificationAdapter.Show(IToastNotification notification) {
-                if(notifier == null)
-                    ComFunctions.CheckHRESULT(manager.CreateToastNotifierWithId(appId, out notifier));
+                if(notifier == null) {
+                    using(var hString_appId = HSTRING.FromString(appId))
+                        ComFunctions.CheckHRESULT(manager.CreateToastNotifierWithId(hString_appId, out notifier));
+                }
                 if(notifier != null && notification != null)
                     notifier.Show(notification);
             }
             void IToastNotificationAdapter.Hide(IToastNotification notification) {
-                if(notifier == null)
-                    ComFunctions.CheckHRESULT(manager.CreateToastNotifierWithId(appId, out notifier));
+                if(notifier == null) {
+                    using(var hString_appId = HSTRING.FromString(appId))
+                        ComFunctions.CheckHRESULT(manager.CreateToastNotifierWithId(hString_appId, out notifier));
+                }
                 if(notifier != null && notification != null)
                     notifier.Hide(notification);
             }

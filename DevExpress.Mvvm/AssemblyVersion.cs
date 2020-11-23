@@ -93,11 +93,13 @@ namespace DevExpress.Internal {
     public const string SRAssemblyDataDesktopTests = "DevExpress.Data.Desktop.Tests";
  public const string SRAssemblyDemoData = "DevExpress.DemoData" + VSuffix;
     public const string SRAssemblyPrintingCore = "DevExpress.Printing" + VSuffix + ".Core";
+ public const string SRAssemblyPrintingCoreFull = "DevExpress.Printing" + VSuffix + ".Core" + FullAssemblyVersionExtension;
     public const string SRAssemblyRichEditCore = "DevExpress.RichEdit" + VSuffix + ".Core";
     public const string SRAssemblyOfficeCore = "DevExpress.Office" + VSuffix + ".Core";
     public const string SRAssemblyDocs = "DevExpress.Docs" + VSuffix;
     public const string SRAssemblySpreadsheetCore = "DevExpress.Spreadsheet" + VSuffix + ".Core";
     public const string SRAssemblySchedulerCore = "DevExpress.XtraScheduler" + VSuffix + ".Core";
+    public const string SRAssemblySchedulerCoreDesktop = "DevExpress.XtraScheduler" + VSuffix + ".Core.Desktop";
     public const string SRAssemblyPrintingDesign = "DevExpress.XtraPrinting" + VSuffixDesign;
     public const string SRAssemblyPrintingDesignFull = "DevExpress.XtraPrinting" + VSuffixDesign + FullAssemblyVersionExtension;
     public const string SRAssemblyRichEditLayoutEngine = "DevExpress.RichEdit.LayoutEngine" + VSuffix;
@@ -113,6 +115,7 @@ namespace DevExpress.Internal {
     public const string InstallationRegistryKey = InstallationRegistryKeyBase + VSuffixWithoutSeparator;
     public const string InstallationRegistryRootPathValueName = "RootDirectory";
     public const string SRAssemblyXpfPrefix = "DevExpress.Xpf";
+    public const string SRAssemblyPrefix = "DevExpress";
     public const string ThemePrefixWithoutSeparator = "Themes";
     public const string ThemePrefix = "." + ThemePrefixWithoutSeparator + ".";
 

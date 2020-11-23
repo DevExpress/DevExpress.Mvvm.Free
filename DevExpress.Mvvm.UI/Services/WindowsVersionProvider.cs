@@ -26,7 +26,10 @@ namespace DevExpress.Utils {
             }
         }
         public static bool IsWindows10 {
-            get { return WinVersionInfo.ProductName.ToLower().Contains("windows 10"); }
+            get {
+                if(string.IsNullOrEmpty(WinVersionInfo.ProductName)) return false;
+                return WinVersionInfo.ProductName.IndexOf("windows 10", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
         }
         public static bool IsWin10AnniversaryUpdateOrHigher {
             get {

@@ -38,12 +38,11 @@
     <DefineConstants>TRACE;MVVM;DXCORE3;FREE;</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="AssemblyVersion.cs" />
     <Compile Include="CellValue.cs" />
     <Compile Include="CollectionBindingHelper.cs" />
     <Compile Include="Commands\DelegateCommand.cs" />
+    <Compile Include="Commands\ICommand.cs" />
     <Compile Include="Commands\UICommand.cs" />
     <Compile Include="DataAnnotationsResources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -102,7 +101,6 @@
     <Compile Include="Native\ExpressionHelper.cs" />
     <Compile Include="Native\Guard.cs" />
     <Compile Include="Native\IClickable.cs" />
-    <Compile Include="Native\ICommand.cs" />
     <Compile Include="Native\IUICommand.cs" />
     <Compile Include="Native\ListAdapter.cs" />
     <Compile Include="Native\MayBe.cs" />
@@ -175,6 +173,6 @@
       <LastGenOutput>DataAnnotationsResources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup/>
+  <ItemGroup />
 </Project>
 

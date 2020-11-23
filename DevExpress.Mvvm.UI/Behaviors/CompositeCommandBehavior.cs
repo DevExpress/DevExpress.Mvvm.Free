@@ -213,10 +213,6 @@ namespace DevExpress.Mvvm.UI {
 
         CanExecuteChangedEventHandler<CommandItem> commandCanExecuteChangedHandler;
 
-        public CommandItem() {
-            this.commandCanExecuteChangedHandler = new CanExecuteChangedEventHandler<CommandItem>(this, (owner, o, e) => owner.OnCommandCanExecuteChanged(o, e));
-        }
-
         public bool ExecuteCommand() {
             if(!CanExecute)
                 return false;
@@ -225,8 +221,16 @@ namespace DevExpress.Mvvm.UI {
             return true;
         }
         void OnCommandChanged(DependencyPropertyChangedEventArgs e) {
-            e.OldValue.With(x => x as ICommand).Do(o => o.CanExecuteChanged -= this.commandCanExecuteChangedHandler.Handler);
-            e.NewValue.With(x => x as ICommand).Do(o => o.CanExecuteChanged += this.commandCanExecuteChangedHandler.Handler);
+            var oldValue = e.OldValue as ICommand;
+            var newValue = e.NewValue as ICommand;
+            if(oldValue != null && commandCanExecuteChangedHandler != null) {
+                oldValue.CanExecuteChanged -= commandCanExecuteChangedHandler.Handler;
+                commandCanExecuteChangedHandler = null;
+            }
+            if(newValue != null) {
+                commandCanExecuteChangedHandler = new CanExecuteChangedEventHandler<CommandItem>(this, (owner, o, ee) => owner.OnCommandCanExecuteChanged(o, ee));
+                newValue.CanExecuteChanged += commandCanExecuteChangedHandler.Handler;
+            }
             UpdateCanExecute();
         }
         void OnCommandCanExecuteChanged(object sender, EventArgs e) {

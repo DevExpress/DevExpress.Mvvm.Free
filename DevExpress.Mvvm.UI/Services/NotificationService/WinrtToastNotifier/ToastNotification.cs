@@ -138,10 +138,11 @@ namespace DevExpress.Internal {
                 return InvokeCore(sender, GetActivationString(args as IToastActivatedEventArgs), (h, s, a) => h(s, a));
             }
             string GetActivationString(IToastActivatedEventArgs args) {
-                string activationString = null;
-                if(args != null)
+                HSTRING activationString = new HSTRING();
+                if(args != null) {
                     args.GetArguments(out activationString);
-                return activationString;
+                }
+                return activationString.GetString();
             }
         }
         sealed class HandlerFailed : ToastNotificationHandler<TypedEventHandler<IPredefinedToastNotification, ToastNotificationFailedException>>, ITypedEventHandler_IToastNotification_Failed {

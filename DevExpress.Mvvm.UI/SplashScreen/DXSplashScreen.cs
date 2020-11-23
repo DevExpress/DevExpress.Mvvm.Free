@@ -259,10 +259,15 @@ namespace DevExpress.Mvvm.UI {
             public void SetState(object state) {
                 if(ViewModelBase.IsInDesignMode)
                     return;
-                if(!IsActive)
-                    throw new InvalidOperationException(DXSplashScreenExceptions.ServiceException2);
-                if(!ActiveInfo.Callbacks.PushSetStateCallback(state))
+                lock(internalLocker) {
+                    if(ActiveInfo == null)
+                        return;
+                    if(!ActiveInfo.IsActive)
+                        throw new InvalidOperationException(DXSplashScreenExceptions.ServiceException2);
+                    if(ActiveInfo.Callbacks != null && ActiveInfo.Callbacks.PushSetStateCallback(state))
+                        return;
                     InvokeOnSplashScreenDispatcher(new Action<SplashScreenInfo, object>(SetStateCore), new object[] { ActiveInfo, state });
+                }
             }
             public void CallSplashScreenMethod<T>(Action<T> action) where T : Window {
                 if(ViewModelBase.IsInDesignMode)
@@ -439,6 +444,8 @@ namespace DevExpress.Mvvm.UI {
                     GetViewModel(info).Do(x => x.State = state);
             }
             static SplashScreenViewModel GetViewModel(SplashScreenInfo info) {
+                if(info.SplashScreen == null)
+                    return null;
                 return (info.SplashScreen.Content as FrameworkElement).With(x => x.DataContext as SplashScreenViewModel);
             }
 

@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
     [CLSCompliant(false)]
@@ -16,15 +13,15 @@ namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
         void get_Doctype();
         void get_Implementation();
         void get_DocumentElement();
-        int CreateElement([In, MarshalAs(47)] string name, out IXmlElement element);
+        int CreateElement([In] HSTRING name, out IXmlElement element);
         void CreateDocumentFragment();
-        int CreateTextNode([In, MarshalAs(47)] string data,
+        int CreateTextNode([In] HSTRING data,
                            out IXmlText newTextNode);
         void CreateComment();
         void CreateProcessingInstruction();
         void CreateAttribute();
         void CreateEntityReference();
-        int GetElementsByTagName([In, MarshalAs(47)] string tagName, out IXmlNodeList elements);
+        int GetElementsByTagName([In] HSTRING tagName, out IXmlNodeList elements);
     }
     [CLSCompliant(false)]
     [ComImport]
@@ -34,7 +31,7 @@ namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        void LoadXml([In, MarshalAs(47)]string xml);
+        void LoadXml([In] HSTRING xml);
     }
 
     [CLSCompliant(false)]
@@ -47,8 +44,8 @@ namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
         void IInspectableStub3();
         string TagName { get; }
         void GetAttribute();
-        int SetAttribute([In, MarshalAs(47)] string attributeName,
-                         [In, MarshalAs(47)] string attributeValue);
+        int SetAttribute([In] HSTRING attributeName,
+                         [In] HSTRING attributeValue);
     }
 
     [CLSCompliant(false)]
@@ -59,7 +56,7 @@ namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
         void IInspectableStub1();
         void IInspectableStub2();
         void IInspectableStub3();
-        int GetXml([Out, MarshalAs(47)] out string xml);
+        int GetXml([Out] out HSTRING xml);
     }
 
     [CLSCompliant(false)]
@@ -114,6 +111,6 @@ namespace DevExpress.Internal.WinApi.Window.Data.Xml.Dom {
         void IInspectableStub3();
         void get_Length();
         void Item();
-        int GetNamedItem([In, MarshalAs(47)] string name, out IXmlNode node);
+        int GetNamedItem([In] HSTRING name, out IXmlNode node);
     }
 }

@@ -32,7 +32,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevExpress.Mvvm.Wpf.NetCore
 EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "DevExpress.Mvvm.TestClasses.VB.NetCore.Desktop.Free", "DevExpress.Mvvm.TestClasses\DevExpress.Mvvm.TestClasses.VB.NetCore.Desktop.Free.vbproj", "{502F13A4-EF48-4015-B0D8-B52E6099CF95}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevExpress.Mvvm.UI.Wpf.NetCore.Desktop.Free", "DevExpress.Mvvm.UI\DevExpress.Mvvm.UI.Wpf.NetCore.Desktop.Free.csproj", "{8E649F7E-FE4D-4924-BD45-F2B82C4512C3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevExpress.Mvvm.UI.Wpf.NetCore.Desktop.Free", "DevExpress.Mvvm.UI\DevExpress.Mvvm.UI.Wpf.NetCore.Desktop.Free.csproj", "{8E649F7E-FE4D-4924-BD45-F2B82C4512C3}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7545BCBC-E63B-082A-2109-556174DE4D1A} = {7545BCBC-E63B-082A-2109-556174DE4D1A}
 	EndProjectSection
@@ -81,7 +81,7 @@ Global
 		{8E649F7E-FE4D-4924-BD45-F2B82C4512C3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CA4AFACD-89FD-0C7D-2A4B-E4107BB5AB91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CA4AFACD-89FD-0C7D-2A4B-E4107BB5AB91}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CA4AFACD-89FD-0C7D-2A4B-E4107BB5AB91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA4AFACD-89FD-0C7D-2A4B-E4107BB5AB91}.Release|Any CPU.ActiveCfg = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

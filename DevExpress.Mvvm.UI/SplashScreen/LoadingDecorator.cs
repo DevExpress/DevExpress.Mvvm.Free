@@ -160,14 +160,15 @@ namespace DevExpress.Mvvm.UI {
         }
         void OnLoaded(object sender, RoutedEventArgs e) {
             IsLoadedEx = true;
-            if (!IsLoaded)
-                return;
-
-            Loaded -= OnLoaded;
             if(ViewModelBase.IsInDesignMode)
                 return;
+            if (!IsLoaded)
+                return;
+            if(!isFirstLoad) return;
+            isFirstLoad = false;
             OnLoadingChildChanged(true);
         }
+        bool isFirstLoad = true;
         void OnUnloaded(object sender, RoutedEventArgs e) {
             IsLoadedEx = false;
             CloseSplashScreenOnLoading();
@@ -245,8 +246,15 @@ namespace DevExpress.Mvvm.UI {
             CloseSplashScreenOnLoading();
         }
         void SplashScreenDataContextChanged() {
-            if(SplashScreenDataContext is DependencyObject)
+            var dataContext = SplashScreenDataContext;
+            if(dataContext is DependencyObject)
                 throw new InvalidOperationException(Exception1);
+            if(SplashScreenTemplate == null || !SplashContainer.IsActive) return;
+            SplashContainer.ActiveInfo?.Dispatcher?.InvokeAsync(() => {
+                var c = SplashContainer?.ActiveInfo?.SplashScreen?.Content as FrameworkElement;
+                if(c != null)
+                    c.DataContext = dataContext;
+            });
         }
 
         protected virtual void ShowSplashScreen() {

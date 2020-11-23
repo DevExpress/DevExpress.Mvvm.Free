@@ -1095,7 +1095,6 @@ namespace DevExpress.Mvvm.POCO {
         internal const string Error_ObjectDoesntImplementIPOCOViewModel = "Object doesn't implement IPOCOViewModel.";
         internal const string Error_ObjectDoesntImplementISupportServices = "Object doesn't implement ISupportServices.";
         internal const string Error_CommandNotFound = "Command not found: {0}.";
-        internal const string Error_CommandNotAsync = "Command is not async";
         internal const string Error_ConstructorNotFound = "Constructor not found.";
         internal const string Error_TypeHasNoCtors = "Type has no accessible constructors: {0}.";
 
@@ -1164,7 +1163,7 @@ namespace DevExpress.Mvvm.POCO {
             pocoViewModel.RaisePropertyChanged(BindableBase.GetPropertyNameFast(propertyExpression));
         }
         public static IDelegateCommand GetCommand<T>(this T viewModel, Expression<Action<T>> methodExpression) {
-            return GetCommandCore(viewModel, methodExpression);
+            return GetCommandCore<IDelegateCommand>(viewModel, methodExpression);
         }
         public static T SetParentViewModel<T>(this T viewModel, object parentViewModel) {
             ((ISupportParentViewModel)viewModel).ParentViewModel = parentViewModel;
@@ -1174,13 +1173,13 @@ namespace DevExpress.Mvvm.POCO {
             return (T)((ISupportParentViewModel)viewModel).ParentViewModel;
         }
         public static IAsyncCommand GetAsyncCommand<T>(this T viewModel, Expression<Func<T, Task>> methodExpression) {
-            return GetAsyncCommandCore(viewModel, methodExpression);
+            return GetCommandCore<IAsyncCommand>(viewModel, methodExpression);
         }
         public static void RaiseCanExecuteChanged<T>(this T viewModel, Expression<Action<T>> methodExpression) {
-            RaiseCanExecuteChangedCore(viewModel, methodExpression);
+            GetCommandCore<IDelegateCommand>(viewModel, methodExpression).RaiseCanExecuteChanged();
         }
         public static void RaiseCanExecuteChanged<T>(this T viewModel, Expression<Func<T, Task>> methodExpression) {
-            RaiseCanExecuteChangedCore(viewModel, methodExpression);
+            GetCommandCore<IAsyncCommand>(viewModel, methodExpression).RaiseCanExecuteChanged();
         }
 
         public static bool HasError<T, TProperty>(this T viewModel, Expression<Func<T, TProperty>> propertyExpression) {
@@ -1228,25 +1227,14 @@ namespace DevExpress.Mvvm.POCO {
         public static bool GetIsExecuting<T>(this T viewModel, Expression<Func<T, Task>> methodExpression) {
             return GetAsyncCommand(viewModel, methodExpression).IsExecuting;
         }
-        internal static void RaiseCanExecuteChangedCore(object viewModel, LambdaExpression methodExpression) {
-            IDelegateCommand command = GetCommandCore(viewModel, methodExpression);
-            command.RaiseCanExecuteChanged();
-        }
-        static IAsyncCommand GetAsyncCommandCore(object viewModel, LambdaExpression methodExpression) {
-            GetPOCOViewModel(viewModel);
-            ICommand command = GetCommandCore(viewModel, methodExpression);
-            if(!(command is IAsyncCommand))
-                throw new ViewModelSourceException(ViewModelSourceException.Error_CommandNotAsync);
-            return (IAsyncCommand)command;
-        }
-        static IDelegateCommand GetCommandCore(object viewModel, LambdaExpression methodExpression) {
+        internal static TCommand GetCommandCore<TCommand>(object viewModel, LambdaExpression methodExpression) where TCommand : class, IDelegateCommand {
             GetPOCOViewModel(viewModel);
             MethodInfo method = ExpressionHelper.GetMethod(methodExpression);
             string commandName = ViewModelSource.GetCommandName(method);
             PropertyInfo property = viewModel.GetType().GetProperty(commandName);
             if(property == null)
                 throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_CommandNotFound, commandName));
-            return property.GetValue(viewModel, null) as IDelegateCommand;
+            return (TCommand)property.GetValue(viewModel, null);
         }
         static IPOCOViewModel GetPOCOViewModel<T>(T viewModel) {
             IPOCOViewModel pocoViewModel = viewModel as IPOCOViewModel;

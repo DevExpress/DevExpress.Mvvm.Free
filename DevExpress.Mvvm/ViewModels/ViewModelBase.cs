@@ -94,21 +94,30 @@ namespace DevExpress.Mvvm {
         protected virtual T GetService<T>(string key, ServiceSearchMode searchMode) where T : class {
             return ServiceContainer.GetService<T>(key, searchMode);
         }
-#region CommandAttributeSupport
+        #region CommandAttributeSupport
+        protected internal IDelegateCommand GetCommand(Expression<Action> commandMethodExpression) {
+            return GetCommandCore<IDelegateCommand>(commandMethodExpression);
+        }
+        protected internal IAsyncCommand GetAsyncCommand(Expression<Func<System.Threading.Tasks.Task>> commandMethodExpression) {
+            return GetCommandCore<IAsyncCommand>(commandMethodExpression);
+        }
+        TCommand GetCommandCore<TCommand>(LambdaExpression methodExpression) where TCommand : class, IDelegateCommand {
+            if(IsPOCOViewModel)
+                return POCOViewModelExtensions.GetCommandCore<TCommand>(this, methodExpression);
+            var method = ExpressionHelper.GetMethod(methodExpression);
+            if(method == null)
+                throw new CommandAttributeException(string.Format(ViewModelSourceException.Error_CommandNotFound, method.Name + CommandNameSuffix));
+            CommandProperty commandProperty;
+            if(commandProperties.TryGetValue(method, out commandProperty))
+                return (TCommand)commandProperty.GetValue(this);
+            throw new CommandAttributeException(string.Format(ViewModelSourceException.Error_CommandNotFound, method.Name + CommandNameSuffix));
+        }
+
         protected internal void RaiseCanExecuteChanged(Expression<Action> commandMethodExpression) {
-            RaiseCanExecuteChangedCore(commandMethodExpression);
+            GetCommand(commandMethodExpression).RaiseCanExecuteChanged();
         }
         protected internal void RaiseCanExecuteChanged(Expression<Func<System.Threading.Tasks.Task>> commandMethodExpression) {
-            RaiseCanExecuteChangedCore(commandMethodExpression);
-        }
-        void RaiseCanExecuteChangedCore(LambdaExpression commandMethodExpression) {
-            if(IsPOCOViewModel) {
-                POCOViewModelExtensions.RaiseCanExecuteChangedCore(this, commandMethodExpression);
-            } else {
-                ((IDelegateCommand)commandProperties[ExpressionHelper.GetMethod(commandMethodExpression)]
-                .GetValue(this)
-                ).RaiseCanExecuteChanged();
-            }
+            GetAsyncCommand(commandMethodExpression).RaiseCanExecuteChanged();
         }
         internal const string CommandNameSuffix = "Command";
         const string CanExecuteSuffix = "Can";

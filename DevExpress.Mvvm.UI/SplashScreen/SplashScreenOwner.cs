@@ -367,7 +367,7 @@ namespace DevExpress.Mvvm.UI {
             Child.Window.WindowStartupLocation = WindowStartupLocation.Manual;
         }
         protected override void CompleteInitializationOverride() {
-            if(Child.Window.Dispatcher.CheckAccess()) {
+            if(Child.Window?.Dispatcher?.CheckAccess() ?? false) {
                 nextParentPos = ((WindowArrangerContainerBase)Parent).GetControlStartupRect(childLocation);
             }
         }
@@ -400,7 +400,7 @@ namespace DevExpress.Mvvm.UI {
             var window = Child.Window;
             if(!SplashScreenHelper.IsZero(window.ActualWidth) && !SplashScreenHelper.IsZero(window.ActualHeight)) {
                 if(childLocation == SplashScreenLocation.CenterScreen)
-                    bounds = SplashScreenHelper.GetDpiBasedBounds(bounds, Child.Handle);
+                    bounds = SplashScreenHelper.GetScaledRect(bounds);
                 var newPosition = new Point(bounds.X + (bounds.Width - window.ActualWidth) * 0.5, bounds.Y + (bounds.Height - window.ActualHeight) * 0.5);
                 window.Left = Math.Round(newPosition.X);
                 window.Top = Math.Round(newPosition.Y);
@@ -471,6 +471,7 @@ namespace DevExpress.Mvvm.UI {
         }
         void CompleteContainerInitialization(WindowContainer container) {
             if(!container.IsInitialized) {
+                container.Initialized -= OnContainerInitialized;
                 container.Initialized += OnContainerInitialized;
                 return;
             }
@@ -483,7 +484,7 @@ namespace DevExpress.Mvvm.UI {
             CompleteInitialization();
         }
         void CompleteInitialization() {
-            if(IsReleased || IsInitialized || Child == null || !Child.IsInitialized || Parent.Handle == IntPtr.Zero)
+            if(IsReleased || IsInitialized || Child == null || !Child.IsInitialized || Parent == null || Parent.Handle == IntPtr.Zero)
                 return;
 
             CompleteInitializationOverride();
@@ -986,19 +987,6 @@ namespace DevExpress.Mvvm.UI {
         internal static bool IsZero(double value) {
             return value == 0d || double.IsNaN(value);
         }
-        internal static Rect GetDpiBasedBounds(Rect bounds, IntPtr hwnd) {
-            if(hwnd == IntPtr.Zero)
-                return bounds;
-
-            var presentationSource = HwndSource.FromHwnd(hwnd);
-            if(presentationSource != null) {
-                return new Rect(bounds.X / presentationSource.CompositionTarget.TransformToDevice.M11,
-                    bounds.Y / presentationSource.CompositionTarget.TransformToDevice.M22,
-                    bounds.Width / presentationSource.CompositionTarget.TransformToDevice.M11,
-                    bounds.Height / presentationSource.CompositionTarget.TransformToDevice.M22);
-            }
-            return bounds;
-        }
 
         public static void SetWindowVisible(IntPtr handle, bool isVisible) {
             if(handle == IntPtr.Zero)
@@ -1052,6 +1040,51 @@ namespace DevExpress.Mvvm.UI {
             HWND_NEXT = 2,
             HWND_PREV = 3,
             OWNER = 4,
+        }
+
+        public static Rect GetScaledRect(Rect rect) {
+            return GetScaledRectCore(rect);
+        }
+        public static Rect GetScaledRectCore(Rect rect) {
+            return new Rect(GetScaledPoint(rect.TopLeft), GetScaledSize(rect.Size));
+        }
+        public static Point GetScaledPoint(Point point) {
+            return new Point(GetScaledValue(point.X), GetScaledValue(point.Y));
+        }
+        public static Size GetScaledSize(Size size) {
+            return new Size(GetScaledValue(size.Width), GetScaledValue(size.Height));
+        }
+        public static double GetScaledValue(double value) {
+            return value / ScaleX;
+        }
+
+        static double? scaleXCore;
+        public static double ScaleX {
+            get { return scaleXCore ?? (scaleXCore = CalcPrimaryScaleX()) ?? 1d; }
+            internal set { scaleXCore = value; }
+        }
+        [SecuritySafeCritical]
+        static double? CalcPrimaryScaleX() {
+            IntPtr dc = NativeMethods.GetDC(IntPtr.Zero);
+            if(dc == IntPtr.Zero)
+                return null;
+            try {
+                double dpiX = NativeMethods.GetDeviceCaps(dc, NativeMethods.LOGPIXELSX);
+                return dpiX / standartDpi;
+            } finally {
+                NativeMethods.ReleaseDC(dc, IntPtr.Zero);
+            }
+        }
+        static readonly double standartDpi = 96d;
+
+        class NativeMethods {
+            public const int LOGPIXELSX = 88;
+            [DllImport("user32.dll")]
+            public static extern IntPtr GetDC(IntPtr hwnd);
+            [DllImport("gdi32.dll")]
+            public static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
+            [DllImport("user32.dll")]
+            public static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
         }
     }
 }

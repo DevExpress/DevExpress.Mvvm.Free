@@ -452,6 +452,56 @@ namespace DevExpress.Mvvm.Tests {
         }
 #pragma warning restore 0618
         #endregion
+
+        public class ViewModelBase_CommandByMethodNameVM : ViewModelBase {
+            [Command(Name = "Do_Command1")]
+            public void Do() { }
+            [Command(Name = "Do_Command2")]
+            public void Do(object parameter) { }
+
+            [Command]
+            public void Do1() { }
+            [Command]
+            public void Do2() { }
+
+            [Command]
+            public async Task Do3() {
+                await Task.Yield();
+            }
+
+            [Command(false)]
+            public void Do4() { }
+        }
+        [Test]
+        public void ViewModelBase_CommandByMethodNameTest() {
+            var vm = new ViewModelBase_CommandByMethodNameVM();
+            var c1 = vm.GetCommand(() => vm.Do());
+            var c2 = vm.GetCommand(() => vm.Do(null));
+            Assert.AreNotEqual(c1, c2);
+            Assert.AreEqual(true, c1 is IDelegateCommand);
+            Assert.AreEqual(true, c2 is IDelegateCommand);
+
+            c1 = vm.GetAsyncCommand(() => vm.Do3());
+            Assert.AreEqual(true, c1 is IAsyncCommand);
+
+            var ex = Assert.Throws<CommandAttributeException>(() => vm.GetCommand(() => vm.Do4()));
+            Assert.AreEqual("Command not found: Do4Command.", ex.Message);
+        }
+        [Test]
+        public void POCO_ViewModelBase_CommandByMethodNameTest() {
+            var vm = ViewModelSource.Create(() => new ViewModelBase_CommandByMethodNameVM());
+            var c1 = vm.GetCommand(() => vm.Do());
+            var c2 = vm.GetCommand(() => vm.Do(null));
+            Assert.AreNotEqual(c1, c2);
+            Assert.AreEqual(true, c1 is IDelegateCommand);
+            Assert.AreEqual(true, c2 is IDelegateCommand);
+
+            c1 = vm.GetAsyncCommand(() => vm.Do3());
+            Assert.AreEqual(true, c1 is IAsyncCommand);
+
+            var ex = Assert.Throws<ViewModelSourceException>(() => vm.GetCommand(() => vm.Do4()));
+            Assert.AreEqual("Command not found: Do4Command.", ex.Message);
+        }
         #endregion
 
         [Test]

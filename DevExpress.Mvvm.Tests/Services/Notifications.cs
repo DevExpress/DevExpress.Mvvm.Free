@@ -507,6 +507,5 @@ namespace DevExpress.Mvvm.UI.Tests {
             service.CustomNotificationScreen = NotificationScreen.ApplicationWindow;
             service.CreateCustomNotification(null);
         }
-
     }
 }

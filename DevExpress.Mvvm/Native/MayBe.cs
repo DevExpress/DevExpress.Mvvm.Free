@@ -187,20 +187,25 @@ namespace DevExpress.Mvvm.Native {
         }
         public static IEnumerable<T> Flatten<T>(this IEnumerable<T> source, Func<T, int, IEnumerable<T>> getItems) {
             var stack = new Stack<EnumeratorAndLevel<T>>();
-            var root = source.GetEnumerator();
-            if(root.MoveNext())
-                stack.Push(new EnumeratorAndLevel<T>(root, 0));
-            while(stack.Count != 0) {
-                var top = stack.Peek();
-                var current = top.En.Current;
-                yield return current;
-                if(!top.En.MoveNext())
-                    stack.Pop();
+            try {
+                var root = source.GetEnumerator();
+                if(root.MoveNext())
+                    stack.Push(new EnumeratorAndLevel<T>(root, 0));
+                while(stack.Count != 0) {
+                    var top = stack.Peek();
+                    var current = top.En.Current;
+                    yield return current;
+                    if(!top.En.MoveNext())
+                        stack.Pop();
 
-                var children = getItems(current, top.Level)?.GetEnumerator();
-                if(children?.MoveNext() == true) {
-                    stack.Push(new EnumeratorAndLevel<T>(children, top.Level + 1));
+                    var children = getItems(current, top.Level)?.GetEnumerator();
+                    if(children?.MoveNext() == true) {
+                        stack.Push(new EnumeratorAndLevel<T>(children, top.Level + 1));
+                    }
                 }
+            } finally {
+                foreach(var enumAndLevel in stack)
+                    enumAndLevel.En.Dispose();
             }
         }
         public static T MinByLast<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector) where TKey : IComparable {

@@ -254,12 +254,17 @@ namespace DevExpress.Mvvm.UI {
             get { return DevExpress.Internal.WinApi.ToastNotificationManager.AreToastNotificationsSupported; }
         }
         public INotification CreateCustomNotification(object viewModel) {
-            Window window = AssociatedObject != null && CustomNotificationScreen == NotificationScreen.ApplicationWindow ?
-                Window.GetWindow(AssociatedObject) : null;
+            var window = GetApplicationWindow();
             return new MvvmCustomNotification(viewModel, CustomNotifier, window,
                 (int)Math.Max(0, Math.Min(int.MaxValue, CustomNotificationDuration.TotalMilliseconds)));
         }
-
+        Window GetApplicationWindow() {
+            if(CustomNotificationScreen == NotificationScreen.Primary)
+                return null;
+            if(AssociatedObject != null)
+                return Window.GetWindow(AssociatedObject);
+            return Application.Current?.MainWindow;
+        }
         public INotification CreatePredefinedNotification(
             string text1,
             string text2,

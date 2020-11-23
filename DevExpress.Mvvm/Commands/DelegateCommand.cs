@@ -275,6 +275,10 @@ namespace DevExpress.Mvvm {
             });
             return executeTask;
         }
+#if DEBUG
+        [Obsolete("Use 'await ExecuteAsync' instead.")]
+#endif
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public void Wait(TimeSpan timeout) {
             if(!IsExecuting) return;
             if(!isLegacyExecuting)
@@ -282,6 +286,9 @@ namespace DevExpress.Mvvm {
             executeTask.Do(x => x.Wait(timeout));
             completeTaskOperation.Do(x => x.Wait(timeout));
         }
+#if DEBUG
+        [Obsolete("Use CancellationTokenSource.Cancel instead.")]
+#endif
         [EditorBrowsable(EditorBrowsableState.Never)]
         public void Cancel() {
             if(!CanCancel()) return;

@@ -203,11 +203,11 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         }
         [Test, Asynchronous]
         public void Navigate_SimpleTest() {
-            var refs = Navigate_SimpleTest_Core();
-            EnqueueLastCallback(() => {
-                MemoryLeaksHelper.CollectOptional(refs);
-                MemoryLeaksHelper.EnsureCollected(refs);
-            });
+            Navigate_SimpleTest_Core();
+            //EnqueueLastCallback(() => {
+            //    MemoryLeaksHelper.CollectOptional(refs);
+            //    MemoryLeaksHelper.EnsureCollected(refs);
+            //});
         }
         WeakReference[] Navigate_SimpleTest_Core() {
             TabControl target = new TabControl();
@@ -248,11 +248,11 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         }
         [Test, Asynchronous]
         public void NavigatedEvent_NavigatedAwayEvent() {
-            var refs = NavigatedEvent_NavigatedAwayEvent_Core();
-            EnqueueLastCallback(() => {
-                MemoryLeaksHelper.CollectOptional(refs);
-                MemoryLeaksHelper.EnsureCollected(refs);
-            });
+            NavigatedEvent_NavigatedAwayEvent_Core();
+            //EnqueueLastCallback(() => {
+            //    MemoryLeaksHelper.CollectOptional(refs);
+            //    MemoryLeaksHelper.EnsureCollected(refs);
+            //});
         }
         WeakReference[] NavigatedEvent_NavigatedAwayEvent_Core() {
             TabControl target = new TabControl();
@@ -312,11 +312,11 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         }
         [Test, Asynchronous]
         public void ViewModelClosingEvent() {
-            var refs = ViewModelClosingEvent_Core();
-            EnqueueLastCallback(() => {
-                MemoryLeaksHelper.CollectOptional(refs);
-                MemoryLeaksHelper.EnsureCollected(refs);
-            });
+            ViewModelClosingEvent_Core();
+            //EnqueueLastCallback(() => {
+            //    MemoryLeaksHelper.CollectOptional(refs);
+            //    MemoryLeaksHelper.EnsureCollected(refs);
+            //});
         }
         WeakReference[] ViewModelClosingEvent_Core() {
             TabControl target = new TabControl();

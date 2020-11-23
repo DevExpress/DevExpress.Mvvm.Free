@@ -51,15 +51,15 @@ namespace DevExpress.Internal {
         }
         static void SetNodeValueString(string str, IXmlDocument xmldoc, IXmlNode node) {
             IXmlText textNode;
-            int res = xmldoc.CreateTextNode(str, out textNode);
-            ComFunctions.CheckHRESULT(res);
+            using(var hStrign_str = HSTRING.FromString(str))
+                ComFunctions.CheckHRESULT(xmldoc.CreateTextNode(hStrign_str, out textNode));
             AppendNode(node, (IXmlNode)textNode);
         }
         static void SetImageSrc(IXmlDocument xmldoc, string imagePath) {
             IXmlNode imageNode = GetNode(xmldoc, "image");
             IXmlNode srcAttribute;
-            int res = imageNode.Attributes.GetNamedItem("src", out srcAttribute);
-            ComFunctions.CheckHRESULT(res);
+            using(var hString_name = HSTRING.FromString("src"))
+                ComFunctions.CheckHRESULT(imageNode.Attributes.GetNamedItem(hString_name, out srcAttribute));
             SetNodeValueString(imagePath, xmldoc, srcAttribute);
         }
         public void SetAppLogoImageCrop(ImageCropType appLogoImageCrop) {
@@ -329,7 +329,9 @@ namespace DevExpress.Internal {
             SetAttribute((IXmlElement)node, attributeName, attributeValue);
         }
         static void SetAttribute(IXmlElement node, string attributeName, string attributeValue) {
-            ComFunctions.CheckHRESULT(node.SetAttribute(attributeName, attributeValue));
+            using(var hString_attributeName = HSTRING.FromString(attributeName))
+            using(var hString_attributeValue = HSTRING.FromString(attributeValue))
+                ComFunctions.CheckHRESULT(node.SetAttribute(hString_attributeName, hString_attributeValue));
         }
         static void SetSound(IXmlDocument xmldoc, PredefinedSound sound) {
             string soundXml = "ms-winsoundevent:" + sound.ToString().Replace("_", ".");
@@ -356,12 +358,14 @@ namespace DevExpress.Internal {
         }
         static IXmlNodeList GetNodes(IXmlDocument xmldoc, string tagName) {
             IXmlNodeList nodes;
-            ComFunctions.CheckHRESULT(xmldoc.GetElementsByTagName(tagName, out nodes));
+            using(var hStrign_tagName = HSTRING.FromString(tagName))
+                ComFunctions.CheckHRESULT(xmldoc.GetElementsByTagName(hStrign_tagName, out nodes));
             return nodes;
         }
         static IXmlElement CreateElement(IXmlDocument xmldoc, string elementName) {
             IXmlElement element;
-            ComFunctions.CheckHRESULT(xmldoc.CreateElement(elementName, out element));
+            using(var hStrign_elementName = HSTRING.FromString(elementName))
+                ComFunctions.CheckHRESULT(xmldoc.CreateElement(hStrign_elementName, out element));
             return element;
         }
         static IXmlNode AppendNode(IXmlNode parentNode, IXmlNode childNode) {

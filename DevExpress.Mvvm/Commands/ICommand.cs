@@ -1,11 +1,10 @@
-using DevExpress.Mvvm.Native;
 using System;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace DevExpress.Mvvm.Native {
+namespace DevExpress.Mvvm {
     public interface IDelegateCommand : ICommand {
         void RaiseCanExecuteChanged();
     }
@@ -16,12 +15,21 @@ namespace DevExpress.Mvvm.Native {
         CancellationTokenSource CancellationTokenSource { get; }
         bool IsCancellationRequested { get; }
         ICommand CancelCommand { get; }
+#if DEBUG
+        [Obsolete("Use 'await ExecuteAsync' instead.")]
+#endif
+        [EditorBrowsable(EditorBrowsableState.Never)]
         void Wait(TimeSpan timeout);
         Task ExecuteAsync(object parameter);
     }
 }
 namespace DevExpress.Mvvm {
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class IAsyncCommandExtensions {
+#if DEBUG
+        [Obsolete("Use 'await ExecuteAsync' instead.")]
+#endif
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public static void Wait(this IAsyncCommand service) {
             VerifyService(service);
             service.Wait(TimeSpan.FromMilliseconds(-1));
