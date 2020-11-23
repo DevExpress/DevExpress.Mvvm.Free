@@ -18,6 +18,15 @@ This repository mirrors the full version of the DevExpress MVVM framework includ
 If you have an idea how to improve our MVVM Framework, please contact us via our [support center](https://www.devexpress.com/Support/Center/Question/Create).
 
 # Release Notes
+
+### 20.2.3
+* [T917390](https://supportcenter.devexpress.com/ticket/details/T917390/the-idelegatecommand-and-iasynccommand-interfaces-have-been-moved-to-the-devexpress-mvvm) - The IDelegateCommand and IAsyncCommand interfaces have been moved to the DevExpress.Mvvm namespace
+* [T906028](https://supportcenter.devexpress.com/ticket/details/T906028/make-the-bindablebase-setproperty-method-virtual) - Make the BindableBase.SetProperty method virtual
+
+### 20.1.6
+* [T831750](https://supportcenter.devexpress.com/ticket/details/T831750/the-propertymanager-class-has-been-removed)  - The PropertyManager class has been removed
+* [T832854](https://supportcenter.devexpress.com/ticket/details/T832854/the-iwindowservice-and-icurrentwindowservice-interfaces-have-been-changed) - The IWindowService and ICurrentWindowService interfaces have been changed
+
 ### 19.2.3
 * DevExpress MVVM Framework now supports .NET Core 3.
 * [T817657](https://www.devexpress.com/Support/Center/Question/Details/T817657/the-idispatcherservice-interface-has-been-changed) - The IDispatcherService interface has been changed
