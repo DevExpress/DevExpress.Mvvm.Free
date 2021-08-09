@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using DevExpress.Mvvm.Native;
 using System.Windows.Controls;
 using DevExpress.Mvvm.POCO;
+using System.Windows.Input;
 using System;
 using System.Windows;
 using NUnit.Framework;
@@ -128,11 +129,7 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void EnumerableConverter_TryConvertToAbstractCollectionTest() {
             var converter = new EnumerableConverter() { TargetItemType = typeof(string), ItemConverter = new ToStringConverter() };
-            AssertHelper.AssertThrows<NotSupportedCollectionException>(() => {
-                converter.Convert(new int[] { 0, 1, 2 }, typeof(ReadOnlyCollectionBase), null, null);
-            }, e => {
-                Assert.AreEqual("Cannot create an abstract class.", e.InnerException.Message);
-            });
+            AssertHelper.AssertThrows<NotSupportedCollectionException>(() => converter.Convert(new int[] { 0, 1, 2 }, typeof(ReadOnlyCollectionBase), null, null));
         }
         [Test]
         public void EnumerableConverter_TryConvertToInvalidCollectionTest() {
@@ -165,7 +162,6 @@ namespace DevExpress.Mvvm.Tests {
         [Test]
         public void BooleanToVisibilityConverter() {
             var converter = new DevExpress.Mvvm.UI.BooleanToVisibilityConverter();
-
             Assert.AreEqual(Visibility.Visible, converter.Convert(true, typeof(Visibility), null, null));
             Assert.AreEqual(Visibility.Collapsed, converter.Convert(false, typeof(Visibility), null, null));
             Assert.AreEqual(Visibility.Visible, converter.Convert(new Nullable<bool>(true), typeof(Visibility), null, null));
@@ -670,6 +666,121 @@ namespace DevExpress.Mvvm.Tests {
             }
         }
 
+        public class CustomCommand : ICommand {
+            readonly Action<int> execute;
+            readonly Func<int, bool> canExecute;
+            public event EventHandler CanExecuteChanged;
+            public CustomCommand(Action<int> execute, Func<int, bool> canExecute) {
+                this.execute = execute;
+                this.canExecute = canExecute;
+            }
+            public bool CanExecute(object parameter) => canExecute?.Invoke((int)parameter) ?? true;
+            public void Execute(object parameter) => execute?.Invoke((int)parameter);
+            public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
+        public class CustomControl : Control {
+            public static readonly DependencyProperty CommandProperty;
+            static CustomControl() => CommandProperty = DependencyProperty.Register(nameof(Command), typeof(ICommand<int>), typeof(CustomControl), null);
+            public ICommand<int> Command {
+                get { return (ICommand<int>)GetValue(CommandProperty); }
+                set { SetValue(CommandProperty, value); }
+            }
+        }
+        public interface ITestInterface {
+            void Testing();
+        }
+        public class TestCommand : ITestInterface, ICommand<int> {
+            public event EventHandler CanExecuteChanged;
+
+            public bool CanExecute(int param) => true;
+            public bool CanExecute(object parameter) => true;
+            public void Execute(int param) { }
+            public void Execute(object parameter) { }
+            public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+
+            public void Testing() {
+            }
+        }
+        public class TestCommandChild : TestCommand {
+        }
+        public class TestNoCommandClass { 
+        }
+        [Test]
+        public void TypeCommandHelper_GetGeneric() {
+            var testCommandChild = new TestCommandChild();
+            var testCommand = new TestCommand();
+            var testNoCommand = new TestNoCommandClass();
+            Assert.AreEqual(typeof(int), TypedCommandHelper.GetCommandGenericType(testCommand.GetType()));
+            Assert.AreEqual(typeof(int), TypedCommandHelper.GetCommandGenericType(testCommandChild.GetType()));
+            Assert.IsNull(TypedCommandHelper.GetCommandGenericType(testNoCommand.GetType()));
+        }
+        [Test]
+        public void ToTypedCommandConverter_Extension() {
+            var accumulator = 0;
+            var customCommand = new CustomCommand(arg => accumulator += arg, arg => arg > 0);
+            var convertedCommand = customCommand.ToTypedCommand<int>();
+
+            Assert.AreEqual(0, accumulator);
+            convertedCommand.Execute(1);
+            Assert.AreEqual(1, accumulator);
+            convertedCommand.Execute(2);
+            Assert.AreEqual(3, accumulator);
+
+            Assert.IsTrue(convertedCommand.CanExecute(1));
+            Assert.IsFalse(convertedCommand.CanExecute(0));
+        }
+        [Test]
+        public void ToTypedCommandConverter_Converter() {
+            var converter = new ToTypedCommandConverter();
+            var customCommand = new CustomCommand(null, null);
+            var targetType = typeof(ICommand<int>);
+
+            Assert.IsNull(converter.Convert(null, targetType, null, CultureInfo.CurrentCulture));
+            Assert.IsNotNull(converter.Convert(customCommand, targetType, null, CultureInfo.CurrentCulture));
+
+            Assert.IsTrue(converter.ProvideValue(null) is IValueConverter);
+        }
+        [Test]
+        public void ToTypedCommandConverter_ConverterExceptions() {
+            var converter = new ToTypedCommandConverter();
+            var customCommand = new CustomCommand(null, null);
+            var typedCommand = customCommand.ToTypedCommand<int>();
+
+            Assert.Throws<ArgumentException>(() => converter.Convert(1, typeof(ICommand<int>), null, CultureInfo.CurrentCulture));
+            Assert.Throws<ArgumentException>(() => converter.Convert(customCommand, typeof(int), null, CultureInfo.CurrentCulture));
+            Assert.Throws<ArgumentException>(() => converter.Convert(customCommand, typeof(Tuple<int>), null, CultureInfo.CurrentCulture));
+
+            Assert.DoesNotThrow(() => converter.Convert(customCommand, typeof(ICommand<int>), null, CultureInfo.CurrentCulture));
+            Assert.DoesNotThrow(() => converter.Convert(customCommand, typeof(DelegateCommand<int>), null, CultureInfo.CurrentCulture));
+        }
+        [Test]
+        public void ToTypedCommandConverter_Binding() {
+            var customControl = new CustomControl();
+            var accumulator = 0;
+            var canFired = true;
+            var customCommand = new CustomCommand(args => accumulator += args, args => canFired);
+            var binding = new Binding() { Source = customCommand, Converter = new ToTypedCommandConverter() };
+
+            customControl.SetBinding(CustomControl.CommandProperty, binding);
+            BindingOperations.SetBinding(customControl, CustomControl.CommandProperty, binding);
+            DispatcherHelper.UpdateLayoutAndDoEvents(customControl);
+
+            Assert.IsNotNull(customControl.Command);
+            Assert.AreEqual(0, accumulator);
+            customControl.Command.Execute(1);
+            Assert.AreEqual(1, accumulator);
+            canFired = false;
+            customControl.Command.Execute(2);
+            Assert.AreEqual(3, accumulator);
+
+            var canOriginExecuteChangedFiredCount = 0;
+            var canActualExecuteChangedFiredCount = 0;
+            customCommand.CanExecuteChanged += (sender, e) => canOriginExecuteChangedFiredCount++;
+            customControl.Command.CanExecuteChanged += (sender, e) => canActualExecuteChangedFiredCount++;
+            customCommand.RaiseCanExecuteChanged();
+            Assert.AreEqual(1, canOriginExecuteChangedFiredCount);
+            Assert.AreEqual(1, canActualExecuteChangedFiredCount);
+        }
 
         [Test]
         public void DelegateConverterTestBase() {

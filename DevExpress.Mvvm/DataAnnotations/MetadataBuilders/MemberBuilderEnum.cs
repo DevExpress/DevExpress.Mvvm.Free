@@ -3,7 +3,7 @@ using DevExpress.Mvvm.Native;
 namespace DevExpress.Mvvm.DataAnnotations {
     public class EnumMemberMetadataBuilderGeneric<T, TBuilder> :
         MemberMetadataBuilderBase<T, TBuilder, EnumMetadataBuilder<T>>
-        where T : struct
+        where T : struct 
         where TBuilder : EnumMemberMetadataBuilderGeneric<T, TBuilder> {
         internal EnumMemberMetadataBuilderGeneric(MemberMetadataStorage storage, EnumMetadataBuilder<T> parent)
             : base(storage, parent) {
@@ -16,7 +16,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
         public TBuilder ImageUri(string imageUri) { return ImageUriCore(imageUri); }
     }
 
-    public class EnumMemberMetadataBuilder<T> :
+    public class EnumMemberMetadataBuilder<T> : 
         EnumMemberMetadataBuilderGeneric<T, EnumMemberMetadataBuilder<T>>
         where T : struct {
 

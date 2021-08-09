@@ -3,8 +3,8 @@ using System.Windows.Markup;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
-using System;
 using DevExpress.Mvvm.UI.Interactivity;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using DevExpress.Mvvm.UI;
@@ -51,7 +51,7 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
             return ParseXaml<StackPanel>(view);
         }
         Style CreateStyle(string behaviorsDefinition, string targetType, bool? useItemsControl = true) {
-            string style = behaviorsDefinition == null
+            string style = behaviorsDefinition == null 
                 ? string.Format(@"<Style {0} TargetType='{1}'>
                     <Setter Property='dxmvvm:Interaction.BehaviorsTemplate' Value='{2}'/>
                 </Style>", GetXamlNamespacesDefinition(), targetType, "{x:Null}")
@@ -357,11 +357,11 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
         }
     }
     public class TestBehavior : Behavior<DependencyObject> {
-        public static readonly DependencyProperty TestNameProperty =
+        public static readonly DependencyProperty TestNameProperty = 
             DependencyProperty.Register("TestName", typeof(string), typeof(TestBehavior), new PropertyMetadata(null));
-        public static readonly DependencyProperty DataProperty =
+        public static readonly DependencyProperty DataProperty = 
             DependencyProperty.Register("Data", typeof(string), typeof(TestBehavior), new PropertyMetadata(null));
-        public static readonly DependencyProperty BrushProperty =
+        public static readonly DependencyProperty BrushProperty = 
             DependencyProperty.Register("Brush", typeof(SolidColorBrush), typeof(TestBehavior), new PropertyMetadata(null));
 
 
@@ -379,7 +379,7 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
         }
     }
     public class TestService : ServiceBase {
-        public static readonly DependencyProperty CommandProperty =
+        public static readonly DependencyProperty CommandProperty = 
             DependencyProperty.Register("Command", typeof(ICommand), typeof(TestService), new PropertyMetadata(null));
         public ICommand Command {
             get { return (ICommand)GetValue(CommandProperty); }

@@ -136,8 +136,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         public void NewOperator() {
             var vm = EventTests_a.Create();
             var bt = BindingTestHelper.BindAssert<EventTests_visual>(
-                "test:EventTests_visual",
-                "CustomRoutedEvent",
+                "test:EventTests_visual", 
+                "CustomRoutedEvent", 
                 "{b:DXEvent Do5(new $Thickness(@s.Margin.Left))}", null, vm);
             bt.RaiseCustomRoutedEvent();
             Assert.AreEqual(new Thickness(), vm.Do5V);
@@ -180,6 +180,17 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             public void Do(string prop) {
                 ResProp = prop;
             }
+        }
+
+        [Test]
+        public void T983298() {
+            var vm = EventTests_a.Create();
+            var bt = BindingTestHelper.BindAssert<EventTests_visual>(
+                "test:EventTests_visual",
+                "CustomEvent",
+                "{b:DXEvent Do6(null)}", null, vm);
+            bt.RaiseCustomEvent();
+            Assert.AreEqual(1, vm.Do6Counter);
         }
     }
 
@@ -226,6 +237,11 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         public Thickness Do5V { get; set; }
         public void Do5(Thickness thickness) {
             Do5V = thickness;
+        }
+
+        public int Do6Counter { get; set; }
+        public void Do6(bool? v) {
+            Do6Counter++;
         }
     }
 }

@@ -86,6 +86,9 @@ namespace DevExpress.Mvvm.Native {
         public static int? GetFieldOrder(FieldInfo field) {
             return (GetFieldDisplayAttribute(field) == null) ? null : GetFieldDisplayAttribute(field).GetOrder();
         }
+        public static bool IsBrowsable(FieldInfo field) {
+            return MetadataHelper.GetAttribute<BrowsableAttribute>(field)?.Browsable ?? true;
+        }
         static DisplayAttribute GetFieldDisplayAttribute(FieldInfo field) {
             return MetadataHelper.GetAttribute<DisplayAttribute>(field);
         }

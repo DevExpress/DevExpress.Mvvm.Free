@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 
 namespace DevExpress.Mvvm.DataAnnotations {
-    public abstract class MemberMetadataBuilderBase<T, TBuilder, TParent> :
+    public abstract class MemberMetadataBuilderBase<T, TBuilder, TParent> : 
         IPropertyMetadataBuilder, IAttributeBuilderInternal, IAttributeBuilderInternal<TBuilder>
         where TBuilder : MemberMetadataBuilderBase<T, TBuilder, TParent>
         where TParent : MetadataBuilderBase<T, TParent> {

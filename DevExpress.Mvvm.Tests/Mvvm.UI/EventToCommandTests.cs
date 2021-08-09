@@ -1,8 +1,8 @@
+using System.Windows;
+using DevExpress.Mvvm.UI.Interactivity;
 using System;
 using System.Linq;
-using System.Windows;
 using DevExpress.Mvvm.Native;
-using DevExpress.Mvvm.UI.Interactivity;
 using NUnit.Framework;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -589,6 +589,42 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(2, canCount);
         }
 
+        [Test]
+        public void EventArgsTwoWayConverter_PassEventArgsToCommand() {
+            var button = new Button();
+            var dataContextChangedCount = 0;
+            var commandParameter = 0;
+            button.DataContext = 0;
+            button.DataContextChanged += (d, e) => dataContextChangedCount++;
+            var eventArgsTwoWayConverter = new EventArgsTwoWayConverterTestClass();
+            var eventToCommand = new EventToCommand() {
+                EventName = "DataContextChanged",
+                Command = new DelegateCommand<int>((value) => commandParameter = value),
+                EventArgsConverter = eventArgsTwoWayConverter
+            };
+            Interaction.GetBehaviors(button).Add(eventToCommand);
+            Assert.AreEqual(0, dataContextChangedCount);
+            Assert.AreEqual(0, commandParameter);
+            button.DataContext = 1;
+            Assert.AreEqual(1, dataContextChangedCount);
+            Assert.AreEqual(1, commandParameter);
+            Assert.AreEqual(1, eventArgsTwoWayConverter.CommandParameter);
+            eventToCommand.PassEventArgsToCommand = false;
+            button.DataContext = 2;
+            Assert.AreEqual(2, dataContextChangedCount);
+            Assert.AreEqual(0, commandParameter);
+            Assert.AreEqual(1, eventArgsTwoWayConverter.CommandParameter);
+        }
+        public class EventArgsTwoWayConverterTestClass : EventArgsConverterBase<DependencyPropertyChangedEventArgs> {
+            public int CommandParameter { get; private set; }
+            protected override void ConvertBack(object sender, DependencyPropertyChangedEventArgs args, object commandParameter) {
+                CommandParameter = (int)commandParameter;
+            }
+            protected override object Convert(object sender, DependencyPropertyChangedEventArgs args) {
+                return (int)args.NewValue;
+            }
+        }
+
         public enum EventToCommandType { AssociatedObject, SourceName, SourceObject }
         public class EventToCommandTestClass : EventToCommand {
             public EventToCommandType Type { get; set; }
@@ -599,7 +635,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 EventCount++;
                 if(SourceName != null)
                     Type = EventToCommandType.SourceName;
-                else if(Source == AssociatedObject)
+                else if(ReferenceEquals(Source, AssociatedObject))
                     Type = EventToCommandType.AssociatedObject;
                 else
                     Type = EventToCommandType.SourceObject;

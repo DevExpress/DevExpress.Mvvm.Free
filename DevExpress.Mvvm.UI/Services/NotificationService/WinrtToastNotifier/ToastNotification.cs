@@ -162,7 +162,7 @@ namespace DevExpress.Internal {
             var source = new TaskCompletionSource<ToastNotificationResultInternal>(state);
             Activated += (s, args) => {
                 Unsubscribe();
-                source.Task.SetActivationArgs(args);
+                ToastActivationAsyncState.SetActivationArgs(source.Task, args);
                 source.SetResult(ToastNotificationResultInternal.Activated);
             };
             Dismissed += (s, reason) => {
@@ -181,9 +181,8 @@ namespace DevExpress.Internal {
             };
             Failed += (s, exception) => {
                 Unsubscribe();
-                if((UInt32)exception.ErrorCode == WPN_E_TOAST_NOTIFICATION_DROPPED) {
+                if((uint)exception.ErrorCode == WPN_E_TOAST_NOTIFICATION_DROPPED)
                     source.SetResult(ToastNotificationResultInternal.Dropped);
-                }
                 else source.SetException(exception);
             };
             ComFunctions.Safe(() => Adapter.Show(Notification),
@@ -215,14 +214,15 @@ namespace DevExpress.Internal {
         sealed class State {
             public string Arguments;
         }
-        public static object Create() {
+        internal static object Create() {
             return new State();
         }
+        internal static void SetActivationArgs(Task<ToastNotificationResultInternal> task, string args) {
+            ((State)task.AsyncState).Arguments = args;
+        }
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public static string ActivationArgs(this Task<ToastNotificationResultInternal> task) {
             return ((State)task.AsyncState).Arguments;
-        }
-        public static void SetActivationArgs(this Task<ToastNotificationResultInternal> task, string args) {
-            ((State)task.AsyncState).Arguments = args;
         }
     }
     #endregion State

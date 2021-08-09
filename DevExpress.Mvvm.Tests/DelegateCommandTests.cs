@@ -12,6 +12,7 @@ using System.Configuration;
 using System.Windows.Threading;
 using System.Windows.Controls;
 
+
 namespace DevExpress.Mvvm.Tests {
     public abstract class CommandTests {
         protected abstract CommandBase<object> CreateCommand(Action execute);

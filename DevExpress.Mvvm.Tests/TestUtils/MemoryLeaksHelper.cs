@@ -1,15 +1,15 @@
 using System;
-using System.Windows.Threading;
 
 namespace DevExpress {
     public static class MemoryLeaksHelper {
         public static void EnsureCollected(params WeakReference[] references) {
-            DispatcherHelper.DoEvents(DispatcherPriority.ApplicationIdle);
+            DispatcherHelper.DoEvents();
             GCTestHelper.EnsureCollected(references);
         }
         public static void CollectOptional(params WeakReference[] references) {
-            DispatcherHelper.DoEvents(DispatcherPriority.ApplicationIdle);
+            DispatcherHelper.DoEvents();
             GCTestHelper.CollectOptional(references);
         }
+        
     }
 }

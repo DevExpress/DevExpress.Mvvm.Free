@@ -137,7 +137,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
                 string elementName = null;
                 if(sourceObjectBinding.ParentBinding != null)
                     elementName = sourceObjectBinding.ParentBinding.ElementName;
-                if(!string.IsNullOrEmpty(elementName)) {
+                if(!string.IsNullOrEmpty(elementName)) { 
                     result = FindObject(associatedObject, elementName, useVisualTreeCore);
                     return true;
                 }

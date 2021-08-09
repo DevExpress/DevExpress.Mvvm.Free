@@ -74,12 +74,14 @@ namespace DevExpress.Mvvm.UI.Native {
         }
         public static string ApplicationIdHash {
             get {
-                if(applicationIdHash == null) {
-                    using(SHA1 sha1 = SHA1.Create()) {
-                        applicationIdHash = "H" + NativeResourceManager.CreateFileName(Convert.ToBase64String(sha1.ComputeHash(Encoding.UTF8.GetBytes(ApplicationExecutablePath))));
-                    }
-                }
+                if(applicationIdHash == null)
+                    applicationIdHash = "H" + NativeResourceManager.CreateFileName(Convert.ToBase64String(CalcApplicationIdHash()));
                 return applicationIdHash;
+            }
+        }
+        static byte[] CalcApplicationIdHash() {
+            using(SHA1 sha1 = SHA1.Create()) {
+                return sha1.ComputeHash(Encoding.UTF8.GetBytes(ApplicationExecutablePath));
             }
         }
         public static string ResourcesFolder { get { return Path.Combine(AppDataEnvironmentVariable, CompanyNameEnvironmentVariable, ProductNameEnvironmentVariable, VersionEnvironmentVariable, ResourcesFolderName); } }

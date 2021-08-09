@@ -1,9 +1,9 @@
 using System.Windows.Controls;
 using System.Windows.Data;
+using DevExpress.Mvvm.UI.Interactivity;
 using NUnit.Framework;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI;
-using DevExpress.Mvvm.UI.Interactivity;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -23,7 +23,7 @@ namespace DevExpress.Mvvm.Tests {
             object title = "title";
             public object Title{
                 get { return title; }
-                set { SetProperty(ref title, value, () => Title); }
+                set { SetProperty(ref title, value, nameof(Title)); }
             }
             void IDocumentContent.OnDestroy() { }
         }
@@ -36,12 +36,12 @@ namespace DevExpress.Mvvm.Tests {
             object title = "bad title";
             public object Title {
                 get { return title; }
-                set { SetProperty(ref title, value, () => Title); }
+                set { SetProperty(ref title, value, nameof(Title)); }
             }
             object documentTitle = "title";
             public object DocumentTitle {
                 get { return documentTitle; }
-                set { SetProperty(ref documentTitle, value, () => DocumentTitle); }
+                set { SetProperty(ref documentTitle, value, nameof(DocumentTitle)); }
             }
             object IDocumentContent.Title { get { return DocumentTitle; } }
             void IDocumentContent.OnDestroy() { }

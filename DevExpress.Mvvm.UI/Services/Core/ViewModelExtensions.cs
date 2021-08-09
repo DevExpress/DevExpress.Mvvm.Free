@@ -10,7 +10,7 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.RegisterAttached("Parameter", typeof(object), typeof(ViewModelExtensions),
             new PropertyMetadata(NotSetParameter, (d, e) => OnParameterChanged(d, e.NewValue)));
         public static readonly DependencyProperty ParentViewModelProperty =
-            DependencyProperty.RegisterAttached("ParentViewModel", typeof(object), typeof(ViewModelExtensions),
+            DependencyProperty.RegisterAttached("ParentViewModel", typeof(object), typeof(ViewModelExtensions), 
             new PropertyMetadata(null, (d,e) => OnParentViewModelChanged(d, e.NewValue)));
         public static readonly DependencyProperty DocumentOwnerProperty =
             DependencyProperty.RegisterAttached("DocumentOwner", typeof(IDocumentOwner), typeof(ViewModelExtensions),
@@ -56,12 +56,12 @@ namespace DevExpress.Mvvm.UI {
             ViewModelInitializer.SetViewModelDocumentOwner(d, newValue);
             ParameterAndParentViewModelSyncBehavior.AttachTo(d);
         }
-
+        
         class ParameterAndParentViewModelSyncBehavior : Behavior<DependencyObject> {
             public static void AttachTo(DependencyObject obj) {
                 if(!(obj is FrameworkElement || obj is FrameworkContentElement)) return;
                 BehaviorCollection bCol = Interaction.GetBehaviors(obj);
-                ParameterAndParentViewModelSyncBehavior b =
+                ParameterAndParentViewModelSyncBehavior b = 
                     (ParameterAndParentViewModelSyncBehavior)bCol.FirstOrDefault(x => x is ParameterAndParentViewModelSyncBehavior);
                 if(b != null) return;
                 bCol.Add(new ParameterAndParentViewModelSyncBehavior());

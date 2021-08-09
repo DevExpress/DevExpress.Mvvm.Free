@@ -213,9 +213,9 @@ namespace DevExpress.Mvvm {
             }
         }
         public bool IsCancellationRequested {
-            get {
+            get { 
                 if(CancellationTokenSource == null) return false;
-                return CancellationTokenSource.IsCancellationRequested;
+                return CancellationTokenSource.IsCancellationRequested; 
             }
         }
         public DelegateCommand CancelCommand { get; private set; }
@@ -279,7 +279,8 @@ namespace DevExpress.Mvvm {
         [Obsolete("Use 'await ExecuteAsync' instead.")]
 #endif
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public void Wait(TimeSpan timeout) {
+        public 
+        void Wait(TimeSpan timeout) {
             if(!IsExecuting) return;
             if(!isLegacyExecuting)
                 throw new NotSupportedException("The Wait method is not supported when you execute a command with the ExecuteAsync method. Use async/await syntax instead.");

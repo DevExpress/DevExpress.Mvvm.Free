@@ -293,9 +293,27 @@ namespace DevExpress.Mvvm.Tests {
             source.ElementAt(1)
                 .AreEqual(x => x.Name, "MemberTwo_");
         }
-#endregion
+        #endregion
 
-#region sort mode
+        #region browsable attribute
+        enum TestEnum4 {
+            [Browsable(false)]
+            Value1,
+            Value2
+        }
+        class EnumTest {
+            public TestEnum4 TestEnum { get; set; }
+        }
+        [Test(Description = "T1010542")]
+        public void BrowsableAttributeInEnum() {
+            var enumSource = EnumSourceHelperCore.GetEnumSource(typeof(TestEnum4));
+            Assert.AreEqual(1, enumSource.Count());
+            Assert.AreEqual(enumSource.FirstOrDefault().Name, TestEnum4.Value2.ToString());
+        }
+
+        #endregion
+
+        #region sort mode
         public enum EnumWithSortMode{
             B,
             CCC,

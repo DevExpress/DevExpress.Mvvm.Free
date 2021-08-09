@@ -26,7 +26,7 @@ namespace DevExpress.Mvvm.Native {
             var methods = methodInfos.Where(m => m.Name == methodName);
             foreach(MethodInfo methodInfo in methods) {
                 ParameterInfo[] parameterInfos = methodInfo.GetParameters();
-                if(parameterInfos.Length != parameterTypes.Length)
+                if(parameterInfos.Length != parameterTypes.Length) 
                     continue;
                 bool isThisMatched = true;
                 for(int i = 0; i < parameterInfos.Length; i++) {

@@ -4,6 +4,7 @@ using System.Windows;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using DevExpress.Mvvm.UI;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
@@ -59,7 +60,7 @@ namespace DevExpress.Mvvm.UI.Native {
             while(child != null) {
                 if(child is T)
                     return child as T;
-                child = VisualTreeHelper.GetParent(child);
+                child = LayoutTreeHelper.GetParent(child);
             }
             return null;
         }

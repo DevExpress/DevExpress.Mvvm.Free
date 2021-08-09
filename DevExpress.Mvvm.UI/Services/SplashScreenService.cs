@@ -31,21 +31,21 @@ namespace DevExpress.Mvvm.UI {
 
         static DXSplashScreenService() {
             DependencyPropertyRegistrator<DXSplashScreenService>.New()
-                .Register(d => d.SplashScreenType, out SplashScreenTypeProperty, null)
-                .Register(d => d.SplashScreenWindowStyle, out SplashScreenWindowStyleProperty, null,
+                .Register(nameof(SplashScreenType), out SplashScreenTypeProperty, default(Type))
+                .Register(nameof(SplashScreenWindowStyle), out SplashScreenWindowStyleProperty, default(Style),
                     (d, e) => d.OnSplashScreenWindowStyleChanged((Style)e.OldValue, (Style)e.NewValue))
-                .Register(d => d.SplashScreenStartupLocation, out SplashScreenStartupLocationProperty, WindowStartupLocation.CenterScreen)
-                .Register(d => d.ShowSplashScreenOnLoading, out ShowSplashScreenOnLoadingProperty, false)
-                .Register(d => d.Progress, out ProgressProperty, SplashScreenViewModel.ProgressDefaultValue, d => d.OnProgressChanged())
-                .Register(d => d.MaxProgress, out MaxProgressProperty, SplashScreenViewModel.MaxProgressDefaultValue, d => d.OnMaxProgressChanged())
-                .Register(d => d.State, out StateProperty, SplashScreenViewModel.StateDefaultValue, d => d.OnStateChanged())
-                .Register(d => d.SplashScreenOwner, out SplashScreenOwnerProperty, null)
-                .Register(d => d.SplashScreenClosingMode, out SplashScreenClosingModeProperty, SplashScreenClosingMode.Default)
-                .Register(d => d.OwnerSearchMode, out OwnerSearchModeProperty, SplashScreenOwnerSearchMode.Full)
-                .Register(d => d.FadeInDuration, out FadeInDurationProperty, TimeSpan.FromSeconds(0.2))
-                .Register(d => d.FadeOutDuration, out FadeOutDurationProperty, TimeSpan.FromSeconds(0.2))
-                .Register(d => d.UseIndependentWindow, out UseIndependentWindowProperty, false, d => d.OnUseIndependentWindowChanged())
-                .RegisterReadOnly(d => d.IsSplashScreenActive, out IsSplashScreenActivePropertyKey, out IsSplashScreenActiveProperty, false)
+                .Register(nameof(SplashScreenStartupLocation), out SplashScreenStartupLocationProperty, WindowStartupLocation.CenterScreen)
+                .Register(nameof(ShowSplashScreenOnLoading), out ShowSplashScreenOnLoadingProperty, false)
+                .Register(nameof(Progress), out ProgressProperty, SplashScreenViewModel.ProgressDefaultValue, d => d.OnProgressChanged())
+                .Register(nameof(MaxProgress), out MaxProgressProperty, SplashScreenViewModel.MaxProgressDefaultValue, d => d.OnMaxProgressChanged())
+                .Register(nameof(State), out StateProperty, (object)SplashScreenViewModel.StateDefaultValue, d => d.OnStateChanged())
+                .Register(nameof(SplashScreenOwner), out SplashScreenOwnerProperty, default(FrameworkElement))
+                .Register(nameof(SplashScreenClosingMode), out SplashScreenClosingModeProperty, SplashScreenClosingMode.Default)
+                .Register(nameof(OwnerSearchMode), out OwnerSearchModeProperty, SplashScreenOwnerSearchMode.Full)
+                .Register(nameof(FadeInDuration), out FadeInDurationProperty, TimeSpan.FromSeconds(0.2))
+                .Register(nameof(FadeOutDuration), out FadeOutDurationProperty, TimeSpan.FromSeconds(0.2))
+                .Register(nameof(UseIndependentWindow), out UseIndependentWindowProperty, false, d => d.OnUseIndependentWindowChanged())
+                .RegisterReadOnly(nameof(IsSplashScreenActive), out IsSplashScreenActivePropertyKey, out IsSplashScreenActiveProperty, false)
                 ;
         }
 
@@ -185,7 +185,7 @@ namespace DevExpress.Mvvm.UI {
             if(isSplashScreenShown)
                 ((ISplashScreenService)this).SetSplashScreenState(State);
         }
-
+         
         void OnUseIndependentWindowChanged() {
             if(isSplashScreenShown)
                 throw new InvalidOperationException("The property value cannot be changed while the DXSplashScreenService is active.");
@@ -221,7 +221,7 @@ namespace DevExpress.Mvvm.UI {
             Func<object, object> contentCreator = null;
             object contentCreatorParams = null;
             var ssModel = CreateSplashScreenViewModel();
-            IList<object> windowCreatorParams = new List<object>() { SplashScreenWindowStyle, SplashScreenStartupLocation, Owner.With(x => new SplashScreenOwner(x)),
+            IList<object> windowCreatorParams = new List<object>() { SplashScreenWindowStyle, SplashScreenStartupLocation, Owner.With(x => new SplashScreenOwner(x)), 
                 SplashScreenClosingMode, FadeInDuration, FadeOutDuration };
             if(SplashScreenType == null) {
                 contentCreator = CreateSplashScreen;

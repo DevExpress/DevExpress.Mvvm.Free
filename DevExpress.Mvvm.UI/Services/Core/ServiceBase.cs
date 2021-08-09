@@ -15,7 +15,7 @@ namespace DevExpress.Mvvm.UI {
             typeof(ServiceBaseGeneric<T>), new PropertyMetadata(null));
         public string Name { get { return (string)GetValue(NameProperty); } set { SetValue(NameProperty, value); } }
         [IgnoreDependencyPropertiesConsistencyCheckerAttribute]
-        static readonly DependencyProperty ServicesClientInternalProperty = DependencyProperty.Register("ServicesClientInternal", typeof(object), typeof(ServiceBaseGeneric<T>),
+        static readonly DependencyProperty ServicesClientInternalProperty = DependencyProperty.Register("ServicesClientInternal", typeof(object), typeof(ServiceBaseGeneric<T>), 
             new PropertyMetadata(null, (d, e) => ((ServiceBaseGeneric<T>)d).OnServicesClientChanged(e.OldValue as ISupportServices, e.NewValue as ISupportServices)));
         public bool YieldToParent { get; set; }
         internal bool ShouldInject { get; set; }

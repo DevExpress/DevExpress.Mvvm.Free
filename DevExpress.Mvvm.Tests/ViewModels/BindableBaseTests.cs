@@ -18,19 +18,6 @@ namespace DevExpress.Mvvm.Tests {
             serializer.WriteObject(m, s);
         }
         [Test]
-        public void PropertyChangedCallbackAndPropertyChangedEventOrderTest() {
-            BindableBaseTest bb = new BindableBaseTest();
-            bool propertyChangedCalled = false;
-            bb.PropertyChanged += (s, e) => {
-                propertyChangedCalled = true;
-                Assert.AreEqual("SomeProperty7", e.PropertyName);
-                Assert.AreEqual(0, bb.ChangedCallbackCallCount);
-            };
-            bb.SomeProperty7 = 777;
-            Assert.IsTrue(propertyChangedCalled);
-            Assert.AreEqual(1, bb.ChangedCallbackCallCount);
-        }
-        [Test]
         public void OnPropertiesChangedTest() {
             BindableBaseTest bb = new BindableBaseTest();
             int count = 0;
@@ -84,6 +71,19 @@ namespace DevExpress.Mvvm.Tests {
             bb.SomeProperty8 = 150;
             Assert.AreEqual("SomeProperty8", propName);
             Assert.AreEqual(2, count);
+        }
+        [Test]
+        public void PropertyChangedCallbackAndPropertyChangedEventOrderTest() {
+            BindableBaseTest bb = new BindableBaseTest();
+            bool propertyChangedCalled = false;
+            bb.PropertyChanged += (s, e) => {
+                propertyChangedCalled = true;
+                Assert.AreEqual("SomeProperty7", e.PropertyName);
+                Assert.AreEqual(0, bb.ChangedCallbackCallCount);
+            };
+            bb.SomeProperty7 = 777;
+            Assert.IsTrue(propertyChangedCalled);
+            Assert.AreEqual(1, bb.ChangedCallbackCallCount);
         }
         [Test]
         public void RaisePropertyChangedWithNoParametersTest_B251476() {
@@ -147,7 +147,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(150, bb.SomeProperty3);
 
             bb.SomeProperty3 = 150;
-            Assert.AreEqual(1, count);
+            Assert.AreEqual(1, count);            
         }
         [Test]
         public void SetPropertyInvalidLambdaTest() {
@@ -174,7 +174,7 @@ namespace DevExpress.Mvvm.Tests {
             bb.SomeProperty7 = 150;
             Assert.AreEqual(1, count);
         }
-#region property bag test
+        #region property bag test
         class PropertyBagViewModel : BindableBase {
             public bool? IntPropertySetValueResult;
             public int IntProperty {
@@ -239,10 +239,10 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("x", viewModel.StringProperty);
             Assert.AreEqual(2, viewModel.StringPropertyChangedCount);
         }
-#endregion
+        #endregion
         [Test]
         public void ChangedCallbackWithOldValue() {
-            BindableBaseTest2 obj = new BindableBaseTest2();
+            var obj = new BindableBaseTest2();
             obj.Prop = true;
             Assert.AreEqual(false, obj.PropOld);
             obj.Prop = false;
@@ -250,7 +250,6 @@ namespace DevExpress.Mvvm.Tests {
             obj.Prop = false;
             Assert.AreEqual(true, obj.PropOld);
         }
-
         [Test]
         public void NoNestedReferenceObjects() {
             var bindable = new BindableBaseTest() { SomeProperty2 = 117 };
@@ -260,6 +259,7 @@ namespace DevExpress.Mvvm.Tests {
                 .ToArray();
             Assert.True(values.All(x => x.Value == null));
         }
+
 
         [Test]
         public void T845633() {
@@ -289,9 +289,9 @@ namespace DevExpress.Mvvm.Tests {
         }
         class SetPropertyOverridesClass : BindableBase {
             int storageProperty;
-            public int StorageProperty {
-                get => storageProperty;
-                set => SetValue(ref storageProperty, value);
+            public int StorageProperty { 
+                get => storageProperty; 
+                set => SetValue(ref storageProperty, value); 
             }
             public int BagProperty {
                 get => GetValue<int>();
@@ -333,13 +333,12 @@ namespace DevExpress.Mvvm.Tests {
         int someProperty7;
         public int SomeProperty7 {
             get { return someProperty7; }
-            set {
+            set {                
                 SetProperty(ref someProperty7, value, () => SomeProperty7, () => {
                     ChangedCallbackCallCount++;
-                });
+                });                
             }
         }
-
         int someProperty6;
         public int SomeProperty6 {
             get { return someProperty6; }
@@ -362,25 +361,10 @@ namespace DevExpress.Mvvm.Tests {
             get { return someProperty3; }
             set { SetProperty(ref someProperty3, value, () => SomeProperty3); }
         }
-        int someProperty2;
-        public int SomeProperty2 {
-            get { return someProperty2; }
-            set { SetProperty(ref someProperty2, value, "SomeProperty2"); }
-        }
-        public int SomeProperty {
-            set {
-                RaisePropertyChanged("SomeProperty");
-            }
-        }
         public int SomeProperty8 {
             get { return 0; }
             set {
                 RaisePropertyChanged(() => SomeProperty8);
-            }
-        }
-        public int SomeProperty9 {
-            set {
-                RaisePropertiesChanged("SomeProperty", "SomeProperty9");
             }
         }
         public int SomeProperty10 {
@@ -407,7 +391,21 @@ namespace DevExpress.Mvvm.Tests {
                 RaisePropertiesChanged(() => SomeProperty2, () => SomeProperty3, () => SomeProperty10, () => SomeProperty11, () => SomeProperty12);
             }
         }
-
+        int someProperty2;
+        public int SomeProperty2 {
+            get { return someProperty2; }
+            set { SetProperty(ref someProperty2, value, "SomeProperty2"); }
+        }
+        public int SomeProperty {
+            set {
+                RaisePropertyChanged("SomeProperty");
+            }
+        }
+        public int SomeProperty9 {
+            set {
+                RaisePropertiesChanged("SomeProperty", "SomeProperty9");
+            }
+        }
         public new void RaisePropertyChanged(string propertyName) {
             base.RaisePropertyChanged(propertyName);
         }
@@ -428,7 +426,6 @@ namespace DevExpress.Mvvm.Tests {
             PropOld = oldValue;
         }
     }
-
     [TestFixture]
     public class BindableBaseTests_CallerMemberName {
         [Test]
@@ -486,7 +483,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         [Test]
         public void SetPropertyWithCallbackTest() {
-            BindableBaseTest bb = new BindableBaseTest();
+            var bb = new BindableBaseTest_CallerMemberName();
             int count = 0;
             string propName = null;
             bb.SomeProperty7 = 50;
@@ -502,7 +499,7 @@ namespace DevExpress.Mvvm.Tests {
             bb.SomeProperty7 = 150;
             Assert.AreEqual(1, count);
         }
-        #region property bag test
+#region property bag test
         class PropertyBagViewModel : BindableBase {
             public bool? IntPropertySetValueResult;
             public int IntProperty
@@ -569,7 +566,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual("x", viewModel.StringProperty);
             Assert.AreEqual(2, viewModel.StringPropertyChangedCount);
         }
-        #endregion
+#endregion
         [Test]
         public void ChangedCallbackWithOldValue() {
             var obj = new BindableBaseTest2_CallerMemberName();
@@ -586,10 +583,10 @@ namespace DevExpress.Mvvm.Tests {
         int someProperty7;
         public int SomeProperty7 {
             get { return someProperty7; }
-            set {
+            set {                
                 SetValue(ref someProperty7, value, () => {
                     ChangedCallbackCallCount++;
-                });
+                });                
             }
         }
 

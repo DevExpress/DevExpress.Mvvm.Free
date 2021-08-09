@@ -490,7 +490,7 @@ namespace DevExpress.Mvvm.Tests {
         static bool IsSequritySafeCriticalType(Type type) {
             return type.GetCustomAttributes(false).OfType<SecuritySafeCriticalAttribute>().Any();
         }
-        #endregion
+        #endregion        
 
         #region MetadataBuilder test
         class StrictPropertiesAndMethodExpressionEntity {

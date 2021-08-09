@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using DevExpress.Mvvm.Native;
+using DevExpress.Xpf.Core.Native;
 
 namespace DevExpress.Mvvm.UI.Native {
     public delegate void UnregisterCallback<E>(EventHandler<E> eventHandler) where E : EventArgs;
@@ -75,20 +76,27 @@ namespace DevExpress.Mvvm.UI.Native {
             }, handler => DisplaySettingsChanged -= handler);
         }
 
-        public static System.Windows.Point GetDpi() {
-            using(var textBox = new System.Windows.Forms.TextBox()) {
-                using(var graphics = textBox.CreateGraphics()) {
-                    return new System.Windows.Point(graphics.DpiX / 96, graphics.DpiY / 96);
-                }
-            }
+        public static System.Windows.Point GetDpi(System.Windows.Point screenPoint) {
+            System.Windows.Point graphicsDpi;
+            graphicsDpi = GetGraphicsDpi();
+            return new System.Windows.Point(graphicsDpi.X / 96, graphicsDpi.Y / 96);
         }
 
         public Rect GetWorkingArea(System.Windows.Point point) {
-            var dpi = GetDpi();
+            var dpi = GetDpi(point);
             var area = Screen.GetWorkingArea(new System.Drawing.Point((int)point.X + 1, (int)point.Y + 1));
             return new Rect(area.X / dpi.X, area.Y / dpi.Y, area.Width / dpi.X, area.Height / dpi.Y);
         }
 
+        static System.Windows.Point GetGraphicsDpi() {
+            System.Windows.Point dpi;
+            using(var textBox = new System.Windows.Forms.TextBox()) {
+                using(var graphics = textBox.CreateGraphics()) {
+                    dpi = new System.Windows.Point(graphics.DpiX, graphics.DpiY);
+                }
+            }
+            return dpi;
+        }
         public event Action WorkingAreaChanged;
     }
 
@@ -173,6 +181,7 @@ namespace DevExpress.Mvvm.UI.Native {
             try {
                 info.win = new ToastWindow();
             } catch {
+                
                 content.TimeOutCommand.Execute(null);
                 return;
             }
@@ -191,6 +200,7 @@ namespace DevExpress.Mvvm.UI.Native {
             try {
                 info.win.Show();
             } catch(System.ComponentModel.Win32Exception) {
+                
                 content.TimeOutCommand.Execute(null);
                 return;
             }

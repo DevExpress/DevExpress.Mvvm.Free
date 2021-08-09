@@ -11,7 +11,7 @@ namespace DevExpress.Mvvm.UI.Interactivity.Internal {
             DependencyProperty.RegisterAttached("EnableBehaviorsInDesignTime", typeof(bool), typeof(InteractionHelper),
             new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits));
         public static bool GetEnableBehaviorsInDesignTime(DependencyObject d) {
-   if(d == null) return false;
+			if(d == null) return false;
             return (bool)d.GetValue(EnableBehaviorsInDesignTimeProperty);
         }
         public static void SetEnableBehaviorsInDesignTime(DependencyObject d, bool value) {

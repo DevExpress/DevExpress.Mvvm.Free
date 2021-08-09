@@ -564,7 +564,7 @@ namespace DevExpress.Mvvm.UI {
 
         internal WindowArrangerContainerBase(WindowContainer container) : base(container) { }
         public WindowArrangerContainerBase(DependencyObject windowObject) : base(windowObject) { }
-        public WindowArrangerContainerBase(DependencyObject windowObject, bool isHandleRequired, bool forceCreateHandle)
+        public WindowArrangerContainerBase(DependencyObject windowObject, bool isHandleRequired, bool forceCreateHandle) 
             : base(windowObject, isHandleRequired, forceCreateHandle) {
             if(!IsInitialized) {
                 if(Window != null && Window.Owner != null) {

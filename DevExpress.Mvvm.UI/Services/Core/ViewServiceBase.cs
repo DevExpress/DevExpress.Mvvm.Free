@@ -44,7 +44,7 @@ namespace DevExpress.Mvvm.UI {
             if (ownerObject == null)
                 return;
             if (!ViewModelBase.IsInDesignMode) {
-                w.Owner = LayoutTreeHelper.GetVisualParents(ownerObject).OfType<Window>().FirstOrDefault()
+                w.Owner = LayoutTreeHelper.GetVisualParents(ownerObject).OfType<Window>().FirstOrDefault() 
                     ?? Window.GetWindow(ownerObject);
             } else {
                 System.Windows.Interop.WindowInteropHelper windowInteropHelper = new System.Windows.Interop.WindowInteropHelper(w);

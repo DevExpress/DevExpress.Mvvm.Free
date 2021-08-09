@@ -10,7 +10,7 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty EventArgsConverterProperty =
             DependencyProperty.Register("EventArgsConverter", typeof(IEventArgsConverter), typeof(EventToCommand),
             new PropertyMetadata(null));
-        public static readonly DependencyProperty PassEventArgsToCommandProperty =
+        public static readonly DependencyProperty PassEventArgsToCommandProperty = 
             DependencyProperty.Register("PassEventArgsToCommand", typeof(bool?), typeof(EventToCommand), new PropertyMetadata(null));
         public static readonly DependencyProperty AllowChangingEventOwnerIsEnabledProperty =
             DependencyProperty.Register("AllowChangingEventOwnerIsEnabled", typeof(bool), typeof(EventToCommand),
@@ -37,7 +37,7 @@ namespace DevExpress.Mvvm.UI {
         public ModifierKeys? ModifierKeys {
             get { return (ModifierKeys?)GetValue(ModifierKeysProperty); }
             set { SetValue(ModifierKeysProperty, value); }
-        }
+        }        
         protected override void OnAttached() {
             base.OnAttached();
             UpdateIsEnabled();
@@ -60,13 +60,16 @@ namespace DevExpress.Mvvm.UI {
         }
         protected override void Invoke(object sender, object eventArgs) {
             object commandParameter = CommandParameter;
-            if(commandParameter == null && ActualPassEventArgsToCommand) {
+            bool useConverter = CommandParameter == null && ActualPassEventArgsToCommand;
+            if(useConverter) {
                 if(EventArgsConverter != null)
                     commandParameter = EventArgsConverter.Convert(sender, eventArgs);
                 else commandParameter = eventArgs;
             }
             if(CommandCanExecute(commandParameter))
                 CommandExecute(commandParameter);
+            if(useConverter && EventArgsConverter is IEventArgsTwoWayConverter)
+                ((IEventArgsTwoWayConverter)EventArgsConverter).ConvertBack(sender, eventArgs, commandParameter);
         }
         protected override bool CanInvoke(object sender, object eventArgs) {
             bool res = base.CanInvoke(sender, eventArgs);

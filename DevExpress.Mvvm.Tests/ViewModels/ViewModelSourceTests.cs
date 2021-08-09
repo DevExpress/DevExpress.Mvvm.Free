@@ -19,6 +19,8 @@ using System.Threading.Tasks;
 using System.Threading;
 using Expression = System.Linq.Expressions.Expression;
 using System.Reflection.Emit;
+using System.Text;
+using System.Diagnostics;
 
 namespace DevExpress.Mvvm.Tests.Internal {
     public class POCOViewModel {
@@ -698,7 +700,7 @@ namespace DevExpress.Mvvm.Tests {
                 IPOCOViewModel iPOCOViewModel = (IPOCOViewModel)ViewModelSource.Create<POCOWithoutINPChanging>();
                 iPOCOViewModel.RaisePropertyChanging(null);
             }, x => x.Message.AreEqual(string.Format(
-                ViewModelSourceException.Error_INotifyPropertyChangingIsNotImplemented,
+                ViewModelSourceException.Error_INotifyPropertyChangingIsNotImplemented, 
                 typeof(POCOWithoutINPChanging).Name)));
 
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {
@@ -2359,8 +2361,41 @@ namespace DevExpress.Mvvm.Tests {
             protected internal IsPOCO_NoDefaultCtor6(object x = null, int y = 0) { }
             public virtual int X { get; set; }
         }
+        public class AsyncCommandViewModel {
+            [AsyncCommand(UseCommandManager = false)]
+            public async Task<int> GenericTask() {
+                await Task.Delay(100);
+                return 0;
+            }
+            public void RaiseCanExecuteChanged() {
+                this.RaiseCanExecuteChanged(x => x.GenericTask());
+            }
+        }
+        class VMTraceListener : TraceListener {
+            StringBuilder output;
+            public string Output { get { return output.ToString(); } }
+            public VMTraceListener() {
+                output = new StringBuilder();
+            }
+            public override void Write(string message) {
+                output.Append(message);
+            }
+            public override void WriteLine(string message) {
+                output.AppendLine(message);
+            }
+        }
 
         #endregion
+        [Test(Description = "T1002753")]
+        public void AsyncCommandTest() {
+            using (var listener = new VMTraceListener()) {
+                Trace.Listeners.Add(listener);
+                var viewModel = ViewModelSource.Create<AsyncCommandViewModel>();
+                Assert.DoesNotThrow(() => viewModel.RaiseCanExecuteChanged());
+                Assert.IsTrue(listener.Output.Contains("To generate AsyncCommand, the GenericTask method should return System.Threading.Tasks.Task. The DevExpress.Mvvm.DelegateCommand is generated instead."));
+                Trace.Listeners.Remove(listener);
+            }
+        }
         [Test]
         public void CreateByType() {
             Assert.AreEqual(13, ((IsPOCO_NoDefaultCtor1)ViewModelSourceHelper.Create(typeof(IsPOCO_NoDefaultCtor1))).X);
@@ -2677,8 +2712,51 @@ namespace DevExpress.Mvvm.Tests {
             vm.Y2 = 2;
             propChangedCounter.AreEqual(4);
         }
-        #endregion
 
+        [POCOViewModel(ImplementINotifyPropertyChanging = true)]
+        public class T977520_VM {
+            public virtual bool P { get; set; }
+            [DependsOnProperties(nameof(P))]
+            public bool P1 => false;
+            [DependsOnProperties(nameof(P))]
+            public bool P2 => false;
+            [DependsOnProperties(nameof(P))]
+            public bool P3 => false;
+            [DependsOnProperties(nameof(P))]
+            public bool P4 => false;
+            [DependsOnProperties(nameof(P))]
+            public bool P5 => false;
+            [DependsOnProperties(nameof(P))]
+            public bool P6 => false;
+            [DependsOnProperties(nameof(P))]
+            public bool P7 => false;
+            [DependsOnProperties(nameof(P))]
+            public bool P8 => false;
+            [DependsOnProperties(nameof(P))]
+            public bool P9 => false;
+            [DependsOnProperties(nameof(P))]
+            public bool P10 => false;
+
+            internal int pChanging, pChanged;
+            protected void OnPChanged(bool oldValue) { pChanging++; }
+            protected void OnPChanging(bool newValue) { pChanged++; }
+        }
+        [Test]
+        public void T977520() {
+            var vm = ViewModelSource.Create<T977520_VM>();
+            vm.P = true;
+            Assert.AreEqual(1, vm.pChanging);
+            Assert.AreEqual(1, vm.pChanged);
+        }
+        #endregion
+        #region Namespace and generated class name
+        [Test]
+        public void TestPOCOGeneratesNamespace() {
+            var poco = new POCOViewModel();
+            var gen = ViewModelSource.Create<POCOViewModel>();
+            Assert.AreEqual(poco.GetType().Namespace, gen.GetType().Namespace);
+        }
+        #endregion
         void CheckBindableProperty<T, TProperty>(T viewModel, Expression<Func<T, TProperty>> propertyExpression, Action<T, TProperty> setValueAction, TProperty value1, TProperty value2, Action<T, TProperty> checkOnPropertyChangedResult = null) {
             CheckBindablePropertyCore(viewModel, propertyExpression, setValueAction, value1, value2, true, checkOnPropertyChangedResult);
         }

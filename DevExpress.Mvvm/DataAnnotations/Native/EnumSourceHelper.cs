@@ -26,7 +26,7 @@ namespace DevExpress.Mvvm.Native {
                 return Enumerable.Empty<EnumMemberInfo>();
             Func<string, ImageSource> getImageSource = uri => (ImageSource)new ImageSourceConverter().ConvertFrom(uri);
             var result = enumType.GetFields(BindingFlags.Static | BindingFlags.Public)
-                .Where(field => DataAnnotationsAttributeHelper.GetAutoGenerateField(field))
+                .Where(field => DataAnnotationsAttributeHelper.GetAutoGenerateField(field) && DataAnnotationsAttributeHelper.IsBrowsable(field))
                 .Select(field => {
                     Enum value = (Enum)field.GetValue(null);
                     string name = GetEnumName(field, value, nameConverter, splitNames);
@@ -95,7 +95,7 @@ namespace DevExpress.Mvvm.Native {
 }
 namespace DevExpress.Mvvm {
     public static class EnumSourceHelper {
-        public static IEnumerable<EnumMemberInfo> GetEnumSource(Type enumType, bool useUnderlyingEnumValue = true, IValueConverter nameConverter = null, bool splitNames = false,
+        public static IEnumerable<EnumMemberInfo> GetEnumSource(Type enumType, bool useUnderlyingEnumValue = true, IValueConverter nameConverter = null, bool splitNames = false, 
             EnumMembersSortMode sortMode = EnumMembersSortMode.Default, Func<string, ImageSource> getSvgImageSource = null, Size? imageSize = null) {
             return EnumSourceHelperCore.GetEnumSource(enumType, useUnderlyingEnumValue, nameConverter, splitNames, sortMode, null, getSvgImageSource: getSvgImageSource, imageSize: imageSize);
         }

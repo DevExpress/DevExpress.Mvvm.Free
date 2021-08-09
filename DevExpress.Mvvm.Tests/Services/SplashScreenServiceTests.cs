@@ -98,7 +98,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 Template = TemplateCreator.Invoke();
         }
     }
-
+    
     public class DXSplashScreenBaseTestFixture : BaseWpfFixture {
         protected override void SetUpCore() {
             base.SetUpCore();

@@ -38,7 +38,7 @@ namespace DevExpress.Internal.WinApi {
             return WinRTToastNotificationContent.GetDocument(manager, info);
         }
         internal static string GetXml(IPredefinedToastNotificationInfo info) {
-            return GetXml((Window.Data.Xml.Dom.IXmlNodeSerializer)GetDocument(info));
+            return GetXml((Window.Data.Xml.Dom.IXmlNodeSerializer)GetDocument(info)); 
         }
         internal static string GetXml(Window.Data.Xml.Dom.IXmlNodeSerializer content) {
             HSTRING xml;

@@ -117,8 +117,11 @@ namespace DevExpress.Mvvm.UI {
             } catch(IOException) { }
         }
         static string GetImageHash(byte[] image) {
+            return Convert.ToBase64String(CalcImageHash(image));
+        }
+        static byte[] CalcImageHash(byte[] image) {
             using(SHA1 sha1 = SHA1.Create()) {
-                return Convert.ToBase64String(sha1.ComputeHash(image));
+                return sha1.ComputeHash(image);
             }
         }
         [DllImport("user32.dll")]

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 
 namespace DevExpress {
     public class GCTestHelperException : Exception {
@@ -25,18 +26,21 @@ namespace DevExpress {
             EnsureCollected(references.AsEnumerable());
         }
         public static void EnsureCollected(IEnumerable<WeakReference> references) {
-            AssertCollectedCore(references, -1);
+            AssertCollected(GetLiveReferences(references));
         }
-        static void AssertCollectedCore(IEnumerable<WeakReference> references, int alreadyCollectedGen) {
+        public static List<WeakReference> GetLiveReferences(IEnumerable<WeakReference> references) {
+            return GetLiveReferencesCore(references, -1);
+        }
+        static List<WeakReference> GetLiveReferencesCore(IEnumerable<WeakReference> references, int alreadyCollectedGen) {
             int maxGeneration;
             List<WeakReference> nextIterationHolder = CollectExistingData(references, out maxGeneration);
             if(nextIterationHolder.Count == 0)
-                return;
+                return new List<WeakReference>();
             if(maxGeneration <= alreadyCollectedGen) {
-                SlowButSureAssertCollected(nextIterationHolder);
+                return SlowButSureGetLiveReferencesCore(nextIterationHolder);
             } else {
                 GC.Collect(maxGeneration, GCCollectionMode.Forced);
-                AssertCollectedCore(nextIterationHolder, maxGeneration);
+                return GetLiveReferencesCore(nextIterationHolder, maxGeneration);
             }
         }
         static List<WeakReference> CollectExistingData(IEnumerable<WeakReference> references, out int maxGeneration) {
@@ -53,23 +57,47 @@ namespace DevExpress {
             }
             return nextIterationHolder;
         }
-        static void SlowButSureAssertCollected(IList<WeakReference> nextIterationHolder) {
+        static List<WeakReference> SlowButSureGetLiveReferencesCore(IList<WeakReference> nextIterationHolder) {
+            List<WeakReference> empty = new List<WeakReference>();
             GC.GetTotalMemory(true);
-            if(nextIterationHolder.All(wr => !wr.IsAlive))
-                return;
+            if (nextIterationHolder.All(wr => !wr.IsAlive))
+                return empty;
             GC.Collect();
-            if(nextIterationHolder.All(wr => !wr.IsAlive))
-                return;
+            if (nextIterationHolder.All(wr => !wr.IsAlive))
+                return empty;
             GC.GetTotalMemory(true);
-            var notCollected = nextIterationHolder.Select(wr => wr.Target).Where(t => t != null).ToArray();
-            if(notCollected.Length == 0)
-                return;
-            var objectsReport = string.Join("\n", notCollected.GroupBy(o => o.GetType()).OrderBy(gr => gr.Key.FullName)
-                .Select(gr => string.Format("\t{0} object(s) of type {1}:\n{2}", gr.Count(), gr.Key.FullName
-                    , string.Join("\n", gr.Select(o => o.ToString()).OrderBy(s => s).Select(s => string.Format("\t\t{0}", s)))
-                    )));
-            throw new GCTestHelperException(string.Format("{0} garbage object(s) not collected:\n{1}", notCollected.Length, objectsReport));
+            return nextIterationHolder.Where(t => t.Target != null).ToList();
         }
+
+        static void AssertCollected(List<WeakReference> nextIterationHolder) {
+            var notCollected = nextIterationHolder.Select(wr => wr.Target).Where(t => t != null).ToArray();
+            if(notCollected.Length==0)
+                return;
+            throw new GCTestHelperException(BuildExceptionString(notCollected));
+        }
+
+        static string BuildExceptionString(object[] notCollected) {
+            StringBuilder report = new StringBuilder();
+            report.AppendLine($"{notCollected.Length} garbage object(s) not collected:{report}");
+            report.AppendLine();
+            foreach (var typeAndInstancesGrouping in notCollected.GroupBy(o => o.GetType()).OrderBy(gr => gr.Key.FullName)) {
+                var currentType = typeAndInstancesGrouping.Key;
+                var typeAndInstances = typeAndInstancesGrouping.ToArray();
+                var currentInstancesFormatted = typeAndInstances.Select(x => x.ToString()).GroupBy(x => x).OrderBy(x => x.Key).ToArray();
+
+                var currentInstancesIsInformative = currentInstancesFormatted.Length > 1;
+
+                report.AppendLine($"\t{typeAndInstances.Length} object(s) of type {currentType.FullName}{(currentInstancesIsInformative ? ":" : ";")}");
+                if (currentInstancesIsInformative) {
+                    var instancesReport = string.Join(",\r\n", currentInstancesFormatted.Select(x => $"\t\t[{x.Count()}] - {x.Key}"));
+                    report.Append(instancesReport);
+                    report.Append(";");
+                    report.AppendLine();
+                }
+            }
+            return report.ToString();
+        }
+
         public static void CollectOptional(params WeakReference[] references) {
             CollectOptional(references.AsEnumerable());
         }
@@ -78,9 +106,8 @@ namespace DevExpress {
         static bool IsHardOptional() {
             if(HardOptional.HasValue)
                 return HardOptional.Value;
-            lock(rnd) {
+            lock(rnd) 
                 return rnd.Next(100) < 5;
-            }
         }
         public static void CollectOptional(IEnumerable<WeakReference> references) {
             if(IsHardOptional()) {

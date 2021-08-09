@@ -8,8 +8,8 @@ using System.Windows.Media.Media3D;
 
 namespace DevExpress.Mvvm.UI {
     public static class LayoutTreeHelper {
-        static DependencyObject GetParent(DependencyObject element) {
-            if(element is Visual || element is Visual3D)
+        internal static DependencyObject GetParent(DependencyObject element) {
+            if(element is Visual || element is Visual3D) 
                 return VisualTreeHelper.GetParent(element);
             if(element is FrameworkContentElement)
                 return LogicalTreeHelper.GetParent(element);
@@ -32,16 +32,16 @@ namespace DevExpress.Mvvm.UI {
 
         internal static IEnumerable<DependencyObject> GetVisualChildrenCore(DependencyObject parent, bool includeStartNode, Func<DependencyObject, bool> skipChildren = null) {
             return GetChildrenCore(
-                parent,
-                includeStartNode,
-                x => Enumerable.Range(0, x != null ? VisualTreeHelper.GetChildrenCount(x) : 0).Select(index => VisualTreeHelper.GetChild(x, index)),
+                parent, 
+                includeStartNode, 
+                x => Enumerable.Range(0, x != null ? VisualTreeHelper.GetChildrenCount(x) : 0).Select(index => VisualTreeHelper.GetChild(x, index)), 
                 skipChildren);
         }
         internal static IEnumerable<DependencyObject> GetLogicalChildrenCore(DependencyObject parent, bool includeStartNode, Func<DependencyObject, bool> skipChildren = null) {
             return GetChildrenCore(
-                parent,
-                includeStartNode,
-                x => LogicalTreeHelper.GetChildren(x).OfType<DependencyObject>(),
+                parent, 
+                includeStartNode, 
+                x => LogicalTreeHelper.GetChildren(x).OfType<DependencyObject>(), 
                 skipChildren);
         }
         static IEnumerable<DependencyObject> GetChildrenCore(DependencyObject parent, bool includeStartNode, Func<DependencyObject, IEnumerable<DependencyObject>> getChildren, Func<DependencyObject, bool> skipChildren = null) {

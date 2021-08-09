@@ -657,7 +657,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Execute_AssertArithmetic("Execute1(Tag)", new[] { vm, vm.Tag }, null);
             Assert.AreEqual(false, vm.Execute1Res);
         }
-        #region Research How the Csearches for the appropriate method overload
+        #region Research How the C# searches for the appropriate method overload
         [Test]
         public void ResearchStandardMethodSearchTest1() {
             var obj = new ResearchStandardMethodSearch();
@@ -754,7 +754,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             public void A(int p1, object p2) { A4 = true; }
             public void A(char p1, char p2) { A5 = true; }
             #endregion
-            #region B
+            #region B 
             public bool B1 { get; set; }
             public bool B2 { get; set; }
             public bool B3 { get; set; }
@@ -868,12 +868,12 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
         [Test]
         public void NewOperator_Arithmetic() {
-            AssertArithmetic("new int()",
+            AssertArithmetic("new int()", 
                 x => Assert.That(object.Equals(x, new int())));
-            AssertArithmetic("new int?()",
+            AssertArithmetic("new int?()", 
                 x => Assert.That(object.Equals(x, new int?())));
-            AssertArithmetic("new $dx:DXType()",
-                x => Assert.That(x is NewOperator_a),
+            AssertArithmetic("new $dx:DXType()", 
+                x => Assert.That(x is NewOperator_a), 
                 null, null, x => typeof(NewOperator_a));
             AssertArithmetic("new $dx:DXType(1)",
                 x => Assert.That(((NewOperator_a)x).V1 == 1),
@@ -965,12 +965,12 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             ex("B(A1V, A1V)"); Assert.IsTrue(obj.B6); obj.Clear();
             ex("B(A1V, A2V)"); Assert.IsTrue(obj.B7); obj.Clear();
             ex("B(A1V, A3V)"); Assert.IsTrue(obj.B8); obj.Clear();
-
+                       
             ex("B(A2V, o)"); Assert.IsTrue(obj.B9); obj.Clear();
             ex("B(A2V, A1V)"); Assert.IsTrue(obj.B10); obj.Clear();
             ex("B(A2V, A2V)"); Assert.IsTrue(obj.B11); obj.Clear();
             ex("B(A2V, A3V)"); Assert.IsTrue(obj.B12); obj.Clear();
-
+                       
             ex("B(A3V, o)"); Assert.IsTrue(obj.B13); obj.Clear();
             ex("B(A3V, A1V)"); Assert.IsTrue(obj.B14); obj.Clear();
             ex("B(A3V, A2V)"); Assert.IsTrue(obj.B15); obj.Clear();

@@ -1,5 +1,4 @@
 using System.Windows.Markup;
-using DevExpress.Internal;
 using System.Resources;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -8,6 +7,7 @@ using System.Windows;
 using System;
 using System.Security;
 using DevExpress.Mvvm.Native;
+using DevExpress.Internal;
 
 [assembly: AssemblyTitle("DevExpress.Mvvm")]
 [assembly: AssemblyDescription("")]

@@ -56,7 +56,7 @@ namespace DevExpress.Mvvm.Native {
                 ThrowArgumentException(name, value);
         }
         static void ThrowArgumentException(string propName, object val, Exception innerException = null) {
-            string valueStr =
+            string valueStr = 
                 Object.ReferenceEquals(val, string.Empty) ? "String.Empty" :
                 Object.ReferenceEquals(val, null) ? "null" :
                 val.ToString();

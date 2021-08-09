@@ -72,7 +72,7 @@ namespace DevExpress.Mvvm.Native {
             }
             return result;
         }
-#if !NETFX_CORE && (!DXCORE3 || MVVM)
+#if !WINUI && (!DXCORE3 || MVVM)
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key) {
             TValue result;
             dictionary.TryGetValue(key, out result);

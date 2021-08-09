@@ -21,10 +21,10 @@ namespace DevExpress.Mvvm.Native {
 
         readonly ErrorMessageAccessorDelegate errorMessageAccessor;
         protected DXValidationAttribute() { throw new NotSupportedException(); }
-        protected DXValidationAttribute(Func<string> errorMessageAccessor, Func<string> defaultErrorMessageAccessor)
+        protected DXValidationAttribute(Func<string> errorMessageAccessor, Func<string> defaultErrorMessageAccessor) 
             : this(errorMessageAccessor == null ? null : new ErrorMessageAccessorDelegate((x,y) => errorMessageAccessor())
                   , defaultErrorMessageAccessor) { }
-        protected DXValidationAttribute(Func<object, string> errorMessageAccessor, Func<string> defaultErrorMessageAccessor)
+        protected DXValidationAttribute(Func<object, string> errorMessageAccessor, Func<string> defaultErrorMessageAccessor) 
             : this(errorMessageAccessor == null ? null : new ErrorMessageAccessorDelegate((x,y) => errorMessageAccessor(x))
                   , defaultErrorMessageAccessor) { }
         protected DXValidationAttribute(ErrorMessageAccessorDelegate errorMessageAccessor, Func<string> defaultErrorMessageAccessor) {

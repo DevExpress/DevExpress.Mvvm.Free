@@ -284,11 +284,14 @@ namespace DevExpress.Mvvm.POCO {
         }
 
         #region commands
+        const string Error_AsyncCommandUnsupportedReturnType = "To generate AsyncCommand, the {0} method should return {1}. The {2} is generated instead.";
         static void BuildCommands(Type type, TypeBuilder typeBuilder) {
             MethodInfo[] methods = GetCommandMethods(type).ToArray();
             foreach(var commandMethod in methods) {
                 CommandAttribute attribute = ViewModelBase.GetAttribute<CommandAttribute>(commandMethod);
                 bool isAsyncCommand = commandMethod.ReturnType == typeof(Task);
+                if (!isAsyncCommand && ViewModelBase.GetAttribute<AsyncCommandAttribute>(commandMethod) != null)
+                    System.Diagnostics.Trace.TraceWarning(string.Format(Error_AsyncCommandUnsupportedReturnType, commandMethod.Name,typeof(Task).FullName, typeof(DelegateCommand).FullName));
                 string commandName = GetCommandName(commandMethod);
                 if(type.GetMember(commandName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public).Any() || methods.Any(x => GetCommandName(x) == commandName && x != commandMethod))
                     throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_MemberWithSameCommandNameAlreadyExists, commandName));
@@ -616,11 +619,11 @@ namespace DevExpress.Mvvm.POCO {
         internal static ViewModelSourceBuilderBase Default { get { return _default ?? (_default = new ViewModelSourceBuilderBase()); } }
 
         public void BuildBindableProperties(Type type, TypeBuilder typeBuilder, MethodInfo raisePropertyChangedMethod, MethodInfo raisePropertyChangingMethod) {
-            var bindableProps = GetBindableProperties(type);
+            var bindableProps = GetBindableProperties(type).ToArray();
             var propertyRelations = GetPropertyRelations(type, bindableProps);
             foreach(var propertyInfo in bindableProps) {
-                var newProperty = BuilderBindableProperty.BuildBindableProperty(type, typeBuilder,
-                    propertyInfo, raisePropertyChangedMethod, raisePropertyChangingMethod,
+                var newProperty = BuilderBindableProperty.BuildBindableProperty(type, typeBuilder, 
+                    propertyInfo, raisePropertyChangedMethod, raisePropertyChangingMethod, 
                     DictionaryExtensions.GetValueOrDefault(propertyRelations, propertyInfo.Name, null));
                 BuildBindablePropertyAttributes(propertyInfo, newProperty);
             }
@@ -633,8 +636,8 @@ namespace DevExpress.Mvvm.POCO {
         }
         protected virtual void BuildBindablePropertyAttributes(PropertyInfo property, PropertyBuilder builder) { }
 
-        static Dictionary<string, IEnumerable<string>> GetPropertyRelations(Type type, IEnumerable<PropertyInfo> bindableProperties) {
-            Dictionary<string, IEnumerable<string>> res = new Dictionary<string, IEnumerable<string>>();
+        static Dictionary<string, List<string>> GetPropertyRelations(Type type, IEnumerable<PropertyInfo> bindableProperties) {
+            var res = new Dictionary<string, List<string>>();
             var allProps = type.GetProperties();
             var allPropNames = allProps.Select(x => x.Name);
             var bindablePropertyNames = bindableProperties.Select(x => x.Name);
@@ -648,8 +651,8 @@ namespace DevExpress.Mvvm.POCO {
                         throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_DependsOnNotExist, prop.Name, dependedProp));
                     if(!bindablePropertyNames.Contains(dependedProp))
                         throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_DependsOnNotBindable, prop.Name, dependedProp));
-                    if(!res.ContainsKey(dependedProp)) res.Add(dependedProp, new string[] { });
-                    res[dependedProp] = res[dependedProp].Concat(prop.Name.Yield());
+                    if(!res.ContainsKey(dependedProp)) res.Add(dependedProp, new List<string>());
+                    res[dependedProp].Add(prop.Name);
                 }
             }
             return res;
@@ -721,7 +724,7 @@ namespace DevExpress.Mvvm.POCO {
                 interfaces.Add(typeof(IDataErrorInfo));
             if(ShouldImplementINotifyPropertyChanging(baseType))
                 interfaces.Add(typeof(INotifyPropertyChanging));
-            string typeName = baseType.Name + "_" + Guid.NewGuid().ToString().Replace('-', '_');
+            string typeName = baseType.Namespace + "." + baseType.Name + "_" + Guid.NewGuid().ToString().Replace('-', '_');
             return module.DefineType(typeName, TypeAttributes.Public, baseType, interfaces.ToArray());
         }
 
@@ -953,9 +956,9 @@ namespace DevExpress.Mvvm.POCO {
             MethodInfo propertyChangingMethod = GetPropertyChangedMethod(type, propertyInfo, "Changing", x => x.OnPropertyChangingMethodName, x => x.OnPropertyChangingMethod);
             var onChangedFirst = ShouldInvokeOnPropertyChangedMethodsFirst(type);
             var setter = BuildBindablePropertySetter(typeBuilder, propertyInfo,
-                raisePropertyChangedMethod,
-                raisePropertyChangingMethod,
-                propertyChangedMethod,
+                raisePropertyChangedMethod, 
+                raisePropertyChangingMethod, 
+                propertyChangedMethod, 
                 propertyChangingMethod,
                 relatedProperties,
                 onChangedFirst);
@@ -1001,7 +1004,9 @@ namespace DevExpress.Mvvm.POCO {
             if(shouldBoxValues)
                 gen.Emit(OpCodes.Box, property.PropertyType);
             gen.Emit(OpCodes.Call, ExpressionHelper.GetMethod(equalsExpression));
-            gen.Emit(OpCodes.Brtrue_S, returnLabel);
+            if(relatedProperties != null && relatedProperties.Count() > 7)
+                gen.Emit(OpCodes.Brtrue, returnLabel);
+            else gen.Emit(OpCodes.Brtrue_S, returnLabel);
 
             if(onChangedFirst) {
                 EmitPropertyChanging(gen, propertyChangingMethod);
@@ -1095,6 +1100,7 @@ namespace DevExpress.Mvvm.POCO {
         internal const string Error_ObjectDoesntImplementIPOCOViewModel = "Object doesn't implement IPOCOViewModel.";
         internal const string Error_ObjectDoesntImplementISupportServices = "Object doesn't implement ISupportServices.";
         internal const string Error_CommandNotFound = "Command not found: {0}.";
+        internal const string Error_CommandNotAsync = "Command is not async";
         internal const string Error_ConstructorNotFound = "Constructor not found.";
         internal const string Error_TypeHasNoCtors = "Type has no accessible constructors: {0}.";
 
@@ -1163,7 +1169,7 @@ namespace DevExpress.Mvvm.POCO {
             pocoViewModel.RaisePropertyChanged(BindableBase.GetPropertyNameFast(propertyExpression));
         }
         public static IDelegateCommand GetCommand<T>(this T viewModel, Expression<Action<T>> methodExpression) {
-            return GetCommandCore<IDelegateCommand>(viewModel, methodExpression);
+            return GetCommandCore(viewModel, methodExpression);
         }
         public static T SetParentViewModel<T>(this T viewModel, object parentViewModel) {
             ((ISupportParentViewModel)viewModel).ParentViewModel = parentViewModel;
@@ -1173,13 +1179,13 @@ namespace DevExpress.Mvvm.POCO {
             return (T)((ISupportParentViewModel)viewModel).ParentViewModel;
         }
         public static IAsyncCommand GetAsyncCommand<T>(this T viewModel, Expression<Func<T, Task>> methodExpression) {
-            return GetCommandCore<IAsyncCommand>(viewModel, methodExpression);
+            return GetAsyncCommandCore(viewModel, methodExpression);
         }
         public static void RaiseCanExecuteChanged<T>(this T viewModel, Expression<Action<T>> methodExpression) {
-            GetCommandCore<IDelegateCommand>(viewModel, methodExpression).RaiseCanExecuteChanged();
+            RaiseCanExecuteChangedCore(viewModel, methodExpression);
         }
         public static void RaiseCanExecuteChanged<T>(this T viewModel, Expression<Func<T, Task>> methodExpression) {
-            GetCommandCore<IAsyncCommand>(viewModel, methodExpression).RaiseCanExecuteChanged();
+            RaiseCanExecuteChangedCore(viewModel, methodExpression);
         }
 
         public static bool HasError<T, TProperty>(this T viewModel, Expression<Func<T, TProperty>> propertyExpression) {
@@ -1227,14 +1233,25 @@ namespace DevExpress.Mvvm.POCO {
         public static bool GetIsExecuting<T>(this T viewModel, Expression<Func<T, Task>> methodExpression) {
             return GetAsyncCommand(viewModel, methodExpression).IsExecuting;
         }
-        internal static TCommand GetCommandCore<TCommand>(object viewModel, LambdaExpression methodExpression) where TCommand : class, IDelegateCommand {
+        static void RaiseCanExecuteChangedCore(object viewModel, LambdaExpression methodExpression) {
+            IDelegateCommand command = GetCommandCore(viewModel, methodExpression);
+            command.RaiseCanExecuteChanged();
+        }
+        internal static IAsyncCommand GetAsyncCommandCore(object viewModel, LambdaExpression methodExpression) {
+            GetPOCOViewModel(viewModel);
+            ICommand command = GetCommandCore(viewModel, methodExpression);
+            if (!(command is IAsyncCommand))
+                throw new ViewModelSourceException(ViewModelSourceException.Error_CommandNotAsync);
+            return (IAsyncCommand)command;
+        }
+        internal static IDelegateCommand GetCommandCore(object viewModel, LambdaExpression methodExpression) {
             GetPOCOViewModel(viewModel);
             MethodInfo method = ExpressionHelper.GetMethod(methodExpression);
             string commandName = ViewModelSource.GetCommandName(method);
             PropertyInfo property = viewModel.GetType().GetProperty(commandName);
             if(property == null)
                 throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_CommandNotFound, commandName));
-            return (TCommand)property.GetValue(viewModel, null);
+            return property.GetValue(viewModel, null) as IDelegateCommand;
         }
         static IPOCOViewModel GetPOCOViewModel<T>(T viewModel) {
             IPOCOViewModel pocoViewModel = viewModel as IPOCOViewModel;

@@ -237,13 +237,13 @@ namespace DevExpress.Internal {
         }
         static void UpdateContent(IXmlDocument xmldoc, IPredefinedToastNotificationInfo info) {
             string xml = ToastNotificationManager.GetXml((IXmlNodeSerializer)xmldoc);
-            System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
-            doc.LoadXml(xml);
+            var document = new System.Xml.XmlDocument();
+            document.LoadXml(xml);
             IPredefinedToastNotificationInfoGeneric infoGeneric = info as IPredefinedToastNotificationInfoGeneric;
             if(infoGeneric.UpdateToastContent != null)
-                infoGeneric.UpdateToastContent.Invoke(doc);
+                infoGeneric.UpdateToastContent.Invoke(document);
             infoGeneric.UpdateToastContent = null;
-            ToastNotificationManager.LoadXml((IXmlDocumentIO)xmldoc, doc.OuterXml);
+            ToastNotificationManager.LoadXml((IXmlDocumentIO)xmldoc, document.OuterXml);
         }
         static ToastTemplateType GetToastTemplateType(IPredefinedToastNotificationInfo info) {
             if(info.ToastTemplateType != ToastTemplateType.ToastGeneric) return info.ToastTemplateType;
@@ -375,8 +375,10 @@ namespace DevExpress.Internal {
         }
         public bool IsAssigned { get; set; }
         void RemoveTempFile(string filePath) {
+            if(string.IsNullOrEmpty(filePath))
+                return;
             try {
-                if(!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+                if(File.Exists(filePath))
                     File.Delete(filePath);
             }
             catch { }

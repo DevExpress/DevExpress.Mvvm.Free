@@ -267,7 +267,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 onClose();
             }
             public void OnDestroy() {
-
+                
             }
             public object Title {
                 get { return ""; }

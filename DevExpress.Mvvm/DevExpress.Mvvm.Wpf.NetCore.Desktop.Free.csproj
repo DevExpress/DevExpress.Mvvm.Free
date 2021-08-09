@@ -119,6 +119,7 @@
     <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpItemInfoSource.cs" />
     <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpTaskInfoInternal.cs" />
     <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpTaskInfoSource.cs" />
+    <Compile Include="Services\DefaultServiceContainer.cs" />
     <Compile Include="Services\DialogService\DialogServiceExtensions.Wpf.cs" />
     <Compile Include="Services\DialogService\IDialogService.cs" />
     <Compile Include="Services\DialogService\DialogServiceExtensions.cs" />

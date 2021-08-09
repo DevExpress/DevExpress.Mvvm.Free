@@ -117,7 +117,8 @@ namespace DevExpress.Mvvm {
         }
     }
     public class ServiceContainer : ServiceContainerBase, IServiceContainer {
-        static IServiceContainer _default = new DefaultServiceContainer();
+        static IServiceContainer _default =
+            new DefaultServiceContainer();
         static IServiceContainer custom = null;
         public static IServiceContainer Default {
             get { return custom ?? _default; }
@@ -173,36 +174,6 @@ namespace DevExpress.Mvvm {
         T IServiceContainer.GetService<T>(string key, ServiceSearchMode searchMode) {
             bool serviceHasKey;
             return (T)GetServiceCore(typeof(T), key, searchMode, out serviceHasKey);
-        }
-    }
-    class DefaultServiceContainer : ServiceContainer {
-        public DefaultServiceContainer() : base(null) { }
-        protected virtual ResourceDictionary GetApplicationResources() {
-            bool hasAccess = Application.Current.Return(x => x.Dispatcher.CheckAccess(), () => false);
-            return hasAccess ? Application.Current.Resources : null;
-        }
-        Dictionary<string, object> GetApplicationResources(Type type) {
-            var appResources = GetApplicationResources();
-            if(appResources == null) return new Dictionary<string, object>();
-            return appResources.Keys.OfType<string>()
-                .ToDictionary(x => x, x => appResources[x])
-                .Where(x => x.Value != null && type.IsAssignableFrom(x.Value.GetType()))
-                .ToDictionary(x => x.Key, x => x.Value);
-        }
-        protected override object GetServiceCore(Type type, string key, ServiceSearchMode searchMode, out bool serviceHasKey) {
-            object res = base.GetServiceCore(type, key, searchMode, out serviceHasKey);
-            if(res != null) return res;
-            var appResources = GetApplicationResources(type);
-            if(!string.IsNullOrEmpty(key) && appResources.ContainsKey(key))
-                return appResources[key];
-            serviceHasKey = true;
-            return appResources.FirstOrDefault().Value;
-        }
-        protected override IEnumerable<object> GetServicesCore(Type type, bool localOnly) {
-            foreach(var x in base.GetServicesCore(type, localOnly))
-                yield return x;
-            foreach(var x in GetApplicationResources(type).Values)
-                yield return x;
         }
     }
 }

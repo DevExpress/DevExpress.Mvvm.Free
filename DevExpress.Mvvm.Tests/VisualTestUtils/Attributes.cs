@@ -25,7 +25,7 @@ namespace DevExpress.Tests {
 
     public class DXRequiresSTAAttribute : NUnit.Framework.PropertyAttribute {
         public DXRequiresSTAAttribute()
-            : base("APARTMENT_STATE", 0) {
+            : base("APARTMENT_STATE", 0) { 
         }
     }
 }

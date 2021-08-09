@@ -17,20 +17,22 @@ namespace DevExpress.Mvvm {
         internal const string Error_ParentViewModel = "ViewModel cannot be parent of itself.";
         static readonly object NotSetParameter = new object();
         private object parameter = NotSetParameter;
-        static bool? isInDesignMode;
 
+        static bool? isInDesignMode;
         public static bool IsInDesignMode {
             get {
                 if(ViewModelDesignHelper.IsInDesignModeOverride.HasValue)
                     return ViewModelDesignHelper.IsInDesignModeOverride.Value;
                 if(!isInDesignMode.HasValue) {
                     DependencyPropertyDescriptor property = DependencyPropertyDescriptor.FromProperty(DesignerProperties.IsInDesignModeProperty, typeof(FrameworkElement));
+                    if(property == null) {
+                        return false;
+                    }
                     isInDesignMode = (bool)property.Metadata.DefaultValue;
                 }
                 return isInDesignMode.Value;
             }
         }
-
 
         object parentViewModel;
         object ISupportParentViewModel.ParentViewModel {
@@ -57,6 +59,11 @@ namespace DevExpress.Mvvm {
                 OnInitializeInRuntime();
             }
         }
+        protected virtual void OnInitializeInRuntime() {
+        }
+        protected virtual void OnInitializeInDesignMode() {
+            OnParameterChanged(null);
+        }
         protected object Parameter {
             get { return object.Equals(parameter, NotSetParameter) ? null : parameter; }
             set {
@@ -75,11 +82,6 @@ namespace DevExpress.Mvvm {
         }
         protected virtual void OnParentViewModelChanged(object parentViewModel) {
         }
-        protected virtual void OnInitializeInDesignMode() {
-            OnParameterChanged(null);
-        }
-        protected virtual void OnInitializeInRuntime() {
-        }
         protected virtual T GetService<T>() where T : class {
             return GetService<T>(ServiceSearchMode.PreferLocal);
         }
@@ -94,22 +96,30 @@ namespace DevExpress.Mvvm {
         protected virtual T GetService<T>(string key, ServiceSearchMode searchMode) where T : class {
             return ServiceContainer.GetService<T>(key, searchMode);
         }
-        #region CommandAttributeSupport
+#region CommandAttributeSupport
         protected internal IDelegateCommand GetCommand(Expression<Action> commandMethodExpression) {
-            return GetCommandCore<IDelegateCommand>(commandMethodExpression);
+            if (IsPOCOViewModel)
+                return POCOViewModelExtensions.GetCommandCore(this, commandMethodExpression);
+            var method = ExpressionHelper.GetMethod(commandMethodExpression);
+            var command = GetCommandCore(method);
+            return (IDelegateCommand)command;
+
         }
         protected internal IAsyncCommand GetAsyncCommand(Expression<Func<System.Threading.Tasks.Task>> commandMethodExpression) {
-            return GetCommandCore<IAsyncCommand>(commandMethodExpression);
+           if(IsPOCOViewModel)
+                return POCOViewModelExtensions.GetAsyncCommandCore(this, commandMethodExpression);
+            var method = ExpressionHelper.GetMethod(commandMethodExpression);
+            var command = GetCommandCore(method);
+            if (!(command is IAsyncCommand))
+                throw new CommandAttributeException(ViewModelSourceException.Error_CommandNotAsync);
+            return (IAsyncCommand)command;
         }
-        TCommand GetCommandCore<TCommand>(LambdaExpression methodExpression) where TCommand : class, IDelegateCommand {
-            if(IsPOCOViewModel)
-                return POCOViewModelExtensions.GetCommandCore<TCommand>(this, methodExpression);
-            var method = ExpressionHelper.GetMethod(methodExpression);
-            if(method == null)
+        object GetCommandCore(MethodInfo method) {
+            if (method == null)
                 throw new CommandAttributeException(string.Format(ViewModelSourceException.Error_CommandNotFound, method.Name + CommandNameSuffix));
             CommandProperty commandProperty;
             if(commandProperties.TryGetValue(method, out commandProperty))
-                return (TCommand)commandProperty.GetValue(this);
+                return commandProperty.GetValue(this);
             throw new CommandAttributeException(string.Format(ViewModelSourceException.Error_CommandNotFound, method.Name + CommandNameSuffix));
         }
 
@@ -158,7 +168,7 @@ namespace DevExpress.Mvvm {
 
                     MethodInfo canExecuteMethod = GetCanExecuteMethod(type, x, attribute, s => new CommandAttributeException(s), m => m.IsPublic);
                     var attributes = MetadataHelper.GetAllAttributes(x);
-                    return new CommandProperty(x, canExecuteMethod, name, attribute.GetUseCommandManager(), attributes, type, attribute.AllowMultipleExecutionCore);
+                    return new CommandProperty(x, canExecuteMethod, name, attribute.GetUseCommandManager(), attributes, type, attribute.AllowMultipleExecutionCore); 
                 })
                 .ToDictionary(x => x.Method);
             foreach(var property in commandProperties.Values) {
@@ -175,7 +185,7 @@ namespace DevExpress.Mvvm {
             if(CheckCommandMethodConditionValue(parameters.Length <= 1, method, Error_MethodCannotHaveMoreThanOneParameter, createException))
                 return false;
             bool isValidSingleParameter = (parameters.Length == 1) && (parameters[0].IsOut || parameters[0].ParameterType.IsByRef);
-            if(CheckCommandMethodConditionValue(!isValidSingleParameter, method, Error_MethodCannotHaveOutORRefParameters, createException))
+            if(CheckCommandMethodConditionValue(!isValidSingleParameter, method, Error_MethodCannotHaveOutORRefParameters, createException)) 
                 return false;
             if(CheckCommandMethodConditionValue(!method.IsGenericMethodDefinition, method, Error_MethodCannotShouldNotBeGeneric, createException))
                 return false;
@@ -248,10 +258,8 @@ namespace DevExpress.Mvvm {
                 .GetMethod(isAsync ? nameof(CreateCommandHelper<object>.CreateAsyncCommand) : nameof(CreateCommandHelper<object>.CreateCommand), BindingFlags.Static | BindingFlags.Public)
                 .Invoke(null, isAsync ? args.Concat(allowMultipleExecution.Yield<object>()).ToArray() : args);
         }
-        #region CommandProperty
-        class CommandProperty :
-            PropertyDescriptor
-        {
+#region CommandProperty
+        class CommandProperty : PropertyDescriptor {
             readonly MethodInfo method;
             readonly MethodInfo canExecuteMethod;
             readonly string name;
@@ -285,9 +293,9 @@ namespace DevExpress.Mvvm {
             public override void SetValue(object component, object value) { throw new NotSupportedException(); }
             public override bool ShouldSerializeValue(object component) { return false; }
         }
-        #endregion
+#endregion
 
-        #region ICustomTypeDescriptor
+#region ICustomTypeDescriptor
         AttributeCollection ICustomTypeDescriptor.GetAttributes() {
             return TypeDescriptor.GetAttributes(this, true);
         }
@@ -320,13 +328,13 @@ namespace DevExpress.Mvvm {
         }
         PropertyDescriptorCollection properties;
         PropertyDescriptorCollection ICustomTypeDescriptor.GetProperties() {
-            return properties ??
+            return properties ?? 
                 (properties = new PropertyDescriptorCollection(TypeDescriptor.GetProperties(this, true).Cast<PropertyDescriptor>().Concat(commandProperties.Values).ToArray()));
         }
         object ICustomTypeDescriptor.GetPropertyOwner(PropertyDescriptor pd) {
             return this;
         }
-        #endregion
+#endregion
 #endregion CommandAttributeSupport
     }
     [Serializable]

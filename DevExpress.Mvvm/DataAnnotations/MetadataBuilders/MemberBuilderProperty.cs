@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Linq.Expressions;
 
 namespace DevExpress.Mvvm.DataAnnotations {
-    public abstract class PropertyMetadataBuilderGeneric<T, TProperty, TBuilder> :
+    public abstract class PropertyMetadataBuilderGeneric<T, TProperty, TBuilder> : 
         PropertyMetadataBuilderBase<T, TProperty, TBuilder>
         where TBuilder : PropertyMetadataBuilderGeneric<T, TProperty, TBuilder> {
         internal PropertyMetadataBuilderGeneric(MemberMetadataStorage storage, ClassMetadataBuilder<T> parent)
@@ -27,7 +27,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
         [Obsolete("Use the MatchesInstanceRule(Func<TProperty, T, bool> isValidFunction, Func<string> errorMessageAccessor = null) method instead.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public TBuilder MatchesInstanceRule(Func<T, bool> isValidFunction, Func<string> errorMessageAccessor = null) { return MatchesInstanceRuleCore(isValidFunction, errorMessageAccessor); }
-
+        
 
         #region POCO
         public TBuilder DoNotMakeBindable() {

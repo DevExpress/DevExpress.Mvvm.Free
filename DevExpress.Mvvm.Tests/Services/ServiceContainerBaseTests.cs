@@ -354,7 +354,6 @@ namespace DevExpress.Mvvm.Tests {
                     tester.TestKeylessServiceSearch(44, parentHasKey: true, nestedHasKey: true, yieldToParent: true, preferLocal: true, assertActualIsNested: false);
                 }
         }
-
         [Test]
         public void GetApplicationService() {
             var defaultServiceContainer = new DefaultServiceContainer2();
@@ -384,6 +383,15 @@ namespace DevExpress.Mvvm.Tests {
             vm.GetService<IMessageBoxService>();
         }
         [Test]
+        public void GetApplicationService_DoNotUseServicesInMergedDictionaries() {
+            var defaultServiceContainer = new DefaultServiceContainer2();
+            var service1 = new TestService1();
+            var mergedDictionary = new ResourceDictionary();
+            mergedDictionary.Add("testService2", service1);
+            defaultServiceContainer.Resources.MergedDictionaries.Add(mergedDictionary);
+            Assert.IsNull(defaultServiceContainer.GetService<IService1>());
+        }
+        [Test]
         public void GetLastParent() {
             var root = new TestSupportServices();
             var parent = new TestSupportServices();
@@ -400,15 +408,6 @@ namespace DevExpress.Mvvm.Tests {
             child.ServiceContainer.RegisterService(childSrv);
 
             Assert.AreEqual(rootSrv, child.ServiceContainer.GetService<IService1>(ServiceSearchMode.PreferParents));
-        }
-        [Test]
-        public void GetApplicationService_DoNotUseServicesInMergedDictionaries() {
-            var defaultServiceContainer = new DefaultServiceContainer2();
-            var service1 = new TestService1();
-            var mergedDictionary = new ResourceDictionary();
-            mergedDictionary.Add("testService2", service1);
-            defaultServiceContainer.Resources.MergedDictionaries.Add(mergedDictionary);
-            Assert.IsNull(defaultServiceContainer.GetService<IService1>());
         }
 
         class KeylessServiceSearchTestHelper {
@@ -472,6 +471,7 @@ namespace DevExpress.Mvvm.Tests {
             set { throw new NotSupportedException(); }
         }
     }
+
     class DefaultServiceContainer2 : DefaultServiceContainer {
         public DefaultServiceContainer2() : base() {
             Resources = new ResourceDictionary();
@@ -481,7 +481,6 @@ namespace DevExpress.Mvvm.Tests {
             return Resources;
         }
     }
-
     [TestFixture]
     public class ServiceBaseTests : BaseWpfFixture {
         [Test]

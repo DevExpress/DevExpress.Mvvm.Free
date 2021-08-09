@@ -31,12 +31,12 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             InheritedServiceProperty = DependencyProperty.RegisterAttached("InheritedService", typeof(UIRegionBase), typeof(UIRegionBase),
                 new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits | FrameworkPropertyMetadataOptions.OverridesInheritanceBehavior));
             DependencyPropertyRegistrator<UIRegionBase>.New()
-                .Register(x => x.ModuleManager, out ModuleManagerProperty, null)
-                .Register(x => x.StrategyManager, out StrategyManagerProperty, null)
-                .Register(x => x.RegionName, out RegionNameProperty, null)
-                .RegisterReadOnly(x => x.SelectedViewModel, out SelectedViewModelPropertyKey, out SelectedViewModelProperty, null, (x, oldValue, newValue) => x.OnSelectedViewModelPropertyChanged(oldValue, newValue))
-                .Register(x => x.SetParentViewModel, out SetParentViewModelProperty, true)
-                .Register(x => x.ParentViewModel, out ParentViewModelProperty, null, (x, oldValue, newValue) => x.OnParentViewModelChanged(oldValue, newValue));
+                .Register(nameof(ModuleManager), out ModuleManagerProperty, default(IModuleManagerImplementation))
+                .Register(nameof(StrategyManager), out StrategyManagerProperty, default(IStrategyManager))
+                .Register(nameof(RegionName), out RegionNameProperty, default(string))
+                .RegisterReadOnly(nameof(SelectedViewModel), out SelectedViewModelPropertyKey, out SelectedViewModelProperty, default(object), (x, oldValue, newValue) => x.OnSelectedViewModelPropertyChanged(oldValue, newValue))
+                .Register(nameof(SetParentViewModel), out SetParentViewModelProperty, true)
+                .Register(nameof(ParentViewModel), out ParentViewModelProperty, default(object), (x, oldValue, newValue) => x.OnParentViewModelChanged(oldValue, newValue));
         }
         protected static void EnforceSaveLayout(object viewModel) {
             if(viewModel == null) return;
@@ -71,7 +71,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             if(!SetParentViewModel || iSupportPVM == null) return;
             if (iSupportPVM == ActualParentViewModel) {
                 Trace.WriteLine(
-                    "MIF: UIRegion (" + RegionName + ") " +
+                    "MIF: UIRegion (" + RegionName + ") " + 
                     "failed to set ParentViewModel. " +
                     "Bind the UIRegion.ParentViewModel property manually.");
                 return;
@@ -141,7 +141,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             }
         }
         bool focusOnSelectedViewModelChanged = true;
-
+        
         void IUIRegion.Inject(object viewModel, Type viewType) {
             if(viewModel == null) return;
             viewModels.Add(viewModel);
@@ -174,7 +174,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         }
         protected abstract object GetView(object viewModel);
         #endregion
-        #region StrategyOwner
+        #region StrategyOwner 
         protected class StrategyOwnerBase : IStrategyOwner {
             public UIRegionBase Owner { get; private set; }
             public DependencyObject Target { get; private set; }
@@ -272,11 +272,11 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
                 OnSelectedViewModelChanged(SelectedViewModel, SelectedViewModel, false);
             else SelectedViewModel = Strategy.SelectedViewModel;
         }
-
-        #region StrategyOwner
+        
+        #region StrategyOwner 
         class StrategyOwner : StrategyOwnerBase {
             protected new UIRegion Owner { get { return (UIRegion)base.Owner; } }
-            public StrategyOwner(UIRegion owner)
+            public StrategyOwner(UIRegion owner) 
                 : base(owner, owner.AssociatedObject) { }
             public override void SelectViewModel(object viewModel) {
                 if(Owner.Target != null && Owner.Target.IsLoaded)
@@ -297,13 +297,13 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
 
         static UIWindowRegion() {
             DependencyPropertyRegistrator<UIWindowRegion>.New()
-                .Register(x => x.WindowFactory, out WindowFactoryProperty, null)
-                .Register(x => x.WindowStyle, out WindowStyleProperty, null)
-                .Register(x => x.WindowStyleSelector, out WindowStyleSelectorProperty, null)
-                .Register(x => x.WindowShowMode, out WindowShowModeProperty, WindowShowMode.Default)
-                .Register(x => x.WindowStartupLocation, out WindowStartupLocationProperty, WindowStartupLocation.CenterScreen)
-                .Register(x => x.SetWindowOwner, out SetWindowOwnerProperty, true)
-                .Register(x => x.IsMainWindow, out IsMainWindowProperty, false);
+                .Register(nameof(WindowFactory), out WindowFactoryProperty, default(DataTemplate))
+                .Register(nameof(WindowStyle), out WindowStyleProperty, default(Style))
+                .Register(nameof(WindowStyleSelector), out WindowStyleSelectorProperty, default(StyleSelector))
+                .Register(nameof(WindowShowMode), out WindowShowModeProperty, WindowShowMode.Default)
+                .Register(nameof(WindowStartupLocation), out WindowStartupLocationProperty, WindowStartupLocation.CenterScreen)
+                .Register(nameof(SetWindowOwner), out SetWindowOwnerProperty, true)
+                .Register(nameof(IsMainWindow), out IsMainWindowProperty, false);
         }
         #endregion
         public DataTemplate WindowFactory { get { return (DataTemplate)GetValue(WindowFactoryProperty); } set { SetValue(WindowFactoryProperty, value); } }
@@ -347,7 +347,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             if(WindowStyleSelector != null) w.Style = WindowStyleSelector.SelectStyle(vm, w);
             if(SetWindowOwner && !IsMainWindow && Application.Current != null) {
                 w.Owner =
-                    Application.Current.Windows.OfType<Window>().FirstOrDefault(x => x.IsActive)
+                    Application.Current.Windows.OfType<Window>().FirstOrDefault(x => x.IsActive) 
                     ?? Application.Current.MainWindow;
             }
             if(!IsMainWindow && AssociatedObject is FrameworkElement)
@@ -396,7 +396,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             setResult = result;
         }
         #endregion
-        #region StrategyOwner
+        #region StrategyOwner 
         class StrategyOwner : StrategyOwnerBase {
             public new UIWindowRegion Owner { get { return (UIWindowRegion)base.Owner; } }
             public StrategyOwner(UIWindowRegion owner, FrameworkElement window)

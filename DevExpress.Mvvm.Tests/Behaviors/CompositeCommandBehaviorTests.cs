@@ -200,7 +200,7 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
 
         #region Mock
         class MockControl : Control {
-            public static readonly DependencyProperty CustomDataProperty =
+            public static readonly DependencyProperty CustomDataProperty = 
                 DependencyProperty.Register("CustomData", typeof(object), typeof(MockControl), new PropertyMetadata(null));
 
             public object CustomData2 { get; set; }

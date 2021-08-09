@@ -287,7 +287,7 @@ namespace DevExpress.Mvvm.UI {
                     break;
             }
             if(image != null) {
-                var dpi = PrimaryScreen.GetDpi();
+                var dpi = PrimaryScreen.GetDpi(new Point(0, 0));
                 var width = PredefinedNotificationsFactory.ImageSize;
                 var size = new Size(width * dpi.X, width * dpi.Y);
                 content.SetImage(ImageLoader2.ImageToByteArray(image, GetBaseUri, size));

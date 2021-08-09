@@ -1,9 +1,9 @@
 using NUnit.Framework;
-using System.Linq;
-using System.Windows;
-using DevExpress.Mvvm.UI.Native;
 using System.Windows.Controls;
 using System.Windows.Markup;
+using DevExpress.Mvvm.UI.Native;
+using System.Linq;
+using System.Windows;
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]

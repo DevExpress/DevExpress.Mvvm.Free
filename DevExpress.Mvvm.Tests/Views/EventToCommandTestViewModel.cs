@@ -23,7 +23,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 
         public string TestParameter {
             get { return testParameter; }
-            set { SetProperty(ref testParameter, value, () => TestParameter); }
+            set { SetProperty(ref testParameter, value, nameof(TestParameter)); }
         }
 
 
@@ -115,7 +115,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         bool selectionChangedCommandParameter4 = false;
         public bool SelectionChangedCommandParameter4 {
             get { return selectionChangedCommandParameter4; }
-            set { SetProperty(ref selectionChangedCommandParameter4, value, () => SelectionChangedCommandParameter4); }
+            set { SetProperty(ref selectionChangedCommandParameter4, value, nameof(SelectionChangedCommandParameter4)); }
         }
         public int SelectionChangedCount4 { get; private set; }
         ICommand selectionChangedCommand4;
@@ -135,7 +135,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         bool selectionChangedCommandParameter5 = false;
         public bool SelectionChangedCommandParameter5 {
             get { return selectionChangedCommandParameter5; }
-            set { SetProperty(ref selectionChangedCommandParameter5, value, () => SelectionChangedCommandParameter5); }
+            set { SetProperty(ref selectionChangedCommandParameter5, value, nameof(SelectionChangedCommandParameter5)); }
         }
         public int SelectionChangedCount5 { get; private set; }
         ICommand selectionChangedCommand5;

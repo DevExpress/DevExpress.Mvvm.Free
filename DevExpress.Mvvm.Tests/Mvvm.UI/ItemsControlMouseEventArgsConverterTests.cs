@@ -13,7 +13,7 @@ using DevExpress.Mvvm.Native;
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
     public class ItemsControlMouseEventArgsConverterTests : BaseWpfFixture {
-        public class ItemsControlMouseEventArgsConverterTester : ItemsControlMouseEventArgsConverter {
+        public class ItemsControlMouseEventArgsConverterTester : ItemsControlMouseEventArgsConverter { 
             public object TestConvert(object sender, DependencyObject originalSource) {
                 return ConvertCore(sender, originalSource);
             }

@@ -133,7 +133,7 @@ namespace DevExpress.Mvvm {
                     default: Reset(); break;
                 }
             }
-
+            
             object sourceRef;
             object targetRef;
 

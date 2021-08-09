@@ -62,7 +62,7 @@ namespace DevExpress.Mvvm.UI.Tests {
 
         public static class IsolatedDomainTestHelper {
         class IsolatedDomainTester : MarshalByRefObject {
-            public void Test(MethodInfo actionInfo, params object[] args) {
+            public void Test(MethodInfo actionInfo, params object[] args) {                
                 object target = Activator.CreateInstance(actionInfo.DeclaringType);
                 MethodInfo setupFixture = target.GetType().GetMethods().FirstOrDefault((mi) => mi.GetCustomAttributes(typeof(OneTimeSetUpAttribute), true).FirstOrDefault() != null);
                 MethodInfo setup = target.GetType().GetMethods().FirstOrDefault((mi) => mi.GetCustomAttributes(typeof(SetUpAttribute), true).FirstOrDefault() != null);

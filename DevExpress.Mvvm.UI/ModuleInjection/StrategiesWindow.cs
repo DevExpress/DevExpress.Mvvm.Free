@@ -144,7 +144,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         public Window Target { get; set; }
         public object Content { get { return Target.Content; } set { Target.Content = value; } }
         public DataTemplate ContentTemplate { get { return Target.ContentTemplate; } set { Target.ContentTemplate = value; } }
-        public DataTemplateSelector ContentTemplateSelector {
+        public virtual DataTemplateSelector ContentTemplateSelector {
             get { return Target.ContentTemplateSelector; }
             set {
                 Target.ContentTemplateSelector = value;

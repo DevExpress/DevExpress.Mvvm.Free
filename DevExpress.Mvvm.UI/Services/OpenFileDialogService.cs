@@ -49,7 +49,7 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("ReadOnlyChecked", typeof(bool), typeof(OpenFileDialogService), new PropertyMetadata(false));
         public static readonly DependencyProperty ShowReadOnlyProperty =
             DependencyProperty.Register("ShowReadOnly", typeof(bool), typeof(OpenFileDialogService), new PropertyMetadata(false));
-
+        
         public bool Multiselect {
             get { return (bool)GetValue(MultiselectProperty); }
             set { SetValue(MultiselectProperty, value); }

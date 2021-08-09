@@ -1,8 +1,8 @@
+using DevExpress.Mvvm.UI.Interactivity;
+using DevExpress.Mvvm.UI.Interactivity.Internal;
 using NUnit.Framework;
 using System.Windows;
-using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.Native;
-using DevExpress.Mvvm.UI.Interactivity.Internal;
 using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Controls;

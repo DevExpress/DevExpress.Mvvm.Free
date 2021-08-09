@@ -23,7 +23,6 @@ namespace DevExpress.Mvvm.Tests {
                 get { return nestedViewModel; }
                 set { SetProperty(ref nestedViewModel, value, () => NestedViewModel); }
             }
-
             public int TestCommandExecuteCount { get; private set; }
             public object ExecuteParameter { get; private set; }
             public object CanExecuteParameter { get; private set; }

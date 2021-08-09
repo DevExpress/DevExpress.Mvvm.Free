@@ -17,37 +17,37 @@ namespace DevExpress.Mvvm {
         object id = null;
         public object Id {
             get { return id; }
-            set { SetProperty(ref id, value, () => Id); }
+            set { SetProperty(ref id, value, nameof(Id)); }
         }
         object caption = null;
         public object Caption {
             get { return caption; }
-            set { SetProperty(ref caption, value, () => Caption); }
+            set { SetProperty(ref caption, value, nameof(Caption)); }
         }
         ICommand command = null;
         public ICommand Command {
             get { return command; }
-            set { SetProperty(ref command, value, () => Command); }
+            set { SetProperty(ref command, value, nameof(Command)); }
         }
         bool isDefault = false;
         public bool IsDefault {
             get { return isDefault; }
-            set { SetProperty(ref isDefault, value, () => IsDefault); }
+            set { SetProperty(ref isDefault, value, nameof(IsDefault)); }
         }
         bool isCancel = false;
         public bool IsCancel {
             get { return isCancel; }
-            set { SetProperty(ref isCancel, value, () => IsCancel); }
+            set { SetProperty(ref isCancel, value, nameof(IsCancel)); }
         }
         object tag = null;
         public object Tag {
             get { return tag; }
-            set { SetProperty(ref tag, value, () => Tag); }
+            set { SetProperty(ref tag, value, nameof(Tag)); }
         }
         bool allowCloseWindow = true;
         public bool AllowCloseWindow {
             get { return allowCloseWindow; }
-            set { SetProperty(ref allowCloseWindow, value, () => AllowCloseWindow); }
+            set { SetProperty(ref allowCloseWindow, value, nameof(AllowCloseWindow)); }
         }
 
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
@@ -64,7 +64,7 @@ namespace DevExpress.Mvvm {
         DialogButtonAlignment alignment = DialogButtonAlignment.Right;
         public DialogButtonAlignment Alignment {
             get { return alignment; }
-            set { SetProperty(ref alignment, value, () => Alignment); }
+            set { SetProperty(ref alignment, value, nameof(Alignment)); }
         }
 
         Dock placement = Dock.Right;
@@ -72,7 +72,7 @@ namespace DevExpress.Mvvm {
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public Dock Placement {
             get { return placement; }
-            set { SetProperty(ref placement, value, () => Placement); }
+            set { SetProperty(ref placement, value, nameof(Placement)); }
         }
         public UICommand() { }
         public UICommand(object id, object caption, ICommand command, bool isDefault, bool isCancel, object tag = null, bool allowCloseWindow = true, Dock placement = Dock.Right, DialogButtonAlignment alignment = DialogButtonAlignment.Right) {
@@ -85,6 +85,18 @@ namespace DevExpress.Mvvm {
             this.allowCloseWindow = allowCloseWindow;
             this.placement = placement;
             this.alignment = alignment;
+        }
+        public UICommand(object id, object caption, ICommand<CancelEventArgs> command, bool isDefault, bool isCancel, object tag = null, bool allowCloseWindow = true, Dock placement = Dock.Right, DialogButtonAlignment alignment = DialogButtonAlignment.Right) 
+            : this(id: id, 
+                  caption: caption, 
+                  command: (ICommand)command, 
+                  isDefault: isDefault, 
+                  isCancel: isCancel, 
+                  tag: tag, 
+                  allowCloseWindow: 
+                  allowCloseWindow, 
+                  placement: placement, 
+                  alignment: alignment) {
         }
 
         public static List<UICommand> GenerateFromMessageButton(MessageButton dialogButtons, IMessageButtonLocalizer buttonLocalizer, MessageResult? defaultButton = null, MessageResult? cancelButton = null) {

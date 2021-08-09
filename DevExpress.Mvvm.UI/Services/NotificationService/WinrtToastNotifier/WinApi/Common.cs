@@ -112,19 +112,19 @@ namespace DevExpress.Internal.WinApi {
             finally { Marshal.FreeHGlobal(hMem); }
         }
         public void Dispose() {
-            if(handle != IntPtr.Zero)
-                Marshal.ThrowExceptionForHR(WindowsDeleteString(handle));
+            if(handle == IntPtr.Zero)
+                return;
+            Marshal.ThrowExceptionForHR(WindowsDeleteString(handle));
         }
         public string GetString() {
-            if(handle != IntPtr.Zero) {
-                uint len = WindowsGetStringLen(handle);
-                if(len > 0) {
-                    uint actualLen;
-                    return Marshal.PtrToStringUni(WindowsGetStringRawBuffer(handle, out actualLen));
-                }
+            if(handle == IntPtr.Zero)
                 return string.Empty;
+            uint len = WindowsGetStringLen(handle);
+            if(len > 0) {
+                uint actualLen;
+                return Marshal.PtrToStringUni(WindowsGetStringRawBuffer(handle, out actualLen));
             }
-            return null;
+            return string.Empty;
         }
         [DllImport("api-ms-win-core-winrt-string-l1-1-0.dll", CallingConvention = CallingConvention.StdCall)]
         static extern int WindowsCreateString(

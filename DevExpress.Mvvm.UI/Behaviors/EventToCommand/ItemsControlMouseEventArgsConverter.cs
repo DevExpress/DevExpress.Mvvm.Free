@@ -14,8 +14,8 @@ namespace DevExpress.Mvvm.UI {
             var converter = new ItemsControlMouseEventArgsConverter();
             return converter.Convert(sender, args);
         }
-        protected static Dictionary<Type, Type> itemsTypes = new Dictionary<Type, Type>() {
-            { typeof(ListBox), typeof(ListBoxItem) },
+        protected static Dictionary<Type, Type> itemsTypes = new Dictionary<Type, Type>() { 
+            { typeof(ListBox), typeof(ListBoxItem) },            
             { typeof(ListView), typeof(ListViewItem) },
             { typeof(TreeView), typeof(TreeViewItem) },
             { typeof(TreeViewItem), typeof(TreeViewItem) },
@@ -23,12 +23,7 @@ namespace DevExpress.Mvvm.UI {
             { typeof(StatusBar), typeof(StatusBarItem) },
             { typeof(Menu), typeof(MenuItem) },
         };
-        public static readonly DependencyProperty ItemTypeProperty =
-            DependencyProperty.Register("ItemType", typeof(Type), typeof(ItemsControlMouseEventArgsConverter), new PropertyMetadata(null));
-        public Type ItemType {
-            get { return (Type)GetValue(ItemTypeProperty); }
-            set { SetValue(ItemTypeProperty, value); }
-        }
+        public Type ItemType { get; set; }
         protected override object Convert(object sender, MouseEventArgs args) {
             return ConvertCore(sender, (DependencyObject)args.OriginalSource);
         }

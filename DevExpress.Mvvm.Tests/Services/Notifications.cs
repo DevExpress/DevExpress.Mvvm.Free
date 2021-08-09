@@ -474,7 +474,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             } catch(InvalidOperationException) { }
         }
 
-  [Test]
+		[Test]
         public void ConvertTimeSpanToMilliseconds() {
             var service = new NotificationService();
             service.CustomNotificationDuration = TimeSpan.MaxValue;
@@ -505,7 +505,13 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void CreateApplicationWindowNotification() {
             var service = new NotificationService();
             service.CustomNotificationScreen = NotificationScreen.ApplicationWindow;
-            service.CreateCustomNotification(null);
+            service.CreateCustomNotification(null);                
+        }
+        [Test, Description("T994586")]
+        public void GetDpiTest() {
+            var dpi = PrimaryScreen.GetDpi(new Point(1, 1));
+            Assert.AreEqual(1, dpi.X);
+            Assert.AreEqual(1, dpi.Y);
         }
     }
 }

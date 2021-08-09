@@ -36,10 +36,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         }
         [Test]
         public void MissingModule() {
-            Assert.Throws<ModuleInjectionException>(() =>
+            Assert.Throws<ModuleInjectionException>(() => 
                 ModuleManager.DefaultManager.Inject("A", "1"),
                "Cannot find a module with the passed key. Register module before working with it.");
-            Assert.Throws<ModuleInjectionException>(() =>
+            Assert.Throws<ModuleInjectionException>(() => 
                ModuleManager.DefaultManager.InjectOrNavigate("A", "1"),
                "Cannot find a module with the passed key. Register module before working with it.");
             ModuleManager.DefaultManager.Navigate("A", "1");
@@ -51,10 +51,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Assert.AreEqual(null, ModuleManager.DefaultManager.GetRegion("B").SelectedKey);
 
 
-            Assert.Throws<ModuleInjectionException>(() =>
+            Assert.Throws<ModuleInjectionException>(() => 
                 ModuleManager.DefaultWindowManager.Show("A", "1"),
                "Cannot find a module with the passed key. Register module before working with it.");
-            Assert.Throws<ModuleInjectionException>(() =>
+            Assert.Throws<ModuleInjectionException>(() => 
                 ModuleManager.DefaultWindowManager.ShowOrActivate("A", "1"),
                "Cannot find a module with the passed key. Register module before working with it.");
             ModuleManager.DefaultWindowManager.Activate("A", "1");

@@ -1,3 +1,4 @@
+using DevExpress.Mvvm.UI.Interactivity;
 using System.Windows.Controls;
 using System;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             TestVM vm = new TestVM();
             UserControl control = new UserControl() { DataContext = vm };
             DispatcherService service = new DispatcherService();
-            Interactivity.Interaction.GetBehaviors(control).Add(service);
+            Interaction.GetBehaviors(control).Add(service);
             Window.Content = control;
             EnqueueShowWindow();
             EnqueueCallback(() => {

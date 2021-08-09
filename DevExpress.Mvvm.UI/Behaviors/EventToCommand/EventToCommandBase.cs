@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Input;
+using System.ComponentModel;
 using System.Windows.Controls;
 using System.Windows.Threading;
 
@@ -19,6 +20,7 @@ namespace DevExpress.Mvvm.UI {
             DependencyProperty.Register("MarkRoutedEventsAsHandled", typeof(bool), typeof(EventToCommandBase),
             new PropertyMetadata(false));
 
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public static readonly DependencyProperty UseDispatcherProperty =
             DependencyProperty.Register("UseDispatcher", typeof(bool?), typeof(EventToCommandBase),
             new PropertyMetadata(null));
@@ -45,6 +47,7 @@ namespace DevExpress.Mvvm.UI {
             get { return (bool)GetValue(MarkRoutedEventsAsHandledProperty); }
             set { SetValue(MarkRoutedEventsAsHandledProperty, value); }
         }
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public bool? UseDispatcher {
             get { return (bool?)GetValue(UseDispatcherProperty); }
             set { SetValue(UseDispatcherProperty, value); }

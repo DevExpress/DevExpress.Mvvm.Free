@@ -67,7 +67,7 @@ namespace DevExpress.Mvvm {
                 }
             }
         }
-
+        
         protected static void ResolveTypeProperties(ref string name, out IDictionary<string, string> properties) {
             Func<string, string> getPropName = x => {
                 var ind = x.IndexOf('=');

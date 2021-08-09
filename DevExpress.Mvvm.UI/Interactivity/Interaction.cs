@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Windows.Controls;
 using System.Windows;
-using System.ComponentModel;
 using DevExpress.Mvvm.UI.Native;
 
 namespace DevExpress.Mvvm.UI.Interactivity {
@@ -19,7 +19,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         public static readonly DependencyProperty BehaviorsTemplateProperty =
             DependencyProperty.RegisterAttached(BehaviorsTemplatePropertyName, typeof(DataTemplate), typeof(Interaction), new PropertyMetadata(null, OnBehaviorsTemplateChanged));
         [IgnoreDependencyPropertiesConsistencyChecker]
-        static readonly DependencyProperty BehaviorsTemplateItemsProperty =
+        static readonly DependencyProperty BehaviorsTemplateItemsProperty = 
             DependencyProperty.RegisterAttached("BehaviorsTemplateItems", typeof(IList<Behavior>), typeof(Interaction), new PropertyMetadata(null));
         [IgnoreDependencyPropertiesConsistencyChecker]
         [Obsolete("This property is obsolete. Use the Behaviors property instead.")]
@@ -36,6 +36,8 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             }
             return behaviors;
         }
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static BehaviorCollection GetBehaviorsInternal(DependencyObject d) => GetBehaviors(d);
         public static DataTemplate GetBehaviorsTemplate(DependencyObject d) {
             return (DataTemplate)d.GetValue(BehaviorsProperty);
         }

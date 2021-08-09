@@ -12,7 +12,7 @@ namespace DevExpress.Mvvm.UI {
         #region Dependency Properties
         static MessageBoxButton DefaultMessageBoxButton = MessageBoxButton.YesNo;
         public static readonly DependencyProperty EnableConfirmationMessageProperty =
-            DependencyProperty.Register("EnableConfirmationMessage", typeof(bool), typeof(ConfirmationBehavior),
+            DependencyProperty.Register("EnableConfirmationMessage", typeof(bool), typeof(ConfirmationBehavior), 
             new PropertyMetadata(true));
         public static readonly DependencyProperty CommandProperty =
             DependencyProperty.Register("Command", typeof(ICommand), typeof(ConfirmationBehavior),

@@ -38,7 +38,7 @@ namespace DevExpress.Mvvm.Native {
             : base(target, action) {
         }
         protected override void Execute(object parameter) {
-            MethodInfo method = ActionMethod;
+            MethodInfo method = ActionMethod; 
             object target = ActionTargetReference.Target;
             if(method != null && target != null) {
                 method.Invoke(target, null);

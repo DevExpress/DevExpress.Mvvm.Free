@@ -211,7 +211,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 "Button", "Command",
                 @"{b:DXCommand 
                     Execute='Do(@s.Margin);', 
-                    CanExecute='new $Thickness(@s.Margin.Bottom).Left == 1'}",
+                    CanExecute='new $Thickness(@s.Margin.Bottom).Left == 1'}", 
                 null, vm);
             Assert.AreEqual(false, BindingTestHelper.CanDoCommand(bt));
             Assert.AreEqual(0, vm.DoubleProp);

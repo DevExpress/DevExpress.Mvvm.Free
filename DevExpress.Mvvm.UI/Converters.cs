@@ -13,6 +13,7 @@ using DevExpress.Mvvm.UI.Native;
 using System.Collections;
 using System.Windows.Media;
 using System.Text.RegularExpressions;
+using System.Windows.Input;
 
 namespace DevExpress.Mvvm.UI {
     public class ReflectionConverter : IValueConverter {
@@ -541,6 +542,25 @@ namespace DevExpress.Mvvm.UI {
         }
         object IValueConverter.ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             return ConvertBack(value);
+        }
+    }
+
+    public class ToTypedCommandConverter : MarkupExtension, IValueConverter {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+            if(value == null)
+                return value;
+            if(!TypedCommandHelper.IsTypedCommand(targetType))
+                throw new ArgumentException(string.Format("Unable to convert an object to the '{0}' type. The target type should be '{1}'.", targetType.ToDisplayString(), typeof(ICommand<>)));
+            if(!(value is ICommand))
+                throw new ArgumentException(string.Format("Unable to convert an object of the '{0}' type to the '{1}' type.", value.GetType().ToDisplayString(), targetType.ToDisplayString()));
+            var genericArg = TypedCommandHelper.GetCommandGenericType(targetType);
+            return typeof(ICommandExtensions).GetMethod(nameof(ICommandExtensions.ToTypedCommand)).MakeGenericMethod(genericArg).Invoke(null, new[] { value });
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+            throw new NotImplementedException();
+        }
+        public override object ProvideValue(IServiceProvider serviceProvider) {
+            return this;
         }
     }
 

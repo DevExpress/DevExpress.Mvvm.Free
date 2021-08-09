@@ -33,7 +33,7 @@ namespace DevExpress.Mvvm.UI.Native {
 
         public static IWindowSurrogate GetWindowSurrogate(object window) {
             IWindowSurrogate res = (window as DependencyObject).With(x => GetActualWindowSurrogate(x));
-            if(res != null)
+            if(res != null) 
                 return res;
             res = window as IWindowSurrogate ?? new WindowProxy((WindowBase)window);
             (window as DependencyObject).Do(x => SetActualWindowSurrogate(x, res));
