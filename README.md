@@ -19,6 +19,8 @@ If you have an idea how to improve our MVVM Framework, please contact us via our
 
 # Release Notes
 
+### 21.1.5
+* DevExpress MVVM Framework now includes the [IEventArgsTwoWayConverter](https://docs.devexpress.com/WPF/DevExpress.Mvvm.UI.IEventArgsTwoWayConverter) interface. This interface allows you to define back conversion logic and return values from a command to an event. Refer to the following topic for more information: [EventToCommand](https://docs.devexpress.com/WPF/DevExpress.Mvvm.UI.EventToCommand#pass-a-parameter-back-to-the-bound-event).
 ### 20.2.3
 * [T917390](https://supportcenter.devexpress.com/ticket/details/T917390/the-idelegatecommand-and-iasynccommand-interfaces-have-been-moved-to-the-devexpress-mvvm) - The IDelegateCommand and IAsyncCommand interfaces have been moved to the DevExpress.Mvvm namespace
 
