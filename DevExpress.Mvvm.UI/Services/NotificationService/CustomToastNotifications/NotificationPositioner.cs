@@ -15,7 +15,7 @@ namespace DevExpress.Mvvm.UI.Native {
         Rect screen;
         const double verticalMargin = 10;
         const double verticalScreenMargin = 20;
-        readonly List<ItemInfo> items = new List<ItemInfo>();
+        List<ItemInfo> items = new List<ItemInfo>();
         public List<T> Items { get { return CloneItemsCollection().Select(i => i == null ? null : i.value).ToList(); } }
         double itemWidth;
         double itemHeight;
@@ -30,18 +30,15 @@ namespace DevExpress.Mvvm.UI.Native {
             this.screen = screen;
             this.position = position;
             this.maxCount = maxCount;
-            List<ItemInfo> visible = CloneItemsCollection().Where(i => i != null).ToList();
-            items.Clear();
-            foreach(ItemInfo info in visible) {
-                Add(info.value, info.size.Width, info.size.Height);
-            }
+            lock(items) RemoveEmptySlots();
         }
 
         public Point GetItemPosition(T item) {
-            ItemInfo info = CloneItemsCollection().FirstOrDefault(i => i != null && i.value == item);
+            var clonedItems = CloneItemsCollection();
+            ItemInfo info = clonedItems.FirstOrDefault(i => i != null && i.value == item);
             if (info == null)
                 return new Point(-1, -1);
-            int index = items.IndexOf(info);
+            int index = clonedItems.IndexOf(info);
             double y = 0;
             if(position == NotificationPosition.TopRight) {
                 y = screen.Y + verticalScreenMargin + index * (info.size.Height + verticalMargin);
@@ -54,13 +51,15 @@ namespace DevExpress.Mvvm.UI.Native {
         public Point Add(T item, double width, double height) {
             itemWidth = width;
             itemHeight = height;
-            ReplaceSlotValue(null, new ItemInfo { value = item, size = new Size(width, height) });
+            lock(items) items.Add(new ItemInfo { value = item, size = new Size(width, height) });
             return GetItemPosition(item);
         }
 
         public void Remove(T item) {
-            ItemInfo info = CloneItemsCollection().First(i => i != null && i.value == item);
-            ReplaceSlotValue(info, null);
+            lock(items) { 
+                CleanItem(item);
+                RemoveEmptySlots();
+            }
         }
 
         public bool HasEmptySlot() {
@@ -72,17 +71,19 @@ namespace DevExpress.Mvvm.UI.Native {
             return hasEmptySlot && hasEnoughSpace;
         }
 
-        void ReplaceSlotValue(ItemInfo oldInfo, ItemInfo newInfo) {
+        void CleanItem(T item) {
             for(int i = 0; i < items.Count; i++) {
-                if(items[i] == oldInfo) {
-                    items[i] = newInfo;
+                if(items[i]?.value == item) {
+                    items[i] = null;
                     return;
                 }
             }
-            items.Add(newInfo);
+        }
+        void RemoveEmptySlots() {
+            items = items.Where(i => i != null).ToList();
         }
         List<ItemInfo> CloneItemsCollection() {
-            return new List<ItemInfo>(items);
+            lock(items) return new List<ItemInfo>(items);
         }
     }
 }

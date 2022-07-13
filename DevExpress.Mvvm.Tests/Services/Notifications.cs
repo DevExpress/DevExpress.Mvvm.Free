@@ -45,7 +45,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             pos.Remove("item2");
             p = pos.Add("item4", 200, 50);
             Assert.AreEqual(800 - 200, p.X);
-            Assert.AreEqual(20 + 50 + 10, p.Y);
+            Assert.AreEqual(20 + 50 + 10 + 50 + 10, p.Y);
 
             pos.Remove("item3");
             p = pos.Add("item5", 200, 50);
@@ -75,7 +75,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             pos.Remove("item2");
             p = pos.Add("item4", 200, 50);
             Assert.AreEqual(800 - 200, p.X);
-            Assert.AreEqual(600 - 50 - 20 - 50 - 10, p.Y);
+            Assert.AreEqual(600 - 50 - 20 - 50 - 10 - 50 - 10, p.Y);
 
             pos.Remove("item3");
             p = pos.Add("item5", 200, 50);

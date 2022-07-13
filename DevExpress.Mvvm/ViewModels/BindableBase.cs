@@ -27,25 +27,11 @@ namespace DevExpress.Mvvm {
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-        protected T GetProperty<T>(Expression<Func<T>> expression) {
-            return GetPropertyCore<T>(GetPropertyName(expression));
-        }
         protected bool SetProperty<T>(ref T storage, T value, Expression<Func<T>> expression, Action changedCallback) {
             return SetProperty(ref storage, value, GetPropertyName(expression), changedCallback);
         }
         protected bool SetProperty<T>(ref T storage, T value, Expression<Func<T>> expression) {
             return SetProperty<T>(ref storage, value, expression, null);
-        }
-        protected bool SetProperty<T>(Expression<Func<T>> expression, T value) {
-            return SetProperty(expression, value, (Action)null);
-        }
-        protected bool SetProperty<T>(Expression<Func<T>> expression, T value, Action changedCallback) {
-            string propertyName = GetPropertyName(expression);
-            return SetPropertyCore(propertyName, value, changedCallback);
-        }
-        protected bool SetProperty<T>(Expression<Func<T>> expression, T value, Action<T> changedCallback) {
-            string propertyName = GetPropertyName(expression);
-            return SetPropertyCore(propertyName, value, changedCallback);
         }
         protected void RaisePropertyChanged<T>(Expression<Func<T>> expression) {
             RaisePropertyChanged(GetPropertyName(expression));
@@ -71,6 +57,20 @@ namespace DevExpress.Mvvm {
             RaisePropertyChanged(expression3);
             RaisePropertyChanged(expression4);
             RaisePropertyChanged(expression5);
+        }
+        protected T GetProperty<T>(Expression<Func<T>> expression) {
+            return GetPropertyCore<T>(GetPropertyName(expression));
+        }
+        protected bool SetProperty<T>(Expression<Func<T>> expression, T value, Action<T> changedCallback) {
+            string propertyName = GetPropertyName(expression);
+            return SetPropertyCore(propertyName, value, changedCallback);
+        }
+        protected bool SetProperty<T>(Expression<Func<T>> expression, T value) {
+            return SetProperty(expression, value, (Action)null);
+        }
+        protected bool SetProperty<T>(Expression<Func<T>> expression, T value, Action changedCallback) {
+            string propertyName = GetPropertyName(expression);
+            return SetPropertyCore(propertyName, value, changedCallback);
         }
         protected virtual bool SetProperty<T>(ref T storage, T value, string propertyName, Action changedCallback) {
             VerifyAccess();

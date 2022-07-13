@@ -84,13 +84,13 @@ namespace DevExpress.Mvvm.UI {
         }
         #endregion
 
-        internal DelegateCommand<object> ConfirmationCommand;
+        internal IDelegateCommand ConfirmationCommand;
         public ConfirmationBehavior() {
             ConfirmationCommand = new DelegateCommand<object>(ConfirmationCommandExecute, ConfirmationCommandCanExecute, false);
         }
         protected override void OnAttached() {
             base.OnAttached();
-            SetAssociatedObjectCommandProperty(ConfirmationCommand);
+            SetAssociatedObjectCommandProperty();
             if(Command != null) {
                 Command.CanExecuteChanged -= OnCommandCanExecuteChanged;
                 Command.CanExecuteChanged += OnCommandCanExecuteChanged;
@@ -132,10 +132,15 @@ namespace DevExpress.Mvvm.UI {
             PropertyInfo commandPropertyInfo = associatedObjectType.GetProperty(CommandPropertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
             return commandPropertyInfo;
         }
-        internal bool SetAssociatedObjectCommandProperty(object command) {
+        internal bool SetAssociatedObjectCommandProperty() {
             var pi = GetCommandProperty();
+            if(pi != null && TypedCommandHelper.IsTypedCommand(pi.PropertyType)) {
+                var genericArg = TypedCommandHelper.GetCommandGenericType(pi.PropertyType);
+                var arguments = new object[] { new Action<object>(ConfirmationCommandExecute), new Func<object, bool>(ConfirmationCommandCanExecute), false };
+                ConfirmationCommand = (IDelegateCommand)Activator.CreateInstance(typeof(DelegateCommand<>).MakeGenericType(genericArg), arguments);
+            }
             if(pi != null) {
-                pi.SetValue(AssociatedObject, command, null);
+                pi.SetValue(AssociatedObject, ConfirmationCommand, null);
                 return true;
             }
             return false;

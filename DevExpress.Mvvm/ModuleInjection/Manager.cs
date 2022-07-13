@@ -19,6 +19,7 @@ namespace DevExpress.Mvvm.ModuleInjection {
         void Unregister(string regionName, string key);
         IModule GetModule(string regionName, string key);
         IRegion GetRegion(string regionName);
+        IEnumerable<IRegion> GetRegions();
         IEnumerable<IRegion> GetRegions(object viewModel);
         IRegionEventManager GetEvents(string regionName);
         IViewModelEventManager GetEvents(object viewModel);
@@ -220,6 +221,9 @@ namespace DevExpress.Mvvm.ModuleInjection {
         }
         IRegion IModuleManagerBase.GetRegion(string regionName) {
             return GetRegion(regionName);
+        }
+        IEnumerable<IRegion> IModuleManagerBase.GetRegions() {
+            return regions;
         }
         IEnumerable<IRegion> IModuleManagerBase.GetRegions(object viewModel) {
             return regions.Where(x => x.ViewModels.Contains(viewModel)).ToList();

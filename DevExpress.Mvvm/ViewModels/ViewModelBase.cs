@@ -120,6 +120,9 @@ namespace DevExpress.Mvvm {
             CommandProperty commandProperty;
             if(commandProperties.TryGetValue(method, out commandProperty))
                 return commandProperty.GetValue(this);
+            var found = commandProperties.Keys.FirstOrDefault(x => x.Name == method.Name && x.DeclaringType == method.DeclaringType);
+            if(found != null)
+                return commandProperties[found].GetValue(this);
             throw new CommandAttributeException(string.Format(ViewModelSourceException.Error_CommandNotFound, method.Name + CommandNameSuffix));
         }
 

@@ -14,6 +14,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Xaml;
+using DevExpress.Xpf.DXBinding;
 
 namespace DevExpress.Xpf.DXBinding {
     public abstract class DXMarkupExtensionBase : MarkupExtension {
@@ -275,65 +276,6 @@ namespace DevExpress.Xpf.DXBinding {
                 }
             }
         }
-        internal class DXBindingConverterBase : IMultiValueConverter, IValueConverter {
-            protected readonly IErrorHandler errorHandler;
-            public DXBindingConverterBase(DXBindingBase owner) {
-                this.errorHandler = owner.ErrorHandler;
-            }
-
-            object IValueConverter.Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-                return ((IMultiValueConverter)this).Convert(new object[] { value }, targetType, parameter, culture);
-            }
-            object IValueConverter.ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
-                return ((IMultiValueConverter)this).ConvertBack(value, new Type[] { targetType }, parameter, culture).First();
-            }
-            object IMultiValueConverter.Convert(object[] values, Type targetType, object parameter, CultureInfo culture) {
-                if(!CanConvert(values)) return Binding.DoNothing;
-                object res = Convert(values, targetType);
-                res = CoerceAfterConvert(res, targetType, parameter, culture);
-                return ConvertToTargetType(res, targetType);
-            }
-            object[] IMultiValueConverter.ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
-                value = CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
-                object[] res = ConvertBack(value, targetTypes);
-                res = CoerceAfterConvertBack(res, targetTypes, parameter, culture);
-                for(int i = 0; i < res.Count(); i++)
-                    res[i] = ConvertToTargetType(res[i], targetTypes[i]);
-                return res.ToArray();
-            }
-            protected virtual bool CanConvert(object[] values) {
-                return !ValuesContainUnsetValue(values);
-            }
-            protected virtual object Convert(object[] values, Type targetType) {
-                return values;
-            }
-            protected virtual object[] ConvertBack(object value, Type[] targetTypes) {
-                throw new NotImplementedException();
-            }
-            protected virtual object CoerceAfterConvert(object value, Type targetType, object parameter, CultureInfo culture) {
-                return value;
-            }
-            protected virtual object CoerceBeforeConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
-                return value;
-            }
-            protected virtual object[] CoerceAfterConvertBack(object[] value, Type[] targetTypes, object parameter, CultureInfo culture) {
-                return value;
-            }
-
-            public static bool ValuesContainUnsetValue(object[] values) {
-                foreach(object v in values) {
-                    if(v == DependencyProperty.UnsetValue) return true;
-                }
-                return false;
-            }
-            static object ConvertToTargetType(object value, Type targetType) {
-                if (value == Binding.DoNothing)
-                    return value;
-                if(value != null && targetType == typeof(string) && !(value is string))
-                    value = value.ToString();
-                return value;
-            }
-        }
     }
     
     public sealed class DXBindingExtension : DXBindingBase {
@@ -363,8 +305,8 @@ namespace DevExpress.Xpf.DXBinding {
         public bool AllowUnsetValue { get; set; }
 
         BindingMode ActualMode { get; set; }
-        BindingTreeInfo TreeInfo { get; set; }
-        IBindingCalculator Calculator { get; set; }
+        internal BindingTreeInfo TreeInfo { get; set; }
+        internal IBindingCalculator Calculator { get; set; }
 
         public DXBindingExtension() : this(string.Empty) { }
         public DXBindingExtension(string expr) {
@@ -487,118 +429,13 @@ namespace DevExpress.Xpf.DXBinding {
                 return new DXBindingConverter(this, (BindingCalculator)Calculator);
             return new DXBindingConverterDynamic(this, (BindingCalculatorDynamic)Calculator, AllowUnsetValue);
         }
-
-        class DXBindingConverter : DXBindingConverterBase {
-            readonly BindingTreeInfo treeInfo;
-            readonly BindingCalculator calculator;
-            readonly IValueConverter externalConverter;
-            Type backConversionType;
-            bool isBackConversionInitialized = false;
-            public DXBindingConverter(DXBindingExtension owner, BindingCalculator calculator) : base(owner) {
-                this.treeInfo = owner.TreeInfo;
-                this.calculator = calculator;
-                this.backConversionType = owner.TargetPropertyType;
-                this.externalConverter = owner.Converter;
-            }
-            protected override object Convert(object[] values, Type targetType) {
-                if(backConversionType == null)
-                    backConversionType = targetType;
-                errorHandler.ClearError();
-                return calculator.Resolve(values);
-            }
-            protected override object[] ConvertBack(object value, Type[] targetTypes) {
-                if(treeInfo.IsEmptyBackExpr() && !treeInfo.IsSimpleExpr())
-                    errorHandler.Throw(ErrorHelper.Err101_TwoWay(), null);
-                if(!isBackConversionInitialized) {
-                    Type valueType = value.Return(x => x.GetType(), () => null);
-                    var backExprType = valueType ?? backConversionType;
-                    if(backExprType == null)
-                        errorHandler.Throw(ErrorHelper.Err104(), null);
-                    calculator.InitBack(valueType ?? backConversionType);
-                    isBackConversionInitialized = true;
-                }
-                List<object> res = new List<object>();
-                foreach(var op in calculator.Operands) {
-                    if(!op.IsTwoWay || op.BackConverter == null) res.Add(value);
-                    else res.Add(op.BackConverter(new object[] { value }));
-                }
-                return res.ToArray();
-            }
-            protected override object CoerceAfterConvert(object value, Type targetType, object parameter, CultureInfo culture) {
-                if(externalConverter != null)
-                    return externalConverter.Convert(value, targetType, parameter, culture);
-                if(value == DependencyProperty.UnsetValue && targetType == typeof(string))
-                    value = null;
-                else value = ObjectToObjectConverter.Coerce(value, targetType, true);
-                return base.CoerceAfterConvert(value, targetType, parameter, culture);
-            }
-            protected override object CoerceBeforeConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
-                if(externalConverter != null) {
-                    var t = targetTypes != null && targetTypes.Count() == 1 ? targetTypes[0] : backConversionType;
-                    return externalConverter.ConvertBack(value, t, parameter, culture);
-                }
-                return base.CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
-            }
-        }
-        class DXBindingConverterDynamic : DXBindingConverterBase {
-            readonly BindingTreeInfo treeInfo;
-            readonly BindingCalculatorDynamic calculator;
-            readonly IValueConverter externalConverter;
-            readonly bool allowUnsetValue;
-            public DXBindingConverterDynamic(DXBindingExtension owner, BindingCalculatorDynamic calculator, bool allowUnsetValue) : base(owner) {
-                this.treeInfo = owner.TreeInfo;
-                this.calculator = calculator;
-                this.externalConverter = owner.Converter;
-                this.allowUnsetValue = allowUnsetValue;
-            }
-            List<WeakReference> valueRefs;
-            protected override object Convert(object[] values, Type targetType) {
-                errorHandler.ClearError();
-                this.valueRefs = values.Select(x => new WeakReference(x)).ToList();
-                return calculator.Resolve(values);
-            }
-            protected override object[] ConvertBack(object value, Type[] targetTypes) {
-                if (treeInfo.IsEmptyBackExpr() && !treeInfo.IsSimpleExpr())
-                    errorHandler.Throw(ErrorHelper.Err101_TwoWay(), null);
-                if (treeInfo.IsEmptyBackExpr())
-                    return Enumerable.Range(0, calculator.Operands.Count()).Select(x => value).ToArray();
-                var values = valueRefs.Select(x => x.Target).ToArray();
-                var res = calculator.ResolveBack(values, value).ToArray();
-                return res;
-            }
-            protected override object CoerceAfterConvert(object value, Type targetType, object parameter, CultureInfo culture) {
-                if (externalConverter != null)
-                    return externalConverter.Convert(value, targetType, parameter, culture);
-                if (value == Binding.DoNothing)
-                    return value;
-                if (value == DependencyProperty.UnsetValue && targetType == typeof(string))
-                    value = null;
-                else value = ObjectToObjectConverter.Coerce(value, targetType, true);
-                return base.CoerceAfterConvert(value, targetType, parameter, culture);
-            }
-            protected override object CoerceBeforeConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
-                if (externalConverter != null) {
-                    var t = targetTypes != null && targetTypes.Count() == 1 ? targetTypes[0] : null;
-                    return externalConverter.ConvertBack(value, t, parameter, culture);
-                }
-                return base.CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
-            }
-            protected override object[] CoerceAfterConvertBack(object[] value, Type[] targetTypes, object parameter, CultureInfo culture) {
-                for(int i = 0; i < value.Count(); i++)
-                    value[i] = ObjectToObjectConverter.Coerce(value[i], targetTypes[i], true);
-                return base.CoerceAfterConvertBack(value, targetTypes, parameter, culture);
-            }
-            protected override bool CanConvert(object[] values) {
-                return allowUnsetValue || !ValuesContainUnsetValue(values);
-            }
-        }
     }
     public sealed class DXCommandExtension : DXBindingBase {
         public string Execute { get; set; }
         public string CanExecute { get; set; }
         public bool FallbackCanExecute { get; set; }
-        CommandTreeInfo TreeInfo { get; set; }
-        ICommandCalculator Calculator { get; set; }
+        internal CommandTreeInfo TreeInfo { get; set; }
+        internal ICommandCalculator Calculator { get; set; }
 
         public DXCommandExtension() : this(string.Empty) { }
         public DXCommandExtension(string execute) {
@@ -663,68 +500,11 @@ namespace DevExpress.Xpf.DXBinding {
         DXCommandConverter CreateConverter(bool isEmpty) {
             return new DXCommandConverter(this, isEmpty);
         }
-
-        class DXCommandConverter : DXBindingConverterBase {
-            readonly ICommandCalculator calculator;
-            readonly bool fallbackCanExecute;
-            readonly bool isEmpty;
-            public DXCommandConverter(DXCommandExtension owner, bool isEmpty) : base(owner) {
-                this.calculator = owner.Calculator;
-                this.fallbackCanExecute = owner.FallbackCanExecute;
-                this.isEmpty = isEmpty;
-            }
-            protected override object Convert(object[] values, Type targetType) {
-                return new Command(errorHandler, calculator, fallbackCanExecute, isEmpty, values);
-            }
-            protected override bool CanConvert(object[] values) {
-                return true;
-            }
-        }
-        class Command : ICommand {
-            readonly WeakReference errorHandler;
-            readonly WeakReference calculator;
-            readonly WeakReference[] values;
-            readonly bool fallbackCanExecute;
-            readonly bool isEmpty;
-            IErrorHandler ErrorHandler { get { return (IErrorHandler)errorHandler.Target; } }
-            ICommandCalculator Calculator { get { return (ICommandCalculator)calculator.Target; } }
-            object[] Values { get { return isEmpty ? null : values.Select(x => x.Target).ToArray(); } }
-            bool IsAlive {
-                get {
-                    bool res = errorHandler.IsAlive && calculator.IsAlive;
-                    if(isEmpty) return res;
-                    return res && !values.Any(x => !x.IsAlive);
-                }
-            }
-            public Command(IErrorHandler errorHandler, ICommandCalculator calculator, bool fallbackCanExecute, bool isEmpty, object[] values) {
-                this.errorHandler = new WeakReference(errorHandler);
-                this.calculator = new WeakReference(calculator);
-                this.fallbackCanExecute = fallbackCanExecute;
-                this.isEmpty = isEmpty;
-                this.values = values.Select(x => new WeakReference(x)).ToArray();
-            }
-            void ICommand.Execute(object parameter) {
-                if(!IsAlive) return;
-                ErrorHandler.ClearError();
-                if(!isEmpty && DXBindingConverterBase.ValuesContainUnsetValue(Values)) return;
-                Calculator.Execute(Values, parameter);
-            }
-            bool ICommand.CanExecute(object parameter) {
-                if(!IsAlive) return fallbackCanExecute;
-                ErrorHandler.ClearError();
-                if(!isEmpty && DXBindingConverterBase.ValuesContainUnsetValue(Values)) return fallbackCanExecute;
-                return Calculator.CanExecute(Values, parameter);
-            }
-            event EventHandler ICommand.CanExecuteChanged {
-                add { CommandManager.RequerySuggested += value; }
-                remove { CommandManager.RequerySuggested -= value; }
-            }
-        }
     }
     public sealed class DXEventExtension : DXBindingBase {
         public string Handler { get; set; }
-        EventTreeInfo TreeInfo { get; set; }
-        IEventCalculator Calculator { get; set; }
+        internal EventTreeInfo TreeInfo { get; set; }
+        internal IEventCalculator Calculator { get; set; }
 
         public DXEventExtension() : this(string.Empty) { }
         public DXEventExtension(string expr) {
@@ -760,7 +540,7 @@ namespace DevExpress.Xpf.DXBinding {
             Calculator.Init(TypeResolver);
         }
         protected override object GetProvidedValue() {
-            var eventBinder = new EventBinder(this, GetEventHandlerType(), CreateBinding());
+            var eventBinder = new DXEventBinder(this, (DependencyObject)TargetProvider.TargetObject, GetEventHandlerType(), CreateBinding());
             return eventBinder.GetEventHandler();
         }
         protected override IEnumerable<Operand> GetOperands() {
@@ -776,12 +556,12 @@ namespace DevExpress.Xpf.DXBinding {
             if(Calculator.Operands.Count() == 0) {
                 var binding = CreateBinding(null, BindingMode.OneTime);
                 binding.Source = null;
-                binding.Converter = new EventConverter(this, true);
+                binding.Converter = new DXEventConverter(this, true);
                 return binding;
             }
             if(Calculator.Operands.Count() == 1) {
                 var binding = CreateBinding(Calculator.Operands.First(), BindingMode.OneTime);
-                binding.Converter = new EventConverter(this, false);
+                binding.Converter = new DXEventConverter(this, false);
                 return binding;
             }
             if(Calculator.Operands.Count() > 1) {
@@ -790,93 +570,10 @@ namespace DevExpress.Xpf.DXBinding {
                     var subBinding = CreateBinding(op, BindingMode.OneTime);
                     binding.Bindings.Add(subBinding);
                 }
-                binding.Converter = new EventConverter(this, false);
+                binding.Converter = new DXEventConverter(this, false);
                 return binding;
             }
             throw new NotImplementedException();
-        }
-
-        class EventBinder {
-            readonly IErrorHandler errorHandler;
-            readonly IEventCalculator calculator;
-            readonly WeakReference targetObject;
-            readonly string handler;
-            readonly Type targetType;
-            readonly string targetPropertyName;
-            readonly Type targetPropertyType;
-            readonly Type eventHandlerType;
-            DependencyProperty dataProperty;
-            static object locker = new object();
-            static long dataPropertyIndex = 0;
-            static Dictionary<Tuple<Type, string>, DependencyProperty> propertiesCache = new Dictionary<Tuple<Type, string>, DependencyProperty>();
-
-            DependencyObject TargetObject { get { return (DependencyObject)targetObject.Target; } }
-            bool IsAlive { get { return targetObject.IsAlive; } }
-            public EventBinder(DXEventExtension owner, Type eventHandlerType, BindingBase binding) {
-                lock (locker) {
-                    this.errorHandler = owner.ErrorHandler;
-                    this.calculator = owner.Calculator;
-                    var target = (DependencyObject)owner.TargetProvider.TargetObject;
-                    this.targetObject = new WeakReference(target);
-                    this.handler = owner.Handler;
-                    this.targetType = target.GetType();
-                    this.targetPropertyName = owner.TargetPropertyName;
-                    this.targetPropertyType = owner.TargetPropertyType;
-                    this.eventHandlerType = eventHandlerType;
-                    var dataPropertyInfo = Tuple.Create(target.GetType(), owner.Handler);
-                    if (!propertiesCache.TryGetValue(dataPropertyInfo, out dataProperty)) {
-                        dataProperty = DependencyProperty.Register(
-                            "Tag" + dataPropertyIndex++.ToString(), typeof(object), dataPropertyInfo.Item1);
-                        propertiesCache[dataPropertyInfo] = dataProperty;
-                    }
-                    BindCore(binding);
-                }
-            }
-            public Delegate GetEventHandler() {
-                var eventSubscriber = new DevExpress.Mvvm.UI.Interactivity.Internal.EventTriggerEventSubscriber(OnEvent);
-                return eventSubscriber.CreateEventHandler(eventHandlerType);
-            }
-            object[] GetBoundEventData() {
-                if(!IsAlive) return null;
-                var res = (IEnumerable<object>)TargetObject.GetValue(dataProperty);
-                if (res == null) {
-                    var expr = BindingOperations.GetBindingExpression(TargetObject, dataProperty);
-                    if(expr != null && expr.Status == BindingStatus.Unattached) {
-                        var b = BindingOperations.GetBinding(TargetObject, dataProperty);
-                        BindCore(b);
-                        res = (IEnumerable<object>)TargetObject.GetValue(dataProperty);
-                    }
-                }
-                return res == null ? null : res.ToArray();
-            }
-            void OnEvent(object sender, object eventArgs) {
-                var data = GetBoundEventData();
-                errorHandler.ClearError();
-                calculator.Event(data, sender, eventArgs);
-            }
-            void BindCore(BindingBase binding) {
-                if (TargetObject == null) return;
-                try {
-                    BindingOperations.SetBinding(TargetObject, dataProperty, binding);
-                } catch (Exception e) {
-                    string message = "DXEvent cannot set binding on data property. " + Environment.NewLine
-                        + "Expr: " + handler + Environment.NewLine
-                        + "TargetProperty: " + targetPropertyName + Environment.NewLine
-                        + "TargetPropertyType: " + targetPropertyType.ToString() + Environment.NewLine
-                        + "TargetObjectType: " + targetType + Environment.NewLine
-                        + "DataProperty: " + dataProperty.Name;
-                    throw new DXEventException(targetPropertyName, targetType.ToString(), handler, message, e);
-                }
-            }
-        }
-        class EventConverter : DXBindingConverterBase {
-            readonly bool isEmpty;
-            public EventConverter(DXEventExtension owner, bool isEmpty) : base(owner) {
-                this.isEmpty = isEmpty;
-            }
-            protected override object Convert(object[] values, Type targetType) {
-                return isEmpty ? null : new List<object>(values ?? new object[] { });
-            }
         }
     }
 
@@ -940,5 +637,306 @@ namespace DevExpress.Xpf.DXBinding {
     }
 }
 namespace DevExpress.Xpf.Core.Native {
+    public class DXBindingConverterBase : IMultiValueConverter, IValueConverter {
+        protected readonly IErrorHandler errorHandler;
+        public DXBindingConverterBase(DXBindingBase owner) {
+            this.errorHandler = owner.ErrorHandler;
+        }
+
+        object IValueConverter.Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+            return ((IMultiValueConverter)this).Convert(new object[] { value }, targetType, parameter, culture);
+        }
+        object IValueConverter.ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+            return ((IMultiValueConverter)this).ConvertBack(value, new Type[] { targetType }, parameter, culture).First();
+        }
+        object IMultiValueConverter.Convert(object[] values, Type targetType, object parameter, CultureInfo culture) {
+            if(!CanConvert(values)) return Binding.DoNothing;
+            object res = Convert(values, targetType);
+            res = CoerceAfterConvert(res, targetType, parameter, culture);
+            return ConvertToTargetType(res, targetType);
+        }
+        object[] IMultiValueConverter.ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
+            value = CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
+            object[] res = ConvertBack(value, targetTypes);
+            res = CoerceAfterConvertBack(res, targetTypes, parameter, culture);
+            for(int i = 0; i < res.Count(); i++)
+                res[i] = ConvertToTargetType(res[i], targetTypes[i]);
+            return res.ToArray();
+        }
+        protected virtual bool CanConvert(object[] values) {
+            return !ValuesContainUnsetValue(values);
+        }
+        protected virtual object Convert(object[] values, Type targetType) {
+            return values;
+        }
+        protected virtual object[] ConvertBack(object value, Type[] targetTypes) {
+            throw new NotImplementedException();
+        }
+        protected virtual object CoerceAfterConvert(object value, Type targetType, object parameter, CultureInfo culture) {
+            return value;
+        }
+        protected virtual object CoerceBeforeConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
+            return value;
+        }
+        protected virtual object[] CoerceAfterConvertBack(object[] value, Type[] targetTypes, object parameter, CultureInfo culture) {
+            return value;
+        }
+
+        public static bool ValuesContainUnsetValue(object[] values) {
+            foreach(object v in values) {
+                if(v == DependencyProperty.UnsetValue) return true;
+            }
+            return false;
+        }
+        static object ConvertToTargetType(object value, Type targetType) {
+            if(value == Binding.DoNothing)
+                return value;
+            if(value != null && targetType == typeof(string) && !(value is string))
+                value = value.ToString();
+            return value;
+        }
+    }
+    public class DXBindingConverter : DXBindingConverterBase {
+        readonly BindingTreeInfo treeInfo;
+        readonly BindingCalculator calculator;
+        readonly IValueConverter externalConverter;
+        Type backConversionType;
+        bool isBackConversionInitialized = false;
+        public DXBindingConverter(DXBindingExtension owner, BindingCalculator calculator) : base(owner) {
+            this.treeInfo = owner.TreeInfo;
+            this.calculator = calculator;
+            this.backConversionType = owner.TargetPropertyType;
+            this.externalConverter = owner.Converter;
+        }
+        protected override object Convert(object[] values, Type targetType) {
+            if(backConversionType == null)
+                backConversionType = targetType;
+            errorHandler.ClearError();
+            return calculator.Resolve(values);
+        }
+        protected override object[] ConvertBack(object value, Type[] targetTypes) {
+            if(treeInfo.IsEmptyBackExpr() && !treeInfo.IsSimpleExpr())
+                errorHandler.Throw(ErrorHelper.Err101_TwoWay(), null);
+            if(!isBackConversionInitialized) {
+                Type valueType = value.Return(x => x.GetType(), () => null);
+                var backExprType = valueType ?? backConversionType;
+                if(backExprType == null)
+                    errorHandler.Throw(ErrorHelper.Err104(), null);
+                calculator.InitBack(valueType ?? backConversionType);
+                isBackConversionInitialized = true;
+            }
+            List<object> res = new List<object>();
+            foreach(var op in calculator.Operands) {
+                if(!op.IsTwoWay || op.BackConverter == null) res.Add(value);
+                else res.Add(op.BackConverter(new object[] { value }));
+            }
+            return res.ToArray();
+        }
+        protected override object CoerceAfterConvert(object value, Type targetType, object parameter, CultureInfo culture) {
+            if(externalConverter != null)
+                return externalConverter.Convert(value, targetType, parameter, culture);
+            if(value == DependencyProperty.UnsetValue && targetType == typeof(string))
+                value = null;
+            else value = ObjectToObjectConverter.Coerce(value, targetType, true);
+            return base.CoerceAfterConvert(value, targetType, parameter, culture);
+        }
+        protected override object CoerceBeforeConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
+            if(externalConverter != null) {
+                var t = targetTypes != null && targetTypes.Count() == 1 ? targetTypes[0] : backConversionType;
+                return externalConverter.ConvertBack(value, t, parameter, culture);
+            }
+            return base.CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
+        }
+    }
+    public class DXBindingConverterDynamic : DXBindingConverterBase {
+        readonly BindingTreeInfo treeInfo;
+        readonly BindingCalculatorDynamic calculator;
+        readonly IValueConverter externalConverter;
+        readonly bool allowUnsetValue;
+        public DXBindingConverterDynamic(DXBindingExtension owner, BindingCalculatorDynamic calculator, bool allowUnsetValue) : base(owner) {
+            this.treeInfo = owner.TreeInfo;
+            this.calculator = calculator;
+            this.externalConverter = owner.Converter;
+            this.allowUnsetValue = allowUnsetValue;
+        }
+        List<WeakReference> valueRefs;
+        protected override object Convert(object[] values, Type targetType) {
+            errorHandler.ClearError();
+            this.valueRefs = values.Select(x => new WeakReference(x)).ToList();
+            return calculator.Resolve(values);
+        }
+        protected override object[] ConvertBack(object value, Type[] targetTypes) {
+            if(treeInfo.IsEmptyBackExpr() && !treeInfo.IsSimpleExpr())
+                errorHandler.Throw(ErrorHelper.Err101_TwoWay(), null);
+            if(treeInfo.IsEmptyBackExpr())
+                return Enumerable.Range(0, calculator.Operands.Count()).Select(x => value).ToArray();
+            var values = valueRefs.Select(x => x.Target).ToArray();
+            var res = calculator.ResolveBack(values, value).ToArray();
+            return res;
+        }
+        protected override object CoerceAfterConvert(object value, Type targetType, object parameter, CultureInfo culture) {
+            if(externalConverter != null)
+                return externalConverter.Convert(value, targetType, parameter, culture);
+            if(value == Binding.DoNothing)
+                return value;
+            if(value == DependencyProperty.UnsetValue && targetType == typeof(string))
+                value = null;
+            else value = ObjectToObjectConverter.Coerce(value, targetType, true);
+            return base.CoerceAfterConvert(value, targetType, parameter, culture);
+        }
+        protected override object CoerceBeforeConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
+            if(externalConverter != null) {
+                var t = targetTypes != null && targetTypes.Count() == 1 ? targetTypes[0] : null;
+                return externalConverter.ConvertBack(value, t, parameter, culture);
+            }
+            return base.CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
+        }
+        protected override object[] CoerceAfterConvertBack(object[] value, Type[] targetTypes, object parameter, CultureInfo culture) {
+            for(int i = 0; i < value.Count(); i++)
+                value[i] = ObjectToObjectConverter.Coerce(value[i], targetTypes[i], true);
+            return base.CoerceAfterConvertBack(value, targetTypes, parameter, culture);
+        }
+        protected override bool CanConvert(object[] values) {
+            return allowUnsetValue || !ValuesContainUnsetValue(values);
+        }
+    }
+    public class DXCommandConverter : DXBindingConverterBase {
+        readonly ICommandCalculator calculator;
+        readonly bool fallbackCanExecute;
+        readonly bool isEmpty;
+        public DXCommandConverter(DXCommandExtension owner, bool isEmpty) : base(owner) {
+            this.calculator = owner.Calculator;
+            this.fallbackCanExecute = owner.FallbackCanExecute;
+            this.isEmpty = isEmpty;
+        }
+        protected override object Convert(object[] values, Type targetType) {
+            return new DXCommandResult(errorHandler, calculator, fallbackCanExecute, isEmpty, values);
+        }
+        protected override bool CanConvert(object[] values) {
+            return true;
+        }
+    }
+    public class DXCommandResult : ICommand {
+        readonly WeakReference errorHandler;
+        readonly WeakReference calculator;
+        readonly WeakReference[] values;
+        readonly bool fallbackCanExecute;
+        readonly bool isEmpty;
+        IErrorHandler ErrorHandler { get { return (IErrorHandler)errorHandler.Target; } }
+        ICommandCalculator Calculator { get { return (ICommandCalculator)calculator.Target; } }
+        object[] Values { get { return isEmpty ? null : values.Select(x => x.Target).ToArray(); } }
+        bool IsAlive {
+            get {
+                bool res = errorHandler.IsAlive && calculator.IsAlive;
+                if(isEmpty) return res;
+                return res && !values.Any(x => !x.IsAlive);
+            }
+        }
+        public DXCommandResult(IErrorHandler errorHandler, ICommandCalculator calculator, bool fallbackCanExecute, bool isEmpty, object[] values) {
+            this.errorHandler = new WeakReference(errorHandler);
+            this.calculator = new WeakReference(calculator);
+            this.fallbackCanExecute = fallbackCanExecute;
+            this.isEmpty = isEmpty;
+            this.values = values.Select(x => new WeakReference(x)).ToArray();
+        }
+        void ICommand.Execute(object parameter) {
+            if(!IsAlive) return;
+            ErrorHandler.ClearError();
+            if(!isEmpty && DXBindingConverterBase.ValuesContainUnsetValue(Values)) return;
+            Calculator.Execute(Values, parameter);
+        }
+        bool ICommand.CanExecute(object parameter) {
+            if(!IsAlive) return fallbackCanExecute;
+            ErrorHandler.ClearError();
+            if(!isEmpty && DXBindingConverterBase.ValuesContainUnsetValue(Values)) return fallbackCanExecute;
+            return Calculator.CanExecute(Values, parameter);
+        }
+        event EventHandler ICommand.CanExecuteChanged {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
+    }
+    public class DXEventBinder {
+        readonly IErrorHandler errorHandler;
+        readonly IEventCalculator calculator;
+        readonly WeakReference targetObject;
+        readonly string handler;
+        readonly Type targetType;
+        readonly string targetPropertyName;
+        readonly Type targetPropertyType;
+        readonly Type eventHandlerType;
+        DependencyProperty dataProperty;
+        static object locker = new object();
+        static long dataPropertyIndex = 0;
+        static Dictionary<Tuple<Type, string>, DependencyProperty> propertiesCache = new Dictionary<Tuple<Type, string>, DependencyProperty>();
+
+        DependencyObject TargetObject { get { return (DependencyObject)targetObject.Target; } }
+        bool IsAlive { get { return targetObject.IsAlive; } }
+        public DXEventBinder(DXEventExtension owner, DependencyObject target, Type eventHandlerType, BindingBase binding) {
+            lock(locker) {
+                this.errorHandler = owner.ErrorHandler;
+                this.calculator = owner.Calculator;
+                this.targetObject = new WeakReference(target);
+                this.handler = owner.Handler;
+                this.targetType = target.GetType();
+                this.targetPropertyName = owner.TargetPropertyName;
+                this.targetPropertyType = owner.TargetPropertyType;
+                this.eventHandlerType = eventHandlerType;
+                var dataPropertyInfo = Tuple.Create(target.GetType(), owner.Handler);
+                if(!propertiesCache.TryGetValue(dataPropertyInfo, out dataProperty)) {
+                    dataProperty = DependencyProperty.Register(
+                        "Tag" + dataPropertyIndex++.ToString(), typeof(object), dataPropertyInfo.Item1);
+                    propertiesCache[dataPropertyInfo] = dataProperty;
+                }
+                BindCore(binding);
+            }
+        }
+        public Delegate GetEventHandler() {
+            var eventSubscriber = new DevExpress.Mvvm.UI.Interactivity.Internal.EventTriggerEventSubscriber(OnEvent);
+            return eventSubscriber.CreateEventHandler(eventHandlerType);
+        }
+        object[] GetBoundEventData() {
+            if(!IsAlive) return null;
+            var res = (IEnumerable<object>)TargetObject.GetValue(dataProperty);
+            if(res == null) {
+                var expr = BindingOperations.GetBindingExpression(TargetObject, dataProperty);
+                if(expr != null && expr.Status == BindingStatus.Unattached) {
+                    var b = BindingOperations.GetBinding(TargetObject, dataProperty);
+                    BindCore(b);
+                    res = (IEnumerable<object>)TargetObject.GetValue(dataProperty);
+                }
+            }
+            return res == null ? null : res.ToArray();
+        }
+        void OnEvent(object sender, object eventArgs) {
+            var data = GetBoundEventData();
+            errorHandler.ClearError();
+            calculator.Event(data, sender, eventArgs);
+        }
+        void BindCore(BindingBase binding) {
+            if(TargetObject == null) return;
+            try {
+                BindingOperations.SetBinding(TargetObject, dataProperty, binding);
+            } catch(Exception e) {
+                string message = "DXEvent cannot set binding on data property. " + Environment.NewLine
+                    + "Expr: " + handler + Environment.NewLine
+                    + "TargetProperty: " + targetPropertyName + Environment.NewLine
+                    + "TargetPropertyType: " + targetPropertyType.ToString() + Environment.NewLine
+                    + "TargetObjectType: " + targetType + Environment.NewLine
+                    + "DataProperty: " + dataProperty.Name;
+                throw new DXEventException(targetPropertyName, targetType.ToString(), handler, message, e);
+            }
+        }
+    }
+    public class DXEventConverter : DXBindingConverterBase {
+        readonly bool isEmpty;
+        public DXEventConverter(DXEventExtension owner, bool isEmpty) : base(owner) {
+            this.isEmpty = isEmpty;
+        }
+        protected override object Convert(object[] values, Type targetType) {
+            return isEmpty ? null : new List<object>(values ?? new object[] { });
+        }
+    }
+
     public interface ITypedStyle { }
 }

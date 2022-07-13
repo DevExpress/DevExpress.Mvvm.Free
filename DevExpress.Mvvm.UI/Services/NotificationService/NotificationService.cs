@@ -269,21 +269,22 @@ namespace DevExpress.Mvvm.UI {
             string text1,
             string text2,
             string text3,
-            ImageSource image = null) {
+            ImageSource image = null,
+            string id = null) {
             IPredefinedToastNotificationContentFactory cf = PredefinedNotificationsFactory.CreateContentFactory();
             IPredefinedToastNotificationContent content = null;
             switch(PredefinedNotificationTemplate) {
                 case NotificationTemplate.LongText:
-                    content = cf.CreateContent(text1);
+                    content = cf.CreateContent(text1, id);
                     break;
                 case NotificationTemplate.ShortHeaderAndLongText:
-                    content = cf.CreateOneLineHeaderContent(text1, text2);
+                    content = cf.CreateOneLineHeaderContent(text1, text2, null, id);
                     break;
                 case NotificationTemplate.LongHeaderAndShortText:
-                    content = cf.CreateTwoLineHeaderContent(text1, text2);
+                    content = cf.CreateTwoLineHeaderContent(text1, text2, id);
                     break;
                 case NotificationTemplate.ShortHeaderAndTwoTextFields:
-                    content = cf.CreateOneLineHeaderContent(text1, text2, text3);
+                    content = cf.CreateOneLineHeaderContent(text1, text2, text3, id);
                     break;
             }
             if(image != null) {

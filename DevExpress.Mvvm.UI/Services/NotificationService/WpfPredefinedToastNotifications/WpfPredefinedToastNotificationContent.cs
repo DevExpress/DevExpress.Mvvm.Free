@@ -42,6 +42,7 @@ namespace DevExpress.Mvvm.UI.Native {
         class WpfTToastNotificationInfo : DevExpress.Internal.IPredefinedToastNotificationInfo {
             public ToastTemplateType ToastTemplateType { get; set; }
             public string[] Lines { get; set; }
+            public string Id { get; set; }
             public string ImagePath { get; set; }
             public DevExpress.Internal.NotificationDuration Duration { get; set; }
             public DevExpress.Internal.PredefinedSound Sound { get; set; }

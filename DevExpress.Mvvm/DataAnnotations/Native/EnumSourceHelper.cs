@@ -13,8 +13,8 @@ using System.Windows.Media.Imaging;
 
 namespace DevExpress.Mvvm.Native {
     public static class EnumSourceHelperCore {
-        public static readonly string ValueMemberName = BindableBase.GetPropertyName(() => new EnumMemberInfo(null, null, null, null).Id);
-        public static readonly string DisplayMemberName = BindableBase.GetPropertyName(() => new EnumMemberInfo(null, null, null, null).Name);
+        public const string ValueMemberName = nameof(EnumMemberInfo.Id);
+        public const string DisplayMemberName = nameof(EnumMemberInfo.Name);
         const int DefaultDisplayOrder = 10000;
         public static int GetEnumCount(Type enumType) {
             return Enum.GetValues(enumType).Length;

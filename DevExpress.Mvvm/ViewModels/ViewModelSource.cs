@@ -27,7 +27,9 @@ namespace DevExpress.Mvvm.Native {
         public static ConstructorInfo FindConstructorWithAllOptionalParameters(Type type) {
             return DevExpress.Mvvm.POCO.ViewModelSource.FindConstructorWithAllOptionalParameters(type);
         }
-
+        public static bool IsPOCOGeneratedType(Type type) {
+            return DevExpress.Mvvm.POCO.ViewModelSource.IsPOCOGeneratedType(type);
+        }
     }
 }
 namespace DevExpress.Mvvm.POCO {
@@ -193,6 +195,9 @@ namespace DevExpress.Mvvm.POCO {
             return ctor;
         }
 
+        internal static bool IsPOCOGeneratedType(Type type) {
+            return Types.ContainsValue(type);
+        }
         internal static bool IsPOCOViewModelType(Type type) {
             try {
                 if(!CheckType(type, false))

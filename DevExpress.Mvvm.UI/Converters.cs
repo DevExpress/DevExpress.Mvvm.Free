@@ -549,7 +549,7 @@ namespace DevExpress.Mvvm.UI {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             if(value == null)
                 return value;
-            if(!TypedCommandHelper.IsTypedCommand(targetType))
+			if(!TypedCommandHelper.IsTypedCommand(targetType))
                 throw new ArgumentException(string.Format("Unable to convert an object to the '{0}' type. The target type should be '{1}'.", targetType.ToDisplayString(), typeof(ICommand<>)));
             if(!(value is ICommand))
                 throw new ArgumentException(string.Format("Unable to convert an object of the '{0}' type to the '{1}' type.", value.GetType().ToDisplayString(), targetType.ToDisplayString()));

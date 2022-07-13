@@ -17,17 +17,17 @@ namespace DevExpress.Mvvm.UI.Native {
         public IPredefinedToastNotification CreateToastNotification(IPredefinedToastNotificationContent content) {
             return new WpfPredefinedToastNotification((WpfPredefinedToastNotificationContent)content, notifier);
         }
-        public IPredefinedToastNotification CreateToastNotification(string bodyText) {
-            return CreateToastNotification(DefaultFactory.CreateContent(bodyText));
+        public IPredefinedToastNotification CreateToastNotification(string bodyText, string id = null) {
+            return CreateToastNotification(DefaultFactory.CreateContent(bodyText, id));
         }
         public IPredefinedToastNotification CreateToastNotificationOneLineHeaderContent(string headlineText, string bodyText) {
             return CreateToastNotification(DefaultFactory.CreateOneLineHeaderContent(headlineText, bodyText));
         }
-        public IPredefinedToastNotification CreateToastNotificationOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2) {
-            return CreateToastNotification(DefaultFactory.CreateOneLineHeaderContent(headlineText, bodyText1, bodyText2));
+        public IPredefinedToastNotification CreateToastNotificationOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2, string id = null) {
+            return CreateToastNotification(DefaultFactory.CreateOneLineHeaderContent(headlineText, bodyText1, bodyText2, id));
         }
-        public IPredefinedToastNotification CreateToastNotificationTwoLineHeader(string headlineText, string bodyText) {
-            return CreateToastNotification(DefaultFactory.CreateTwoLineHeaderContent(headlineText, bodyText));
+        public IPredefinedToastNotification CreateToastNotificationTwoLineHeader(string headlineText, string bodyText, string id = null) {
+            return CreateToastNotification(DefaultFactory.CreateTwoLineHeaderContent(headlineText, bodyText, id));
         }
         IPredefinedToastNotificationContentFactory factoryCore;
         IPredefinedToastNotificationContentFactory DefaultFactory {
@@ -45,18 +45,24 @@ namespace DevExpress.Mvvm.UI.Native {
         }
         class WpfPredefinedToastNotificationContentFactory : IPredefinedToastNotificationContentFactory {
             #region IPredefinedToastNotificationContentFactory Members
-            public IPredefinedToastNotificationContent CreateContent(string bodyText) {
+            public IPredefinedToastNotificationContent CreateContent(string bodyText, string id = null) {
                 PredefinedToastNotificationVewModel vm = CreateDefaultViewModel();
                 vm.ToastTemplate = NotificationTemplate.LongText;
                 vm.Text1 = bodyText;
+                vm.Id = id;
                 return new WpfPredefinedToastNotificationContent(vm);
             }
-            public IPredefinedToastNotificationContent CreateOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2) {
+            public IPredefinedToastNotificationContent CreateOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2, string id = null) {
                 PredefinedToastNotificationVewModel vm = CreateDefaultViewModel();
-                vm.ToastTemplate = NotificationTemplate.ShortHeaderAndTwoTextFields;
                 vm.Text1 = headlineText;
                 vm.Text2 = bodyText1;
-                vm.Text3 = bodyText2;
+                if(string.IsNullOrEmpty(bodyText2))
+                    vm.ToastTemplate = NotificationTemplate.ShortHeaderAndLongText;
+                else {
+                    vm.ToastTemplate = NotificationTemplate.ShortHeaderAndTwoTextFields;
+                    vm.Text3 = bodyText2;
+                }
+                vm.Id = id;
                 return new WpfPredefinedToastNotificationContent(vm);
             }
             public IPredefinedToastNotificationContent CreateOneLineHeaderContent(string headlineText, string bodyText) {
@@ -66,11 +72,12 @@ namespace DevExpress.Mvvm.UI.Native {
                 vm.Text2 = bodyText;
                 return new WpfPredefinedToastNotificationContent(vm);
             }
-            public IPredefinedToastNotificationContent CreateTwoLineHeaderContent(string headlineText, string bodyText) {
+            public IPredefinedToastNotificationContent CreateTwoLineHeaderContent(string headlineText, string bodyText, string id = null) {
                 PredefinedToastNotificationVewModel vm = CreateDefaultViewModel();
                 vm.ToastTemplate = NotificationTemplate.LongHeaderAndShortText;
                 vm.Text1 = headlineText;
                 vm.Text2 = bodyText;
+                vm.Id = id;
                 return new WpfPredefinedToastNotificationContent(vm);
             }
             #endregion

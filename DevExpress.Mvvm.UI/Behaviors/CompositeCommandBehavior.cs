@@ -76,7 +76,7 @@ namespace DevExpress.Mvvm.UI {
         #endregion
 
         #region Props
-        public DelegateCommand<object> CompositeCommand { get; private set; }
+        public IDelegateCommand CompositeCommand { get; private set; }
         public CommandsCollection Commands { get; private set; }
         #endregion
 
@@ -149,6 +149,11 @@ namespace DevExpress.Mvvm.UI {
         }
         void SetAssociatedObjectCommandProperty(string propName) {
             var pi = GetCommandProperty(propName);
+            if(pi != null && TypedCommandHelper.IsTypedCommand(pi.PropertyType)) {
+                var genericArg = TypedCommandHelper.GetCommandGenericType(pi.PropertyType);
+                var arguments = new object[] { new Action<object>(CompositeCommandExecute), new Func<object, bool>(CompositeCommandCanExecute), false };
+                CompositeCommand = (IDelegateCommand)Activator.CreateInstance(typeof(DelegateCommand<>).MakeGenericType(genericArg), arguments);
+            }
             if(pi != null)
                 pi.SetValue(AssociatedObject, CompositeCommand, null);
             else

@@ -63,10 +63,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         protected virtual object ActualParentViewModel { get { return ParentViewModel ?? Target.With(x => x.DataContext); } }
         protected override bool AllowAttachInDesignMode { get { return false; } }
 
-        protected virtual void InitViewModels() {
-            foreach(var vm in viewModels) InitViewModel(vm);
+        protected virtual void InitViewModels(bool overrideParentViewModel) {
+            foreach(var vm in viewModels) InitViewModel(vm, overrideParentViewModel);
         }
-        protected virtual void InitViewModel(object vm) {
+        protected virtual void InitViewModel(object vm, bool overrideParentViewModel) {
             var iSupportPVM = vm as ISupportParentViewModel;
             if(!SetParentViewModel || iSupportPVM == null) return;
             if (iSupportPVM == ActualParentViewModel) {
@@ -76,7 +76,8 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
                     "Bind the UIRegion.ParentViewModel property manually.");
                 return;
             }
-            iSupportPVM.ParentViewModel = ActualParentViewModel;
+            if(overrideParentViewModel || iSupportPVM.ParentViewModel == null)
+                iSupportPVM.ParentViewModel = ActualParentViewModel;
         }
         protected virtual void ClearViewModel(object vm) {
             var iSupportPVM = vm as ISupportParentViewModel;
@@ -118,10 +119,10 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             ActualModuleManager.GetRegionImplementation(RegionName).UnregisterUIRegion(this);
         }
         void OnParentViewModelChanged(object oldValue, object newValue) {
-            InitViewModels();
+            InitViewModels(true);
         }
         void OnTargetDataContextChanged(object sender, DependencyPropertyChangedEventArgs e) {
-            InitViewModels();
+            InitViewModels(false);
         }
         void OnTargetInitialized(object sender, EventArgs e) {
             Target.Initialized -= OnTargetInitialized;
@@ -145,7 +146,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         void IUIRegion.Inject(object viewModel, Type viewType) {
             if(viewModel == null) return;
             viewModels.Add(viewModel);
-            InitViewModel(viewModel);
+            InitViewModel(viewModel, false);
             DoInject(viewModel, viewType);
         }
         void IUIRegion.Remove(object viewModel) {

@@ -55,13 +55,13 @@ namespace DevExpress.Mvvm.Native {
         public static Type GetCommandGenericType(Type type) {
             if(IsTypedCommandCore(type))
                 return type.GenericTypeArguments.Single();
-            var generiсType = type.GetInterfaces().FirstOrDefault(IsTypedCommandCore)?.GenericTypeArguments.Single();
-            return generiсType;
+            var genericType = type.GetInterfaces().Where(x => IsTypedCommandCore(x)).FirstOrDefault()?.GenericTypeArguments.Single();
+            return genericType;
         }
-        static bool IsTypedCommandCore(Type type) {
+		static bool IsTypedCommandCore(Type type) {
             return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ICommand<>);
         }
-        public static string ToDisplayString(this Type type) {
+		public static string ToDisplayString(this Type type) {
             var @namespace = type.Namespace;
             var name = type.Name;
             var i = name.IndexOf('`');

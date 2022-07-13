@@ -17,6 +17,14 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void SetUp() {
             ApplicationJumpListServiceTestsImageSourceHelper.RegisterPackScheme();
         }
+        #region Utils
+
+        bool IsArmPlatform() {
+            return false;
+        }
+
+        #endregion
+
         [Test]
         public void LoadLocalImages2() {
             TestUri(ImageFormat.Png,
@@ -80,7 +88,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void LoadDrawingImage() {
             var data = ImageLoader2.ImageToByteArray(DrawingImage);
             Assert.IsNotNull(data);
-            Assert.AreEqual(3682, data.Length);
+            Assert.AreEqual(IsArmPlatform() ? 4230 : 3682, data.Length);
             Bitmap bitmap = new Bitmap(new MemoryStream(data));
             Assert.AreEqual(ImageFormat.Png, bitmap.RawFormat);
             Assert.AreEqual(System.Drawing.Imaging.PixelFormat.Format32bppArgb, bitmap.PixelFormat);
@@ -91,7 +99,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void LoadInteropBitmap() {
             var data = ImageLoader2.ImageToByteArray(InteropBitmap);
             Assert.IsNotNull(data);
-            Assert.AreEqual(1164, data.Length);
+            Assert.AreEqual(IsArmPlatform() ? 1189 : 1164, data.Length);
             Bitmap bitmap = new Bitmap(new MemoryStream(data));
             Assert.AreEqual(ImageFormat.Png, bitmap.RawFormat);
             Assert.AreEqual(System.Drawing.Imaging.PixelFormat.Format32bppArgb, bitmap.PixelFormat);
@@ -102,7 +110,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void LoadGenericBitmapSource() {
             var data = ImageLoader2.ImageToByteArray(RenderTargetBitmap);
             Assert.IsNotNull(data);
-            Assert.AreEqual(304, data.Length);
+            Assert.AreEqual(IsArmPlatform() ? 454 : 304, data.Length);
             Bitmap bitmap = new Bitmap(new MemoryStream(data));
             Assert.AreEqual(ImageFormat.Png, bitmap.RawFormat);
             Assert.AreEqual(System.Drawing.Imaging.PixelFormat.Format32bppArgb, bitmap.PixelFormat);
@@ -113,7 +121,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void LoadDrawingImage_Resize() {
             var data = ImageLoader2.ImageToByteArray(DrawingImage, drawingImageSize: new System.Windows.Size(150, 45));
             Assert.IsNotNull(data);
-            Assert.AreEqual(1821, data.Length);
+            Assert.AreEqual(IsArmPlatform() ? 1934 : 1821, data.Length);
             Bitmap bitmap = new Bitmap(new MemoryStream(data));
             Assert.AreEqual(ImageFormat.Png, bitmap.RawFormat);
             Assert.AreEqual(System.Drawing.Imaging.PixelFormat.Format32bppArgb, bitmap.PixelFormat);

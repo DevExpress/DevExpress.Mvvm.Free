@@ -10,6 +10,7 @@ namespace DevExpress.Internal {
     public interface IPredefinedToastNotificationInfo {
         ToastTemplateType ToastTemplateType { get; }
         string[] Lines { get; }
+        string Id { get; }
         string ImagePath { get; }
         NotificationDuration Duration { get; }
         PredefinedSound Sound { get; }
@@ -39,22 +40,22 @@ namespace DevExpress.Internal {
         void SetUpdateToastContentAction(Action<System.Xml.XmlDocument> updateToastContentAction);
     }
     public interface IPredefinedToastNotificationContentFactory {
-        IPredefinedToastNotificationContent CreateContent(string bodyText);
+        IPredefinedToastNotificationContent CreateContent(string bodyText, string id = null);
         IPredefinedToastNotificationContent CreateOneLineHeaderContent(string headlineText, string bodyText);
-        IPredefinedToastNotificationContent CreateOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2);
-        IPredefinedToastNotificationContent CreateTwoLineHeaderContent(string headlineText, string bodyText);
+        IPredefinedToastNotificationContent CreateOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2, string id = null);
+        IPredefinedToastNotificationContent CreateTwoLineHeaderContent(string headlineText, string bodyText, string id = null);
     }
     public interface IPredefinedToastNotificationContentFactoryGeneric {
-        IPredefinedToastNotificationContent CreateToastGeneric(string headlineText, string bodyText1, string bodyText2);
+        IPredefinedToastNotificationContent CreateToastGeneric(string headlineText, string bodyText1, string bodyText2, string id = null);
     }
     public interface IPredefinedToastNotificationFactory {
         double ImageSize { get; }
         IPredefinedToastNotificationContentFactory CreateContentFactory();
         IPredefinedToastNotification CreateToastNotification(IPredefinedToastNotificationContent content);
-        IPredefinedToastNotification CreateToastNotification(string bodyText);
+        IPredefinedToastNotification CreateToastNotification(string bodyText, string id = null);
         IPredefinedToastNotification CreateToastNotificationOneLineHeaderContent(string headlineText, string bodyText);
-        IPredefinedToastNotification CreateToastNotificationOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2);
-        IPredefinedToastNotification CreateToastNotificationTwoLineHeader(string headlineText, string bodyText);
+        IPredefinedToastNotification CreateToastNotificationOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2, string id = null);
+        IPredefinedToastNotification CreateToastNotificationTwoLineHeader(string headlineText, string bodyText, string id = null);
     }
     public enum ToastNotificationResultInternal {
         Activated = 0,

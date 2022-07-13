@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Mvvm.UI;
 using System.Windows;
+using System.Linq;
 
 namespace DevExpress.Mvvm.Tests.Behaviors {
     [TestFixture]
@@ -192,6 +193,27 @@ namespace DevExpress.Mvvm.Tests.Behaviors {
             var command = new MockCommand(1);
             var commandItemReference = CreateCommandItemReference(command);
             MemoryLeaksHelper.EnsureCollected(new[] { commandItemReference });
+        }
+        public class TestControl1 : Control {
+            public ICommand Command { get; set; }
+            public ICommand<string> StringICommand { get; set; }
+            public DelegateCommand<string> StringDelegateCommand { get; set; }
+        }
+        [Test(Description = "T1079515")]
+        public void CompositeCommandWorksWithTypedICommand() {
+            TestControl1 control = new TestControl1();
+            var b = new CompositeCommandBehavior() { CommandPropertyName = nameof(TestControl1.StringICommand) };
+            Assert.DoesNotThrow(() => Interaction.GetBehaviors(control).Add(b));
+            Assert.IsNotNull(b.CompositeCommand);
+            Assert.AreEqual(typeof(string), b.CompositeCommand.GetType().GetGenericArguments().Single());
+        }
+        [Test(Description = "T1079515")]
+        public void CompositeCommandWorksWithTypedDelegateCommand() {
+            TestControl1 control = new TestControl1();
+            var b = new CompositeCommandBehavior() { CommandPropertyName = nameof(TestControl1.StringDelegateCommand) };
+            Assert.DoesNotThrow(() => Interaction.GetBehaviors(control).Add(b));
+            Assert.IsNotNull(b.CompositeCommand);
+            Assert.AreEqual(typeof(string), b.CompositeCommand.GetType().GetGenericArguments().Single());
         }
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         WeakReference CreateCommandItemReference(ICommand command) {

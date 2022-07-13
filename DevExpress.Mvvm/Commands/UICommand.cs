@@ -45,8 +45,11 @@ namespace DevExpress.Mvvm {
             set { SetProperty(ref tag, value, nameof(Tag)); }
         }
         bool allowCloseWindow = true;
+        
         public bool AllowCloseWindow {
-            get { return allowCloseWindow; }
+            get {
+                return  allowCloseWindow;
+            }
             set { SetProperty(ref allowCloseWindow, value, nameof(AllowCloseWindow)); }
         }
 

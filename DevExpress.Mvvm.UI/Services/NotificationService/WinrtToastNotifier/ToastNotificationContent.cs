@@ -9,6 +9,7 @@ using DevExpress.Internal.WinApi.Windows.UI.Notifications;
 namespace DevExpress.Internal {
     class WinRTToastNotificationContent : IPredefinedToastNotificationContent, IPredefinedToastNotificationContentGeneric {
         string[] lines = new string[3];
+        string id;
         ToastTemplateType type;
         string imagePath;
         internal string tempImagePath;
@@ -31,23 +32,24 @@ namespace DevExpress.Internal {
             tempHeroImagePath = null;
             updateToastContent = null;
         }
-        public static WinRTToastNotificationContent Create(string bodyText) {
-            return Create(ToastTemplateType.ToastText01, bodyText);
+        public static WinRTToastNotificationContent Create(string bodyText, string id = null) {
+            return Create(ToastTemplateType.ToastText01, id, bodyText);
         }
         public static WinRTToastNotificationContent CreateOneLineHeader(string headlineText, string bodyText) {
-            return Create(ToastTemplateType.ToastText02, headlineText, bodyText);
+            return Create(ToastTemplateType.ToastText02, null, headlineText, bodyText);
         }
-        public static WinRTToastNotificationContent CreateTwoLineHeader(string headlineText, string bodyText) {
-            return Create(ToastTemplateType.ToastText03, headlineText, bodyText);
+        public static WinRTToastNotificationContent CreateTwoLineHeader(string headlineText, string bodyText, string id = null) {
+            return Create(ToastTemplateType.ToastText03, id, headlineText, bodyText);
         }
-        public static WinRTToastNotificationContent CreateOneLineHeader(string headlineText, string bodyText1, string bodyText2) {
-            return Create(ToastTemplateType.ToastText04, headlineText, bodyText1, bodyText2);
+        public static WinRTToastNotificationContent CreateOneLineHeader(string headlineText, string bodyText1, string bodyText2, string id = null) {
+            return string.IsNullOrEmpty(bodyText2) ? Create(ToastTemplateType.ToastText02, id, headlineText, bodyText1) 
+                : Create(ToastTemplateType.ToastText04, id, headlineText, bodyText1, bodyText2);
         }
-        public static WinRTToastNotificationContent CreateToastGeneric(string headlineText, string bodyText1, string bodyText2) {
-            return Create(ToastTemplateType.ToastGeneric, headlineText, bodyText1, bodyText2);
+        public static WinRTToastNotificationContent CreateToastGeneric(string headlineText, string bodyText1, string bodyText2, string id = null) {
+            return Create(ToastTemplateType.ToastGeneric, id, headlineText, bodyText1, bodyText2);
         }
-        static WinRTToastNotificationContent Create(ToastTemplateType type, params string[] lines) {
-            return new WinRTToastNotificationContent { type = type, lines = lines };
+        static WinRTToastNotificationContent Create(ToastTemplateType type, string id, params string[] lines) {
+            return new WinRTToastNotificationContent { type = type, id = id, lines = lines };
         }
         static void SetNodeValueString(string str, IXmlDocument xmldoc, IXmlNode node) {
             IXmlText textNode;
@@ -194,6 +196,7 @@ namespace DevExpress.Internal {
                 return new WinRTToastNotificationInfo() {
                     ToastTemplateType = type,
                     Lines = lines,
+                    Id = id,
                     ImagePath = imagePath,
                     AppLogoImagePath = appLogoImagePath,
                     HeroImagePath = heroImagePath,
@@ -209,6 +212,7 @@ namespace DevExpress.Internal {
         class WinRTToastNotificationInfo : IPredefinedToastNotificationInfo, IPredefinedToastNotificationInfoGeneric {
             public ToastTemplateType ToastTemplateType { get; set; }
             public string[] Lines { get; set; }
+            public string Id { get; set; }
             public string ImagePath { get; set; }
             public string AppLogoImagePath { get; set; }
             public string HeroImagePath { get; set; }
@@ -233,6 +237,7 @@ namespace DevExpress.Internal {
             UpdateSound(content, info);
             UpdateDuration(content, info);
             UpdateContent(content, info);
+            AddId(content, info);
             return content;
         }
         static void UpdateContent(IXmlDocument xmldoc, IPredefinedToastNotificationInfo info) {
@@ -284,6 +289,10 @@ namespace DevExpress.Internal {
                 else
                     SetImageSrc(content, imagePath);
             }
+        }
+        static void AddId(IXmlDocument xmldoc, IPredefinedToastNotificationInfo info) {
+            if(!string.IsNullOrEmpty(info.Id))
+                SetAttribute(xmldoc, "toast", "launch", info.Id);
         }
         static void UpdateAppLogoImage(IPredefinedToastNotificationInfo info, IXmlDocument content) {
             IPredefinedToastNotificationInfoGeneric infoGeneric = info as IPredefinedToastNotificationInfoGeneric;

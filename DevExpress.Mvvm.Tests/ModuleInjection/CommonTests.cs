@@ -203,6 +203,12 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Assert.AreEqual("3", ((ISupportParameter)ModuleManager.DefaultManager.GetRegion("R").GetViewModel("3")).Parameter);
         }
 
+        [Test]
+        public void GetAllRegions() {
+            var regions = Enumerable.Range(1, 10).Select(i => ModuleManager.DefaultManager.GetRegion("Region " + i)).ToList();
+            Assert.AreEqual(regions, ModuleManager.DefaultManager.GetRegions());
+        }
+
         public class VM1 {
             public VM1(string value) { }
         }

@@ -580,6 +580,13 @@ namespace DevExpress.Mvvm.Tests {
             bt1.SetBinding(Button.CommandProperty, new Binding("Test2Command"));
             Assert.AreEqual(null, bt1.Command);
         }
+
+        [Test(Description = "T1083604")]
+        public void CommandDefinedInBaseClass_NoThrow() {
+            var vm = new MainViewModel();
+            var cmd = vm.GetCommand(() => vm.Update());
+            Assert.DoesNotThrow(() => cmd.Execute(null));
+        }
     }
     public class TestViewModel : ViewModelBase {
         public new IServiceContainer ServiceContainer { get { return base.ServiceContainer; } }
@@ -610,6 +617,20 @@ namespace DevExpress.Mvvm.Tests {
         protected override void OnInitializeInRuntime() {
             base.OnInitializeInRuntime();
             InitializeInRuntimeCount++;
+        }
+    }
+
+    public class MainViewModel : ViewModelCore { }
+    public abstract class ViewModelCore : ViewModelBase {
+        [Command]
+        public void Reset() {
+        }
+        public bool CanReset() {
+            return false;
+        }
+        [Command]
+        public void Update() {
+            this.RaiseCanExecuteChanged(() => this.Reset());
         }
     }
 }

@@ -136,12 +136,10 @@ namespace DevExpress.Mvvm.UI.Native {
 
         void screen_WorkingAreaChanged() {
             positioner.Update(screen.GetWorkingArea(currentScreenPosition));
-            foreach (ToastInfo info in VisibleItems) {
-                info.timer.Stop();
-                info.timer.Start();
-                var newPos = positioner.GetItemPosition(info);
-                info.win.Left = newPos.X;
-                info.win.Top = newPos.Y;
+            foreach (var item in VisibleItems) {
+                item.timer.Stop();
+                item.timer.Start();
+                UpdateToastPosition(item);
             }
         }
 
@@ -245,10 +243,20 @@ namespace DevExpress.Mvvm.UI.Native {
             info.win.Close();
             info.timer.Stop();
             positioner.Remove(info);
+            VisibleItems.ForEach(item => UpdateToastPosition(item));
             info.source.SetResult(result);
         }
+        void UpdateToastPosition(ToastInfo toast) {
+            toast.win.Dispatcher.BeginInvoke((Action)(() =>
+                toast?.win.Do(x => {
+                    var position = positioner.GetItemPosition(toast);
+                    x.Left = position.X;
+                    x.Top = position.Y;
+                })
+            ));
+        }
 
-        private ToastInfo GetVisibleToastInfo(CustomNotification toast) {
+        ToastInfo GetVisibleToastInfo(CustomNotification toast) {
             return positioner.Items.FirstOrDefault(t => t != null && t.toast == toast);
         }
 

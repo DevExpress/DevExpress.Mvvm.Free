@@ -24,7 +24,8 @@ namespace DevExpress.Mvvm {
             string text1,
             string text2,
             string text3,
-            ImageSource image = null);
+            ImageSource image = null,
+            string id = null);
         INotification CreateCustomNotification(object viewModel);
     }
 }

@@ -14,6 +14,8 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
         public class TestControl1 : Control {
             public ICommand Command { get; set; }
+            public ICommand<string> StringICommand { get; set; }
+            public DelegateCommand<string> StringDelegateCommand { get; set; }
         }
         public class TestMessageBoxService : IMessageBoxService {
             public string MessageBoxTest;
@@ -65,7 +67,8 @@ namespace DevExpress.Mvvm.UI.Tests {
             var b = new ConfirmationBehavior();
             Interaction.GetBehaviors(control).Add(b);
             var command = new DelegateCommand(() => { });
-            var res = b.SetAssociatedObjectCommandProperty(command);
+            b.ConfirmationCommand = command;
+            var res = b.SetAssociatedObjectCommandProperty();
             Assert.IsTrue(res);
             Assert.AreEqual(command, control.Command);
         }
@@ -75,7 +78,8 @@ namespace DevExpress.Mvvm.UI.Tests {
             var b = new ConfirmationBehavior();
             Interaction.GetBehaviors(control).Add(b);
             var command = new DelegateCommand(() => { });
-            var res = b.SetAssociatedObjectCommandProperty(command);
+            b.ConfirmationCommand = command;
+            var res = b.SetAssociatedObjectCommandProperty();
             Assert.IsTrue(res);
             Assert.AreEqual(command, control.Command);
         }
@@ -208,6 +212,22 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(0, service.ShowCount);
             Assert.IsNull(service.Caption);
             Assert.IsNull(service.MessageBoxTest);
+        }
+        [Test(Description = "T1079515")]
+        public void ConfirmationBehaviorWorksWithTypedICommand() {
+            TestControl1 control = new TestControl1();
+            var b = new ConfirmationBehavior() { CommandPropertyName = nameof(TestControl1.StringICommand) };
+            Assert.DoesNotThrow(() => Interaction.GetBehaviors(control).Add(b));
+            Assert.IsNotNull(b.ConfirmationCommand);
+            Assert.AreEqual(typeof(string), b.ConfirmationCommand.GetType().GetGenericArguments().Single());
+        }
+        [Test(Description = "T1079515")]
+        public void ConfirmationBehaviorWorksWithTypedDelegateCommand() {
+            TestControl1 control = new TestControl1();
+            var b = new ConfirmationBehavior() { CommandPropertyName = nameof(TestControl1.StringDelegateCommand) };
+            Assert.DoesNotThrow(() => Interaction.GetBehaviors(control).Add(b));
+            Assert.IsNotNull(b.ConfirmationCommand);
+            Assert.AreEqual(typeof(string), b.ConfirmationCommand.GetType().GetGenericArguments().Single());
         }
     }
 }

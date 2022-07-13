@@ -13,17 +13,17 @@ namespace DevExpress.Internal {
         public IPredefinedToastNotification CreateToastNotification(IPredefinedToastNotificationContent content) {
             return new WinRTToastNotification(content, () => ToastNotificationManager.CreateToastNotificationAdapter(appId));
         }
-        public IPredefinedToastNotification CreateToastNotification(string bodyText) {
-            return CreateToastNotification(DefaultFactory.CreateContent(bodyText));
+        public IPredefinedToastNotification CreateToastNotification(string bodyText, string id = null) {
+            return CreateToastNotification(DefaultFactory.CreateContent(bodyText, id));
         }
         public IPredefinedToastNotification CreateToastNotificationOneLineHeaderContent(string headlineText, string bodyText) {
             return CreateToastNotification(DefaultFactory.CreateOneLineHeaderContent(headlineText, bodyText));
         }
-        public IPredefinedToastNotification CreateToastNotificationOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2) {
-            return CreateToastNotification(DefaultFactory.CreateOneLineHeaderContent(headlineText, bodyText1, bodyText2));
+        public IPredefinedToastNotification CreateToastNotificationOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2, string id = null) {
+            return CreateToastNotification(DefaultFactory.CreateOneLineHeaderContent(headlineText, bodyText1, bodyText2, id));
         }
-        public IPredefinedToastNotification CreateToastNotificationTwoLineHeader(string headlineText, string bodyText) {
-            return CreateToastNotification(DefaultFactory.CreateTwoLineHeaderContent(headlineText, bodyText));
+        public IPredefinedToastNotification CreateToastNotificationTwoLineHeader(string headlineText, string bodyText, string id = null) {
+            return CreateToastNotification(DefaultFactory.CreateTwoLineHeaderContent(headlineText, bodyText, id));
         }
         #region IPredefinedToastNotificationContentFactory
         IPredefinedToastNotificationContentFactory factoryCore;
@@ -41,20 +41,20 @@ namespace DevExpress.Internal {
             return new WinRTToastNotificationContentFactory();
         }
         class WinRTToastNotificationContentFactory : IPredefinedToastNotificationContentFactory, IPredefinedToastNotificationContentFactoryGeneric {
-            public IPredefinedToastNotificationContent CreateContent(string bodyText) {
-                return WinRTToastNotificationContent.Create(bodyText);
+            public IPredefinedToastNotificationContent CreateContent(string bodyText, string id = null) {
+                return WinRTToastNotificationContent.Create(bodyText, id);
             }
             public IPredefinedToastNotificationContent CreateOneLineHeaderContent(string headlineText, string bodyText) {
                 return WinRTToastNotificationContent.CreateOneLineHeader(headlineText, bodyText);
             }
-            public IPredefinedToastNotificationContent CreateTwoLineHeaderContent(string headlineText, string bodyText) {
-                return WinRTToastNotificationContent.CreateTwoLineHeader(headlineText, bodyText);
+            public IPredefinedToastNotificationContent CreateTwoLineHeaderContent(string headlineText, string bodyText, string id = null) {
+                return WinRTToastNotificationContent.CreateTwoLineHeader(headlineText, bodyText, id);
             }
-            public IPredefinedToastNotificationContent CreateOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2) {
-                return WinRTToastNotificationContent.CreateOneLineHeader(headlineText, bodyText1, bodyText2);
+            public IPredefinedToastNotificationContent CreateOneLineHeaderContent(string headlineText, string bodyText1, string bodyText2, string id = null) {
+                return WinRTToastNotificationContent.CreateOneLineHeader(headlineText, bodyText1, bodyText2, id);
             }
-            public IPredefinedToastNotificationContent CreateToastGeneric(string headlineText, string bodyText1, string bodyText2) {
-                return WinRTToastNotificationContent.CreateToastGeneric(headlineText, bodyText1, bodyText2);
+            public IPredefinedToastNotificationContent CreateToastGeneric(string headlineText, string bodyText1, string bodyText2, string id = null) {
+                return WinRTToastNotificationContent.CreateToastGeneric(headlineText, bodyText1, bodyText2, id);
             }
         }
         #endregion IPredefinedToastNotificationContentFactory
