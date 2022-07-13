@@ -19,6 +19,11 @@ If you have an idea how to improve our MVVM Framework, please contact us via our
 
 # Release Notes
 
+### 22.1.3
+* [T1079515](https://supportcenter.devexpress.com/internal/ticket/details/T1079515) - The CompositeCommand and ConfirmationBehavior can work with commands that accept specific type arguments.
+* [Notification Service](https://docs.devexpress.com/WPF/18138/mvvm-framework/services/predefined-set/notificationservice#create-a-native-windows-1011-notification) - you can use the optional **Id** parameter of the [NotificationService.CreatePredefinedNotification](https://docs.devexpress.com/WPF/DevExpress.Mvvm.UI.NotificationService.CreatePredefinedNotification(System.String-System.String-System.String-System.Windows.Media.ImageSource-System.String)) method to identify the notification with which the user interacts.
+* [Module Manager](https://docs.devexpress.com/WPF/118618/mvvm-framework/mif/module-manager#regions) - you can use our new `ModuleInjection.GetRegion` method to get a region by its name. 
+
 ### 21.1.5
 * DevExpress MVVM Framework now includes the [IEventArgsTwoWayConverter](https://docs.devexpress.com/WPF/DevExpress.Mvvm.UI.IEventArgsTwoWayConverter) interface. This interface allows you to define back conversion logic and return values from a command to an event. Refer to the following topic for more information: [EventToCommand](https://docs.devexpress.com/WPF/DevExpress.Mvvm.UI.EventToCommand#pass-a-parameter-back-to-the-bound-event).
 ### 20.2.3
