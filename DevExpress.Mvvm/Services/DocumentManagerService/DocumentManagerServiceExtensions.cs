@@ -14,7 +14,7 @@ namespace DevExpress.Mvvm {
             else
                 return service.CreateDocument(documentType, null, parameter, parameter);
         }
-        
+
         public static IDocument CreateDocument(this IDocumentManagerService service, object viewModel) {
             VerifyService(service);
             return service.CreateDocument(null, viewModel, null, null);
@@ -69,7 +69,7 @@ namespace DevExpress.Mvvm {
             }
             documentStorage.Show();
         }
-        
+
         static void VerifyService(IDocumentManagerService service) {
             if(service == null)
                 throw new ArgumentNullException("service");

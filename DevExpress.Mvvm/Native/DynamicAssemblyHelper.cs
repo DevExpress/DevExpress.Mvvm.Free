@@ -14,7 +14,9 @@ namespace DevExpress.Mvvm.Native {
                 if(PartialNameEquals(asm.FullName, asmName))
                     return asm;
             }
+#pragma warning disable DX0010
             return Assembly.Load(asmName);
+#pragma warning restore DX0010
         }
         static bool PartialNameEquals(string asmName0, string asmName1) {
             return string.Equals(GetPartialName(asmName0), GetPartialName(asmName1),

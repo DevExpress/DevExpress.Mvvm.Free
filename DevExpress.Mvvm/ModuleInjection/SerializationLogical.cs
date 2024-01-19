@@ -1,9 +1,9 @@
-using DevExpress.Mvvm.Native;
 using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Xml.Serialization;
+using DevExpress.Mvvm.Internal;
+using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm {
     public interface ISupportState<T> {
@@ -22,17 +22,16 @@ namespace DevExpress.Mvvm {
         public string SerializeState(object state, Type stateType) {
             string res = null;
             if(state == null) return res;
-            XmlSerializer s = new XmlSerializer(state.GetType());
-            return SerializationHelper.SerializeToString(x => s.Serialize(x, state));
+            return SerializationHelper.SerializeToString(x => XmlSerializerHelper.Serialize(x, state, state.GetType()));
         }
         public object DeserializeState(string state, Type stateType) {
             object res = null;
-            XmlSerializer s = new XmlSerializer(stateType);
-            SerializationHelper.DeserializeFromString(state, x => res = s.Deserialize(x));
+            SerializationHelper.DeserializeFromString(state, x => res = XmlSerializerHelper.Deserialize(x, stateType));
             return res;
         }
     }
 }
+
 namespace DevExpress.Mvvm.Native {
     public static class ISupportStateHelper {
         public static Type GetStateType(Type vmType) {
@@ -77,6 +76,10 @@ namespace DevExpress.Mvvm.Native {
         public static void DeserializeFromString(string state, Action<Stream> deserializationMethod) {
             using(var ms = new MemoryStream(Encoding.UTF8.GetBytes(state)))
                 deserializationMethod(ms);
+        }
+        public static T DeserializeFromString<T>(string state, Func<Stream,T> deserializationMethod) {
+            using(var ms = new MemoryStream(Encoding.UTF8.GetBytes(state)))
+                return deserializationMethod(ms);
         }
     }
 }

@@ -14,8 +14,8 @@ namespace DevExpress.Mvvm.UI {
             var converter = new ItemsControlMouseEventArgsConverter();
             return converter.Convert(sender, args);
         }
-        protected static Dictionary<Type, Type> itemsTypes = new Dictionary<Type, Type>() { 
-            { typeof(ListBox), typeof(ListBoxItem) },            
+        protected static Dictionary<Type, Type> itemsTypes = new Dictionary<Type, Type>() {
+            { typeof(ListBox), typeof(ListBoxItem) },
             { typeof(ListView), typeof(ListViewItem) },
             { typeof(TreeView), typeof(TreeViewItem) },
             { typeof(TreeViewItem), typeof(TreeViewItem) },

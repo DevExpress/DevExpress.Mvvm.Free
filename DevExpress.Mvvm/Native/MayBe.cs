@@ -72,7 +72,6 @@ namespace DevExpress.Mvvm.Native {
             }
             return result;
         }
-#if !WINUI && (!DXCORE3 || MVVM)
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key) {
             TValue result;
             dictionary.TryGetValue(key, out result);
@@ -84,7 +83,6 @@ namespace DevExpress.Mvvm.Native {
                 return result;
             return defaultValue;
         }
-#endif
     }
     public
     static class EmptyArray<TElement> {
@@ -153,6 +151,10 @@ namespace DevExpress.Mvvm.Native {
             if(singleElement != null)
                 yield return singleElement;
         }
+        public static IEnumerable<T> YieldIfNotNull<T>(this T? value) where T : struct {
+            if(value.HasValue)
+                yield return value.Value;
+        }
         public static IEnumerable<string> YieldIfNotEmpty(this string singleElement) {
             if(!string.IsNullOrEmpty(singleElement))
                 yield return singleElement;
@@ -162,6 +164,9 @@ namespace DevExpress.Mvvm.Native {
         }
         public static T[] YieldIfNotNullToArray<T>(this T singleElement) {
             return singleElement == null ? EmptyArray<T>.Instance : new[] { singleElement };
+        }
+        public static T[] YieldIfNotNullToArray<T>(this T? singleElement) where T : struct {
+            return singleElement.HasValue ? new[] { singleElement.Value } : EmptyArray<T>.Instance;
         }
         public static string[] YieldIfNotEmptyToArray(this string singleElement) {
             return string.IsNullOrEmpty(singleElement) ? EmptyArray<string>.Instance : new[] { singleElement };

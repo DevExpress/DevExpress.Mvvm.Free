@@ -113,6 +113,7 @@
     <Compile Include="Native\TypeCastHelper.cs" />
     <Compile Include="Native\ViewModelDesignHelper.cs" />
     <Compile Include="PropertyValueChangedEvent.cs" />
+    <Compile Include="SafeXml.cs" />
     <Compile Include="Services\ApplicationJumpListService\ApplicationJumpItems.cs" />
     <Compile Include="Services\ApplicationJumpListService\IApplicationJumpListService.cs" />
     <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpItemInfoInternal.cs" />

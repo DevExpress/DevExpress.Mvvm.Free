@@ -1,4 +1,3 @@
-#if !DXCORE3
 
 using System;
 using System.Collections;
@@ -276,4 +275,3 @@ namespace DevExpress.Mvvm.UI {
         #endregion
     }
 }
-#endif

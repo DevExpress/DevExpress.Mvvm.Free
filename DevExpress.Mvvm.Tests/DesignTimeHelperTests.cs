@@ -4,7 +4,7 @@ using System.Windows;
 namespace DevExpress.Mvvm.Tests {
     [TestFixture]
     public class DesignTimeHelperTests {
-        public class NestedClass { 
+        public class NestedClass {
         }
         public class TestClass {
             public int ReadonlyProp { get; private set; }

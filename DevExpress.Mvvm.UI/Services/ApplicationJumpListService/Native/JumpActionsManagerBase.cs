@@ -1,4 +1,3 @@
-#if !DXCORE3
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -254,4 +253,3 @@ namespace DevExpress.Mvvm.UI.Native {
         }
     }
 }
-#endif

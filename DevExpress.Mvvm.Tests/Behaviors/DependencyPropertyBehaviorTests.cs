@@ -41,7 +41,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             EnqueueWindowUpdateLayout();
             EnqueueCallback(() => {
-                Assert.AreEqual("654321", passwordBox.Password);   
+                Assert.AreEqual("654321", passwordBox.Password);
             });
             EnqueueTestComplete();
         }
@@ -200,7 +200,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         string property;
         public string Property {
             get { return property; }
-            set { 
+            set {
                 property = value;
                 propertyChangedCounter++;
             }

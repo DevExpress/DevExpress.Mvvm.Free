@@ -390,9 +390,9 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void ItemsSourseRequiredException() {
             FrameworkElement element = new FrameworkElement();
             EnumItemsSourceBehavior behavior = new EnumItemsSourceBehavior() { EnumType = typeof(TestEnum1) };
-            Assert.Throws<Exception>(() => { Interaction.GetBehaviors(element).Add(behavior); }, 
+            Assert.Throws<Exception>(() => { Interaction.GetBehaviors(element).Add(behavior); },
                 "ItemsSource dependency property required");
-            
+
         }
         void ImageSizeTestCore<T>() where T: Image {
             var listBox = new ListBox();

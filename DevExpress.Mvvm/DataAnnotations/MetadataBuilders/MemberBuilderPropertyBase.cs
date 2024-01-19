@@ -11,7 +11,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
         internal PropertyMetadataBuilderBase(MemberMetadataStorage storage, ClassMetadataBuilder<T> parent)
             : base(storage, parent) {
         }
-        
+
         protected TBuilder RequiredCore(bool allowEmptyStrings = false, Func<string> errorMessageAccessor = null) {
             return AddOrReplaceAttribute(new DXRequiredAttribute(allowEmptyStrings, errorMessageAccessor));
         }
@@ -41,7 +41,7 @@ namespace DevExpress.Mvvm.DataAnnotations {
         [Obsolete("Use the MatchesInstanceRule(Func<TProperty, T, bool> isValidFunction, Func<string> errorMessageAccessor = null) method instead.")]
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         protected TBuilder MatchesInstanceRuleCore(Func<T, bool> isValidFunction, Func<string> errorMessageAccessor = null) {
-            return AddOrReplaceAttribute(new CustomInstanceValidationAttribute(typeof(T), (value, instance) => isValidFunction((T)instance), 
+            return AddOrReplaceAttribute(new CustomInstanceValidationAttribute(typeof(T), (value, instance) => isValidFunction((T)instance),
                 errorMessageAccessor == null ? null : new DXValidationAttribute.ErrorMessageAccessorDelegate((x, y) => errorMessageAccessor()) ));
         }
         protected static Func<TProperty, string> GetErrorMessageAccessor(Func<string> errorMessageAccessor) {

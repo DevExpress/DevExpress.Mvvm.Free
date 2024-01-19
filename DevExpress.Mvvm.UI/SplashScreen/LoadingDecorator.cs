@@ -191,7 +191,7 @@ namespace DevExpress.Mvvm.UI {
             if((LoadingChild == null && LoadingChildTemplate == null) || !IsInitialized)
                 return;
             if(CanAutoShow()) {
-                if (!IsVisible && IsLoadedEx) 
+                if (!IsVisible && IsLoadedEx)
                     CloseSplashScreen();
                 else
                     ShowSplashScreen();
@@ -275,7 +275,7 @@ namespace DevExpress.Mvvm.UI {
             SplashScreenHelper.InvokeAsync(this, CloseSplashScreen, DispatcherPriority.Render);
         }
         object[] GetSplashScreenCreatorParams() {
-            return new object[] { UseFadeEffect, new WindowArrangerContainer(this, SplashScreenLocation), OwnerLock, 
+            return new object[] { UseFadeEffect, new WindowArrangerContainer(this, SplashScreenLocation), OwnerLock,
                 FadeInDuration, FadeOutDuration, FlowDirection, SplashScreenWindowStyle };
         }
         internal virtual SplashScreenArrangeMode ArrangeMode() { return SplashScreenArrangeMode.Default; }

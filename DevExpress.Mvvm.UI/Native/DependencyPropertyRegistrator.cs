@@ -327,7 +327,6 @@ namespace DevExpress.Mvvm.UI.Native {
             propertyField = propertyFieldKey.DependencyProperty;
             return this;
         }
-
         public DependencyPropertyRegistrator<T> OverrideDefaultStyleKey() {
             DefaultStyleKeyHelper.DefaultStyleKeyProperty.OverrideMetadata(typeof(T), new FrameworkPropertyMetadata(typeof(T)));
             return this;

@@ -177,6 +177,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
 
     [Platform("NET")]
     [TestFixture]
+    [SetCulture("en-US")]
     public class BindingTests {
         [SetUp]
         public virtual void Init() {
@@ -446,6 +447,14 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.AreEqual("16", tb.Text);
         }
 
+        class TestViewModel {
+            public decimal? Prop { get; set; }
+        }
+        [Test(Description = "T1105713")]
+        public virtual void CantConvert_NullableTest() {
+            var textBlock = BindingTestHelper.BindAssert("Text", "{b:DXBinding Prop, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}", "1", new TestViewModel { Prop = 1m });
+            textBlock.Text = "a string";
+        }
         [Test]
         public virtual void PropertyAndMethod() {
             BindingTestHelper.BindAssert("Text", "{b:DXBinding GetSelf(GetSelf()).IntProp}", "1", new BindingTests_a(intV: 1));
@@ -567,7 +576,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             BindingListener.Reset();
             Assert.AreEqual(string.Empty, tb.Text);
 
-            
+
             tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Text", "{Binding IntPropB}", null, null);
             Assert.IsEmpty(BindingListener.GetError());
             Assert.AreEqual(string.Empty, tb.Text);
@@ -628,7 +637,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 BindingTestHelper.DoEvents(panel);
                 Assert.AreEqual("3", tb1.Text);
                 Assert.AreEqual("3", tb2.Text);
-                tb1.Text = "4"; 
+                tb1.Text = "4";
                 BindingTestHelper.DoEvents(panel);
                 Assert.AreEqual(2, vm.IntProp);
                 Assert.AreEqual("4", tb2.Text);
@@ -969,7 +978,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         [Test]
         public virtual void EqualityTest() {
             var vm = new BindingTests_a() { Visibility1 = Visibility.Visible };
-            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled", 
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
                 "{b:DXBinding 'Visibility1 == $Visibility.Visible'}", true, vm);
             vm = new BindingTests_a() { Visibility1 = Visibility.Collapsed };
             BindingTestHelper.BindAssert<TextBox>("TextBox", "IsEnabled",
@@ -1089,9 +1098,9 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         }
         [Test]
         public void DynamicTernary_T491236() {
-            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'Trigger ? Value1.Prop : Value2.Prop'}", "Prop1", 
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'Trigger ? Value1.Prop : Value2.Prop'}", "Prop1",
                 new DynamicTernary_T491236_0() { Trigger = true });
-            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'Trigger ? Value1.Prop : Value2.Prop'}", "Prop2", 
+            BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding 'Trigger ? Value1.Prop : Value2.Prop'}", "Prop2",
                 new DynamicTernary_T491236_0() { Trigger = false });
             BindingTestHelper.BindAssert<TextBox>("TextBox", "Tag", "{b:DXBinding '(Trigger ? Value1 : Value2).Prop'}", "Prop1",
                new DynamicTernary_T491236_0() { Trigger = true });
@@ -1176,7 +1185,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         [Test]
         public void NewOperator() {
             var vm = new PerformanceTests_a() { DoubleProp = 2 };
-            var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Margin", 
+            var tb = BindingTestHelper.BindAssert<TextBox>("TextBox", "Margin",
                 "{b:DXBinding Expr='new $Thickness(DoubleProp, 0, 0, 0)', BackExpr='DoubleProp=@v.Left', Mode=TwoWay}", null, vm);
             Assert.That(tb.Margin == new Thickness(2, 0, 0, 0));
             tb.Margin = new Thickness(3); BindingTestHelper.DoEvents(tb);
@@ -1617,7 +1626,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Assert.LessOrEqual(dxTime2 / 2, standardTime2);
         }
     }
-    
+
     public class ParserTests_a {
         public static int StaticIntProp { get; set; }
         public static int StaticIntField { get; set; }

@@ -42,8 +42,6 @@ namespace DevExpress.Mvvm.POCO {
 #if DEBUG
         static Action<Type> checkTypeInTests;
         public static void SetCheckTypeInTestsDelegate(Action<Type> check) {
-            if (checkTypeInTests != null)
-                throw new InvalidOperationException();
             checkTypeInTests = check;
         }
 #endif
@@ -627,8 +625,8 @@ namespace DevExpress.Mvvm.POCO {
             var bindableProps = GetBindableProperties(type).ToArray();
             var propertyRelations = GetPropertyRelations(type, bindableProps);
             foreach(var propertyInfo in bindableProps) {
-                var newProperty = BuilderBindableProperty.BuildBindableProperty(type, typeBuilder, 
-                    propertyInfo, raisePropertyChangedMethod, raisePropertyChangingMethod, 
+                var newProperty = BuilderBindableProperty.BuildBindableProperty(type, typeBuilder,
+                    propertyInfo, raisePropertyChangedMethod, raisePropertyChangingMethod,
                     DictionaryExtensions.GetValueOrDefault(propertyRelations, propertyInfo.Name, null));
                 BuildBindablePropertyAttributes(propertyInfo, newProperty);
             }
@@ -961,9 +959,9 @@ namespace DevExpress.Mvvm.POCO {
             MethodInfo propertyChangingMethod = GetPropertyChangedMethod(type, propertyInfo, "Changing", x => x.OnPropertyChangingMethodName, x => x.OnPropertyChangingMethod);
             var onChangedFirst = ShouldInvokeOnPropertyChangedMethodsFirst(type);
             var setter = BuildBindablePropertySetter(typeBuilder, propertyInfo,
-                raisePropertyChangedMethod, 
-                raisePropertyChangingMethod, 
-                propertyChangedMethod, 
+                raisePropertyChangedMethod,
+                raisePropertyChangingMethod,
+                propertyChangedMethod,
                 propertyChangingMethod,
                 relatedProperties,
                 onChangedFirst);

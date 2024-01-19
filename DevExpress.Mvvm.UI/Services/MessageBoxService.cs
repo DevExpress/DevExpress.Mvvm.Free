@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using DevExpress.Xpf.Core.Native;
 namespace DevExpress.Mvvm.UI {
     public class MessageBoxService : ServiceBase, IMessageBoxService {
         MessageResult IMessageBoxService.Show(string messageBoxText, string caption, MessageButton button, MessageIcon icon, MessageResult defaultResult) {

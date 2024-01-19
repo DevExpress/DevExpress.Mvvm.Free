@@ -311,7 +311,6 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Assert.AreEqual(false, w2.IsLoaded);
             serviceHelper.Dispose();
         }
-#if !DXCORE3
         [Test, Retry(3)]
         public void ClosingWindow() {
             UIWindowRegion service = new UIWindowRegion() { RegionName = "region" };
@@ -362,7 +361,6 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             serviceHelper.Dispose();
             Manager.Clear("region");
         }
-#endif
         [Test]
         public void SetResultWindow() {
             UIWindowRegion service = new UIWindowRegion() { RegionName = "region" };

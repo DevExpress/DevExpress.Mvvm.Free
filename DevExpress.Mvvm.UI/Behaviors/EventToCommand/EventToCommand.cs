@@ -10,7 +10,7 @@ namespace DevExpress.Mvvm.UI {
         public static readonly DependencyProperty EventArgsConverterProperty =
             DependencyProperty.Register("EventArgsConverter", typeof(IEventArgsConverter), typeof(EventToCommand),
             new PropertyMetadata(null));
-        public static readonly DependencyProperty PassEventArgsToCommandProperty = 
+        public static readonly DependencyProperty PassEventArgsToCommandProperty =
             DependencyProperty.Register("PassEventArgsToCommand", typeof(bool?), typeof(EventToCommand), new PropertyMetadata(null));
         public static readonly DependencyProperty AllowChangingEventOwnerIsEnabledProperty =
             DependencyProperty.Register("AllowChangingEventOwnerIsEnabled", typeof(bool), typeof(EventToCommand),
@@ -37,7 +37,7 @@ namespace DevExpress.Mvvm.UI {
         public ModifierKeys? ModifierKeys {
             get { return (ModifierKeys?)GetValue(ModifierKeysProperty); }
             set { SetValue(ModifierKeysProperty, value); }
-        }        
+        }
         protected override void OnAttached() {
             base.OnAttached();
             UpdateIsEnabled();

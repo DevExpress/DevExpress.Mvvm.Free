@@ -483,7 +483,7 @@ namespace DevExpress.Mvvm.Tests {
 
             c1 = vm.GetAsyncCommand(() => vm.Do3());
             Assert.AreEqual(true, c1 is IAsyncCommand);
-            
+
             var ex = Assert.Throws<CommandAttributeException>(() => vm.GetCommand(() => vm.Do4()));
             Assert.AreEqual("Command not found: Do4Command.", ex.Message);
         }

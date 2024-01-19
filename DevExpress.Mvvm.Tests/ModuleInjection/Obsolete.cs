@@ -358,7 +358,6 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             return new WeakReference[] { targetReference, serviceReference, vm1Reference, vm2Reference, vm3Reference };
         }
 
-#if !DXCORE3
         [Test, Asynchronous]
         public void PersistentMode_InjectRemove() {
             object vm = new object();
@@ -434,7 +433,6 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             WeakReference service2Reference = new WeakReference(service2);
             return new WeakReference[] { target1Reference, target2Reference, service1Reference, service2Reference };
         }
-#endif
     }
 
     public class TabView : Grid {

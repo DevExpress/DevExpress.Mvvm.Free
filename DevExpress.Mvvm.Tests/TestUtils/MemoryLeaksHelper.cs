@@ -10,6 +10,5 @@ namespace DevExpress {
             DispatcherHelper.DoEvents();
             GCTestHelper.CollectOptional(references);
         }
-        
     }
 }

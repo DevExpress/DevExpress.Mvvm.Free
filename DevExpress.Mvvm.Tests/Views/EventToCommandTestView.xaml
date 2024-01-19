@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="DevExpress.Mvvm.UI.Tests.EventToCommandTestView"
+<UserControl x:Class="DevExpress.Mvvm.UI.Tests.EventToCommandTestView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
@@ -20,9 +20,9 @@
         </dxmvvm:EventToCommand>
         <dxmvvm:EventToCommand EventName="SelectionChanged" SourceName="listBox5" AllowChangingEventOwnerIsEnabled="True" Command="{Binding SelectionChangedCommand5}" CommandParameter="{Binding SelectionChangedCommandParameter5}"/>
 
-        <dxmvvm:EventToCommand PassEventArgsToCommand="True" EventName="Loaded" 
+        <dxmvvm:EventToCommand PassEventArgsToCommand="True" EventName="Loaded"
                                Command="{Binding Q554072Command}" SourceName="Q554072"/>
-        <dxmvvm:EventToCommand PassEventArgsToCommand="True" EventName="SizeChanged" 
+        <dxmvvm:EventToCommand PassEventArgsToCommand="True" EventName="SizeChanged"
                                Command="{Binding Q554072Command}" SourceName="Q554072"/>
     </dxmvvm:Interaction.Behaviors>
     <StackPanel Name="LayoutRoot">

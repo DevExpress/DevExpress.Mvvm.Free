@@ -179,7 +179,6 @@ namespace DevExpress.Mvvm.UI.Native {
             try {
                 info.win = new ToastWindow();
             } catch {
-                
                 content.TimeOutCommand.Execute(null);
                 return;
             }
@@ -198,7 +197,6 @@ namespace DevExpress.Mvvm.UI.Native {
             try {
                 info.win.Show();
             } catch(System.ComponentModel.Win32Exception) {
-                
                 content.TimeOutCommand.Execute(null);
                 return;
             }

@@ -18,6 +18,9 @@ using DevExpress.Mvvm.Native;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ThemeInfo(ResourceDictionaryLocation.None, ResourceDictionaryLocation.SourceAssembly)]
+#if DXCORE3
+[assembly: System.Runtime.Versioning.SupportedOSPlatform(AssemblyInfo.SupportedOSPlatform)]
+#endif
 
 [assembly: CLSCompliant(true)]
 [assembly: AllowPartiallyTrustedCallers]

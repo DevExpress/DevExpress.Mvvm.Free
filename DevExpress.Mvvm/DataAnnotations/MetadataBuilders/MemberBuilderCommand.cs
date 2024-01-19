@@ -4,10 +4,10 @@ using System.Linq.Expressions;
 
 namespace DevExpress.Mvvm.DataAnnotations {
     public abstract class CommandMethodMetadataBuilderBase<T, TBuilder> :
-        CommandMetadataBuilderBase<T, TBuilder> 
+        CommandMetadataBuilderBase<T, TBuilder>
         where TBuilder : CommandMethodMetadataBuilderBase<T, TBuilder> {
         readonly string methodName;
-        internal CommandMethodMetadataBuilderBase(MemberMetadataStorage storage, ClassMetadataBuilder<T> parent, string methodName) 
+        internal CommandMethodMetadataBuilderBase(MemberMetadataStorage storage, ClassMetadataBuilder<T> parent, string methodName)
             : base(storage, parent) {
             this.methodName = methodName;
         }

@@ -32,7 +32,7 @@ namespace DevExpress.Data.Controls.WinrtToastNotifier.WinApi {
                 Build = Environment.OSVersion.Version.Build;
             }
         }
-        
+
         [SecuritySafeCritical]
         static string GetOSVersionString() {
             string version = "";

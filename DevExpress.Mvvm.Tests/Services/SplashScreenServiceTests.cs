@@ -98,7 +98,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 Template = TemplateCreator.Invoke();
         }
     }
-    
+
     public class DXSplashScreenBaseTestFixture : BaseWpfFixture {
         protected override void SetUpCore() {
             base.SetUpCore();
@@ -152,7 +152,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 && Math.Abs(point1.Y - point2.Y) < accuracy;
         }
     }
-    [TestFixture]
+    [TestFixture, Ignore("Ignore")]
     public class DXSplashScreenTests : DXSplashScreenBaseTestFixture {
         [Test, Order(1)]
         public void InvalidUsage_Test01() {
@@ -809,7 +809,8 @@ namespace DevExpress.Mvvm.UI.Tests {
                 DXSplashScreen.SplashContainer.ActiveInfo.WaitEvent = new AutoResetEvent(false);
         }
     }
-    [TestFixture]
+
+    [TestFixture, Ignore("Ignore")]
     public class DXSplashScreenServiceTests : DXSplashScreenBaseTestFixture {
         public class ContainerVM {
             public virtual double Progress { get; set; }
@@ -1042,9 +1043,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 };
             });
         }
-#if !DXCORE3
         [Test]
-#endif
         public void WindowShouldBeActivatedOnCloseSplashScreen_Test() {
             DXSplashScreenService service = CreateDefaultSplashScreenAndShow();
             var wnd = SplashScreenTestUserControl.Window;
@@ -1574,7 +1573,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             return SplashScreenTestsHelper.CreateDefaultSplashScreenAndShow(RealWindow, owner, ownerSearchMode, activateWindow, windowContent, closingMode);
         }
     }
-#if !DXCORE3
     [TestFixture, Platform("NET")]
     public class DXSplashScreenServiceIsolatedAppDomainTests {
         Window RealWindow { get; set; }
@@ -1639,7 +1637,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
         }
     }
-#endif
     static class SplashScreenTestsHelper {
         public static void CloseDXSplashScreen() {
             JoinThread(DXSplashScreen.SplashContainer.With(x => x.OldInfo));

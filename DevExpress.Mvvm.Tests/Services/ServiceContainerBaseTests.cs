@@ -550,7 +550,6 @@ namespace DevExpress.Mvvm.Tests {
         public class TestServiceBase : ServiceBase, ITestService { }
     }
 
-#if !DXCORE3
     [TestFixture]
     public class ServiceContainerThreadTest :BaseWpfFixture {
         const int iterationCount = 1000;
@@ -610,5 +609,4 @@ namespace DevExpress.Mvvm.Tests {
             }
         }
     }
-#endif
 }

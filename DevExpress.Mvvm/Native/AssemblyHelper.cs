@@ -27,13 +27,6 @@ namespace DevExpress.Utils {
             }
             set { entryAssembly = value; }
         }
-        static Assembly GetReflectionOnlyLoadedAssembly(string asmName) {
-            try {
-                return Assembly.ReflectionOnlyLoad(asmName);
-            } catch {
-                return null;
-            }
-        }
         const int PublicKeyTokenBytesLength = 8;
 
         static byte[] StringToBytes(string str) {

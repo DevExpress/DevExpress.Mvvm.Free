@@ -13,14 +13,6 @@
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <LangVersion>6</LangVersion>
     <FileAlignment>512</FileAlignment>
-    <SccProjectName>
-    </SccProjectName>
-    <SccLocalPath>
-    </SccLocalPath>
-    <SccAuxPath>
-    </SccAuxPath>
-    <SccProvider>
-    </SccProvider>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <BaseIntermediateOutputPath>obj.Wpf.Free</BaseIntermediateOutputPath>
@@ -139,6 +131,7 @@
     <Compile Include="Native\TypeCastHelper.cs" />
     <Compile Include="Native\ViewModelDesignHelper.cs" />
     <Compile Include="PropertyValueChangedEvent.cs" />
+    <Compile Include="SafeXml.cs" />
     <Compile Include="Services\ApplicationJumpListService\ApplicationJumpItems.cs" />
     <Compile Include="Services\ApplicationJumpListService\IApplicationJumpListService.cs" />
     <Compile Include="Services\ApplicationJumpListService\Native\IApplicationJumpItemInfoInternal.cs" />

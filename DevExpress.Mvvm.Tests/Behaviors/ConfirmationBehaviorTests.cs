@@ -60,7 +60,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             Assert.AreEqual(service, viewModel.MessageBoxService);
             Assert.AreEqual(service, b.GetActualService());
         }
-      
+
         [Test]
         public void SetAssociatedObjectCommandPropertyTest1() {
             Button control = new Button();

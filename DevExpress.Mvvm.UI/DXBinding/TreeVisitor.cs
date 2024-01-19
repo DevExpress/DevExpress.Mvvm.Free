@@ -886,7 +886,7 @@ namespace DevExpress.DXBinding.Native {
                    }).SelectMany(x => x).ToList().ForEach(x => res = res.Union(Visit(x)));
             return res.ToList();
         }
-        
+
         void BackExpr(NBase n) {
             if(operands.Count() == 0) {
                 errorHandler.Throw(ErrorHelper.Err102(), null);
@@ -1168,7 +1168,7 @@ namespace DevExpress.DXBinding.Native {
                 return x.GetType();
             }).ToArray();
         }
-        static void GetInvocation<T>(IEnumerable<T> methods, IEnumerable<object> args, out T method, out IEnumerable<object> outArgs) 
+        static void GetInvocation<T>(IEnumerable<T> methods, IEnumerable<object> args, out T method, out IEnumerable<object> outArgs)
             where T : MethodBase {
 
             var argsTypes = GetArgsTypes(args);
@@ -1673,7 +1673,7 @@ namespace DevExpress.DXBinding.Native {
             return null;
         }
         #endregion
-        
+
         IErrorHandler errorHandler;
         Func<NType, Type> typeResolver;
         protected IEnumerable<Expression> Resolve(NRoot expr, Func<NType, Type> typeResolver, IErrorHandler errorHandler) {
@@ -1759,7 +1759,7 @@ namespace DevExpress.DXBinding.Native {
             }
             Clean();
         }
-        public void ResolveExecute(NRoot executeExpr, NRoot canExecuteExpr, Type parameterType, 
+        public void ResolveExecute(NRoot executeExpr, NRoot canExecuteExpr, Type parameterType,
             out Func<object[], object> execute, out Func<object[], object> canExecute) {
             execute = null;
             canExecute = null;

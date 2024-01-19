@@ -172,7 +172,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             document2.Close();
         }
 
-#if !DXCORE3
         [Test, Retry(3)]
         public void ActivateDocumentsWhenClosed() {
             Window.Show();
@@ -210,7 +209,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             documents[0].Close();
             documents[2].Close();
         }
-#endif
 
 
         public class BindingTestClass : DependencyObject {
@@ -267,7 +265,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 onClose();
             }
             public void OnDestroy() {
-                
+
             }
             public object Title {
                 get { return ""; }

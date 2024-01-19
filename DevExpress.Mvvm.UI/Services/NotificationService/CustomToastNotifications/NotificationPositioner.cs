@@ -56,7 +56,7 @@ namespace DevExpress.Mvvm.UI.Native {
         }
 
         public void Remove(T item) {
-            lock(items) { 
+            lock(items) {
                 CleanItem(item);
                 RemoveEmptySlots();
             }

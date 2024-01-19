@@ -185,7 +185,7 @@ namespace DevExpress.Mvvm.UI {
             if(isSplashScreenShown)
                 ((ISplashScreenService)this).SetSplashScreenState(State);
         }
-         
+
         void OnUseIndependentWindowChanged() {
             if(isSplashScreenShown)
                 throw new InvalidOperationException("The property value cannot be changed while the DXSplashScreenService is active.");
@@ -221,7 +221,7 @@ namespace DevExpress.Mvvm.UI {
             Func<object, object> contentCreator = null;
             object contentCreatorParams = null;
             var ssModel = CreateSplashScreenViewModel();
-            IList<object> windowCreatorParams = new List<object>() { SplashScreenWindowStyle, SplashScreenStartupLocation, Owner.With(x => new SplashScreenOwner(x)), 
+            IList<object> windowCreatorParams = new List<object>() { SplashScreenWindowStyle, SplashScreenStartupLocation, Owner.With(x => new SplashScreenOwner(x)),
                 SplashScreenClosingMode, FadeInDuration, FadeOutDuration };
             if(SplashScreenType == null) {
                 contentCreator = CreateSplashScreen;

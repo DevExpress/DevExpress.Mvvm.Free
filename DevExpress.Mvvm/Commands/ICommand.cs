@@ -58,19 +58,19 @@ namespace DevExpress.Mvvm.Native {
             var genericType = type.GetInterfaces().Where(x => IsTypedCommandCore(x)).FirstOrDefault()?.GenericTypeArguments.Single();
             return genericType;
         }
-		static bool IsTypedCommandCore(Type type) {
+  static bool IsTypedCommandCore(Type type) {
             return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ICommand<>);
         }
-		public static string ToDisplayString(this Type type) {
+  public static string ToDisplayString(this Type type) {
             var @namespace = type.Namespace;
             var name = type.Name;
             var i = name.IndexOf('`');
             if(i > 0)
                 name = name.Remove(i);
             if(!type.IsGenericType)
-                return $"{@namespace}.{name}";
+                return"{@namespace}.{name}";
             var genericArgs = string.Join(", ", type.GetGenericArguments().Select(x => x.ToDisplayString()));
-            return $"{@namespace}.{name}<{genericArgs}>";
+            return"{@namespace}.{name}<{genericArgs}>";
         }
     }
 
@@ -83,7 +83,7 @@ namespace DevExpress.Mvvm.Native {
                     command.CanExecuteChanged += OnCommandCanExecuteChanged;
                 CanExecuteChanged += value;
             }
-            remove { 
+            remove {
                 CanExecuteChanged -= value;
                 if(CanExecuteChanged == null)
                     command.CanExecuteChanged -= OnCommandCanExecuteChanged;

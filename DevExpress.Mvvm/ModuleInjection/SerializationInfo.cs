@@ -1,24 +1,29 @@
-using DevExpress.Mvvm.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Xml;
 using System.Xml.Serialization;
+using DevExpress.Mvvm.Internal;
+using DevExpress.Mvvm.Native;
 
 namespace DevExpress.Mvvm.ModuleInjection.Native {
     [Serializable]
     public class SerializableState {
         [XmlIgnore]
-        public string State { get; private set; }
+        public string State {
+            get;
+            private set;
+        }
         [EditorBrowsable(EditorBrowsableState.Never)]
         public XmlCDataSection CDATAState {
             get {
-                if(string.IsNullOrEmpty(State)) return null;
-                return new XmlDocument().CreateCDataSection(State);
+                if(string.IsNullOrEmpty(State))
+                    return null;
+                var document = new XmlDocument();
+                return document.CreateCDataSection(State);
             }
-            set { State = value != null ? value.Value : null; }
+            set { State = value?.Value; }
         }
-
         public SerializableState() { }
         public SerializableState(string state) {
             State = state;
@@ -65,33 +70,31 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
     [Serializable]
     public class LogicalInfo {
         public static string Serialize(LogicalInfo logicalState) {
-            return SerializationHelper.SerializeToString(x => new XmlSerializer(typeof(LogicalInfo)).Serialize(x, logicalState));
+            return SerializationHelper.SerializeToString(x => XmlSerializerHelper.Serialize<LogicalInfo>(x,logicalState));
         }
         public static LogicalInfo Deserialize(string logicalState) {
-            if(string.IsNullOrEmpty(logicalState)) return null;
-            LogicalInfo res = null;
-            SerializationHelper.DeserializeFromString(logicalState, x => res = (LogicalInfo)new XmlSerializer(typeof(LogicalInfo)).Deserialize(x));
-            return res;
+            if(string.IsNullOrEmpty(logicalState))
+                return null;
+            return SerializationHelper.DeserializeFromString(logicalState, x => XmlSerializerHelper.Deserialize<LogicalInfo>(x));
         }
-        public List<RegionInfo> Regions { get; set; }
         public LogicalInfo() {
             Regions = new List<RegionInfo>();
         }
+        public List<RegionInfo> Regions { get; set; }
     }
     [Serializable]
     public class VisualInfo {
         public static string Serialize(VisualInfo visualState) {
-            return SerializationHelper.SerializeToString(x => new XmlSerializer(typeof(VisualInfo)).Serialize(x, visualState));
+            return SerializationHelper.SerializeToString(x => XmlSerializerHelper.Serialize<VisualInfo>(x, visualState));
         }
         public static VisualInfo Deserialize(string visualState) {
-            if(string.IsNullOrEmpty(visualState)) return null;
-            VisualInfo res = null;
-            SerializationHelper.DeserializeFromString(visualState, x => res = (VisualInfo)new XmlSerializer(typeof(VisualInfo)).Deserialize(x));
-            return res;
+            if(string.IsNullOrEmpty(visualState))
+                return null;
+            return SerializationHelper.DeserializeFromString(visualState, x => XmlSerializerHelper.Deserialize<VisualInfo>(x));
         }
-        public List<RegionVisualInfo> Regions { get; set; }
         public VisualInfo() {
             Regions = new List<RegionVisualInfo>();
         }
+        public List<RegionVisualInfo> Regions { get; set; }
     }
 }

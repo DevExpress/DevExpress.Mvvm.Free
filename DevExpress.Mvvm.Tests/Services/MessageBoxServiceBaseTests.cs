@@ -8,7 +8,7 @@ namespace DevExpress.Mvvm.Tests {
         public class TestMessabeBoxService : IMessageBoxService {
             public string MessageBoxText { get; private set; }
             public string Caption { get; private set; }
-            public MessageButton Button { get; private set; } 
+            public MessageButton Button { get; private set; }
             public MessageIcon Icon { get; private set; }
             public MessageResult DefaultResult { get; private set; }
             public MessageResult Result { get; set; }

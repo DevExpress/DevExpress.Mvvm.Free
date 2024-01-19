@@ -13,6 +13,19 @@ namespace DevExpress.Mvvm {
         Left,
     }
 
+    public enum AsyncDisplayMode {
+        None,
+        Wait,
+        WaitCancel
+    }
+
+    public enum GlyphAlignment {
+        Left,
+        Top,
+        Right,
+        Bottom
+    }
+
     public class UICommand : BindableBase, IUICommand {
         object id = null;
         public object Id {
@@ -22,7 +35,8 @@ namespace DevExpress.Mvvm {
         object caption = null;
         public object Caption {
             get { return caption; }
-            set { SetProperty(ref caption, value, nameof(Caption)); }
+            set {
+                SetProperty(ref caption, value, nameof(Caption)); }
         }
         ICommand command = null;
         public ICommand Command {
@@ -45,12 +59,20 @@ namespace DevExpress.Mvvm {
             set { SetProperty(ref tag, value, nameof(Tag)); }
         }
         bool allowCloseWindow = true;
-        
+
         public bool AllowCloseWindow {
             get {
                 return  allowCloseWindow;
             }
             set { SetProperty(ref allowCloseWindow, value, nameof(AllowCloseWindow)); }
+        }
+
+        AsyncDisplayMode asyncDisplayMode = AsyncDisplayMode.None;
+        public AsyncDisplayMode AsyncDisplayMode {
+            get {
+                return asyncDisplayMode;
+            }
+            set { SetProperty(ref asyncDisplayMode, value, nameof(AsyncDisplayMode)); }
         }
 
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
@@ -70,6 +92,18 @@ namespace DevExpress.Mvvm {
             set { SetProperty(ref alignment, value, nameof(Alignment)); }
         }
 
+        object glyph = null;
+        public object Glyph {
+            get { return glyph; }
+            set { SetProperty(ref glyph, value, nameof(Glyph)); }
+        }
+
+        GlyphAlignment glyphAlignment = GlyphAlignment.Left;
+        public GlyphAlignment GlyphAlignment {
+            get { return glyphAlignment; }
+            set { SetProperty(ref glyphAlignment, value, nameof(GlyphAlignment)); }
+        }
+
         Dock placement = Dock.Right;
 
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
@@ -78,9 +112,8 @@ namespace DevExpress.Mvvm {
             set { SetProperty(ref placement, value, nameof(Placement)); }
         }
         public UICommand() { }
-        public UICommand(object id, object caption, ICommand command, bool isDefault, bool isCancel, object tag = null, bool allowCloseWindow = true, Dock placement = Dock.Right, DialogButtonAlignment alignment = DialogButtonAlignment.Right) {
+        public UICommand(object id, object caption, ICommand command, bool isDefault, bool isCancel, object tag = null, bool allowCloseWindow = true, Dock placement = Dock.Right, DialogButtonAlignment alignment = DialogButtonAlignment.Right, AsyncDisplayMode asyncDisplayMode = AsyncDisplayMode.None, object glyph = null, GlyphAlignment glyphAlignment = GlyphAlignment.Left) {
             this.id = id;
-            this.caption = caption;
             this.command = command;
             this.isDefault = isDefault;
             this.isCancel = isCancel;
@@ -88,18 +121,25 @@ namespace DevExpress.Mvvm {
             this.allowCloseWindow = allowCloseWindow;
             this.placement = placement;
             this.alignment = alignment;
+            this.caption = caption;
+            this.glyph = glyph;
+            this.glyphAlignment = glyphAlignment;
+            AsyncDisplayMode = asyncDisplayMode;
         }
-        public UICommand(object id, object caption, ICommand<CancelEventArgs> command, bool isDefault, bool isCancel, object tag = null, bool allowCloseWindow = true, Dock placement = Dock.Right, DialogButtonAlignment alignment = DialogButtonAlignment.Right) 
-            : this(id: id, 
-                  caption: caption, 
-                  command: (ICommand)command, 
-                  isDefault: isDefault, 
-                  isCancel: isCancel, 
-                  tag: tag, 
-                  allowCloseWindow: 
-                  allowCloseWindow, 
-                  placement: placement, 
-                  alignment: alignment) {
+        public UICommand(object id, object caption, ICommand<CancelEventArgs> command, bool isDefault, bool isCancel, object tag = null, bool allowCloseWindow = true, Dock placement = Dock.Right, DialogButtonAlignment alignment = DialogButtonAlignment.Right, AsyncDisplayMode asyncDisplayMode = AsyncDisplayMode.None, object glyph = null, GlyphAlignment glyphAlignment = GlyphAlignment.Left)
+            : this(id: id,
+                  caption: caption,
+                  command: (ICommand)command,
+                  isDefault: isDefault,
+                  isCancel: isCancel,
+                  tag: tag,
+                  allowCloseWindow:
+                  allowCloseWindow,
+                  placement: placement,
+                  alignment: alignment,
+                  glyph: glyph,
+                  glyphAlignment: glyphAlignment,
+                  asyncDisplayMode: asyncDisplayMode) {
         }
 
         public static List<UICommand> GenerateFromMessageButton(MessageButton dialogButtons, IMessageButtonLocalizer buttonLocalizer, MessageResult? defaultButton = null, MessageResult? cancelButton = null) {
@@ -186,8 +226,8 @@ namespace DevExpress.Mvvm {
         class DefaultButtonCommand : UICommand {
             public DefaultButtonCommand(object id, string caption, object tag) {
                 this.id = id;
-                this.caption = caption;
                 this.tag = tag;
+                this.caption = caption;
             }
         }
         #endregion DefaultButtonCommand

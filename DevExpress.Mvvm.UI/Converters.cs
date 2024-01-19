@@ -285,10 +285,13 @@ namespace DevExpress.Mvvm.UI {
             if(value == null || targetType == typeof(object) || value.GetType() == targetType) return value;
             if(targetType.IsAssignableFrom(value.GetType())) return value;
             var nullableType = Nullable.GetUnderlyingType(targetType);
-            var coerced = CoerceNonNullable(value, nullableType ?? targetType, ignoreImplicitXamlConversions, convertIntToEnum);
-            if(nullableType != null) {
-                return Activator.CreateInstance(targetType, coerced);
-            }
+            var coerced = value;
+            try {
+                coerced = TryCoerceNonNullable(value, nullableType ?? targetType, ignoreImplicitXamlConversions, convertIntToEnum);
+                if(nullableType != null) {
+                    return Activator.CreateInstance(targetType, coerced);
+                }
+            } catch { }
             return coerced;
         }
         internal static bool IsImplicitXamlConvertion(Type valueType, Type targetType) {
@@ -300,7 +303,7 @@ namespace DevExpress.Mvvm.UI {
                 return true;
             return false;
         }
-        internal static object CoerceNonNullable(object value, Type targetType, bool ignoreImplicitXamlConversions, bool convertIntToEnum) {
+        internal static object TryCoerceNonNullable(object value, Type targetType, bool ignoreImplicitXamlConversions, bool convertIntToEnum) {
             if (!ignoreImplicitXamlConversions && IsImplicitXamlConvertion(value.GetType(), targetType))
                 return value;
             if (targetType == typeof(string)) {
@@ -332,13 +335,9 @@ namespace DevExpress.Mvvm.UI {
                 return value;
             }
             var cc = TypeDescriptor.GetConverter(targetType);
-            try {
-                if (cc != null && cc.IsValid(value))
-                    return cc.ConvertFrom(null, System.Globalization.CultureInfo.InvariantCulture, value);
-                return System.Convert.ChangeType(value, targetType, System.Globalization.CultureInfo.InvariantCulture);
-            } catch {
-                return value;
-            }
+            if (cc != null && cc.IsValid(value))
+                return cc.ConvertFrom(null, System.Globalization.CultureInfo.InvariantCulture, value);
+            return System.Convert.ChangeType(value, targetType, System.Globalization.CultureInfo.InvariantCulture);
         }
         public static bool SafeCompare(object left, object right) {
             if(left == null) {
@@ -549,7 +548,7 @@ namespace DevExpress.Mvvm.UI {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             if(value == null)
                 return value;
-			if(!TypedCommandHelper.IsTypedCommand(targetType))
+   if(!TypedCommandHelper.IsTypedCommand(targetType))
                 throw new ArgumentException(string.Format("Unable to convert an object to the '{0}' type. The target type should be '{1}'.", targetType.ToDisplayString(), typeof(ICommand<>)));
             if(!(value is ICommand))
                 throw new ArgumentException(string.Format("Unable to convert an object of the '{0}' type to the '{1}' type.", value.GetType().ToDisplayString(), targetType.ToDisplayString()));

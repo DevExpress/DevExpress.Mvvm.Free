@@ -104,9 +104,7 @@ namespace DevExpress.Mvvm.UI {
                 Point position = new Point();
                 if(window != null) {
                     var pointToScreen = window.PointToScreen(new Point());
-                    if(pointToScreen != null) {
-                        position = new Point(pointToScreen.X + window.Width / 2, pointToScreen.Y + window.Height / 2);
-                    }
+                    position = new Point(pointToScreen.X + window.Width / 2, pointToScreen.Y + window.Height / 2);
                 }
                 notifier.ChangeScreen(position);
                 return notifier.ShowAsync(notification, duration);

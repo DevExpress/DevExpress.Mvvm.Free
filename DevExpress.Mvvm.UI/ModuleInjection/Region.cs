@@ -71,7 +71,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             if(!SetParentViewModel || iSupportPVM == null) return;
             if (iSupportPVM == ActualParentViewModel) {
                 Trace.WriteLine(
-                    "MIF: UIRegion (" + RegionName + ") " + 
+                    "MIF: UIRegion (" + RegionName + ") " +
                     "failed to set ParentViewModel. " +
                     "Bind the UIRegion.ParentViewModel property manually.");
                 return;
@@ -142,7 +142,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             }
         }
         bool focusOnSelectedViewModelChanged = true;
-        
+
         void IUIRegion.Inject(object viewModel, Type viewType) {
             if(viewModel == null) return;
             viewModels.Add(viewModel);
@@ -175,7 +175,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
         }
         protected abstract object GetView(object viewModel);
         #endregion
-        #region StrategyOwner 
+        #region StrategyOwner
         protected class StrategyOwnerBase : IStrategyOwner {
             public UIRegionBase Owner { get; private set; }
             public DependencyObject Target { get; private set; }
@@ -273,11 +273,11 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
                 OnSelectedViewModelChanged(SelectedViewModel, SelectedViewModel, false);
             else SelectedViewModel = Strategy.SelectedViewModel;
         }
-        
-        #region StrategyOwner 
+
+        #region StrategyOwner
         class StrategyOwner : StrategyOwnerBase {
             protected new UIRegion Owner { get { return (UIRegion)base.Owner; } }
-            public StrategyOwner(UIRegion owner) 
+            public StrategyOwner(UIRegion owner)
                 : base(owner, owner.AssociatedObject) { }
             public override void SelectViewModel(object viewModel) {
                 if(Owner.Target != null && Owner.Target.IsLoaded)
@@ -343,12 +343,14 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             } else {
                 w = new Window();
             }
+
+            w.DataContext = vm;
             w.WindowStartupLocation = WindowStartupLocation;
             if(WindowStyle != null) w.Style = WindowStyle;
             if(WindowStyleSelector != null) w.Style = WindowStyleSelector.SelectStyle(vm, w);
             if(SetWindowOwner && !IsMainWindow && Application.Current != null) {
                 w.Owner =
-                    Application.Current.Windows.OfType<Window>().FirstOrDefault(x => x.IsActive) 
+                    Application.Current.Windows.OfType<Window>().FirstOrDefault(x => x.IsActive)
                     ?? Application.Current.MainWindow;
             }
             if(!IsMainWindow && AssociatedObject is FrameworkElement)
@@ -397,7 +399,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             setResult = result;
         }
         #endregion
-        #region StrategyOwner 
+        #region StrategyOwner
         class StrategyOwner : StrategyOwnerBase {
             public new UIWindowRegion Owner { get { return (UIWindowRegion)base.Owner; } }
             public StrategyOwner(UIWindowRegion owner, FrameworkElement window)

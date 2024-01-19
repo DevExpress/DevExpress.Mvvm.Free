@@ -51,7 +51,7 @@ namespace DevExpress.Mvvm.UI {
             return new ObjectToBooleanConverter() { Inverse = this.Inverse };
         }
         public bool Inverse { get; set; }
-    }    
+    }
     public class BooleanToVisibilityConverterExtension : MarkupExtension {
         public bool Inverse { get; set; }
         public bool HiddenInsteadOfCollapsed { get; set; }

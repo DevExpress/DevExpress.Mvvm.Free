@@ -1,4 +1,3 @@
-#if !DXCORE3
 using DevExpress.Mvvm.UI.Native;
 using NUnit.Framework;
 using System;
@@ -464,4 +463,3 @@ namespace DevExpress.Mvvm.UI.Tests {
         string ICurrentProcess.ApplicationId { get { return applicationID + Uri.EscapeDataString(ExecutablePath); } }
     }
 }
-#endif

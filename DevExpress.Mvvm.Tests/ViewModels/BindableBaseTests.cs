@@ -147,7 +147,7 @@ namespace DevExpress.Mvvm.Tests {
             Assert.AreEqual(150, bb.SomeProperty3);
 
             bb.SomeProperty3 = 150;
-            Assert.AreEqual(1, count);            
+            Assert.AreEqual(1, count);
         }
         [Test]
         public void SetPropertyInvalidLambdaTest() {
@@ -289,9 +289,9 @@ namespace DevExpress.Mvvm.Tests {
         }
         class SetPropertyOverridesClass : BindableBase {
             int storageProperty;
-            public int StorageProperty { 
-                get => storageProperty; 
-                set => SetValue(ref storageProperty, value); 
+            public int StorageProperty {
+                get => storageProperty;
+                set => SetValue(ref storageProperty, value);
             }
             public int BagProperty {
                 get => GetValue<int>();
@@ -333,10 +333,10 @@ namespace DevExpress.Mvvm.Tests {
         int someProperty7;
         public int SomeProperty7 {
             get { return someProperty7; }
-            set {                
+            set {
                 SetProperty(ref someProperty7, value, () => SomeProperty7, () => {
                     ChangedCallbackCallCount++;
-                });                
+                });
             }
         }
         int someProperty6;
@@ -583,10 +583,10 @@ namespace DevExpress.Mvvm.Tests {
         int someProperty7;
         public int SomeProperty7 {
             get { return someProperty7; }
-            set {                
+            set {
                 SetValue(ref someProperty7, value, () => {
                     ChangedCallbackCallCount++;
-                });                
+                });
             }
         }
 

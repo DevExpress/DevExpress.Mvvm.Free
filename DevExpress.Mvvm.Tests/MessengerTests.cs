@@ -98,7 +98,7 @@ namespace DevExpress.Mvvm.Tests {
             public void RegisterAnonymousStatic() {
                 Messenger.Default.Register<string>(this, x => StaticMessage = x);
             }
-        
+
             public void PublicMethod(string message) {
                 PublicMessage = message;
             }

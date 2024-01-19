@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 
 namespace DevExpress.Mvvm.DataAnnotations {
-    public abstract class MetadataBuilderBase<T, TMetadataBuilder> : 
+    public abstract class MetadataBuilderBase<T, TMetadataBuilder> :
         IAttributesProvider,
         IAttributeBuilderInternal,
         IAttributeBuilderInternal<TMetadataBuilder>

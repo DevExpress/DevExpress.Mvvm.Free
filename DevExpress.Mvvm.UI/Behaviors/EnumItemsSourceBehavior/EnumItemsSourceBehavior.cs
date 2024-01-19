@@ -87,7 +87,7 @@ namespace DevExpress.Mvvm.UI {
                     throw new Exception("ItemsSource dependency property required");
                 else {
                     var imageSize = ImageSize.HasValue ? new Size(ImageSize.Value.Width, ImageSize.Value.Height) : (Size?)null;
-                    descriptor.SetValue(this.AssociatedObject, EnumSourceHelperCore.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter, 
+                    descriptor.SetValue(this.AssociatedObject, EnumSourceHelperCore.GetEnumSource(EnumType, UseNumericEnumValue, NameConverter,
                         SplitNames, SortMode, null, showImage: AllowImages
                         ,
                         imageSize: imageSize));
@@ -96,7 +96,7 @@ namespace DevExpress.Mvvm.UI {
         }
         void ChangeItemTemplate() {
             ItemsControl itemsControl = this.AssociatedObject as ItemsControl;
-            if(itemsControl != null) 
+            if(itemsControl != null)
                 itemsControl.ItemTemplate = ItemTemplate;
         }
 

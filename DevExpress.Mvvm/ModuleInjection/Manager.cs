@@ -147,8 +147,8 @@ namespace DevExpress.Mvvm.ModuleInjection {
             Verifier.VerifyRegionName(regionName);
             return new Region(regionName, this, isTestingMode);
         }
-        
-        #region ModuleWrapper 
+
+        #region ModuleWrapper
         class ModuleWrapper {
             public string RegionName { get; private set; }
             public IModule Module { get; private set; }

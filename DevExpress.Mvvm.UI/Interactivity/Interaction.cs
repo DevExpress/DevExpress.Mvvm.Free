@@ -19,7 +19,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
         public static readonly DependencyProperty BehaviorsTemplateProperty =
             DependencyProperty.RegisterAttached(BehaviorsTemplatePropertyName, typeof(DataTemplate), typeof(Interaction), new PropertyMetadata(null, OnBehaviorsTemplateChanged));
         [IgnoreDependencyPropertiesConsistencyChecker]
-        static readonly DependencyProperty BehaviorsTemplateItemsProperty = 
+        static readonly DependencyProperty BehaviorsTemplateItemsProperty =
             DependencyProperty.RegisterAttached("BehaviorsTemplateItems", typeof(IList<Behavior>), typeof(Interaction), new PropertyMetadata(null));
         [IgnoreDependencyPropertiesConsistencyChecker]
         [Obsolete("This property is obsolete. Use the Behaviors property instead.")]

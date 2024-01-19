@@ -703,7 +703,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         public class TestCommandChild : TestCommand {
         }
-        public class TestNoCommandClass { 
+        public class TestNoCommandClass {
         }
         [Test]
         public void TypeCommandHelper_GetGeneric() {

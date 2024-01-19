@@ -17,7 +17,8 @@ namespace DevExpress.Mvvm.Native {
             Func<object, object> convertItemAction,
             Action<int, object> insertItemAction = null,
             ISupportInitialize supportInitialize = null,
-            Action<object> clearItemAction = null) {
+            Action<object> clearItemAction = null,
+            Action<object, object> setReplacedItemAction = null) {
 
             GuardHelper.ArgumentNotNull(target, nameof(target));
             GuardHelper.ArgumentNotNull(source, nameof(source));
@@ -35,15 +36,16 @@ namespace DevExpress.Mvvm.Native {
                 case NotifyCollectionChangedAction.Move:
                     object insertItem = target[e.OldStartingIndex];
 
-                    target.RemoveAt(e.OldStartingIndex);                    
+                    target.RemoveAt(e.OldStartingIndex);
                     target.Insert(e.NewStartingIndex, insertItem);
                     break;
                 case NotifyCollectionChangedAction.Replace:
-                    RemoveItem(e.NewStartingIndex, target, clearItemAction);                    
-                    InsertItem(e.NewItems[0], target, source, convertItemAction, insertItemAction);
+                    var oldItem = RemoveItem(e.NewStartingIndex, target, clearItemAction);
+                    var newItem = InsertItem(e.NewItems[0], target, source, convertItemAction, insertItemAction);
+                    setReplacedItemAction?.Invoke(oldItem, newItem);
                     break;
             }
-        }        
+        }
         public static void PopulateCore(
             IList target,
             IEnumerable source,
@@ -107,20 +109,22 @@ namespace DevExpress.Mvvm.Native {
             if(loadedItem == null) return;
             target.Add(loadedItem);
         }
-        static void InsertItem(object item, IList target, IList source, Func<object, object> convertItemAction, Action<int, object> insertItemAction) {
+        static object InsertItem(object item, IList target, IList source, Func<object, object> convertItemAction, Action<int, object> insertItemAction) {
             object loadedItem = convertItemAction(item);
-            if(loadedItem == null) return;
+            if(loadedItem == null) return null;
             int index = source.IndexOf(item);
             if(insertItemAction != null)
                 insertItemAction(index, loadedItem);
             else target.Insert(index, loadedItem);
+            return loadedItem;
         }
-        static void RemoveItem(int index, IList target, Action<object> clearItemAction) {
-            if(index < 0 || index >= target.Count) return;
+        static object RemoveItem(int index, IList target, Action<object> clearItemAction) {
+            if(index < 0 || index >= target.Count) return null;
             var item = target[index];
             target.RemoveAt(index);
             if (clearItemAction != null)
                 clearItemAction(item);
+            return item;
         }
         static void DoAction(IEnumerable list, Action<object> action) {
             foreach(object item in list)

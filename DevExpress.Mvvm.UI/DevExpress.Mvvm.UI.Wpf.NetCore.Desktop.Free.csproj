@@ -1,4 +1,4 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
     <ProjectGuid>{8E649F7E-FE4D-4924-BD45-F2B82C4512C3}</ProjectGuid>
     <TargetFramework>netcoreapp3.0</TargetFramework>
@@ -209,9 +209,9 @@
     <Compile Include="DXBinding\TreeVisitor.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.Management" Version="4.5.0" />
-    <PackageReference Include="System.ComponentModel.Annotations" Version="4.5.0" />
-    <PackageReference Include="System.ServiceModel.Http" Version="4.5.3" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.6.0" />
-  </ItemGroup>
+    <PackageReference Include="System.Management" Version="4.5.0"/>
+    <PackageReference Include="System.ComponentModel.Annotations" Version="4.5.0"/>
+    <PackageReference Include="System.ServiceModel.Http" Version="4.5.3"/>
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6"/>
+  </ItemGroup>  
 </Project>

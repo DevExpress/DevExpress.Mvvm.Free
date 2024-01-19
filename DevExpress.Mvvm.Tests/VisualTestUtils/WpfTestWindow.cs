@@ -32,7 +32,7 @@ namespace DevExpress {
         public WpfTestWindow() {
             MethodsToSkip = Enumerable.Empty<string>();
         }
- 
+
         public virtual int TimeoutInSeconds { get { return 5; } }
         protected virtual TestWindow CreateTestWindow() { return TestWindow.GetContainer(); }
         protected virtual Window CreateRealWindow() { return new Window(); }

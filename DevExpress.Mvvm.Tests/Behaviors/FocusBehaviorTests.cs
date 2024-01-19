@@ -321,4 +321,3 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
     }
 }
-

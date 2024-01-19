@@ -1,8 +1,8 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using Microsoft.Win32;
 using DevExpress.Internal.WinApi;
+using Microsoft.Win32;
 
 namespace DevExpress.Data {
     public static partial class ShellHelper {
@@ -103,11 +103,13 @@ namespace DevExpress.Data {
         }
         public static void UnregisterComServer(Type activatorType) {
             string keyName = GetRegistryKeyName(activatorType);
-            using(var key = Registry.CurrentUser.OpenSubKey(keyName)) {
-                if(key == null)
-                    return;
+            try {
+                using(var key = Registry.CurrentUser.OpenSubKey(keyName)) {
+                    if(key == null) return;
+                }
+                Registry.CurrentUser.DeleteSubKeyTree(keyName);
             }
-            Registry.CurrentUser.DeleteSubKeyTree(keyName);
+            catch { }
         }
     }
 }

@@ -14,7 +14,7 @@ namespace DevExpress.Utils {
         }
         public static bool IsWindows10 {
             get {
-                if(string.IsNullOrEmpty(WinVersionInfo.ProductName)) 
+                if(string.IsNullOrEmpty(WinVersionInfo.ProductName))
                     return false;
                 return WinVersionInfo.ProductName.IndexOf("windows 10", StringComparison.OrdinalIgnoreCase) >= 0;
             }
@@ -37,6 +37,9 @@ namespace DevExpress.Utils {
         }
         public static bool IsWinSupportsAcrylicEffect {
             get { return WinVersionInfo.ReleaseID >= 1803 && WinVersionInfo.CurrentBuild >= 17064; }
+        }
+        public static bool IsWinSupportsMicaEffect {
+            get { return IsWindows11 && WinVersionInfo.CurrentBuild >= 22523; }
         }
         public static bool IsWindows10Build1903OrHigher {
             get { return WinVersionInfo.ReleaseID >= 1903; }

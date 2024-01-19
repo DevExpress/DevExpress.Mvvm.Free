@@ -42,7 +42,7 @@ namespace DevExpress.Internal {
             return Create(ToastTemplateType.ToastText03, id, headlineText, bodyText);
         }
         public static WinRTToastNotificationContent CreateOneLineHeader(string headlineText, string bodyText1, string bodyText2, string id = null) {
-            return string.IsNullOrEmpty(bodyText2) ? Create(ToastTemplateType.ToastText02, id, headlineText, bodyText1) 
+            return string.IsNullOrEmpty(bodyText2) ? Create(ToastTemplateType.ToastText02, id, headlineText, bodyText1)
                 : Create(ToastTemplateType.ToastText04, id, headlineText, bodyText1, bodyText2);
         }
         public static WinRTToastNotificationContent CreateToastGeneric(string headlineText, string bodyText1, string bodyText2, string id = null) {

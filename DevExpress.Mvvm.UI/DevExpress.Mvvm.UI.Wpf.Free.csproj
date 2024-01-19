@@ -13,14 +13,6 @@
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <LangVersion>6</LangVersion>
     <FileAlignment>512</FileAlignment>
-    <SccProjectName>
-    </SccProjectName>
-    <SccLocalPath>
-    </SccLocalPath>
-    <SccAuxPath>
-    </SccAuxPath>
-    <SccProvider>
-    </SccProvider>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <BaseIntermediateOutputPath>obj.Wpf.Free</BaseIntermediateOutputPath>

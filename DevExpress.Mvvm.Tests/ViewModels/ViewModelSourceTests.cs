@@ -700,7 +700,7 @@ namespace DevExpress.Mvvm.Tests {
                 IPOCOViewModel iPOCOViewModel = (IPOCOViewModel)ViewModelSource.Create<POCOWithoutINPChanging>();
                 iPOCOViewModel.RaisePropertyChanging(null);
             }, x => x.Message.AreEqual(string.Format(
-                ViewModelSourceException.Error_INotifyPropertyChangingIsNotImplemented, 
+                ViewModelSourceException.Error_INotifyPropertyChangingIsNotImplemented,
                 typeof(POCOWithoutINPChanging).Name)));
 
             AssertHelper.AssertThrows<ViewModelSourceException>(() => {

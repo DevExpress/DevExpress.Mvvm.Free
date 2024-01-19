@@ -178,8 +178,11 @@ namespace DevExpress.Mvvm.UI.Native {
             return FindLayoutOrVisualParentObjectCore(child, element => parentType.IsAssignableFrom(element.GetType()), useLogicalTree, stopSearchNode);
         }
         static DependencyObject FindLayoutOrVisualParentObjectCore(DependencyObject child, Predicate<DependencyObject> predicate, bool useLogicalTree, DependencyObject stopSearchNode = null) {
+            return FindLayoutOrVisualParentObjectCore(child, predicate, useLogicalTree, x => x == stopSearchNode);
+        }
+        internal static DependencyObject FindLayoutOrVisualParentObjectCore(DependencyObject child, Predicate<DependencyObject> predicate, bool useLogicalTree, Predicate<DependencyObject> stopCondition) {
             while(child != null) {
-                if(child == stopSearchNode)
+                if(stopCondition(child))
                     break;
                 if(predicate(child))
                     return child;

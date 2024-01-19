@@ -30,9 +30,9 @@ namespace DevExpress.Mvvm.UI {
 
         DXWindowState ICurrentWindowService.WindowState {
             get { return DXWindowStateConverter.ToDXWindowState(GetActualWindow()?.WindowState ?? WindowState.Normal); }
-            set { 
+            set {
                 var w = GetActualWindow();
-                if(w != null) 
+                if(w != null)
                     w.WindowState = DXWindowStateConverter.ToWindowState(value);
             }
         }

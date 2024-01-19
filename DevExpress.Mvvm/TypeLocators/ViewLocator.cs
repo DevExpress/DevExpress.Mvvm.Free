@@ -16,7 +16,9 @@ namespace DevExpress.Mvvm.Native {
         public static IViewLocator Default {
             get {
                 if(ViewLocatorDefaultProperty == null) {
+#pragma warning disable DX0004
                     var viewLocatorType = DynamicAssemblyHelper.MvvmUIAssembly.GetType(ViewLocatorTypeName);
+#pragma warning restore DX0004
                     ViewLocatorDefaultProperty = viewLocatorType.GetProperty("Default", BindingFlags.Static | BindingFlags.Public);
                 }
                 return (IViewLocator)ViewLocatorDefaultProperty.GetValue(null, null);

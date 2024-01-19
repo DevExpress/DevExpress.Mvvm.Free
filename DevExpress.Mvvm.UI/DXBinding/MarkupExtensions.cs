@@ -277,7 +277,7 @@ namespace DevExpress.Xpf.DXBinding {
             }
         }
     }
-    
+
     public sealed class DXBindingExtension : DXBindingBase {
         public string BindingGroupName { get; set; }
         public object TargetNullValue { get; set; }
@@ -534,7 +534,7 @@ namespace DevExpress.Xpf.DXBinding {
         }
         protected override void Init() {
             TreeInfo = new EventTreeInfo(Handler, ErrorHandler);
-            if(ActualResolvingMode == DXBindingResolvingMode.LegacyStaticTyping) 
+            if(ActualResolvingMode == DXBindingResolvingMode.LegacyStaticTyping)
                 Calculator = new EventCalculator(TreeInfo);
             else Calculator = new EventCalculatorDynamic(TreeInfo);
             Calculator.Init(TypeResolver);
@@ -577,12 +577,12 @@ namespace DevExpress.Xpf.DXBinding {
         }
     }
 
-    public abstract class DXBindingExceptionBase<TSelf, TOwner> : Exception 
+    public abstract class DXBindingExceptionBase<TSelf, TOwner> : Exception
         where TSelf : DXBindingExceptionBase<TSelf, TOwner>
         where TOwner : DXBindingBase {
         public string TargetPropertyName { get; private set; }
         public string TargetObjectType { get; private set; }
-        protected DXBindingExceptionBase(TOwner owner, string message, Exception innerException) 
+        protected DXBindingExceptionBase(TOwner owner, string message, Exception innerException)
             : this(owner.TargetPropertyName, owner.TargetObjectName, message, innerException) {
         }
         protected DXBindingExceptionBase(string targetPropertyName, string targetObjectType, string message, Exception innerException)

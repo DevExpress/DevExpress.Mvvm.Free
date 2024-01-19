@@ -156,7 +156,7 @@ namespace DevExpress.Mvvm.Native {
             IEnumerable<Attribute> IAttributesProvider.GetAttributes(string propertyName) {
                 if(string.IsNullOrEmpty(propertyName))
                     return Enumerable.Empty<Attribute>();
-                MemberInfo metadataProperty = (MemberInfo)metadataClassType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public) 
+                MemberInfo metadataProperty = (MemberInfo)metadataClassType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public)
                     ?? metadataClassType.GetMethod(propertyName, BindingFlags.Instance | BindingFlags.Public);
                 if(metadataProperty != null)
                     return metadataProperty.GetCustomAttributes(true).OfType<Attribute>();
@@ -295,13 +295,13 @@ namespace DevExpress.Mvvm.Native {
             IEnumerable<Type> hierarchy = componentType.Yield().Flatten(x => x.BaseType.YieldIfNotNull()).Reverse();
             IEnumerable<IAttributesProvider> result = new IAttributesProvider[0];
             foreach(var type in hierarchy) {
-                IEnumerable<Type> metadataClassType = 
+                IEnumerable<Type> metadataClassType =
                     (forFiltering ? GetFilteringMetadataClassType(type) : GetMetadataClassType(type))
                     .Return(x => new[] { x }, () => Enumerable.Empty<Type>());
                 IEnumerable<Type> externalMetadataClassTypes = GetMetadataTypes(MetadataLocator.Default, type);
                 result = result.Concat(metadataClassType.Concat(externalMetadataClassTypes).GetProviders(type, forFiltering));
-                (forFiltering 
-                    ? GetFluentAPIFilteringAttributesFromStaticMethod(type, type) 
+                (forFiltering
+                    ? GetFluentAPIFilteringAttributesFromStaticMethod(type, type)
                     : GetFluentAPIAttributesFromStaticMethod(type, type))
                 .Do(x => result = result.Concat(new[] { x }));
             }
@@ -339,11 +339,11 @@ namespace DevExpress.Mvvm.Native {
             return GetFluentAPIAttributesFromStaticMethodCore(metadataClassType, componentType, true);
         }
         static IAttributesProvider GetFluentAPIAttributesFromStaticMethodCore(Type metadataClassType, Type componentType, bool forFiltering) {
-            MethodInfo buildMetadataMethod = 
-                GetBuildMetadataStaticMethods(metadataClassType, componentType, 
+            MethodInfo buildMetadataMethod =
+                GetBuildMetadataStaticMethods(metadataClassType, componentType,
                     forFiltering ? (Func<Type, Type, bool>)IsFilteringMetadataBuilderType : (Func<Type, Type, bool>)IsMetadataBuilderType).
                 SingleOrDefault();
-            return buildMetadataMethod != null 
+            return buildMetadataMethod != null
                 ? InvokeBuildMetadataStaticMethod(buildMetadataMethod, componentType, forFiltering) : null;
         }
 
@@ -372,7 +372,7 @@ namespace DevExpress.Mvvm.Native {
             if(attrs == null || !attrs.Any()) return null;
             object metadataTypeAttribute = attrs.SingleOrDefault(x => {
                 Type attrType = x.GetType();
-                return attrType.Name == FilterMetadataTypeAttributeHelper.FilteringMetadataTypeName 
+                return attrType.Name == FilterMetadataTypeAttributeHelper.FilteringMetadataTypeName
                 && attrType.Namespace == FilterMetadataTypeAttributeHelper.FilteringMetadataTypeNamespace;
             });
             if(metadataTypeAttribute == null) return null;

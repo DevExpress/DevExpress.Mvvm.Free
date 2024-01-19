@@ -78,7 +78,7 @@ namespace DevExpress {
 
         static string BuildExceptionString(object[] notCollected) {
             StringBuilder report = new StringBuilder();
-            report.AppendLine($"{notCollected.Length} garbage object(s) not collected:{report}");
+            report.AppendLine("{notCollected.Length} garbage object(s) not collected:{report}");
             report.AppendLine();
             foreach (var typeAndInstancesGrouping in notCollected.GroupBy(o => o.GetType()).OrderBy(gr => gr.Key.FullName)) {
                 var currentType = typeAndInstancesGrouping.Key;
@@ -89,7 +89,7 @@ namespace DevExpress {
 
                 report.AppendLine($"\t{typeAndInstances.Length} object(s) of type {currentType.FullName}{(currentInstancesIsInformative ? ":" : ";")}");
                 if (currentInstancesIsInformative) {
-                    var instancesReport = string.Join(",\r\n", currentInstancesFormatted.Select(x => $"\t\t[{x.Count()}] - {x.Key}"));
+                    var instancesReport = string.Join(",\r\n", currentInstancesFormatted.Select(x =>"\t\t[{x.Count()}] - {x.Key}"));
                     report.Append(instancesReport);
                     report.Append(";");
                     report.AppendLine();
@@ -106,7 +106,7 @@ namespace DevExpress {
         static bool IsHardOptional() {
             if(HardOptional.HasValue)
                 return HardOptional.Value;
-            lock(rnd) 
+            lock(rnd)
                 return rnd.Next(100) < 5;
         }
         public static void CollectOptional(IEnumerable<WeakReference> references) {

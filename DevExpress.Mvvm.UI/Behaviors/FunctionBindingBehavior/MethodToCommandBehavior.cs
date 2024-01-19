@@ -12,16 +12,16 @@ namespace DevExpress.Mvvm.UI {
         protected const string Error_SourceFunctionShouldBeBool = "The return value of the '{0}.{1}' function should be bool.";
 
         #region Dependency properties
-        public static readonly DependencyProperty CommandProperty = 
+        public static readonly DependencyProperty CommandProperty =
             DependencyProperty.Register("Command", typeof(string), typeof(MethodToCommandBehavior),
             new PropertyMetadata("Command", (d, e) => ((MethodToCommandBehavior)d).OnCommandChanged(e)));
-        public static readonly DependencyProperty CommandParameterProperty = 
+        public static readonly DependencyProperty CommandParameterProperty =
             DependencyProperty.Register("CommandParameter", typeof(string), typeof(MethodToCommandBehavior),
             new PropertyMetadata("CommandParameter", (d, e) => ((MethodToCommandBehavior)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty CanExecuteFunctionProperty = 
+        public static readonly DependencyProperty CanExecuteFunctionProperty =
             DependencyProperty.Register("CanExecuteFunction", typeof(string), typeof(MethodToCommandBehavior),
             new PropertyMetadata(null, (d, e) => ((MethodToCommandBehavior)d).OnResultAffectedPropertyChanged()));
-        public static readonly DependencyProperty MethodProperty = 
+        public static readonly DependencyProperty MethodProperty =
                 DependencyProperty.Register("Method", typeof(string), typeof(MethodToCommandBehavior),
             new PropertyMetadata(null, (d, e) => ((MethodToCommandBehavior)d).OnResultAffectedPropertyChanged()));
 

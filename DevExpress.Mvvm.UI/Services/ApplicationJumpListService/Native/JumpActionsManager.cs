@@ -7,7 +7,6 @@ using System.Threading;
 using System.Windows.Threading;
 using DevExpress.Utils;
 using DevExpress.Mvvm.Native;
-#if !DXCORE3
 namespace DevExpress.Mvvm.UI.Native {
     public interface IJumpAction {
         string CommandId { get; }
@@ -233,4 +232,3 @@ namespace DevExpress.Mvvm.UI.Native {
         }
     }
 }
-#endif

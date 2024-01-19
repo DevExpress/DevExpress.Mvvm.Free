@@ -216,7 +216,7 @@ namespace DevExpress.Internal.WinApi {
                 array.SetValue(val, i);
             });
 
-            cache.Add(typeof(Single), (pv, array, i) => // float
+            cache.Add(typeof(Single), (pv, array, i) =>
             {
                 float[] val = new float[1];
                 Marshal.Copy(pv._ptr2, val, (int)i, 1);
@@ -461,7 +461,7 @@ namespace DevExpress.Internal.WinApi {
             IntPtr psa = PropVariantNativeMethods.SafeArrayCreateVector(vtUnknown, 0, (uint)array.Length);
 
             IntPtr pvData = PropVariantNativeMethods.SafeArrayAccessData(psa);
-            try // to remember to release lock on data
+            try
             {
                 for(int i = 0; i < array.Length; ++i) {
                     object obj = array.GetValue(i);

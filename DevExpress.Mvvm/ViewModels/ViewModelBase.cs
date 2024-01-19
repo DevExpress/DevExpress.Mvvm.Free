@@ -171,7 +171,7 @@ namespace DevExpress.Mvvm {
 
                     MethodInfo canExecuteMethod = GetCanExecuteMethod(type, x, attribute, s => new CommandAttributeException(s), m => m.IsPublic);
                     var attributes = MetadataHelper.GetAllAttributes(x);
-                    return new CommandProperty(x, canExecuteMethod, name, attribute.GetUseCommandManager(), attributes, type, attribute.AllowMultipleExecutionCore); 
+                    return new CommandProperty(x, canExecuteMethod, name, attribute.GetUseCommandManager(), attributes, type, attribute.AllowMultipleExecutionCore);
                 })
                 .ToDictionary(x => x.Method);
             foreach(var property in commandProperties.Values) {
@@ -188,7 +188,7 @@ namespace DevExpress.Mvvm {
             if(CheckCommandMethodConditionValue(parameters.Length <= 1, method, Error_MethodCannotHaveMoreThanOneParameter, createException))
                 return false;
             bool isValidSingleParameter = (parameters.Length == 1) && (parameters[0].IsOut || parameters[0].ParameterType.IsByRef);
-            if(CheckCommandMethodConditionValue(!isValidSingleParameter, method, Error_MethodCannotHaveOutORRefParameters, createException)) 
+            if(CheckCommandMethodConditionValue(!isValidSingleParameter, method, Error_MethodCannotHaveOutORRefParameters, createException))
                 return false;
             if(CheckCommandMethodConditionValue(!method.IsGenericMethodDefinition, method, Error_MethodCannotShouldNotBeGeneric, createException))
                 return false;
@@ -331,7 +331,7 @@ namespace DevExpress.Mvvm {
         }
         PropertyDescriptorCollection properties;
         PropertyDescriptorCollection ICustomTypeDescriptor.GetProperties() {
-            return properties ?? 
+            return properties ??
                 (properties = new PropertyDescriptorCollection(TypeDescriptor.GetProperties(this, true).Cast<PropertyDescriptor>().Concat(commandProperties.Values).ToArray()));
         }
         object ICustomTypeDescriptor.GetPropertyOwner(PropertyDescriptor pd) {
