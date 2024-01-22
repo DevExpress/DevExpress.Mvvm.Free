@@ -175,7 +175,9 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
 
         public static class DispatcherUtil {
+#if !NET
             [SecurityPermissionAttribute(SecurityAction.Demand, Flags = SecurityPermissionFlag.UnmanagedCode)]
+#endif
             public static void DoEvents() {
                 DispatcherFrame frame = new DispatcherFrame();
                 Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background,

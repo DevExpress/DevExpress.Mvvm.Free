@@ -33,6 +33,7 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
     }
+#if !NET
     [TestFixture]
     public class MetadataBuilderTests : MetadataBuilderTestsBase {
 
@@ -529,6 +530,7 @@ namespace DevExpress.Mvvm.Tests {
             }
         }
     }
+#endif
     [TestFixture]
     public class InternalMetadataLocatorTests : MetadataBuilderTestsBase {
         [Test]
@@ -600,10 +602,12 @@ namespace DevExpress.Mvvm.Tests {
         }
         class PrivateMetadata : TestDataMetadata { }
     }
+#if !NET
     [TestFixture]
     public class FilteringMetadataBuilderTests : MetadataBuilderTests {
         protected override bool UseFilteringAttributes { get { return true; } }
     }
+#endif
     [TestFixture]
     public class InternalFilteringMetadataLocatorTests : InternalMetadataLocatorTests {
         protected override bool UseFilteringAttributes { get { return true; } }

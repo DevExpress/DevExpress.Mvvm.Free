@@ -1573,6 +1573,8 @@ namespace DevExpress.Mvvm.UI.Tests {
             return SplashScreenTestsHelper.CreateDefaultSplashScreenAndShow(RealWindow, owner, ownerSearchMode, activateWindow, windowContent, closingMode);
         }
     }
+
+#if !NET
     [TestFixture, Platform("NET")]
     public class DXSplashScreenServiceIsolatedAppDomainTests {
         Window RealWindow { get; set; }
@@ -1637,6 +1639,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
         }
     }
+#endif
     static class SplashScreenTestsHelper {
         public static void CloseDXSplashScreen() {
             JoinThread(DXSplashScreen.SplashContainer.With(x => x.OldInfo));

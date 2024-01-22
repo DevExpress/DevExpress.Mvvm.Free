@@ -1,3 +1,4 @@
+#if !NET
 using NUnit.Framework;
 using System;
 using System.Linq;
@@ -26,7 +27,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             : this(AppDomain.CurrentDomain.SetupInformation) {
         }
         public NewDomainTestHelper(AppDomainSetup setupInformation) {
-#if DXCORE3
+#if NET
             domain = AppDomain.CreateDomain("TestDomain");
 #else
             domain = AppDomain.CreateDomain("TestDomain", AppDomain.CurrentDomain.Evidence, setupInformation);
@@ -34,7 +35,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             testObject = (T)domain.CreateInstanceAndUnwrap(typeof(T).Assembly.FullName, typeof(T).FullName);
         }
         public NewDomainTestHelper(AppDomainSetup setupInformation, PermissionSet permissionSet, params StrongName[] fullTrustAssemblies) {
-#if DXCORE3
+#if NET
             domain = AppDomain.CreateDomain("TestDomain");
 #else
             domain = AppDomain.CreateDomain("TestDomain", null, setupInformation, permissionSet, fullTrustAssemblies);
@@ -42,7 +43,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             testObject = (T)domain.CreateInstanceAndUnwrap(typeof(T).Assembly.FullName, typeof(T).FullName);
         }
         public bool IsAssemblyLoaded(string assemblyName) {
-#if DXCORE3
+#if NET
             LoadedAssembliesHelper helper = (LoadedAssembliesHelper)domain.CreateInstanceAndUnwrap(this.GetType().Assembly.FullName, typeof(LoadedAssembliesHelper).FullName);
             return helper.IsAssemblyLoaded(assemblyName);
 #else
@@ -101,3 +102,4 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
     }
 }
+#endif

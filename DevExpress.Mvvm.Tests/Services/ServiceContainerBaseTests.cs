@@ -560,7 +560,9 @@ namespace DevExpress.Mvvm.Tests {
                 threads.Add(new Thread(new ThreadStart(test)));
             foreach(var t in threads) t.Start();
             foreach(var t in threads) t.Join();
+#if !NET
             foreach(var t in threads) t.Abort();
+#endif
         }
 
         protected override void SetUpCore() {

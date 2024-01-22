@@ -1,3 +1,4 @@
+
 using DevExpress.Internal;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
@@ -38,6 +39,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             }
         }
     }
+#if !NET
     [TestFixture]
     public class ApplicationJumpListServiceTests : BaseWpfFixture {
         TestJumpActionsManager jumpActionsManager;
@@ -387,4 +389,5 @@ namespace DevExpress.Mvvm.UI.Tests {
     public class TestApplicationJumpListService : ApplicationJumpListService {
         public TestApplicationJumpListService(INativeJumpList nativeJumpList, IJumpActionsManager jumpActionsManager) : base(nativeJumpList, jumpActionsManager) { }
     }
+#endif
 }

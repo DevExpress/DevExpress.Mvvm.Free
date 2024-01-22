@@ -1,7 +1,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
     <ProjectGuid>{7545BCBC-E63B-082A-2109-556174DE4D1A}</ProjectGuid>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <EnableDefaultItems>False</EnableDefaultItems>
     <UseWPF>True</UseWPF>
     <UseWindowsForms>True</UseWindowsForms>
@@ -27,7 +27,7 @@
     <Optimize>false</Optimize>
     <ErrorReport>prompt</ErrorReport>
     <OutputPath>..\Bin\NETCoreDesktop\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;MVVM;DXCORE3;FREE;</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;MVVM;FREE;</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <WarningLevel>4</WarningLevel>
@@ -35,7 +35,7 @@
     <Optimize>true</Optimize>
     <ErrorReport>prompt</ErrorReport>
     <OutputPath>..\Bin\NETCoreDesktop\</OutputPath>
-    <DefineConstants>TRACE;MVVM;DXCORE3;FREE;</DefineConstants>
+    <DefineConstants>TRACE;MVVM;FREE;</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyVersion.cs" />

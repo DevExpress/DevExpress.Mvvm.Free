@@ -1,3 +1,4 @@
+#if !NET
 using System;
 using System.Windows.Shell;
 using DevExpress.Mvvm.Native;
@@ -104,3 +105,4 @@ namespace DevExpress.Mvvm.UI.Native {
 #endregion
     }
 }
+#endif

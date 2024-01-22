@@ -358,6 +358,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             return new WeakReference[] { targetReference, serviceReference, vm1Reference, vm2Reference, vm3Reference };
         }
 
+#if !NET
         [Test, Asynchronous]
         public void PersistentMode_InjectRemove() {
             object vm = new object();
@@ -375,6 +376,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
                 MemoryLeaksHelper.EnsureCollected(refVM);
             });
         }
+#endif
         WeakReference[] PersistentMode_InjectRemove_Core(Func<object> vmFactory, object vm) {
             Grid container = new Grid();
             Window.Content = container;

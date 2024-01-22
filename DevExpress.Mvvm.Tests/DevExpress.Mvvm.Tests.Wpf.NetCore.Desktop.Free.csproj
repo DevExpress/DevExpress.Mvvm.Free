@@ -1,7 +1,7 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
     <ProjectGuid>{CA4AFACD-89FD-0C7D-2A4B-E4107BB5AB91}</ProjectGuid>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <EnableDefaultItems>False</EnableDefaultItems>
     <UseWPF>True</UseWPF>
     <UseWindowsForms>True</UseWindowsForms>
@@ -16,6 +16,7 @@
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	<NoWarn>CA1416</NoWarn>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\DevExpress.Mvvm.Key\StrongKey.snk</AssemblyOriginatorKeyFile>
     <IntermediateOutputPath>obj.NetCore.Desktop.Free</IntermediateOutputPath>
@@ -27,7 +28,7 @@
     <Optimize>false</Optimize>
     <ErrorReport>prompt</ErrorReport>
     <OutputPath>..\Bin\NETCoreDesktop\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;MVVM;DXCORE3;FREE;</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;MVVM;FREE;</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DevExpress.Mvvm">
@@ -153,22 +154,13 @@
     <Resource Include="Images\redoTestSvg.svg" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="NUnit3TestAdapter" />
-    <PackageReference Include="NUnit" />
-    <PackageReference Include="System.Management" />
-    <PackageReference Include="System.ComponentModel.Annotations" />
-    <PackageReference Include="System.ServiceModel.Http" />
-    <PackageReference Include="System.Data.SqlClient" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="16.8.0"/>
-    <PackageVersion Include="NUnit3TestAdapter" Version="3.17.0"/>
-    <PackageVersion Include="NUnit" Version="3.13.0"/>
-    <PackageVersion Include="System.Management" Version="4.5.0" />
-    <PackageVersion Include="System.ComponentModel.Annotations" Version="4.5.0" />
-    <PackageVersion Include="System.ServiceModel.Http" Version="4.5.3" />
-    <PackageVersion Include="System.Data.SqlClient" Version="4.8.6" />
-  </ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.0"/>
+    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0"/>
+    <PackageReference Include="NUnit" Version="3.13.0"/>
+    <PackageReference Include="System.Management" Version="4.5.0"/>
+    <PackageReference Include="System.ComponentModel.Annotations" Version="4.5.0"/>
+    <PackageReference Include="System.ServiceModel.Http" Version="4.5.3"/>
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6"/>
+  </ItemGroup>  
 </Project>
 

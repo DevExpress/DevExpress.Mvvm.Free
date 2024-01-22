@@ -99,6 +99,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             vm.ProgressValue = 1.0;
             Assert.AreEqual(1, RealWindow.TaskbarItemInfo.ProgressValue);
         }
+#if !NET
         [Test]
         public void TestTaskbarListTestHelper() {
             TaskbarListTestHelper.DoWithNotImplementedHrInit(() => {
@@ -131,6 +132,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                 testWindow.Close();
             }
         }
+#endif
 
         [Test]
         public void AttachToWindowChild() {

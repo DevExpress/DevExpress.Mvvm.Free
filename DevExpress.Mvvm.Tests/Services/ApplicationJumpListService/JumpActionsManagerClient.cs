@@ -1,3 +1,4 @@
+#if !NET
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -68,3 +69,4 @@ namespace DevExpress.Mvvm.UI.Native {
     }
 #pragma warning restore DX0015
 }
+#endif
