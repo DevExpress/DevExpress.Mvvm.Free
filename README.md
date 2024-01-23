@@ -19,6 +19,12 @@ If you have an idea on how to improve our MVVM Framework, please contact us at o
 
 # Release Notes
 
+### 23.2.3
+* DevExpress MVVM Framework now supports .NET 6.0.
+* The [System.Data.SqlClient](https://www.nuget.org/packages/System.Data.SqlClient/) package version is updated from 4.6.0 to 4.8.6. Refer to the following link for more information on the security issue found in the 4.6.0 version: [Microsoft.Data.SqlClient and System.Data.SqlClient vulnerable to SQL Data Provider Security Feature Bypass](https://github.com/advisories/GHSA-98g6-xh36-x2p7).
+* Typo fixed ([PR](https://github.com/DevExpress/DevExpress.Mvvm.Free/pull/27/files)).
+* Bug fixes and enhancements.
+
 ### 22.1.3
 * [T1079515](https://supportcenter.devexpress.com/internal/ticket/details/T1079515) - The CompositeCommand and ConfirmationBehavior can work with commands that accept specific type arguments.
 * [Notification Service](https://docs.devexpress.com/WPF/18138/mvvm-framework/services/predefined-set/notificationservice#create-a-native-windows-1011-notification) - You can use the optional **Id** parameter of the [NotificationService.CreatePredefinedNotification](https://docs.devexpress.com/WPF/DevExpress.Mvvm.UI.NotificationService.CreatePredefinedNotification(System.String-System.String-System.String-System.Windows.Media.ImageSource-System.String)) method to identify the notification with which the user interacts.
