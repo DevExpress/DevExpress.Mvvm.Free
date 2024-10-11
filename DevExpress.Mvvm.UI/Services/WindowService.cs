@@ -34,7 +34,7 @@ namespace DevExpress.Mvvm.UI {
             return null;
         }
 
-        const string WindowTypeException = "WindowType show be derived from the Window type";
+        const string WindowTypeException = "WindowType should be derived from the Window type.";
 
         public static readonly DependencyProperty WindowStartupLocationProperty =
             DependencyProperty.Register("WindowStartupLocation", typeof(WindowStartupLocation), typeof(WindowService),
