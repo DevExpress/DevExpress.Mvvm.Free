@@ -22,7 +22,7 @@ namespace DevExpress.Mvvm.UI.Native {
             }
         }
         #endregion
-        protected static readonly IEnumerator EmptyEnumerator = (new object[0]).GetEnumerator();
+        protected static readonly IEnumerator EmptyEnumerator = (Array.Empty<object>()).GetEnumerator();
         IEnumerator objects;
         protected EnumStack stack;
 

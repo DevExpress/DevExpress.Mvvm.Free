@@ -1778,7 +1778,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 if (intProp == value) return;
                 intProp = value;
                 if (PropertyChanged != null)
-                    PropertyChanged(this, new PropertyChangedEventArgs("IntProp"));
+                    PropertyChanged(this, new PropertyChangedEventArgs(nameof(IntProp)));
             }
         }
         double doubleProp;
@@ -1788,7 +1788,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 if (doubleProp == value) return;
                 doubleProp = value;
                 if (PropertyChanged != null)
-                    PropertyChanged(this, new PropertyChangedEventArgs("DoubleProp"));
+                    PropertyChanged(this, new PropertyChangedEventArgs(nameof(DoubleProp)));
             }
         }
         string stringProp;
@@ -1798,7 +1798,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
                 if (stringProp == value) return;
                 stringProp = value;
                 if (PropertyChanged != null)
-                    PropertyChanged(this, new PropertyChangedEventArgs("StringProp"));
+                    PropertyChanged(this, new PropertyChangedEventArgs(nameof(StringProp)));
             }
         }
         public PerformanceTests_a GetSelf() {

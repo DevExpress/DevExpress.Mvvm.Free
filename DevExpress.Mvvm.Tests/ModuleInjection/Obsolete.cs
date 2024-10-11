@@ -376,7 +376,6 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
                 MemoryLeaksHelper.EnsureCollected(refVM);
             });
         }
-#endif
         WeakReference[] PersistentMode_InjectRemove_Core(Func<object> vmFactory, object vm) {
             Grid container = new Grid();
             Window.Content = container;
@@ -435,6 +434,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             WeakReference service2Reference = new WeakReference(service2);
             return new WeakReference[] { target1Reference, target2Reference, service1Reference, service2Reference };
         }
+#endif
     }
 
     public class TabView : Grid {

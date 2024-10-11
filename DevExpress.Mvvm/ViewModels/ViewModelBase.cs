@@ -159,7 +159,7 @@ namespace DevExpress.Mvvm {
             commandProperties = IsPOCOViewModel ? new Dictionary<MethodInfo, CommandProperty>() : GetCommandProperties(GetType());
         }
         static Dictionary<MethodInfo, CommandProperty> GetCommandProperties(Type type) {
-            Dictionary<MethodInfo, CommandProperty> result = PropertiesCache.GetOrAdd(type, () => CreateCommandProperties(type));
+            Dictionary<MethodInfo, CommandProperty> result = PropertiesCache.GetOrAdd(type, t => CreateCommandProperties(t));
             return result;
         }
         static Dictionary<MethodInfo, CommandProperty> CreateCommandProperties(Type type) {
@@ -246,12 +246,12 @@ namespace DevExpress.Mvvm {
                 return x => canExecuteMethod != null ? (bool)canExecuteMethod.Invoke(owner, GetInvokeParameters(x, hasParameter)) : true;
             }
             static object[] GetInvokeParameters(object parameter, bool hasParameter) {
-                return hasParameter ? new[] { parameter } : new object[0];
+                return hasParameter ? new[] { parameter } : EmptyArray<object>.Instance;
             }
         }
         readonly Dictionary<MethodInfo, IDelegateCommand> commands = new Dictionary<MethodInfo, IDelegateCommand>();
         IDelegateCommand GetCommand(MethodInfo method, MethodInfo canExecuteMethod, bool? useCommandManager, bool hasParameter, bool allowMultipleExecution) {
-            return commands.GetOrAdd(method, () => CreateCommand(method, canExecuteMethod, useCommandManager, hasParameter, allowMultipleExecution));
+            return commands.GetOrAdd(method, m => CreateCommand(m, canExecuteMethod, useCommandManager, hasParameter, allowMultipleExecution));
         }
         IDelegateCommand CreateCommand(MethodInfo method, MethodInfo canExecuteMethod, bool? useCommandManager, bool hasParameter, bool allowMultipleExecution) {
             bool isAsync = method.ReturnType == typeof(System.Threading.Tasks.Task);

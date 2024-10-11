@@ -144,7 +144,7 @@ namespace DevExpress.Mvvm.UI.Native {
             return Environment.ExpandEnvironmentVariables(ExpandVariablesCore(name, Variables));
         }
         public static string ExpandVariablesCore(string name, Dictionary<string, Func<string>> variables) {
-            if(name == null) throw new ArgumentNullException("name");
+            if(name == null) throw new ArgumentNullException(nameof(name));
             StringBuilder result = new StringBuilder(name.Length);
             for(int index = 0; index < name.Length; ) {
                 int variableStartIndex = name.IndexOf('%', index);

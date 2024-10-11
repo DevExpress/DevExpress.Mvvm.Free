@@ -55,7 +55,7 @@ namespace DevExpress.Mvvm.Native {
             if(documentViewModel != null)
                 return ExpressionHelper.PropertyHasImplicitImplementation(documentViewModel, i => i.Title);
 #pragma warning restore 612, 618
-            throw new ArgumentException("", "documentContentOrDocumentViewModel");
+            throw new ArgumentException("", nameof(documentContentOrDocumentViewModel));
         }
         public static object GetTitle(object documentContentOrDocumentViewModel) {
             IDocumentContent documentContent = documentContentOrDocumentViewModel as IDocumentContent;
@@ -66,7 +66,7 @@ namespace DevExpress.Mvvm.Native {
             if(documentViewModel != null)
                 return documentViewModel.Title;
 #pragma warning restore 612, 618
-            throw new ArgumentException("", "documentContentOrDocumentViewModel");
+            throw new ArgumentException("", nameof(documentContentOrDocumentViewModel));
         }
     }
 }

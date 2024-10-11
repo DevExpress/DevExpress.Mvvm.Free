@@ -70,7 +70,7 @@ namespace DevExpress.DXBinding.Native {
         internal TreeInfoBase(ExprInfo[] exprs, IErrorHandler errorHandler) {
             this.exprs = exprs;
             this.ErrorHandler = errorHandler;
-            for(int i = 0; i < exprs.Count(); i++)
+            for(int i = 0; i < exprs.Length; i++)
                 exprs[i].Init(Throw);
         }
         protected string GetExprString(int i) { return exprs.ElementAt(i).exprString; }
@@ -117,8 +117,10 @@ namespace DevExpress.DXBinding.Native {
                   errorHandler) {
         }
         public bool IsSimpleExpr() {
-            if(Expr.Exprs.Count() != 1) return false;
-            if(!(Expr.Expr is NIdentBase)) return false;
+            if(Expr.Exprs.Count != 1)
+                return false;
+            if(!(Expr.Expr is NIdentBase))
+                return false;
             NIdentBase rest;
             var op = VisitorOperand.ReduceIdent((NIdentBase)Expr.Expr, x => typeof(object), out rest);
             return op != null && rest == null;

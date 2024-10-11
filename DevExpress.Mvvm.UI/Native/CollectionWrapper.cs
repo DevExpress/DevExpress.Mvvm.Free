@@ -11,9 +11,9 @@ namespace DevExpress.Mvvm.UI.Native {
 
         public EnumerableWrap(IEnumerable innerCollection, Func<object, object> convertMethod) {
             if(innerCollection == null)
-                throw new ArgumentNullException("innerCollection");
+                throw new ArgumentNullException(nameof(innerCollection));
             if(convertMethod == null)
-                throw new ArgumentNullException("convertMethod");
+                throw new ArgumentNullException(nameof(convertMethod));
             this.convertMethod = convertMethod;
             InnerEnumerable = innerCollection;
         }

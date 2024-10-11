@@ -1043,7 +1043,9 @@ namespace DevExpress.Mvvm.UI.Tests {
                 };
             });
         }
+#if !NET
         [Test]
+#endif
         public void WindowShouldBeActivatedOnCloseSplashScreen_Test() {
             DXSplashScreenService service = CreateDefaultSplashScreenAndShow();
             var wnd = SplashScreenTestUserControl.Window;
@@ -1573,7 +1575,6 @@ namespace DevExpress.Mvvm.UI.Tests {
             return SplashScreenTestsHelper.CreateDefaultSplashScreenAndShow(RealWindow, owner, ownerSearchMode, activateWindow, windowContent, closingMode);
         }
     }
-
 #if !NET
     [TestFixture, Platform("NET")]
     public class DXSplashScreenServiceIsolatedAppDomainTests {

@@ -102,7 +102,7 @@ namespace DevExpress.Mvvm.UI {
             return convertMethod.Invoke(args);
         }
         static object ConvertBySourceValueMethod(object value, Type targetType, object parameter, CultureInfo culture, string convertMethodName) {
-            MethodInfo convertMethod = value.GetType().GetMethod(convertMethodName, new Type[] { });
+            MethodInfo convertMethod = value.GetType().GetMethod(convertMethodName, Array.Empty<Type>());
             if(convertMethod == null)
                 convertMethod = value.GetType().GetMethods().Where(c => c.Name == convertMethodName && c.GetParameters().Length > 0 && !c.GetParameters().Any(p => !p.IsOptional)).FirstOrDefault();
             if(convertMethod == null)
@@ -184,7 +184,7 @@ namespace DevExpress.Mvvm.UI {
         }
         object CreateReadOnlyCollection(Type targetType, Type itemType, IEnumerable enumerable) {
             object list = CreateList(null, itemType, enumerable);
-            return list.GetType().GetMethod("AsReadOnly").Invoke(list, new object[] { });
+            return list.GetType().GetMethod("AsReadOnly").Invoke(list, Array.Empty<object>());
         }
         object CreateCollection(Type targetType, Type itemType, IEnumerable enumerable) {
             ConstructorInfo constructor1 = targetType.GetConstructor(new Type[] { typeof(IEnumerable) });
@@ -679,7 +679,7 @@ namespace DevExpress.Mvvm.UI {
                 this.allowUnsetValue = allowUnsetValue;
             }
             public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture) {
-                if (this.valuesCount > 0 && values.Count() != this.valuesCount)
+                if (this.valuesCount > 0 && values.Length != this.valuesCount)
                     throw new TargetParameterCountException();
                 if(!allowUnsetValue && values.Any(x => x == DependencyProperty.UnsetValue))
                     return Binding.DoNothing;
@@ -703,7 +703,7 @@ namespace DevExpress.Mvvm.UI {
         public static string[] GetParameters(object parameter) {
             string param = parameter as string;
             if(string.IsNullOrEmpty(param))
-                return new string[0];
+                return Array.Empty<string>();
             return param.Split(';');
         }
         public static bool GetBooleanParameter(string[] parameters, string name) {

@@ -37,7 +37,7 @@ namespace DevExpress.Mvvm {
         }
         static void VerifyService(INavigationService service) {
             if(service == null)
-                throw new ArgumentNullException("service");
+                throw new ArgumentNullException(nameof(service));
         }
     }
 }

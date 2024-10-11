@@ -163,11 +163,12 @@ namespace DevExpress.Mvvm.ModuleInjection {
         readonly Dictionary<WeakReference, ViewModelEventManager> viewModelEvents = new Dictionary<WeakReference, ViewModelEventManager>();
         IRegionEventManagerImplementation GetEvents(string regionName, bool createIfNotExist) {
             Verifier.VerifyRegionName(regionName);
-            if(!regionEvents.ContainsKey(regionName)) {
+            RegionEventManager events;
+            if(!regionEvents.TryGetValue(regionName, out events)) {
                 if(!createIfNotExist) return null;
-                regionEvents.Add(regionName, new RegionEventManager());
+                regionEvents[regionName] = events = new RegionEventManager();
             }
-            return regionEvents[regionName];
+            return events;
         }
         IViewModelEventManagerImplementation GetEvents(object viewModel, bool createIfNotExist) {
             Verifier.VerifyViewModel(viewModel);
@@ -259,8 +260,8 @@ namespace DevExpress.Mvvm.ModuleInjection {
                 return false;
             VisualInfo visualInfo = VisualInfo.Deserialize(visualState);
             LogicalInfo logicalInfo = LogicalInfo.Deserialize(logicalState);
-            var regionsFromLogicalInfo = logicalInfo != null ? logicalInfo.Regions.Select(x => x.RegionName) : new string[] { };
-            var regionsFromVisualInfo = visualInfo != null ? visualInfo.Regions.Select(x => x.RegionName) : new string[] { };
+            var regionsFromLogicalInfo = logicalInfo != null ? logicalInfo.Regions.Select(x => x.RegionName) : EmptyArray<string>.Instance;
+            var regionsFromVisualInfo = visualInfo != null ? visualInfo.Regions.Select(x => x.RegionName) : EmptyArray<string>.Instance;
             var regionNames = regionsFromLogicalInfo.Union(regionsFromVisualInfo);
             var regions = regionNames.Select(x => GetRegion(x)).ToList();
 

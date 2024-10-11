@@ -85,7 +85,7 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
             if(throwIfNotSupportServices)
                 Verifier.VerifyViewModelISupportServices(viewModel);
             if(!(viewModel is ISupportServices)) {
-                services = new IVisualStateServiceImplementation[] { };
+                services = Mvvm.Native.EmptyArray<IVisualStateServiceImplementation>.Instance;
                 return;
             }
             var serviceContainer = ((ISupportServices)viewModel).ServiceContainer;

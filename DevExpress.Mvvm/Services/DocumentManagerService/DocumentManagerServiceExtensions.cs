@@ -72,7 +72,7 @@ namespace DevExpress.Mvvm {
 
         static void VerifyService(IDocumentManagerService service) {
             if(service == null)
-                throw new ArgumentNullException("service");
+                throw new ArgumentNullException(nameof(service));
         }
     }
 }

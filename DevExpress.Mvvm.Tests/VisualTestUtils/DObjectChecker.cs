@@ -144,7 +144,6 @@ namespace DevExpress {
     public class DependencyPropertyInfoCollection : List<DPropertyInfo> {
     }
 
-    [CLSCompliant(false)]
     public class DependencyObjectCheckerEnumerator : NestedObjectEnumeratorBase {
         public DObjectChecker Current { get { return (DObjectChecker)Enumerator.Current; } }
         public DependencyObjectCheckerEnumerator(DObjectChecker checker)

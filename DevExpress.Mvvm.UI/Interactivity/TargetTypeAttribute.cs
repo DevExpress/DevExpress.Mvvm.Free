@@ -21,7 +21,7 @@ namespace DevExpress.Mvvm.UI.Interactivity {
 
             public static Type GetDeclaredType(Type type) {
                 var baseType = type;
-                if(!baseType.GetCustomAttributes(typeof(UniqueBehaviorTypeAttribute), true).Any())
+                if(baseType.GetCustomAttributes(typeof(UniqueBehaviorTypeAttribute), true).Length == 0)
                     return null;
                 while(baseType.BaseType != null) {
                     var attributes = baseType.BaseType.GetCustomAttributes(true).OfType<UniqueBehaviorTypeAttribute>();

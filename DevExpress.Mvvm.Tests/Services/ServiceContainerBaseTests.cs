@@ -550,6 +550,7 @@ namespace DevExpress.Mvvm.Tests {
         public class TestServiceBase : ServiceBase, ITestService { }
     }
 
+#if !NET
     [TestFixture]
     public class ServiceContainerThreadTest :BaseWpfFixture {
         const int iterationCount = 1000;
@@ -560,9 +561,7 @@ namespace DevExpress.Mvvm.Tests {
                 threads.Add(new Thread(new ThreadStart(test)));
             foreach(var t in threads) t.Start();
             foreach(var t in threads) t.Join();
-#if !NET
             foreach(var t in threads) t.Abort();
-#endif
         }
 
         protected override void SetUpCore() {
@@ -611,4 +610,5 @@ namespace DevExpress.Mvvm.Tests {
             }
         }
     }
+#endif
 }

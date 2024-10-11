@@ -160,7 +160,7 @@ namespace DevExpress.Mvvm.Native {
                     ?? metadataClassType.GetMethod(propertyName, BindingFlags.Instance | BindingFlags.Public);
                 if(metadataProperty != null)
                     return metadataProperty.GetCustomAttributes(true).OfType<Attribute>();
-                return new Attribute[0];
+                return EmptyArray<Attribute>.Instance;
             }
         }
         class CompositeMetadataAttributesProvider : IAttributesProvider {
@@ -206,7 +206,7 @@ namespace DevExpress.Mvvm.Native {
             return GetAttributes<T>(member, inherit).FirstOrDefault() as T;
         }
         internal static Attribute[] GetAllAttributes(MemberInfo member, bool inherit = false) {
-            var externalAndFluentAPIAttrs = GetExternalAndFluentAPIAttributes(member.ReflectedType, member.Name) ?? new Attribute[0];
+            var externalAndFluentAPIAttrs = GetExternalAndFluentAPIAttributes(member.ReflectedType, member.Name) ?? EmptyArray<Attribute>.Instance;
             return Attribute.GetCustomAttributes(member, inherit).Concat(externalAndFluentAPIAttrs).ToArray();
         }
 
@@ -293,7 +293,7 @@ namespace DevExpress.Mvvm.Native {
         }
         static IAttributesProvider GetExternalAndFluentAPIAttributesCore(Type componentType, bool forFiltering) {
             IEnumerable<Type> hierarchy = componentType.Yield().Flatten(x => x.BaseType.YieldIfNotNull()).Reverse();
-            IEnumerable<IAttributesProvider> result = new IAttributesProvider[0];
+            IEnumerable<IAttributesProvider> result = EmptyArray<IAttributesProvider>.Instance;
             foreach(var type in hierarchy) {
                 IEnumerable<Type> metadataClassType =
                     (forFiltering ? GetFilteringMetadataClassType(type) : GetMetadataClassType(type))
@@ -348,7 +348,7 @@ namespace DevExpress.Mvvm.Native {
         }
 
         static IAttributesProvider GetExternalMetadataAttributes(Type metadataClassType, Type componentType) {
-            return metadataClassType.GetMembers(BindingFlags.Public | BindingFlags.Instance).Any()
+            return metadataClassType.GetMembers(BindingFlags.Public | BindingFlags.Instance).Length != 0
                 ? new ExternalMetadataAttributesProvider(metadataClassType, componentType)
                 : null;
         }
@@ -362,14 +362,14 @@ namespace DevExpress.Mvvm.Native {
             Type metadataTypeAttributeType = componentType.IsEnum ? typeof(EnumMetadataTypeAttribute) :
                 typeof(MetadataTypeAttribute);
             object[] metadataTypeAttributes = componentType.GetCustomAttributes(metadataTypeAttributeType, false);
-            if(metadataTypeAttributes == null || !metadataTypeAttributes.Any())
+            if(metadataTypeAttributes == null || metadataTypeAttributes.Length == 0)
                 return null;
             return (Type)metadataTypeAttributes[0].GetType().GetProperty("MetadataClassType", BindingFlags.Instance | BindingFlags.Public).GetValue(metadataTypeAttributes[0], null);
         }
         static Type GetFilteringMetadataClassTypeCore(Type componentType) {
             if(componentType.IsEnum) return null;
             var attrs = componentType.GetCustomAttributes(false);
-            if(attrs == null || !attrs.Any()) return null;
+            if(attrs == null || attrs.Length == 0) return null;
             object metadataTypeAttribute = attrs.SingleOrDefault(x => {
                 Type attrType = x.GetType();
                 return attrType.Name == FilterMetadataTypeAttributeHelper.FilteringMetadataTypeName
@@ -381,7 +381,7 @@ namespace DevExpress.Mvvm.Native {
         const string BuildMetadataMethodName = "BuildMetadata";
         static IEnumerable<MethodInfo> GetBuildMetadataMethodsFromMatadataProvider(Type metadataClassType, Type componentType, Func<Type, Type, bool> isMetadataProviderType) {
             bool isPublic = metadataClassType.IsPublic || metadataClassType.IsNestedPublic;
-            if(metadataClassType.IsAbstract || !isPublic || metadataClassType.GetConstructor(new Type[0]) == null)
+            if(metadataClassType.IsAbstract || !isPublic || metadataClassType.GetConstructor(EmptyArray<Type>.Instance) == null)
                 return Enumerable.Empty<MethodInfo>();
             return metadataClassType.GetInterfaces().Where(x => {
                 return isMetadataProviderType(x, componentType);

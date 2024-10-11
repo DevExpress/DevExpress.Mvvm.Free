@@ -19,8 +19,10 @@ namespace DevExpress.Internal.WinApi {
         STGM_PRIORITY = 0x00040000L,
         STGM_CREATE = 0x00001000L,
         STGM_CONVERT = 0x00020000L,
+#pragma warning disable CA1069
         STGM_FAILIFTHERE = 0x00000000L,
         STGM_DIRECT = 0x00000000L,
+#pragma warning restore CA1069
         STGM_TRANSACTED = 0x00010000L,
         STGM_NOSCRATCH = 0x00100000L,
         STGM_NOSNAPSHOT = 0x00200000L,
@@ -216,7 +218,7 @@ namespace DevExpress.Internal.WinApi {
                 array.SetValue(val, i);
             });
 
-            cache.Add(typeof(Single), (pv, array, i) =>
+            cache.Add(typeof(Single), (pv, array, i) => // float
             {
                 float[] val = new float[1];
                 Marshal.Copy(pv._ptr2, val, (int)i, 1);
@@ -247,7 +249,8 @@ namespace DevExpress.Internal.WinApi {
         public static PropVariant FromObject(object value) {
             if(value == null) {
                 return new PropVariant();
-            } else {
+            }
+            else {
                 var func = GetDynamicConstructor(value.GetType());
                 return func(value);
             }
@@ -262,7 +265,8 @@ namespace DevExpress.Internal.WinApi {
                         .GetConstructor(new Type[] { type });
                     if(constructor == null) {
                         throw new NotSupportedException();
-                    } else {
+                    }
+                    else {
                         var arg = Expression.Parameter(typeof(object), "arg");
                         var create = Expression.New(constructor, Expression.Convert(arg, type));
                         action = Expression.Lambda<Func<object, PropVariant>>(create, arg).Compile();
@@ -307,58 +311,58 @@ namespace DevExpress.Internal.WinApi {
         [SecuritySafeCritical]
         public PropVariant(string value) {
             if(value == null) {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             _valueType = (ushort)VarEnum.VT_LPWSTR;
             _ptr = Marshal.StringToCoTaskMemUni(value);
         }
         public PropVariant(string[] value) {
-            if(value == null) { throw new ArgumentNullException("value"); }
+            if(value == null) { throw new ArgumentNullException(nameof(value)); }
 
             PropVariantNativeMethods.InitPropVariantFromStringVector(value, (uint)value.Length, this);
         }
         public PropVariant(bool[] value) {
-            if(value == null) { throw new ArgumentNullException("value"); }
+            if(value == null) { throw new ArgumentNullException(nameof(value)); }
 
             PropVariantNativeMethods.InitPropVariantFromBooleanVector(value, (uint)value.Length, this);
         }
         public PropVariant(short[] value) {
-            if(value == null) { throw new ArgumentNullException("value"); }
+            if(value == null) { throw new ArgumentNullException(nameof(value)); }
 
             PropVariantNativeMethods.InitPropVariantFromInt16Vector(value, (uint)value.Length, this);
         }
         public PropVariant(ushort[] value) {
-            if(value == null) { throw new ArgumentNullException("value"); }
+            if(value == null) { throw new ArgumentNullException(nameof(value)); }
 
             PropVariantNativeMethods.InitPropVariantFromUInt16Vector(value, (uint)value.Length, this);
         }
         public PropVariant(int[] value) {
-            if(value == null) { throw new ArgumentNullException("value"); }
+            if(value == null) { throw new ArgumentNullException(nameof(value)); }
 
             PropVariantNativeMethods.InitPropVariantFromInt32Vector(value, (uint)value.Length, this);
         }
         public PropVariant(uint[] value) {
-            if(value == null) { throw new ArgumentNullException("value"); }
+            if(value == null) { throw new ArgumentNullException(nameof(value)); }
 
             PropVariantNativeMethods.InitPropVariantFromUInt32Vector(value, (uint)value.Length, this);
         }
         public PropVariant(long[] value) {
-            if(value == null) { throw new ArgumentNullException("value"); }
+            if(value == null) { throw new ArgumentNullException(nameof(value)); }
 
             PropVariantNativeMethods.InitPropVariantFromInt64Vector(value, (uint)value.Length, this);
         }
         public PropVariant(ulong[] value) {
-            if(value == null) { throw new ArgumentNullException("value"); }
+            if(value == null) { throw new ArgumentNullException(nameof(value)); }
 
             PropVariantNativeMethods.InitPropVariantFromUInt64Vector(value, (uint)value.Length, this);
         }
         public PropVariant(double[] value) {
-            if(value == null) { throw new ArgumentNullException("value"); }
+            if(value == null) { throw new ArgumentNullException(nameof(value)); }
 
             PropVariantNativeMethods.InitPropVariantFromDoubleVector(value, (uint)value.Length, this);
         }
         public PropVariant(DateTime[] value) {
-            if(value == null) { throw new ArgumentNullException("value"); }
+            if(value == null) { throw new ArgumentNullException(nameof(value)); }
             System.Runtime.InteropServices.ComTypes.FILETIME[] fileTimeArr =
                 new System.Runtime.InteropServices.ComTypes.FILETIME[value.Length];
 
@@ -407,7 +411,7 @@ namespace DevExpress.Internal.WinApi {
             _valueType = (ushort)VarEnum.VT_DECIMAL;
         }
         public PropVariant(decimal[] value) {
-            if(value == null) { throw new ArgumentNullException("value"); }
+            if(value == null) { throw new ArgumentNullException(nameof(value)); }
 
             _valueType = (ushort)(VarEnum.VT_DECIMAL | VarEnum.VT_VECTOR);
             _int32 = value.Length;
@@ -423,7 +427,7 @@ namespace DevExpress.Internal.WinApi {
             _float = value;
         }
         public PropVariant(float[] value) {
-            if(value == null) { throw new ArgumentNullException("value"); }
+            if(value == null) { throw new ArgumentNullException(nameof(value)); }
 
             _valueType = (ushort)(VarEnum.VT_R4 | VarEnum.VT_VECTOR);
             _int32 = value.Length;
@@ -456,19 +460,20 @@ namespace DevExpress.Internal.WinApi {
             _ptr = Marshal.GetIUnknownForObject(value);
         }
         internal void SetSafeArray(Array array) {
-            if(array == null) { throw new ArgumentNullException("array"); }
+            if(array == null) { throw new ArgumentNullException(nameof(array)); }
             const ushort vtUnknown = 13;
             IntPtr psa = PropVariantNativeMethods.SafeArrayCreateVector(vtUnknown, 0, (uint)array.Length);
 
             IntPtr pvData = PropVariantNativeMethods.SafeArrayAccessData(psa);
-            try
+            try // to remember to release lock on data
             {
                 for(int i = 0; i < array.Length; ++i) {
                     object obj = array.GetValue(i);
                     IntPtr punk = (obj != null) ? Marshal.GetIUnknownForObject(obj) : IntPtr.Zero;
                     Marshal.WriteIntPtr(pvData, i * IntPtr.Size, punk);
                 }
-            } finally {
+            }
+            finally {
                 PropVariantNativeMethods.SafeArrayUnaccessData(psa);
             }
 
@@ -610,7 +615,7 @@ namespace DevExpress.Internal.WinApi {
         private static Array CrackSingleDimSafeArray(IntPtr psa) {
             uint cDims = PropVariantNativeMethods.SafeArrayGetDim(psa);
             if(cDims != 1)
-                throw new ArgumentException("psa");
+                throw new ArgumentException("The array is not one-dimensional", nameof(psa));
 
             int lBound = PropVariantNativeMethods.SafeArrayGetLBound(psa, 1U);
             int uBound = PropVariantNativeMethods.SafeArrayGetUBound(psa, 1U);

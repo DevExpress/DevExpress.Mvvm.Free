@@ -714,7 +714,7 @@ namespace DevExpress.Mvvm.UI {
             IsContainerLoaded = true;
             if(Form != null) {
                 Handle = Form.Handle;
-                ManagedThreadId = (int)(Form.Invoke(new Func<int>(() => Thread.CurrentThread.ManagedThreadId)));
+                ManagedThreadId = (int)(Form.Invoke(new Func<int>(() => Environment.CurrentManagedThreadId)));
                 CompleteInitialization();
             }
         }
@@ -828,6 +828,12 @@ namespace DevExpress.Mvvm.UI {
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, WindowPosOptions uFlags);
 
+#if NET
+        static SplashScreenHelper() {
+            setOwnerMethod = typeof(Window).GetMethod("SetOwnerHandle", BindingFlags.Instance | BindingFlags.NonPublic);
+        }
+        static MethodInfo setOwnerMethod;
+#endif
         internal const int WS_EX_TRANSPARENT = 0x00000020;
         internal const int WS_EX_TOOLWINDOW = 0x00000080;
         internal const int WS_EX_TOPMOST = 0x0008;
@@ -907,7 +913,13 @@ namespace DevExpress.Mvvm.UI {
                 return;
 
             if(window.IsVisible) {
+#if NET
+                try {
+                    setOwnerMethod?.Invoke(window, new object[] { parentHandle });
+                } catch { }
+#else
                 SetWindowLong(new WindowInteropHelper(window).Handle, GWL_HWNDPARENT, parentHandle);
+#endif
             } else {
                 WindowInteropHelper windowInteropHelper = new WindowInteropHelper(window);
                 windowInteropHelper.Owner = parentHandle;

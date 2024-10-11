@@ -94,7 +94,7 @@ namespace DevExpress.Mvvm.Tests {
         public void EnumerableConverter_ConvertToEnumerableTest() {
             var converter = new EnumerableConverter() { TargetItemType = typeof(string), ItemConverter = new ToStringConverter() };
             Assert.AreEqual(null, converter.Convert(null, null, null, null));
-            AssertHelper.AssertEnumerablesAreEqual(new string[] { }, converter.Convert(Enumerable.Empty<int>(), null, null, null).With(x => (IEnumerable<string>)x).With(x => x.ToArray()));
+            AssertHelper.AssertEnumerablesAreEqual(EmptyArray<string>.Instance, converter.Convert(Enumerable.Empty<int>(), null, null, null).With(x => (IEnumerable<string>)x).With(x => x.ToArray()));
             AssertHelper.AssertEnumerablesAreEqual(new string[] { "0", "1", "2" }, (IEnumerable<string>)converter.Convert(new int[] { 0, 1, 2 }, null, null, null));
         }
         IEnumerable<int> GetInfiniteEnumerable() {

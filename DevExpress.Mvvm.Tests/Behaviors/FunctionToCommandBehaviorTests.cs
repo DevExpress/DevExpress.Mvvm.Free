@@ -7,6 +7,9 @@ using DevExpress.Mvvm.POCO;
 using DevExpress.Mvvm.DataAnnotations;
 using System.Windows.Input;
 using System.Reflection;
+#if NET
+using DevExpress.Xpf.Core.Utils;
+#endif
 
 namespace DevExpress.Mvvm.UI.Tests {
     [TestFixture]
@@ -43,8 +46,21 @@ namespace DevExpress.Mvvm.UI.Tests {
         [Test]
         public void ExceptionOnNonBoolCanExecute_Test() {
             PrepareBehavior("Command", "Operation1", new FCBObject());
+#if !NET
             AssertHelper.AssertThrows<ArgumentException>(() => Behavior.CanExecuteFunction = "Operation2",
                 x => Assert.IsTrue(x.Message.Contains("FCBObject.Operation2")));
+#else
+            if(NetVersionDetector.IsNet7()) {
+                AssertHelper.AssertThrows<TargetInvocationException>(() => Behavior.CanExecuteFunction = "Operation2",
+                x => {
+                    Assert.That(x.InnerException, Is.InstanceOf<ArgumentException>());
+                    Assert.IsTrue(x.InnerException.Message.Contains("FCBObject.Operation2"));
+                });
+            } else {
+            AssertHelper.AssertThrows<ArgumentException>(() => Behavior.CanExecuteFunction = "Operation2",
+                x => Assert.IsTrue(x.Message.Contains("FCBObject.Operation2")));
+        }
+#endif
         }
         [Test]
         public void ExceptionOnCommandNotFound_Test() {

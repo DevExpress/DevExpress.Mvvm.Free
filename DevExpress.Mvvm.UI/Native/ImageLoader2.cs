@@ -19,11 +19,11 @@ namespace DevExpress.Mvvm.UI.Native {
         static MethodInfo mapUrlToZoneWrapperMethod;
 
         public static byte[] ImageToByteArray(ImageSource source, Func<Uri> baseUriProvider = null, Size? drawingImageSize = null) {
-            if(source == null) throw new ArgumentNullException("source");
+            if(source == null) throw new ArgumentNullException(nameof(source));
             var streamData = TryGetStreamData(source, drawingImageSize);
             if(streamData != null) {
                 if(streamData.Length == 0)
-                    throw new ArgumentException("EndOfStream", "source");
+                    throw new ArgumentException("EndOfStream", nameof(source));
                 return streamData;
             }
             var uri = TryGetUri(source);
@@ -31,20 +31,20 @@ namespace DevExpress.Mvvm.UI.Native {
                 Uri baseUri = baseUriProvider == null ? null : baseUriProvider();
                 byte[] array = ImageToByteArray(baseUri == null ? uri : new Uri(baseUri, uri));
                 if(array == null)
-                    throw new ArgumentException("Uri:Stream.CanRead", "source");
+                    throw new ArgumentException("Uri:Stream.CanRead", nameof(source));
                 if(array.Length == 0)
-                    throw new ArgumentException("Uri:EndOfStream", "source");
+                    throw new ArgumentException("Uri:EndOfStream", nameof(source));
                 return array;
             }
-            throw new ArgumentException("ImageSource", "source");
+            throw new ArgumentException("ImageSource", nameof(source));
         }
         public static string TryGetImageUriOriginalString(ImageSource source) {
-            if(source == null) throw new ArgumentNullException("source");
+            if(source == null) throw new ArgumentNullException(nameof(source));
             var uri = TryGetUri(source);
             return uri == null ? null : uri.OriginalString;
         }
         static byte[] ImageToByteArray(Uri uri) {
-            if(uri == null) throw new ArgumentNullException("uri");
+            if(uri == null) throw new ArgumentNullException(nameof(uri));
             byte[] data = CheckCache(uri);
             if(data != null) return data;
             Stream stream = null;
@@ -201,7 +201,6 @@ namespace DevExpress.Mvvm.UI.Native {
         }
         static void RemoveFromCache(Uri uri) {
             lock(cache) {
-                if(cache.ContainsKey(uri))
                     cache.Remove(uri);
             }
         }

@@ -1,8 +1,10 @@
+#if !NET
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.ServiceModel;
@@ -105,7 +107,7 @@ namespace DevExpress.Mvvm.UI.Native {
                 instancesFile = CreateFileMappingAndMapView((1 + MaxInstancesCount) * Marshal.SizeOf(typeof(GuidData)), InstancesFileName + ApplicationId, out alreadyExists);
                 if(!alreadyExists) {
                     try {
-                        UpdateInstancesFile(new GuidData[] { });
+                        UpdateInstancesFile(Array.Empty<GuidData>());
                     } catch {
                         DisposeInstancesFile();
                         throw;
@@ -253,3 +255,4 @@ namespace DevExpress.Mvvm.UI.Native {
         }
     }
 }
+#endif

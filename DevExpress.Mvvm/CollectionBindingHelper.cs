@@ -211,9 +211,9 @@ namespace DevExpress.Mvvm {
         }
         static void AssertCollections<TTarget, TSource>(TTarget target, TSource source) where TTarget : class where TSource : class {
             if(target == null)
-                throw new ArgumentNullException("target");
+                throw new ArgumentNullException(nameof(target));
             if(source == null)
-                throw new ArgumentNullException("source");
+                throw new ArgumentNullException(nameof(source));
         }
     }
 }

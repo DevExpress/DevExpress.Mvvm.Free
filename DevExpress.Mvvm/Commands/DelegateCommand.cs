@@ -93,7 +93,7 @@ namespace DevExpress.Mvvm {
 
         void Init(Action<T> executeMethod, Func<T, bool> canExecuteMethod) {
             if(executeMethod == null && canExecuteMethod == null)
-                throw new ArgumentNullException("executeMethod");
+                throw new ArgumentNullException(nameof(executeMethod));
             this.executeMethod = executeMethod;
             this.canExecuteMethod = canExecuteMethod;
         }
@@ -113,7 +113,7 @@ namespace DevExpress.Mvvm {
 
         void Init(Func<T, Task> executeMethod, Func<T, bool> canExecuteMethod) {
             if(executeMethod == null && canExecuteMethod == null)
-                throw new ArgumentNullException("executeMethod");
+                throw new ArgumentNullException(nameof(executeMethod));
             this.executeMethod = executeMethod;
             this.canExecuteMethod = canExecuteMethod;
         }

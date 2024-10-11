@@ -17,7 +17,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         public void DefaultViewLocator() {
             Assert.IsNotNull(ViewLocator.Instance);
             Assert.AreSame(ViewLocator.Instance, ViewLocator.Default);
-            ViewLocator vl = new ViewLocator(new Assembly[] { });
+            ViewLocator vl = new ViewLocator(Mvvm.Native.EmptyArray<Assembly>.Instance);
             ViewLocator.Default = vl;
             Assert.AreSame(vl, ViewLocator.Default);
             ViewLocator.Default = null;

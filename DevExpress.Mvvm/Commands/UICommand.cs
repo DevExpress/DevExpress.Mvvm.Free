@@ -78,10 +78,16 @@ namespace DevExpress.Mvvm {
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public DialogButtonAlignment ActualAlignment {
             get {
-                if(alignment != DialogButtonAlignment.Right)
-                    return alignment;
-                if(placement != Dock.Right && placement.Equals(Dock.Left))
+                if(alignment == DialogButtonAlignment.Right) {
+                    if(placement != null) {
+                        var dockType = placement.GetType();
+                        if(dockType.FullName == "System.Windows.Controls.Dock") {
+                            var dock = Enum.GetName(dockType, placement);
+                            if(dock == nameof(DialogButtonAlignment.Left))
                     return DialogButtonAlignment.Left;
+                        }
+                    }
+                }
                 return alignment;
             }
         }
@@ -104,29 +110,35 @@ namespace DevExpress.Mvvm {
             set { SetProperty(ref glyphAlignment, value, nameof(GlyphAlignment)); }
         }
 
-        Dock placement = Dock.Right;
-
+        object placement = null;
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
-        public Dock Placement {
+        public object Placement {
             get { return placement; }
             set { SetProperty(ref placement, value, nameof(Placement)); }
         }
         public UICommand() { }
-        public UICommand(object id, object caption, ICommand command, bool isDefault, bool isCancel, object tag = null, bool allowCloseWindow = true, Dock placement = Dock.Right, DialogButtonAlignment alignment = DialogButtonAlignment.Right, AsyncDisplayMode asyncDisplayMode = AsyncDisplayMode.None, object glyph = null, GlyphAlignment glyphAlignment = GlyphAlignment.Left) {
+        public UICommand(object id, object caption, ICommand command) {
             this.id = id;
+            this.caption = caption;
             this.command = command;
+        }
+        public UICommand(object id, object caption, ICommand<CancelEventArgs> command) : this(id, caption, (ICommand)command) {
+        }
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
+        public UICommand(object id, object caption, ICommand command, bool isDefault, bool isCancel, object tag = null, bool allowCloseWindow = true, object placement = null, DialogButtonAlignment alignment = DialogButtonAlignment.Right, AsyncDisplayMode asyncDisplayMode = AsyncDisplayMode.None, object glyph = null, GlyphAlignment glyphAlignment = GlyphAlignment.Left)
+            : this(id, caption, command) {
             this.isDefault = isDefault;
             this.isCancel = isCancel;
             this.tag = tag;
             this.allowCloseWindow = allowCloseWindow;
             this.placement = placement;
             this.alignment = alignment;
-            this.caption = caption;
             this.glyph = glyph;
             this.glyphAlignment = glyphAlignment;
             AsyncDisplayMode = asyncDisplayMode;
         }
-        public UICommand(object id, object caption, ICommand<CancelEventArgs> command, bool isDefault, bool isCancel, object tag = null, bool allowCloseWindow = true, Dock placement = Dock.Right, DialogButtonAlignment alignment = DialogButtonAlignment.Right, AsyncDisplayMode asyncDisplayMode = AsyncDisplayMode.None, object glyph = null, GlyphAlignment glyphAlignment = GlyphAlignment.Left)
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
+        public UICommand(object id, object caption, ICommand<CancelEventArgs> command, bool isDefault, bool isCancel, object tag = null, bool allowCloseWindow = true, object placement = null, DialogButtonAlignment alignment = DialogButtonAlignment.Right, AsyncDisplayMode asyncDisplayMode = AsyncDisplayMode.None, object glyph = null, GlyphAlignment glyphAlignment = GlyphAlignment.Left) 
             : this(id: id,
                   caption: caption,
                   command: (ICommand)command,

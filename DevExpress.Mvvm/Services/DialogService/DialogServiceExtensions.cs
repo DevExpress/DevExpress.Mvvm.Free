@@ -39,7 +39,7 @@ namespace DevExpress.Mvvm {
 
         internal static void VerifyService(IDialogService service) {
             if (service == null)
-                throw new ArgumentNullException("service");
+                throw new ArgumentNullException(nameof(service));
         }
         internal static IMessageButtonLocalizer GetLocalizer(IDialogService service) {
             return service as IMessageButtonLocalizer ?? (service as IMessageBoxButtonLocalizer).With(x => x.ToMessageButtonLocalizer()) ?? new DefaultMessageButtonLocalizer();

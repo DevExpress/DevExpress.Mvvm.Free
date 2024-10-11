@@ -167,7 +167,7 @@ namespace DevExpress.Mvvm.POCO {
         }
         internal static object Create(Type type) {
             Type pocoType = GetPOCOType(type);
-            var defaultCtor = pocoType.GetConstructor(new Type[0]);
+            var defaultCtor = pocoType.GetConstructor(EmptyArray<Type>.Instance);
             if(defaultCtor != null)
                 return defaultCtor.Invoke(null);
             defaultCtor = FindConstructorWithAllOptionalParameters(type);
@@ -200,7 +200,7 @@ namespace DevExpress.Mvvm.POCO {
             try {
                 if(!CheckType(type, false))
                     return false;
-                if(type.GetCustomAttributes(typeof(POCOViewModelAttribute), true).Any())
+                if(type.GetCustomAttributes(typeof(POCOViewModelAttribute), true).Length != 0)
                     return true;
                 if(typeof(Component).IsAssignableFrom(type))
                     return false;
@@ -259,7 +259,7 @@ namespace DevExpress.Mvvm.POCO {
             if(!BuilderCommon.ShouldImplementIDataErrorInfo(type))
                 return;
             var errorGetter = BuildExplicitStringGetterOverride(typeBuilder, "Error", null, typeof(IDataErrorInfo));
-            var errorProperty = typeBuilder.DefineProperty("Error", PropertyAttributes.None, typeof(string), new Type[0]);
+            var errorProperty = typeBuilder.DefineProperty("Error", PropertyAttributes.None, typeof(string), EmptyArray<Type>.Instance);
             errorProperty.SetGetMethod(errorGetter);
 
             var indexerGetterImpl = typeof(IDataErrorInfoHelper).GetMethod("GetErrorText", BindingFlags.Public | BindingFlags.Static);
@@ -296,7 +296,7 @@ namespace DevExpress.Mvvm.POCO {
                 if (!isAsyncCommand && ViewModelBase.GetAttribute<AsyncCommandAttribute>(commandMethod) != null)
                     System.Diagnostics.Trace.TraceWarning(string.Format(Error_AsyncCommandUnsupportedReturnType, commandMethod.Name,typeof(Task).FullName, typeof(DelegateCommand).FullName));
                 string commandName = GetCommandName(commandMethod);
-                if(type.GetMember(commandName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public).Any() || methods.Any(x => GetCommandName(x) == commandName && x != commandMethod))
+                if(type.GetMember(commandName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public).Length != 0 || methods.Any(x => GetCommandName(x) == commandName && x != commandMethod))
                     throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_MemberWithSameCommandNameAlreadyExists, commandName));
 
                 MethodInfo canExecuteMethod = GetCanExecuteMethod(type, commandMethod);
@@ -707,12 +707,12 @@ namespace DevExpress.Mvvm.POCO {
             return GetAttribute<BindablePropertyAttribute>(propertyInfo);
         }
         public static bool IsAutoImplemented(PropertyInfo property) {
-            if(property.GetGetMethod().GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Any())
+            if(property.GetGetMethod().GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Length != 0)
                 return true;
             if(property.GetSetMethod(true).GetParameters().Single().Name != "AutoPropertyValue")
                 return false;
             FieldInfo field = property.DeclaringType.GetField("_" + property.Name, BindingFlags.Instance | BindingFlags.NonPublic);
-            return field != null && field.FieldType == property.PropertyType && field.GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Any();
+            return field != null && field.FieldType == property.PropertyType && field.GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Length != 0;
         }
     }
     static class BuilderType {
@@ -733,7 +733,7 @@ namespace DevExpress.Mvvm.POCO {
 
         public static void BuildConstructors(Type type, TypeBuilder typeBuilder) {
             var ctors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => BuilderCommon.CanAccessFromDescendant(x)).ToArray();
-            if(!ctors.Any()) {
+            if(ctors.Length == 0) {
                 throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_TypeHasNoCtors, type.Name));
             }
             foreach(ConstructorInfo constructor in ctors) {
@@ -966,7 +966,7 @@ namespace DevExpress.Mvvm.POCO {
                 relatedProperties,
                 onChangedFirst);
             typeBuilder.DefineMethodOverride(setter, propertyInfo.GetSetMethod(true));
-            var newProperty = typeBuilder.DefineProperty(propertyInfo.Name, PropertyAttributes.None, propertyInfo.PropertyType, new Type[0]);
+            var newProperty = typeBuilder.DefineProperty(propertyInfo.Name, PropertyAttributes.None, propertyInfo.PropertyType, EmptyArray<Type>.Instance);
             newProperty.SetGetMethod(getter);
             newProperty.SetSetMethod(setter);
             return newProperty;
@@ -1071,7 +1071,7 @@ namespace DevExpress.Mvvm.POCO {
                 .Where(x => x.Name == onChangedMethodName).ToArray();
             if(changedMethods.Length > 1)
                 throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_MoreThanOnePropertyChangedMethod, propertyInfo.Name));
-            if(hasCustomPropertyChangedMethodName && !changedMethods.Any())
+            if(hasCustomPropertyChangedMethodName && changedMethods.Length == 0)
                 throw new ViewModelSourceException(string.Format(ViewModelSourceException.Error_PropertyChangedMethodNotFound, onChangedMethodName));
             changedMethods.FirstOrDefault().Do(x => CheckOnChangedMethod(x, propertyInfo.PropertyType));
             return changedMethods.FirstOrDefault();

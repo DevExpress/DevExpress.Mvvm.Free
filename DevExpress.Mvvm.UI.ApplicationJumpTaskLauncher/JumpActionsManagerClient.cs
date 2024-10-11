@@ -1,3 +1,4 @@
+#if !NET
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,7 +8,7 @@ using System.ServiceModel;
 using System.Threading;
 
 namespace DevExpress.Mvvm.UI.Native {
-#pragma warning disable DX0015
+#pragma warning disable DX0015 
     class JumpActionsManagerClient : JumpActionsManagerBase {
         string applicationId;
 #if DEBUG
@@ -68,3 +69,4 @@ namespace DevExpress.Mvvm.UI.Native {
     }
 #pragma warning restore DX0015
 }
+#endif

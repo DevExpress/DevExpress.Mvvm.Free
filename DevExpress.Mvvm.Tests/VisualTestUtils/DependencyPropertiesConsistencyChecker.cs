@@ -1,4 +1,4 @@
-#if NET
+#if !NET
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -17,7 +17,6 @@ namespace DevExpress {
     public class DependencyPropertiesConsistencyChecker {
         [SecuritySafeCritical]
         public static void CheckDependencyPropertiesConsistencyForAssembly(Assembly assembly, Dictionary<Type, Type[]> genericSubstitutes = null) {
-#if !NET
             AppDomainSetup appDomainSetup = new AppDomainSetup();
             appDomainSetup.ApplicationBase = AppDomain.CurrentDomain.BaseDirectory;
             AppDomain dom = AppDomain.CreateDomain("ConsistencyChecker", AppDomain.CurrentDomain.Evidence, appDomainSetup);
@@ -30,7 +29,6 @@ namespace DevExpress {
             } finally {
                 AppDomain.Unload(dom);
             }
-#endif
         }
 
         static Assembly dom_AssemblyResolve(object sender, ResolveEventArgs args) {
@@ -261,7 +259,6 @@ namespace DevExpress {
             return string.Format("Owner type: {0}, Name: {1}: ", fieldInfo.ReflectedType.FullName, fieldInfo.Name);
         }
     }
-
 
     [TestFixture]
     public class DependencyPropertiesConsistencyTests {

@@ -18,7 +18,7 @@ using DevExpress.Internal;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: CLSCompliant(true)]
-[assembly: AllowPartiallyTrustedCallers]
+
 [assembly: SatelliteContractVersion(AssemblyInfo.SatelliteContractVersion)]
 [assembly: ComVisible(false)]
 [assembly: NeutralResourcesLanguage("en-US")]

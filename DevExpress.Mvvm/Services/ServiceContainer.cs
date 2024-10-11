@@ -144,7 +144,7 @@ namespace DevExpress.Mvvm {
             RegisterService(null, service, yieldToParent);
         }
         public void RegisterService(string key, object service, bool yieldToParent) {
-            if(service == null) throw new ArgumentNullException("service");
+            if(service == null) throw new ArgumentNullException(nameof(service));
             UnregisterService(service);
             AddCore(ServiceInfo.Create(key, service, yieldToParent));
         }

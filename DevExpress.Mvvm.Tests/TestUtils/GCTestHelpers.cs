@@ -1,6 +1,6 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace DevExpress {
@@ -38,15 +38,16 @@ namespace DevExpress {
                 return new List<WeakReference>();
             if(maxGeneration <= alreadyCollectedGen) {
                 return SlowButSureGetLiveReferencesCore(nextIterationHolder);
-            } else {
+            }
+            else {
                 GC.Collect(maxGeneration, GCCollectionMode.Forced);
                 return GetLiveReferencesCore(nextIterationHolder, maxGeneration);
             }
         }
         static List<WeakReference> CollectExistingData(IEnumerable<WeakReference> references, out int maxGeneration) {
             maxGeneration = -1;
-            var nextIterationHolder = new List<WeakReference>();
-            foreach(var wr in references) {
+            List<WeakReference> nextIterationHolder = new List<WeakReference>();
+            foreach(WeakReference wr in references) {
                 object t = wr.Target;
                 if(t == null)
                     continue;
@@ -70,7 +71,7 @@ namespace DevExpress {
         }
 
         static void AssertCollected(List<WeakReference> nextIterationHolder) {
-            var notCollected = nextIterationHolder.Select(wr => wr.Target).Where(t => t != null).ToArray();
+            object[] notCollected = nextIterationHolder.Select(wr => wr.Target).Where(t => t != null).ToArray();
             if(notCollected.Length==0)
                 return;
             throw new GCTestHelperException(BuildExceptionString(notCollected));
@@ -78,20 +79,20 @@ namespace DevExpress {
 
         static string BuildExceptionString(object[] notCollected) {
             StringBuilder report = new StringBuilder();
-            report.AppendLine("{notCollected.Length} garbage object(s) not collected:{report}");
+            report.AppendLine($"{notCollected.Length} garbage object(s) not collected:{report}");
             report.AppendLine();
-            foreach (var typeAndInstancesGrouping in notCollected.GroupBy(o => o.GetType()).OrderBy(gr => gr.Key.FullName)) {
-                var currentType = typeAndInstancesGrouping.Key;
-                var typeAndInstances = typeAndInstancesGrouping.ToArray();
-                var currentInstancesFormatted = typeAndInstances.Select(x => x.ToString()).GroupBy(x => x).OrderBy(x => x.Key).ToArray();
+            foreach(IGrouping<Type, object> typeAndInstancesGrouping in notCollected.GroupBy(o => o.GetType()).OrderBy(gr => gr.Key.FullName)) {
+                Type currentType = typeAndInstancesGrouping.Key;
+                object[] typeAndInstances = typeAndInstancesGrouping.ToArray();
+                IGrouping<string, string>[] currentInstancesFormatted = typeAndInstances.Select(x => x.ToString()).GroupBy(x => x).OrderBy(x => x.Key).ToArray();
 
-                var currentInstancesIsInformative = currentInstancesFormatted.Length > 1;
+                bool currentInstancesIsInformative = currentInstancesFormatted.Length > 1;
 
                 report.AppendLine($"\t{typeAndInstances.Length} object(s) of type {currentType.FullName}{(currentInstancesIsInformative ? ":" : ";")}");
                 if (currentInstancesIsInformative) {
-                    var instancesReport = string.Join(",\r\n", currentInstancesFormatted.Select(x =>"\t\t[{x.Count()}] - {x.Key}"));
+                    string instancesReport = string.Join(",\r\n", currentInstancesFormatted.Select(x => $"\t\t[{x.Count()}] - {x.Key}"));
                     report.Append(instancesReport);
-                    report.Append(";");
+                    report.Append(';');
                     report.AppendLine();
                 }
             }
@@ -113,7 +114,8 @@ namespace DevExpress {
             if(IsHardOptional()) {
                 GC.Collect();
                 GC.GetTotalMemory(true);
-            } else {
+            }
+            else {
                 int? maxGeneration = references.Select(wr => wr.Target).Where(t => t != null).Select(t => GC.GetGeneration(t)).Max(gen => (int?)gen);
                 if(maxGeneration.HasValue) {
                     GC.Collect(maxGeneration.Value, GCCollectionMode.Forced);

@@ -296,7 +296,7 @@ namespace DevExpress {
         }
         protected void EnqueueWaitRenderAction() { }
         public static void CheckToSkip(IEnumerable<string> methodsToSkip) {
-            if (methodsToSkip.Count() == 0)
+            if (methodsToSkip.Any())
                 return;
         }
     }

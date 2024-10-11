@@ -12,9 +12,9 @@ namespace DevExpress.Mvvm.Native {
         public static PropertyValidator FromAttributes(IEnumerable attributes, string propertyName) {
             try {
                 var displayName = DataAnnotationsAttributeHelper.GetDisplayName(attributes.OfType<Attribute>()) ?? propertyName;
-                var validationAttributes = attributes != null ? attributes.OfType<ValidationAttribute>().ToArray() : new ValidationAttribute[0];
-                var dxValidationAttributes = attributes != null ? attributes.OfType<DXValidationAttribute>().ToArray() : new DXValidationAttribute[0];
-                return validationAttributes.Any() || dxValidationAttributes.Any() ? new PropertyValidator(validationAttributes, dxValidationAttributes, propertyName, displayName) : null;
+                var validationAttributes = attributes != null ? attributes.OfType<ValidationAttribute>().ToArray() : EmptyArray<ValidationAttribute>.Instance;
+                var dxValidationAttributes = attributes != null ? attributes.OfType<DXValidationAttribute>().ToArray() : EmptyArray<DXValidationAttribute>.Instance;
+                return validationAttributes.Length != 0 || dxValidationAttributes.Length != 0 ? new PropertyValidator(validationAttributes, dxValidationAttributes, propertyName, displayName) : null;
             } catch(TypeAccessException) {
                 return null;
             }

@@ -1,6 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <EnableDefaultItems>false</EnableDefaultItems>
     <UseWPF>true</UseWPF>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -19,16 +19,16 @@
   <PropertyGroup>
     <MyType>Empty</MyType>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netcoreapp3.0|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-windows|AnyCPU'">
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\Bin\NETCoreDesktop\</OutputPath>
+    <OutputPath>..\Bin\NETCore\</OutputPath>
     <IntermediateOutputPath>obj.NetCore.Desktop.Free</IntermediateOutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DevExpress.Mvvm">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Bin\NETCoreDesktop\DevExpress.Mvvm.dll</HintPath>
+      <HintPath>..\Bin\NETCore\DevExpress.Mvvm.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

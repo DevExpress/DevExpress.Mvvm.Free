@@ -13,7 +13,7 @@ namespace DevExpress.Mvvm.UI {
         readonly IEnumerable<Assembly> assemblies;
         protected override IEnumerable<Assembly> Assemblies { get { return assemblies; } }
         public ViewLocator(Application application)
-            : this(EntryAssembly != null && !EntryAssembly.IsInDesignMode() ? new[] { EntryAssembly } : new Assembly[0]) {
+            : this(EntryAssembly != null && !EntryAssembly.IsInDesignMode() ? new[] { EntryAssembly } : Array.Empty<Assembly>()) {
 
         }
         public ViewLocator(IEnumerable<Assembly> assemblies) {

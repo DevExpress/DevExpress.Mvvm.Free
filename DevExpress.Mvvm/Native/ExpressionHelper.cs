@@ -22,13 +22,14 @@ namespace DevExpress.Mvvm.Native {
             MemberExpression memberExpression = null;
             if(expression.Body is MemberExpression) {
                 memberExpression = (MemberExpression)expression.Body;
-            } else if(expression.Body is UnaryExpression) {
+            }
+            else if(expression.Body is UnaryExpression) {
                 UnaryExpression uExp = (UnaryExpression)expression.Body;
                 if(uExp.NodeType == ExpressionType.Convert)
                     memberExpression = (MemberExpression)uExp.Operand;
             }
             if(memberExpression == null)
-                throw new ArgumentException("expression");
+                throw new ArgumentException(null, nameof(expression));
             CheckParameterExpression(memberExpression.Expression);
             return (PropertyInfo)memberExpression.Member;
         }
@@ -39,7 +40,7 @@ namespace DevExpress.Mvvm.Native {
                 if (((UnaryExpression)expression).Operand.NodeType == ExpressionType.Parameter)
                     return;
             }
-            throw new ArgumentException("expression");
+            throw new ArgumentException(null, nameof(expression));
         }
 
         internal static ConstructorInfo GetConstructor<T>(Expression<Func<T>> commandMethodExpression) {
@@ -48,7 +49,7 @@ namespace DevExpress.Mvvm.Native {
         internal static ConstructorInfo GetConstructorCore(LambdaExpression commandMethodExpression) {
             NewExpression newExpression = commandMethodExpression.Body as NewExpression;
             if(newExpression == null) {
-                throw new ArgumentException("commandMethodExpression");
+                throw new ArgumentException(null, nameof(commandMethodExpression));
             }
             return newExpression.Constructor;
         }
@@ -81,7 +82,7 @@ namespace DevExpress.Mvvm.Native {
             MemberExpression memberExpression = GetMemberExpression(expression);
             MemberExpression nextMemberExpression = memberExpression.Expression as MemberExpression;
             if(IsPropertyExpression(nextMemberExpression)) {
-                throw new ArgumentException("expression");
+                throw new ArgumentException(null, nameof(expression));
             }
             return memberExpression.Member.Name;
         }
@@ -92,14 +93,14 @@ namespace DevExpress.Mvvm.Native {
         }
         static MemberExpression GetMemberExpression(LambdaExpression expression) {
             if(expression == null)
-                throw new ArgumentNullException("expression");
+                throw new ArgumentNullException(nameof(expression));
             Expression body = expression.Body;
             if(body is UnaryExpression) {
                 body = ((UnaryExpression)body).Operand;
             }
             MemberExpression memberExpression = body as MemberExpression;
             if(memberExpression == null) {
-                throw new ArgumentException("expression");
+                throw new ArgumentException(null, nameof(expression));
             }
             return memberExpression;
         }
@@ -107,20 +108,17 @@ namespace DevExpress.Mvvm.Native {
         public static bool PropertyHasImplicitImplementation<TInterface, TPropertyType>(TInterface _interface, Expression<Func<TInterface, TPropertyType>> property, bool tryInvoke = true)
             where TInterface : class {
             if(_interface == null)
-                throw new ArgumentNullException("_interface");
+                throw new ArgumentNullException(nameof(_interface));
             string propertyName = GetArgumentPropertyStrict(property).Name;
             string getMethodName = "get_" + propertyName;
             MethodInfo getMethod = GetGetMethod(_interface, getMethodName);
             if(!getMethod.IsPublic || !string.Equals(getMethod.Name, getMethodName)) return false;
-            try
-            {
-                if (tryInvoke)
-                {
+            try {
+                if(tryInvoke) {
                     getMethod.Invoke(_interface, null);
                 }
             }
-            catch (Exception e)
-            {
+            catch(Exception e) {
                 if(e is TargetException) return false;
                 if(e is ArgumentException) return false;
                 if(e is TargetParameterCountException) return false;

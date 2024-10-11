@@ -118,7 +118,7 @@ namespace DevExpress.Mvvm.Native {
 
             public void Insert(int publicIndex, T item) {
                 if(publicIndex < 0 || publicIndex > Count)
-                    throw new ArgumentException("", "publicIndex");
+                    throw new ArgumentException("", nameof(publicIndex));
                 UpdateIndexMap();
                 bool toFirstList = addItemToFirstList(item);
                 int innerIndex;

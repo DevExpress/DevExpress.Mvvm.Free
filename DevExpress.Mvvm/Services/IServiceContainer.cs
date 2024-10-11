@@ -49,7 +49,7 @@ namespace DevExpress.Mvvm {
 
         static void VerifyServiceContainer(IServiceContainer serviceContainer) {
             if(serviceContainer == null)
-                throw new ArgumentNullException("serviceContainer");
+                throw new ArgumentNullException(nameof(serviceContainer));
         }
         static T CheckService<T>(T service) where T : class {
             if(service == null)

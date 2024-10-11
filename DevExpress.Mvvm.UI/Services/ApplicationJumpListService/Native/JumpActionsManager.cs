@@ -1,4 +1,3 @@
-#if !NET
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +7,7 @@ using System.Threading;
 using System.Windows.Threading;
 using DevExpress.Utils;
 using DevExpress.Mvvm.Native;
+#if !NET
 namespace DevExpress.Mvvm.UI.Native {
     public interface IJumpAction {
         string CommandId { get; }

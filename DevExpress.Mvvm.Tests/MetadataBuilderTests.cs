@@ -33,7 +33,6 @@ namespace DevExpress.Mvvm.Tests {
         }
         #endregion
     }
-#if !NET
     [TestFixture]
     public class MetadataBuilderTests : MetadataBuilderTestsBase {
 
@@ -396,6 +395,7 @@ namespace DevExpress.Mvvm.Tests {
                 Assert.AreEqual(DataAnnotationsResourcesResolver.AnnotationsResourceManager.GetString(property.Name), property.GetValue(null, null));
             }
         }
+#if !NET
         [Test]
         public void RegexTest() {
             CheckRegex(typeof(PhoneAttribute), typeof(ValidationAttribute).Assembly.GetType(typeof(ValidationAttribute).Namespace + ".PhoneAttribute"));
@@ -410,6 +410,7 @@ namespace DevExpress.Mvvm.Tests {
         static string GetPatternFromRegex(Regex regex) {
             return (string)typeof(Regex).GetField("pattern", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(regex);
         }
+#endif
         #endregion
 
         #region MetadataHelper tests
@@ -482,7 +483,7 @@ namespace DevExpress.Mvvm.Tests {
         void CheckNestedTypes(Type type) {
             foreach(Type nestedType in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)) {
                 if(!IsSequritySafeCriticalType(nestedType))
-                    Assert.IsFalse(nestedType.GetInterfaces().Any(), nestedType.FullName + " type is not SequritySafeCritical");
+                    Assert.IsFalse(nestedType.GetInterfaces().Length != 0, nestedType.FullName + " type is not SequritySafeCritical");
                 CheckNestedTypes(nestedType);
             }
         }
@@ -530,7 +531,6 @@ namespace DevExpress.Mvvm.Tests {
             }
         }
     }
-#endif
     [TestFixture]
     public class InternalMetadataLocatorTests : MetadataBuilderTestsBase {
         [Test]
@@ -602,12 +602,10 @@ namespace DevExpress.Mvvm.Tests {
         }
         class PrivateMetadata : TestDataMetadata { }
     }
-#if !NET
     [TestFixture]
     public class FilteringMetadataBuilderTests : MetadataBuilderTests {
         protected override bool UseFilteringAttributes { get { return true; } }
     }
-#endif
     [TestFixture]
     public class InternalFilteringMetadataLocatorTests : InternalMetadataLocatorTests {
         protected override bool UseFilteringAttributes { get { return true; } }

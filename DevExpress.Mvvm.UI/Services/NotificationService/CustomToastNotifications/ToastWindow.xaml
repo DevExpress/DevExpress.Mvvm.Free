@@ -1,4 +1,4 @@
-<Window x:Class="DevExpress.Mvvm.UI.Native.ToastWindow"
+﻿<Window x:Class="DevExpress.Mvvm.UI.Native.ToastWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"

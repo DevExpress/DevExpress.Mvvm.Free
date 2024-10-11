@@ -1,4 +1,5 @@
 #if !NET
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -96,7 +97,7 @@ namespace DevExpress.Mvvm.UI {
             nativeJumpList.AddToRecentCategory(jumpPath);
         }
         public virtual IEnumerable<RejectedApplicationJumpItem> Apply() {
-            if(InteractionHelper.IsInDesignMode(this)) return new RejectedApplicationJumpItem[] { };
+            if(InteractionHelper.IsInDesignMode(this)) return Array.Empty<RejectedApplicationJumpItem>();
             jumpActionsManager.BeginUpdate();
             try {
                 foreach(JumpItem jumpItem in nativeJumpList) {
@@ -105,7 +106,7 @@ namespace DevExpress.Mvvm.UI {
                     if(jumpTask != null)
                         jumpActionsManager.RegisterAction(jumpTask, CommandLineArgumentPrefix, GetLauncherPath);
                 }
-                IEnumerable<Tuple<JumpItem, JumpItemRejectionReason>> nativeRejectedItems = nativeJumpList.Apply() ?? new Tuple<JumpItem, JumpItemRejectionReason>[] { };
+                IEnumerable<Tuple<JumpItem, JumpItemRejectionReason>> nativeRejectedItems = nativeJumpList.Apply() ?? Array.Empty<Tuple<JumpItem, JumpItemRejectionReason>>();
                 return nativeRejectedItems.Select(i => new RejectedApplicationJumpItem(ApplicationJumpItemWrapper.Unwrap(i.Item1), i.Item2)).ToArray();
             } finally {
                 jumpActionsManager.EndUpdate();
@@ -134,7 +135,7 @@ namespace DevExpress.Mvvm.UI {
             return true;
         }
         protected override void OnAttached() {
-            if(Items.SourceItems.Any())
+            if(Items.SourceItems.Count > 0)
                 Apply();
             base.OnAttached();
             AssociatedObject.SetValue(InternalItemsProperty, Items.SourceItems);

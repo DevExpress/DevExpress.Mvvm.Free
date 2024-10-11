@@ -22,6 +22,7 @@ namespace DevExpress.Mvvm.UI {
             ContentPaddingProperty = DependencyProperty.Register("ContentPadding", typeof(Thickness), ownerType, new PropertyMetadata(new Thickness()));
             ActualContentPropertyKey = DependencyProperty.RegisterReadOnly("ActualContent", typeof(object), ownerType, new FrameworkPropertyMetadata(null));
             ActualContentProperty = ActualContentPropertyKey.DependencyProperty;
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(WaitIndicator), new FrameworkPropertyMetadata(typeof(WaitIndicator)));
         }
 
         public override void OnApplyTemplate() {
@@ -34,9 +35,7 @@ namespace DevExpress.Mvvm.UI {
             ((WaitIndicator)d).OnDeferedVisibilityChanged();
         }
 
-        public WaitIndicator() {
-            DefaultStyleKey = typeof(WaitIndicator);
-        }
+        public WaitIndicator() { }
         protected override void OnContentChanged(object oldContent, object newContent) {
             base.OnContentChanged(oldContent, newContent);
             ChangeContentIfNeed(newContent);

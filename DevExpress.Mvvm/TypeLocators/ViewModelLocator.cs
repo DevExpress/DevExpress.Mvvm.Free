@@ -20,7 +20,7 @@ namespace DevExpress.Mvvm {
         readonly IEnumerable<Assembly> assemblies;
         protected override IEnumerable<Assembly> Assemblies { get { return assemblies; } }
         public ViewModelLocator(Application application)
-            : this(EntryAssembly != null && !ViewModelBase.IsInDesignMode ? new[] { EntryAssembly } : new Assembly[0]) {
+            : this(EntryAssembly != null && !ViewModelBase.IsInDesignMode ? new[] { EntryAssembly } : Native.EmptyArray<Assembly>.Instance) {
         }
         public ViewModelLocator(params Assembly[] assemblies)
             : this((IEnumerable<Assembly>)assemblies) {
@@ -45,7 +45,7 @@ namespace DevExpress.Mvvm {
         }
         protected bool GetIsPOCOViewModelType(Type type, IDictionary<string, string> properties) {
             string isPOCO;
-            if(type.GetCustomAttributes(typeof(DataAnnotations.POCOViewModelAttribute), true).Any())
+            if(type.GetCustomAttributes(typeof(DataAnnotations.POCOViewModelAttribute), true).Length != 0)
                 return true;
             if(properties.TryGetValue("IsPOCOViewModel", out isPOCO))
                 return bool.Parse(isPOCO);

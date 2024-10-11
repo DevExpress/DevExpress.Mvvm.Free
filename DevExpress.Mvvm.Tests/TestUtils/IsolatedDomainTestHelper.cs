@@ -1,8 +1,8 @@
-#if !NET
 using NUnit.Framework;
 using System;
 using System.Linq;
 using System.Reflection;
+using DevExpress.Mvvm.Native;
 using System.Security;
 using System.Security.Policy;
 using System.IO;
@@ -28,15 +28,21 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
         public NewDomainTestHelper(AppDomainSetup setupInformation) {
 #if NET
+#pragma warning disable SYSLIB0024 
             domain = AppDomain.CreateDomain("TestDomain");
+#pragma warning restore SYSLIB0024 
 #else
             domain = AppDomain.CreateDomain("TestDomain", AppDomain.CurrentDomain.Evidence, setupInformation);
 #endif
             testObject = (T)domain.CreateInstanceAndUnwrap(typeof(T).Assembly.FullName, typeof(T).FullName);
         }
+#pragma warning disable SYSLIB0003
         public NewDomainTestHelper(AppDomainSetup setupInformation, PermissionSet permissionSet, params StrongName[] fullTrustAssemblies) {
+#pragma warning restore SYSLIB0003
 #if NET
+#pragma warning disable SYSLIB0024
             domain = AppDomain.CreateDomain("TestDomain");
+#pragma warning restore SYSLIB0024
 #else
             domain = AppDomain.CreateDomain("TestDomain", null, setupInformation, permissionSet, fullTrustAssemblies);
 #endif
@@ -57,7 +63,9 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
         public void Dispose() {
             if(domain != null)
+#pragma warning disable SYSLIB0024 
                 AppDomain.Unload(domain);
+#pragma warning restore SYSLIB0024 
         }
     }
 
@@ -95,11 +103,10 @@ namespace DevExpress.Mvvm.UI.Tests {
             return null;
         }
         public static void RunTest(Action test) {
-            RunTestCore(test.Method, new object[0]);
+            RunTestCore(test.Method, EmptyArray<object>.Instance);
         }
         public static void RunTest(Action<object> test, object arg) {
             RunTestCore(test.Method, arg);
         }
     }
 }
-#endif

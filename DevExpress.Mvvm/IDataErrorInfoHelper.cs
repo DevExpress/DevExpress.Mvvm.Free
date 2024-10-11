@@ -14,7 +14,7 @@ namespace DevExpress.Mvvm {
             return HasErrors((IDataErrorInfo)owner, false, deep, propertyFilter);
         }
         public static bool HasErrors(IDataErrorInfo owner, bool ignoreOwnerError, int deep = 2, Func<PropertyDescriptor, bool> propertyFilter = null) {
-            if(owner == null) throw new ArgumentNullException("owner");
+            if(owner == null) throw new ArgumentNullException(nameof(owner));
             if(--deep < 0) return false;
             if(propertyFilter == null) propertyFilter = x => true;
             var properties = TypeDescriptor.GetProperties(owner).Cast<PropertyDescriptor>().Where(propertyFilter);
@@ -37,7 +37,7 @@ namespace DevExpress.Mvvm {
         }
         public static string GetErrorText(object owner, string propertyName) {
             if(owner == null)
-                throw new ArgumentNullException("owner");
+                throw new ArgumentNullException(nameof(owner));
             int pathDelimiterIndex = propertyName.IndexOf('.');
             if(pathDelimiterIndex >= 0)
                 return GetNestedPropertyErrorText(owner, propertyName, pathDelimiterIndex);

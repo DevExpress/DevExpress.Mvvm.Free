@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -110,7 +111,6 @@ namespace DevExpress.Internal {
             }
             else if(!ToastNotificationManager.IsGenericTemplateSupported)
                 type = ToastTemplateType.ToastImageAndText04;
-
         }
         public void SetImage(byte[] image) {
             SetImage(new MemoryStream(image));
@@ -122,7 +122,7 @@ namespace DevExpress.Internal {
             SetImage(image, ImagePlacement.Inline);
         }
         public void SetImage(Image image, ImagePlacement placement) {
-            string imagePath = GetTempPath();
+            string imagePath = GetTempFileName();
             switch(placement) {
                 case ImagePlacement.Inline:
                     if(tempImagePath != null) {
@@ -149,27 +149,21 @@ namespace DevExpress.Internal {
             SaveImageToFile(image, imagePath);
             SetImage(imagePath, placement);
         }
-        static string GetTempPath() {
+        static string GetTempFileName() {
             string tempPath = Path.GetTempPath();
             string result = string.Empty;
-            do {
-                result = tempPath + Guid.NewGuid().ToString() + ".png";
-            }
+            do { result = tempPath + Guid.NewGuid().ToString() + ".png"; }
             while(File.Exists(result));
             return result;
         }
         void SaveImageToFile(Image image, string path) {
             image.Save(path, System.Drawing.Imaging.ImageFormat.Png);
         }
+        readonly static HashSet<string> extensions = new HashSet<string>(
+            new string[] { ".png", ".jpg", ".jpeg", ".gif" }, StringComparer.OrdinalIgnoreCase);
         bool IsSupportedExtension(string imagePath) {
-            var extensions = new string[] { ".png", ".jpg", ".jpeg", ".gif" };
-            string fileExt = Path.GetExtension(imagePath);
-            foreach(string goodExt in extensions) {
-                if(fileExt.Equals(goodExt, StringComparison.OrdinalIgnoreCase)) {
-                    return true;
-                }
-            }
-            return false;
+            string extension = Path.GetExtension(imagePath);
+            return !string.IsNullOrEmpty(extension) && extensions.Contains(extension);
         }
         void CheckImagePath(string imagePath) {
             FileInfo info = new FileInfo(imagePath);
@@ -178,15 +172,13 @@ namespace DevExpress.Internal {
             if(!IsSupportedExtension(info.Extension))
                 throw new ArgumentException("Unsupported file type");
             if(info.Length > 1024 * 200) {
-                if(!Utils.WindowsVersionProvider.IsWin10FallCreatorsUpdateOrHigher) {
+                if(!Utils.WindowsVersionProvider.IsWin10FallCreatorsUpdateOrHigher)
                     throw new ArgumentException("File must have size less or equal to 200 KB");
                 }
-            }
         }
         static bool IsLoopingSound(PredefinedSound sound) {
             return sound >= PredefinedSound.Notification_Looping_Alarm;
         }
-
         Action<System.Xml.XmlDocument> updateToastContent = null;
         public void SetUpdateToastContentAction(Action<System.Xml.XmlDocument> updateToastContentAction) {
             updateToastContent = updateToastContentAction;
@@ -209,7 +201,7 @@ namespace DevExpress.Internal {
                 };
             }
         }
-        class WinRTToastNotificationInfo : IPredefinedToastNotificationInfo, IPredefinedToastNotificationInfoGeneric {
+        sealed class WinRTToastNotificationInfo : IPredefinedToastNotificationInfo, IPredefinedToastNotificationInfoGeneric {
             public ToastTemplateType ToastTemplateType { get; set; }
             public string[] Lines { get; set; }
             public string Id { get; set; }

@@ -42,9 +42,9 @@ namespace DevExpress.Mvvm.UI.Native {
     public static class AnotherEventHandlerUtils {
         public static EventHandler<E> MakeWeak<E>(EventHandler<E> eventHandler, UnregisterCallback<E> unregister) where E : EventArgs {
             if(eventHandler == null)
-                throw new ArgumentNullException("eventHandler");
+                throw new ArgumentNullException(nameof(eventHandler));
             if(eventHandler.Method.IsStatic || eventHandler.Target == null)
-                throw new ArgumentException("Only instance methods are supported.", "eventHandler");
+                throw new ArgumentException("Only instance methods are supported.", nameof(eventHandler));
             Type wehType = typeof(AnotherWeakEventHandler<,>).MakeGenericType(eventHandler.Method.DeclaringType, typeof(E));
             ConstructorInfo wehConstructor = wehType.GetConstructor(new Type[] { typeof(EventHandler<E>), typeof(UnregisterCallback<E>) });
             IAnotherWeakEventHandler<E> weh = (IAnotherWeakEventHandler<E>)wehConstructor.Invoke(new object[] { eventHandler, unregister });
@@ -128,7 +128,7 @@ namespace DevExpress.Mvvm.UI.Native {
         }
 
         public void ChangeScreen(System.Windows.Point position) {
-            if(VisibleItems.Any() || currentScreenPosition == position)
+            if(VisibleItems.Count > 0 || currentScreenPosition == position)
                 return;
             currentScreenPosition = position;
             UpdatePositioner(positioner.position, positioner.maxCount);
@@ -162,7 +162,7 @@ namespace DevExpress.Mvvm.UI.Native {
         }
 
         void ShowNext() {
-            if(!positioner.HasEmptySlot() || !toastsQueue.Any())
+            if(!positioner.HasEmptySlot() || toastsQueue.Count == 0)
                 return;
 
             ToastInfo info = toastsQueue[0];
@@ -179,6 +179,7 @@ namespace DevExpress.Mvvm.UI.Native {
             try {
                 info.win = new ToastWindow();
             } catch {
+                
                 content.TimeOutCommand.Execute(null);
                 return;
             }
@@ -197,6 +198,7 @@ namespace DevExpress.Mvvm.UI.Native {
             try {
                 info.win.Show();
             } catch(System.ComponentModel.Win32Exception) {
+                
                 content.TimeOutCommand.Execute(null);
                 return;
             }
