@@ -100,7 +100,7 @@ namespace DevExpress {
         }
 
         public static void AssertAllPropertiesAreEqual(object expected, object actual, bool compareTypes = true) {
-            AssertAllPropertiesAreEqual(expected, actual, new string[] { }, compareTypes);
+            AssertAllPropertiesAreEqual(expected, actual, EmptyArray<string>.Instance, compareTypes);
         }
         public static void AssertAllPropertiesAreEqual(object expected, object actual, IEnumerable<string> skipProperties, bool compareTypes = true) {
             if(expected == null || actual == null)
@@ -120,7 +120,7 @@ namespace DevExpress {
             AssertEnumerablesAreEqual(expected, actual, false, null, true);
         }
         public static void AssertEnumerablesAreEqual(IEnumerable expected, IEnumerable actual, bool compareByProperties, bool compareTypes = true) {
-            AssertEnumerablesAreEqual(expected, actual, compareByProperties, new string[] { }, compareTypes);
+            AssertEnumerablesAreEqual(expected, actual, compareByProperties, EmptyArray<string>.Instance, compareTypes);
         }
         public static void AssertEnumerablesAreEqual(IEnumerable expected, IEnumerable actual, bool compareByProperties, IEnumerable<string> skipProperties, bool compareTypes = true) {
             object[] expectedArray = expected.Cast<object>().ToArray();

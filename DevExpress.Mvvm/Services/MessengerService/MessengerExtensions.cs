@@ -43,7 +43,7 @@ namespace DevExpress.Mvvm {
 
         static void VerifyMessenger(IMessenger messenger) {
             if(messenger == null)
-                throw new ArgumentNullException("messenger");
+                throw new ArgumentNullException(nameof(messenger));
         }
     }
 }

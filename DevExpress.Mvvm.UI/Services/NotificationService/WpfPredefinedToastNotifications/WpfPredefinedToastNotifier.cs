@@ -7,6 +7,7 @@ using System.Security;
 using System.Text;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
+using Env = System.Environment;
 
 namespace DevExpress.Mvvm.UI.Native {
     public class WpfToastNotificationFactory : IPredefinedToastNotificationFactory {
@@ -83,7 +84,8 @@ namespace DevExpress.Mvvm.UI.Native {
             #endregion
             static PredefinedToastNotificationVewModel CreateDefaultViewModel() {
                 var vm = new PredefinedToastNotificationVewModel();
-                Icon icon = ExtractAssociatedIcon(Environment.GetCommandLineArgs()[0]);
+                var args = Env.GetCommandLineArgs();
+                Icon icon = ExtractAssociatedIcon(args[0]);
                 if(icon != null) {
                     BitmapSource bitmapSource = Imaging.CreateBitmapSourceFromHIcon(
                             icon.Handle,

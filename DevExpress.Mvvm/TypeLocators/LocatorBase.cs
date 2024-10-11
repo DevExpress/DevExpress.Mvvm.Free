@@ -55,7 +55,7 @@ namespace DevExpress.Mvvm {
         }
         protected virtual IEnumerator<Type> GetTypes() {
             foreach(Assembly asm in Assemblies) {
-                Type[] types = new Type[] { };
+                Type[] types = EmptyArray<Type>.Instance;
                 try {
                     types = asm.GetTypes();
                 } catch(ReflectionTypeLoadException e) {
@@ -111,7 +111,7 @@ namespace DevExpress.Mvvm {
             try {
                 var parameterlessCtor = type.GetConstructor(
                     BindingFlags.CreateInstance | BindingFlags.Public | BindingFlags.Instance,
-                    null, new Type[] { }, null);
+                    null, EmptyArray<Type>.Instance, null);
                 if(parameterlessCtor != null)
                     res = parameterlessCtor.Invoke(null);
                 if(res == null) {

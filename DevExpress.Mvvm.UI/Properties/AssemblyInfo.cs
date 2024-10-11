@@ -23,7 +23,7 @@ using DevExpress.Mvvm.Native;
 #endif
 
 [assembly: CLSCompliant(true)]
-[assembly: AllowPartiallyTrustedCallers]
+
 
 [assembly: SatelliteContractVersion(AssemblyInfo.SatelliteContractVersion)]
 [assembly: ComVisible(false)]

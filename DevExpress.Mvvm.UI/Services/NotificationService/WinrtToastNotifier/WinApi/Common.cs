@@ -6,6 +6,7 @@ using DevExpress.Internal.WinApi.Windows.UI.Notifications;
 
 namespace DevExpress.Internal.WinApi {
 #pragma warning disable 169
+#pragma warning disable CA2231
     [CLSCompliant(false)]
     public struct EventRegistrationToken : IEquatable<EventRegistrationToken> {
         readonly ulong value;
@@ -22,6 +23,7 @@ namespace DevExpress.Internal.WinApi {
             return value.GetHashCode();
         }
     }
+#pragma warning restore CA2231
     [Guid("AF86E2E0-B12D-4c6a-9C5A-D7AA65101E90")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IInspectable {

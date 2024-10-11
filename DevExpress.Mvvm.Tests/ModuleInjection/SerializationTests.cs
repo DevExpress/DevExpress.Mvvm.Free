@@ -36,8 +36,8 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Manager.Save(out logicalState, out visualState);
             logicalInfo = LogicalInfo.Deserialize(logicalState);
             visualInfo = VisualInfo.Deserialize(visualState);
-            Assert.AreEqual(0, logicalInfo.Regions.Count());
-            Assert.AreEqual(0, visualInfo.Regions.Count());
+            Assert.AreEqual(0, logicalInfo.Regions.Count);
+            Assert.AreEqual(0, visualInfo.Regions.Count);
 
             Manager.Restore(null, null);
             Manager.Restore(string.Empty, string.Empty);
@@ -55,8 +55,8 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Manager.Save(out logicalState, out visualState);
             logicalInfo = LogicalInfo.Deserialize(logicalState);
             visualInfo = VisualInfo.Deserialize(visualState);
-            Assert.AreEqual(0, logicalInfo.Regions.Count());
-            Assert.AreEqual(0, visualInfo.Regions.Count());
+            Assert.AreEqual(0, logicalInfo.Regions.Count);
+            Assert.AreEqual(0, visualInfo.Regions.Count);
         }
         [Test]
         public void SerializeEmpty3() {
@@ -71,8 +71,8 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Manager.Save(out logicalState, out visualState);
             logicalInfo = LogicalInfo.Deserialize(logicalState);
             visualInfo = VisualInfo.Deserialize(visualState);
-            Assert.AreEqual(1, logicalInfo.Regions.Count());
-            Assert.AreEqual(1, visualInfo.Regions.Count());
+            Assert.AreEqual(1, logicalInfo.Regions.Count);
+            Assert.AreEqual(1, visualInfo.Regions.Count);
             Assert.AreEqual(0, visualInfo.Regions[0].Items.Count);
 
             Assert.AreEqual("R", logicalInfo.Regions[0].RegionName);
@@ -152,53 +152,53 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
             Manager.Save(out logicalState, out visualState);
             var logicalInfo = LogicalInfo.Deserialize(logicalState);
             var visualInfo = VisualInfo.Deserialize(visualState);
-            Assert.AreEqual(2, logicalInfo.Regions.Count());
+            Assert.AreEqual(2, logicalInfo.Regions.Count);
             Assert.AreEqual("R1", logicalInfo.Regions[0].RegionName);
             Assert.AreEqual("R2", logicalInfo.Regions[1].RegionName);
-            Assert.AreEqual(2, logicalInfo.Regions[0].Items.Count());
-            Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count());
+            Assert.AreEqual(2, logicalInfo.Regions[0].Items.Count);
+            Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count);
 
             Manager.GetRegion("R1").LogicalSerializationMode = LogicalSerializationMode.Disabled;
             Manager.Save(out logicalState, out visualState);
             logicalInfo = LogicalInfo.Deserialize(logicalState);
             visualInfo = VisualInfo.Deserialize(visualState);
-            Assert.AreEqual(2, logicalInfo.Regions.Count());
+            Assert.AreEqual(2, logicalInfo.Regions.Count);
             Assert.AreEqual("R1", logicalInfo.Regions[0].RegionName);
             Assert.AreEqual("R2", logicalInfo.Regions[1].RegionName);
-            Assert.AreEqual(0, logicalInfo.Regions[0].Items.Count());
-            Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count());
+            Assert.AreEqual(0, logicalInfo.Regions[0].Items.Count);
+            Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count);
 
             Manager.GetRegion("R1").LogicalSerializationMode = LogicalSerializationMode.Enabled;
             Manager.Save(out logicalState, out visualState);
             logicalInfo = LogicalInfo.Deserialize(logicalState);
             visualInfo = VisualInfo.Deserialize(visualState);
-            Assert.AreEqual(2, logicalInfo.Regions[0].Items.Count());
-            Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count());
+            Assert.AreEqual(2, logicalInfo.Regions[0].Items.Count);
+            Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count);
 
             Manager.GetRegion("R1").SetLogicalSerializationMode("1", LogicalSerializationMode.Disabled);
             Manager.Save(out logicalState, out visualState);
             logicalInfo = LogicalInfo.Deserialize(logicalState);
             visualInfo = VisualInfo.Deserialize(visualState);
-            Assert.AreEqual(1, logicalInfo.Regions[0].Items.Count());
+            Assert.AreEqual(1, logicalInfo.Regions[0].Items.Count);
             Assert.AreEqual("2", logicalInfo.Regions[0].Items[0].Key);
-            Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count());
+            Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count);
 
             Manager.GetRegion("R1").LogicalSerializationMode = LogicalSerializationMode.Disabled;
             Manager.GetRegion("R1").SetLogicalSerializationMode("2", LogicalSerializationMode.Enabled);
             Manager.Save(out logicalState, out visualState);
             logicalInfo = LogicalInfo.Deserialize(logicalState);
             visualInfo = VisualInfo.Deserialize(visualState);
-            Assert.AreEqual(1, logicalInfo.Regions[0].Items.Count());
+            Assert.AreEqual(1, logicalInfo.Regions[0].Items.Count);
             Assert.AreEqual("2", logicalInfo.Regions[0].Items[0].Key);
-            Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count());
+            Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count);
 
             Manager.GetRegion("R1").SetLogicalSerializationMode("1", null);
             Manager.GetRegion("R1").SetLogicalSerializationMode("2", null);
             Manager.Save(out logicalState, out visualState);
             logicalInfo = LogicalInfo.Deserialize(logicalState);
             visualInfo = VisualInfo.Deserialize(visualState);
-            Assert.AreEqual(0, logicalInfo.Regions[0].Items.Count());
-            Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count());
+            Assert.AreEqual(0, logicalInfo.Regions[0].Items.Count);
+            Assert.AreEqual(2, logicalInfo.Regions[1].Items.Count);
         }
     }
 }

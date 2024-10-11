@@ -11,7 +11,7 @@ namespace DevExpress.Mvvm.UI {
             return CreateViewTemplate(viewType);
         }
         public static DataTemplate CreateViewTemplate(Type viewType) {
-            if(viewType == null) throw new ArgumentNullException("viewType");
+            if(viewType == null) throw new ArgumentNullException(nameof(viewType));
             DataTemplate res = null;
             if((!typeof(FrameworkElement).IsAssignableFrom(viewType) && !typeof(FrameworkContentElement).IsAssignableFrom(viewType)) || viewType.IsNested)
                 res = CreateFallbackViewTemplate(GetErrorMessage_CannotCreateDataTemplateFromViewType(viewType.Name));
@@ -61,7 +61,7 @@ namespace DevExpress.Mvvm.UI {
 
         static void Verify(IViewLocator viewLocator) {
             if(viewLocator == null)
-                throw new ArgumentNullException("viewLocator");
+                throw new ArgumentNullException(nameof(viewLocator));
         }
         [EditorBrowsable(EditorBrowsableState.Never)]
         public class FallbackView : Panel {

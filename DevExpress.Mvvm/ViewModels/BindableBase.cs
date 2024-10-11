@@ -14,7 +14,7 @@ namespace DevExpress.Mvvm {
         internal static string GetPropertyNameFast(LambdaExpression expression) {
             MemberExpression memberExpression = expression.Body as MemberExpression;
             if(memberExpression == null) {
-                throw new ArgumentException("MemberExpression is expected in expression.Body", "expression");
+                throw new ArgumentException("MemberExpression is expected in expression.Body", nameof(expression));
             }
             const string vblocalPrefix = "$VB$Local_";
             var member = memberExpression.Member;

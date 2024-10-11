@@ -91,8 +91,10 @@ namespace DevExpress.Mvvm.UI {
 
         public static readonly DependencyProperty DescriptionProperty =
             DependencyProperty.Register("Description", typeof(string), typeof(FolderBrowserDialogService), new PropertyMetadata(string.Empty));
+#pragma warning disable DX0019 
         public static readonly DependencyProperty RootFolderProperty =
             DependencyProperty.Register("RootFolder", typeof(Environment.SpecialFolder), typeof(FolderBrowserDialogService), new PropertyMetadata(Environment.SpecialFolder.Desktop));
+#pragma warning restore DX0019
         public static readonly DependencyProperty ShowNewFolderButtonProperty =
             DependencyProperty.Register("ShowNewFolderButton", typeof(bool), typeof(FolderBrowserDialogService), new PropertyMetadata(true));
         public static readonly DependencyProperty StartPathProperty =

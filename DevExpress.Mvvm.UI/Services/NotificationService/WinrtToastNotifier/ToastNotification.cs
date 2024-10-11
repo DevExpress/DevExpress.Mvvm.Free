@@ -67,7 +67,7 @@ namespace DevExpress.Internal {
         Lazy<IToastNotificationAdapter> adapterCore;
         internal WinRTToastNotification(IPredefinedToastNotificationContent content, Func<IToastNotificationAdapter> adapterRoutine) {
             if(content == null)
-                throw new ArgumentNullException("content");
+                throw new ArgumentNullException(nameof(content));
             this.adapterCore = new Lazy<IToastNotificationAdapter>(adapterRoutine);
             this.contentCore = content;
             this.handlerDismissed = new ToastNotificationHandlerInfo<HandlerDismissed>(() => new HandlerDismissed(this));

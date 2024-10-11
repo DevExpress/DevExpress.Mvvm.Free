@@ -69,8 +69,6 @@ namespace DevExpress.Mvvm.Tests {
         }
     }
 
-
-    [CLSCompliant(false)]
     public class POCOViewModel {
         internal string NotPublicProperty { get; set; }
         public string NotVirtualProperty { get; set; }
@@ -827,7 +825,7 @@ namespace DevExpress.Mvvm.Tests {
             ViewModelWithFunctionCommandMethod viewModel = ViewModelSource.Create<ViewModelWithFunctionCommandMethod>();
 
             ParameterExpression parameter1 = Expression.Parameter(typeof(ViewModelWithFunctionCommandMethod), "x");
-            MethodCallExpression methodCallExpression = Expression.Call((Expression)parameter1, typeof(ViewModelWithFunctionCommandMethod).GetMethod("Save", BindingFlags.Public | BindingFlags.Instance), new Expression[0]);
+            MethodCallExpression methodCallExpression = Expression.Call((Expression)parameter1, typeof(ViewModelWithFunctionCommandMethod).GetMethod("Save", BindingFlags.Public | BindingFlags.Instance), System.Array.Empty<Expression>());
             var expression = Expression.Lambda<Func<ViewModelWithFunctionCommandMethod, bool>>(methodCallExpression, parameter1);
 
             ParameterExpression parameter2 = Expression.Parameter(typeof(ViewModelWithFunctionCommandMethod), "a0");
@@ -1100,7 +1098,6 @@ namespace DevExpress.Mvvm.Tests {
                 ;
         }
 
-        [CLSCompliant(false)]
         public class POCOCommandsViewModel {
             public virtual string Property1 { get; set; }
 

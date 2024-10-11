@@ -203,7 +203,7 @@ namespace DevExpress.Mvvm.UI.ModuleInjection.Tests {
         internal WeakReference[] CollectReferencesAndCloseWindow(ITargetWrapper<T> target, object[] refs) {
             var res = memoryTest
                 ? refs.Select(x => new WeakReference(x))
-                : new WeakReference[] { };
+                : Mvvm.Native.EmptyArray<WeakReference>.Instance;
             Close(target);
             return res.ToArray();
         }

@@ -25,8 +25,9 @@ namespace DevExpress.Mvvm {
             if(res != null)
                 return res;
             var appResources = GetApplicationResources(type);
-            if(!string.IsNullOrEmpty(key) && appResources.ContainsKey(key))
-                return appResources[key];
+            object service;
+            if(!string.IsNullOrEmpty(key) && appResources.TryGetValue(key, out service))
+                return service;
             serviceHasKey = true;
             return appResources.FirstOrDefault().Value;
         }

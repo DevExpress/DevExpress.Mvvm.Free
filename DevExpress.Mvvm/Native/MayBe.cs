@@ -72,6 +72,7 @@ namespace DevExpress.Mvvm.Native {
             }
             return result;
         }
+#if !WINUI && (!NET || MVVM)
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key) {
             TValue result;
             dictionary.TryGetValue(key, out result);
@@ -83,10 +84,11 @@ namespace DevExpress.Mvvm.Native {
                 return result;
             return defaultValue;
         }
+#endif
     }
     public
     static class EmptyArray<TElement> {
-        public static readonly TElement[] Instance = new TElement[0];
+        public static readonly TElement[] Instance = Array.Empty<TElement>();
     }
     public
     struct UnitT { }
@@ -163,13 +165,13 @@ namespace DevExpress.Mvvm.Native {
             return new[] { singleElement };
         }
         public static T[] YieldIfNotNullToArray<T>(this T singleElement) {
-            return singleElement == null ? EmptyArray<T>.Instance : new[] { singleElement };
+            return singleElement == null ? Array.Empty<T>() : new[] { singleElement };
         }
         public static T[] YieldIfNotNullToArray<T>(this T? singleElement) where T : struct {
-            return singleElement.HasValue ? new[] { singleElement.Value } : EmptyArray<T>.Instance;
+            return singleElement.HasValue ? new[] { singleElement.Value } : Array.Empty<T>();
         }
         public static string[] YieldIfNotEmptyToArray(this string singleElement) {
-            return string.IsNullOrEmpty(singleElement) ? EmptyArray<string>.Instance : new[] { singleElement };
+            return string.IsNullOrEmpty(singleElement) ? Array.Empty<string>() : new[] { singleElement };
         }
         public static void ForEach<T>(this IEnumerable<T> source, Func<T, int, IEnumerable<T>> getItems, Action<T, int> action) {
             source.ForEachCore(getItems, action, 0);
@@ -217,6 +219,7 @@ namespace DevExpress.Mvvm.Native {
             var comparer = Comparer<TKey>.Default;
             return source.Aggregate((x, y) => comparer.Compare(keySelector(x), keySelector(y)) < 0 ? x : y);
         }
+#if !WINUI && !NET
         public static T MinBy<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector) where TKey : IComparable {
             var comparer = Comparer<TKey>.Default;
             return source.Aggregate((x, y) => comparer.Compare(keySelector(x), keySelector(y)) <= 0 ? x : y);
@@ -225,6 +228,7 @@ namespace DevExpress.Mvvm.Native {
             var comparer = Comparer<TKey>.Default;
             return source.Aggregate((x, y) => comparer.Compare(keySelector(x), keySelector(y)) >= 0 ? x : y);
         }
+#endif
         public static IEnumerable<T> InsertDelimiter<T>(this IEnumerable<T> source, T delimiter) {
             using(var en = source.GetEnumerator()) {
                 if(en.MoveNext())
@@ -330,7 +334,7 @@ namespace DevExpress.Mvvm.Native {
             }
             public void Run(TaskScheduler scheduler) {
                 if(scheduler == null)
-                    throw new ArgumentNullException("scheduler");
+                    throw new ArgumentNullException(nameof(scheduler));
                 SchedulerFuture.Run(scheduler);
                 RunFuture.Run();
             }
@@ -392,7 +396,7 @@ namespace DevExpress.Mvvm.Native {
             }
             public void Run(TaskScheduler scheduler) {
                 if(scheduler == null)
-                    throw new ArgumentNullException("scheduler");
+                    throw new ArgumentNullException(nameof(scheduler));
                 Action<TaskScheduler> action;
                 if(this.scheduler == null) {
                     lock(sync) {
@@ -431,7 +435,7 @@ namespace DevExpress.Mvvm.Native {
         static TaskLinq<UnitT> StartNew(TaskCreationOptions creationOptions) {
             var task = new Task<UnitT>(() => {
 #if DEBUG
-                StartNewThreadId = Thread.CurrentThread.ManagedThreadId;
+                StartNewThreadId = Environment.CurrentManagedThreadId;
 #endif
                 return default(UnitT);
             }, CancellationToken.None, creationOptions);
@@ -655,12 +659,12 @@ namespace DevExpress.Mvvm.Native {
             if(synchronizationContext == null)
                 throw new InvalidOperationException("SynchronizationContext.Current == null");
             var linqScheduler = TaskScheduler.FromCurrentSynchronizationContext();
-            var threadId = Thread.CurrentThread.ManagedThreadId;
+            var threadId = Environment.CurrentManagedThreadId;
             var continueTask = new TaskCompletionSource<TaskLinq<T>>();
             var startTask = new TaskCompletionSource<UnitT>();
             startTask.SetResult(default(UnitT));
             startTask.Task.ContinueWith(_ => {
-                if(Thread.CurrentThread.ManagedThreadId == threadId)
+                if(Environment.CurrentManagedThreadId == threadId)
                     SetResultSafe(continueTask, action);
                 else
                     synchronizationContext.Post(__ => SetResultSafe(continueTask, action), default(UnitT));

@@ -1,7 +1,7 @@
-using DevExpress.Internal.WinApi.Windows.UI.Notifications;
-using DevExpress.Utils;
 using System;
 using System.Security;
+using DevExpress.Internal.WinApi.Windows.UI.Notifications;
+using DevExpress.Utils;
 
 namespace DevExpress.Internal.WinApi {
     [CLSCompliant(false)]

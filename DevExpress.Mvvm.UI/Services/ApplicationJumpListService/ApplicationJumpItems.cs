@@ -29,7 +29,7 @@ namespace DevExpress.Mvvm.UI {
         ApplicationJumpItemInfo itemInfo;
 
         public ApplicationJumpItem(ApplicationJumpItemInfo itemInfo) {
-            if(itemInfo == null) throw new ArgumentNullException("itemInfo");
+            if(itemInfo == null) throw new ArgumentNullException(nameof(itemInfo));
             ItemInfo = itemInfo;
         }
         public string CustomCategory {

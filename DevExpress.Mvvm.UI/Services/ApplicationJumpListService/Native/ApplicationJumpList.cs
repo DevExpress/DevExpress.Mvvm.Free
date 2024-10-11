@@ -20,7 +20,7 @@ namespace DevExpress.Mvvm.UI.Native {
         IApplicationJumpListImplementation implementation;
 
         public ApplicationJumpList(IApplicationJumpListImplementation implementation) {
-            if(implementation == null) throw new ArgumentNullException("implementation");
+            if(implementation == null) throw new ArgumentNullException(nameof(implementation));
             this.implementation = implementation;
         }
         ApplicationJumpTaskInfo IApplicationJumpList.Find(string commandId) {

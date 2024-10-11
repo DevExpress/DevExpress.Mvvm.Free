@@ -18,7 +18,7 @@ namespace DevExpress.Mvvm {
         }
         internal static void VerifyService(IWindowService service) {
             if(service == null)
-                throw new ArgumentNullException("service");
+                throw new ArgumentNullException(nameof(service));
         }
     }
     [EditorBrowsable(EditorBrowsableState.Never)]

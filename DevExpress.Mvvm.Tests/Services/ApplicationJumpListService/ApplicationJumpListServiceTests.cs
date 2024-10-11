@@ -1,4 +1,3 @@
-
 using DevExpress.Internal;
 using DevExpress.Mvvm.Native;
 using DevExpress.Mvvm.UI.Interactivity;
@@ -95,7 +94,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         [Test]
         public void AddJumpPath_CheckRejectedItemsListIsEmpty() {
             applicationJumpListService.Items.Add("4");
-            AssertHelper.AssertEnumerablesAreEqual(new RejectedApplicationJumpItem[] { }, applicationJumpListService.Apply());
+            AssertHelper.AssertEnumerablesAreEqual(System.Array.Empty<RejectedApplicationJumpItem>(), applicationJumpListService.Apply());
         }
         [Test]
         public void AddJumpPath() {
@@ -115,7 +114,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             applicationJumpListService.Items.Add("category", "2");
             applicationJumpListService.Items.Clear();
             applicationJumpListService.Apply();
-            AssertHelper.AssertEnumerablesAreEqual(new JumpItem[] { }, nativeJumpList.AppliedList.JumpItems, true, false);
+            AssertHelper.AssertEnumerablesAreEqual(System.Array.Empty<JumpItem>(), nativeJumpList.AppliedList.JumpItems, true, false);
         }
         [Test]
         public void ReplaceJumpPath() {
@@ -229,7 +228,7 @@ namespace DevExpress.Mvvm.UI.Tests {
             });
             applicationJumpListService.Items.Add("another category", "1", null, "desc", () => { });
             IEnumerable<RejectedApplicationJumpItem> rejection = applicationJumpListService.Apply();
-            AssertHelper.AssertEnumerablesAreEqual(new JumpItemRejectionReason[] { }, rejection.Select(r => r.Reason));
+            AssertHelper.AssertEnumerablesAreEqual(System.Array.Empty<JumpItemRejectionReason>(), rejection.Select(r => r.Reason));
         }
         [Test]
         public void AddApplicationJumpTaskWithNullTitleAndNullCategory() {
@@ -239,7 +238,7 @@ namespace DevExpress.Mvvm.UI.Tests {
         }
         [Test]
         public void JumpListCanBeConstructedFromXaml() {
-            Assert.IsNotNull(typeof(ApplicationJumpListService).GetConstructor(new Type[] { }));
+            Assert.IsNotNull(typeof(ApplicationJumpListService).GetConstructor(System.Array.Empty<Type>()));
             Type itemsCollectionType = typeof(ApplicationJumpListService).GetProperty("Items").PropertyType;
             Assert.IsTrue(itemsCollectionType.GetInterfaces().Contains(typeof(IList)));
             Type[] itemTypes = itemsCollectionType.GetMethods().Where(m => m.Name == "Add").Select(m => m.GetParameters().SingleOrDefault()).Where(x => x != null).Select(p => p.ParameterType).ToArray();

@@ -216,6 +216,17 @@ namespace DevExpress.Mvvm.UI.Native {
         public static T FindElementByType<T>(FrameworkElement treeRoot, Func<FrameworkElement, bool> handler = null) where T : FrameworkElement {
             return (T)FindElementByType(treeRoot, typeof(T), handler);
         }
+        public static T FindElementOfType<T>(FrameworkElement treeRoot, Func<T, bool> predicate = null) where T : FrameworkElement {
+            VisualTreeEnumerator en = new VisualTreeEnumerator(treeRoot);
+            while(en.MoveNext()) {
+                var current = en.Current as T;
+                if(current != null) {
+                    if(predicate == null || predicate(current))
+                        return current;
+                }
+            }
+            return null;
+        }
 
         public static bool IsChildElement(DependencyObject root, DependencyObject element) {
             return IsChildElement(root, element, false);

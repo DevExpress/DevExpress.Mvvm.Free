@@ -103,8 +103,8 @@ namespace DevExpress.Xpf.DXBinding.Tests {
         internal void AssertOperands(string input, string operandsOrder) {
             var info = new BindingTreeInfoTest(input);
             var operands = GetOperands(input, null).Select(x => x.Path);
-            var expOperands = operandsOrder == null ? new string[] { } : operandsOrder.Split(';');
-            Assert.AreEqual(expOperands.Count(), operands.Count());
+            var expOperands = operandsOrder == null ? Mvvm.Native.EmptyArray<string>.Instance : operandsOrder.Split(';');
+            Assert.AreEqual(expOperands.Length, operands.Count());
             for(int i = 0; i < operands.Count(); i++)
                 Assert.AreEqual(expOperands.ElementAt(i), operands.ElementAt(i));
         }
@@ -309,11 +309,13 @@ namespace DevExpress.Xpf.DXBinding.Tests {
 
             AssertArithmetic("typeof(int)", typeof(int));
         }
+#if !NET
         [Test]
         [SetCulture("ru-RU")]
         public virtual void ConstantWithCulture() {
             Constant();
         }
+#endif
         [Test]
         public virtual void Constant() {
             AssertConstant("4", NConstant.NKind.Integer, 4);
@@ -655,7 +657,7 @@ namespace DevExpress.Xpf.DXBinding.Tests {
             Execute_AssertArithmetic("Execute1(Tag)", new[] { vm, vm.Tag }, null);
             Assert.AreEqual(false, vm.Execute1Res);
         }
-        #region Research How the Csearches for the appropriate method overload
+        #region Research How the C# searches for the appropriate method overload
         [Test]
         public void ResearchStandardMethodSearchTest1() {
             var obj = new ResearchStandardMethodSearch();

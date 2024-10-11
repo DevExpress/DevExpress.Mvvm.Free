@@ -1,8 +1,8 @@
-#if !NET
 using System;
 using System.Windows.Shell;
 using DevExpress.Mvvm.Native;
 using DevExpress.Utils;
+#if !NET
 namespace DevExpress.Mvvm.UI.Native {
     public static class ApplicationJumpItemWrapper {
         public static JumpItem Wrap(ApplicationJumpItemInfo applicationJumpItem) {
@@ -10,14 +10,14 @@ namespace DevExpress.Mvvm.UI.Native {
             if(applicationJumpTask != null) return new ApplicationJumpTaskWrap(applicationJumpTask);
             ApplicationJumpPathInfo applicationJumpPath = applicationJumpItem as ApplicationJumpPathInfo;
             if(applicationJumpPath != null) return new ApplicationJumpPathWrap(applicationJumpPath);
-            throw new ArgumentException(string.Empty, "applicationJumpItem");
+            throw new ArgumentException(string.Empty, nameof(applicationJumpItem));
         }
         public static ApplicationJumpItemInfo Unwrap(JumpItem jumpItem) {
             ApplicationJumpTaskWrap applicationJumpTaskWrap = jumpItem as ApplicationJumpTaskWrap;
             if(applicationJumpTaskWrap != null) return applicationJumpTaskWrap.ApplicationJumpTask;
             ApplicationJumpPathWrap applicationJumpPathWrap = jumpItem as ApplicationJumpPathWrap;
             if(applicationJumpPathWrap != null) return applicationJumpPathWrap.ApplicationJumpPath;
-            throw new ArgumentException(string.Empty, "jumpItem");
+            throw new ArgumentException(string.Empty, nameof(jumpItem));
         }
         public static void FillWrapProperties(JumpItem jumpItem) {
             ApplicationJumpTaskWrap applicationJumpTaskWrap = jumpItem as ApplicationJumpTaskWrap;
@@ -33,7 +33,7 @@ namespace DevExpress.Mvvm.UI.Native {
                 applicationJumpPathWrap.Path = applicationJumpPathWrap.ApplicationJumpPath.Path;
                 return;
             }
-            throw new ArgumentException(string.Empty, "jumpItem");
+            throw new ArgumentException(string.Empty, nameof(jumpItem));
         }
         public static string GetJumpItemCommandId(JumpItem jumpItem) {
             ApplicationJumpTaskWrap jumpTask = jumpItem as ApplicationJumpTaskWrap;

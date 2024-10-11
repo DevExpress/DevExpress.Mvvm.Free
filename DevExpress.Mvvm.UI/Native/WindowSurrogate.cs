@@ -40,7 +40,7 @@ namespace DevExpress.Mvvm.UI.Native {
             return res;
         }
         public WindowProxy(WindowBase window) {
-            if(window == null) throw new ArgumentNullException("window");
+            if(window == null) throw new ArgumentNullException(nameof(window));
             RealWindow = window;
         }
         public WindowBase RealWindow { get; private set; }

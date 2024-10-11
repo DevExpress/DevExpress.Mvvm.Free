@@ -63,7 +63,7 @@ namespace DevExpress.DXBinding.Native {
         }
         const string report002 = "The '{0}({1})' method is not found on object '{2}'.";
         public static string Report002(string method, Type[] methodArgs, Type objectType) {
-            var methodArgsStr = methodArgs == null || !methodArgs.Any() ? string.Empty : methodArgs.Select(x => x != null ? x.Name : "null").Aggregate((x, y) => x + ", " + y);
+            var methodArgsStr = methodArgs == null || methodArgs.Length == 0 ? string.Empty : methodArgs.Select(x => x != null ? x.Name : "null").Aggregate((x, y) => x + ", " + y);
             return string.Format(report002, method, methodArgsStr, objectType.Name);
         }
 

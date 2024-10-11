@@ -49,7 +49,7 @@ namespace DevExpress.Mvvm {
         }
         static void VerifyService(IViewInjectionService service) {
             if(service == null)
-                throw new ArgumentNullException("service");
+                throw new ArgumentNullException(nameof(service));
         }
     }
 }
@@ -99,7 +99,7 @@ namespace DevExpress.Mvvm {
 
         static void VerifyService(IViewInjectionManager service) {
             if(service == null)
-                throw new ArgumentNullException("service");
+                throw new ArgumentNullException(nameof(service));
         }
     }
 }

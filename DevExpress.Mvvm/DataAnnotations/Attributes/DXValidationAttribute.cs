@@ -37,7 +37,7 @@ namespace DevExpress.Mvvm.Native {
         }
         public string GetValidationResult(object value, string memberName, object instance = null) {
             if(memberName == null) {
-                throw new ArgumentNullException("memberName");
+                throw new ArgumentNullException(nameof(memberName));
             }
             if(!IsValid(value) || !IsInstanceValid(value, instance)) {
                 return FormatErrorMessage(GetErrorMessageString(value, instance), memberName);

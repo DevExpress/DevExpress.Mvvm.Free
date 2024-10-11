@@ -98,7 +98,7 @@ namespace DevExpress.Mvvm.Native {
         public RegularExpressionAttribute(string pattern, Func<object, string> errorMessageAccessor)
             : base(errorMessageAccessor, () => DataAnnotationsResourcesResolver.RegexAttribute_ValidationError) {
             if(string.IsNullOrEmpty(pattern))
-                throw new ArgumentNullException("pattern");
+                throw new ArgumentNullException(nameof(pattern));
             this.pattern = pattern;
         }
         protected override string FormatErrorMessage(string error, string name) {

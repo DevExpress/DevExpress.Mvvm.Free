@@ -307,7 +307,7 @@ namespace DevExpress.Mvvm.UI.Tests {
                     if(testProperty_2 == value) return;
                     testProperty_2 = value;
                     if(PropertyChanged != null)
-                        PropertyChanged(this, new PropertyChangedEventArgs("TestProperty_2"));
+                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(TestProperty_2)));
                 }
             }
 

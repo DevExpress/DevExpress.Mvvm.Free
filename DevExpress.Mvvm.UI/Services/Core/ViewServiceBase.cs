@@ -1,6 +1,7 @@
 using DevExpress.Mvvm.Native;
 using System.Windows;
 using System.Linq;
+using System.Windows.Interop;
 using System.Windows.Controls;
 using System.Windows.Data;
 
@@ -46,6 +47,10 @@ namespace DevExpress.Mvvm.UI {
             if (!ViewModelBase.IsInDesignMode) {
                 w.Owner = LayoutTreeHelper.GetVisualParents(ownerObject).OfType<Window>().FirstOrDefault()
                     ?? Window.GetWindow(ownerObject);
+                if(w.Owner != null)
+                    return;
+                HwndSource hwndSource = PresentationSource.FromDependencyObject(ownerObject) as HwndSource;
+                if(hwndSource != null) new WindowInteropHelper(w) { Owner = hwndSource.Handle };
             } else {
                 System.Windows.Interop.WindowInteropHelper windowInteropHelper = new System.Windows.Interop.WindowInteropHelper(w);
                 windowInteropHelper.Owner = GetActiveWindow();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using DevExpress.Mvvm.Native;
 
 namespace DevExpress.DXBinding.Native {
     public class Operand {
@@ -150,32 +151,35 @@ namespace DevExpress.DXBinding.Native {
         }
         public static object Cast(NCast.NKind kind, object value, Type type) {
             if (kind == NCast.NKind.Is) {
-                if (!IsOperators.ContainsKey(type)) {
+                Func<object, bool> func;
+                if (!IsOperators.TryGetValue(type, out func)) {
                     var p = Expression.Parameter(typeof(object));
                     var expr = Expression.TypeIs(p, type);
-                    var func = Expression.Lambda<Func<object, bool>>(expr, p).Compile();
-                    IsOperators.Add(type, func);
+                    func = Expression.Lambda<Func<object, bool>>(expr, p).Compile();
+                    IsOperators[type] = func;
                 }
-                return IsOperators[type](value);
+                return func(value);
             }
             if (kind == NCast.NKind.As) {
-                if (!AsOperators.ContainsKey(type)) {
+                Func<object, object> func;
+                if (!AsOperators.TryGetValue(type, out func)) {
                     var p = Expression.Parameter(typeof(object));
                     var expr = Expression.TypeAs(p, type);
                     expr = Expression.Convert(expr, typeof(object));
-                    var func = Expression.Lambda<Func<object, object>>(expr, p).Compile();
+                    func = Expression.Lambda<Func<object, object>>(expr, p).Compile();
                     AsOperators.Add(type, func);
                 }
-                return AsOperators[type](value);
+                return func(value);
             }
             if (kind == NCast.NKind.Cast) {
-                if (!CastOperators.ContainsKey(type)) {
+                Func<object, object> func;
+                if (!CastOperators.TryGetValue(type, out func)) {
                     var p = Expression.Parameter(typeof(object));
                     var expr = Expression.Call(null, CastMethod.MakeGenericMethod(type), p);
-                    var func = Expression.Lambda<Func<object, object>>(expr, p).Compile();
+                    func = Expression.Lambda<Func<object, object>>(expr, p).Compile();
                     CastOperators.Add(type, func);
                 }
-                return CastOperators[type](value);
+                return func(value);
             }
             throw new NotImplementedException();
         }
@@ -290,7 +294,7 @@ namespace DevExpress.DXBinding.Native {
             return generic.GetMethod("m").GetParameters().Single();
         }
         static ParameterInfo[] GetExpandedForm(Type[] args, ParameterInfo[] parameters) {
-            if (!parameters.Any() || !IsParams(parameters.Last()))
+            if (parameters.Length == 0 || !IsParams(parameters.Last()))
                 return null;
             return parameters.Take(parameters.Length - 1)
                 .Concat(Enumerable.Range(0, Math.Max(0, args.Length - parameters.Length + 1)).Select(_ => StripArray(parameters.Last())))
@@ -374,11 +378,11 @@ namespace DevExpress.DXBinding.Native {
         public static MethodBase FindMethodBase(IEnumerable<MethodBase> allMethods, Type[] args, out Type[] outArgs) {
             var applicable = GetApplicableFunctionMembers(allMethods, args).ToList();
             outArgs = null;
-            if (!applicable.Any()) {
+            if (applicable.Count == 0) {
                 return null;
             }
             MethodBase best = null;
-            if (applicable.Count() == 1) {
+            if (applicable.Count == 1) {
                 best = applicable.First();
             } else {
                 best = applicable.FirstOrDefault(x => applicable.Where(a => a != x).All(a => IsLeftBetter(args, x, a)));
@@ -392,7 +396,7 @@ namespace DevExpress.DXBinding.Native {
 
     abstract class VisitorBase<T> {
         protected IEnumerable<T> RootVisit(NRoot n) {
-            return n.Exprs.Select(Visit).ToList();
+            return n.Exprs.Select(x => Visit(x)).ToList();
         }
         protected virtual T Visit(NBase n) {
             if(!CanContinue(n)) return default(T);
@@ -501,7 +505,7 @@ namespace DevExpress.DXBinding.Native {
         protected virtual T Type_New(T from, NNew n, IEnumerable<T> args) { throw new NotImplementedException(); }
 
         protected static IEnumerable<TEl> MakePlain<TEl>(IEnumerable<IEnumerable<TEl>> list) {
-            if(list == null || list.Count() == 0 || list.Contains(null)) return new TEl[] { };
+            if(list == null || !list.Any() || list.Contains(null)) return Array.Empty<TEl>();
             return list.Aggregate((x, y) => x.Union(y)).ToList();
         }
     }
@@ -672,11 +676,11 @@ namespace DevExpress.DXBinding.Native {
             return recursive ? visitor.RootIdent(n) : visitor.RootIdentCore(null, n);
         }
         public static string CombineIdents(IEnumerable<string> idents) {
-            if(idents == null || idents.Count() == 0) return null;
+            if(idents == null || !idents.Any()) return null;
             return idents.Aggregate((x, y) => x + string.Format(nextIdentToString, y));
         }
         public static string CombineArgs(IEnumerable<string> args) {
-            if(args == null || args.Count() == 0) return null;
+            if(args == null || !args.Any()) return null;
             return args.Aggregate((x, y) => x + string.Format(nextMethodArgToString, y));
         }
     }
@@ -716,7 +720,7 @@ namespace DevExpress.DXBinding.Native {
         #endregion
         #region Visitor
         protected override IEnumerable<TypeInfo> RootIdent(NIdentBase n) {
-            IEnumerable<TypeInfo> res = new TypeInfo[] { };
+            IEnumerable<TypeInfo> res = Array.Empty<TypeInfo>();
             NIdentBase rest;
             VisitorOperand.ReduceIdent(n, x => {
                 res = res.Union(Type_Type(null, x));
@@ -724,7 +728,7 @@ namespace DevExpress.DXBinding.Native {
             }, out rest, fullPack);
             n = rest;
             while(n != null) {
-                if(!CanContinue(n)) return new TypeInfo[] { };
+                if(!CanContinue(n)) return Array.Empty<TypeInfo>();
                 res = res.Union(RootIdentCore(res, n));
                 n = n.Next;
             }
@@ -736,10 +740,10 @@ namespace DevExpress.DXBinding.Native {
         protected override IEnumerable<TypeInfo> Relative(IEnumerable<TypeInfo> from, NRelative n) {
             if(n.Kind == NRelative.NKind.Ancestor)
                 return Type_Type(from, n.AncestorType);
-            return new TypeInfo[] { };
+            return Array.Empty<TypeInfo>();
         }
         protected override IEnumerable<TypeInfo> Ident(IEnumerable<TypeInfo> from, NIdent n) {
-            return new TypeInfo[] { };
+            return Array.Empty<TypeInfo>();
         }
         protected override IEnumerable<TypeInfo> Method(IEnumerable<TypeInfo> from, NMethod n, IEnumerable<IEnumerable<TypeInfo>> methodArgs) {
             return MakePlain(methodArgs);
@@ -764,7 +768,7 @@ namespace DevExpress.DXBinding.Native {
         }
 
         protected override IEnumerable<TypeInfo> Constant(NConstant n) {
-            return new TypeInfo[] { };
+            return Array.Empty<TypeInfo>();
         }
         protected override IEnumerable<TypeInfo> Binary(NBinary n, IEnumerable<TypeInfo> left, IEnumerable<TypeInfo> right) {
             return left.Union(right);
@@ -808,7 +812,7 @@ namespace DevExpress.DXBinding.Native {
     }
     class VisitorOperand : VisitorBase<IEnumerable<Operand>> {
         protected override IEnumerable<Operand> Constant(NConstant n) {
-            return new Operand[] { };
+            return Array.Empty<Operand>();
         }
         protected override IEnumerable<Operand> Binary(NBinary n, IEnumerable<Operand> left, IEnumerable<Operand> right) {
             return left.Union(right);
@@ -831,7 +835,7 @@ namespace DevExpress.DXBinding.Native {
             else return NotFullPack_RootIdent(n);
         }
         IEnumerable<Operand> FullPack_RootIdent(NIdentBase n) {
-            IEnumerable<Operand> res = new Operand[] { };
+            IEnumerable<Operand> res = Array.Empty<Operand>();
             NIdentBase rest;
             Operand op = ReduceIdent(n, typeResolver, out rest);
             if (op != null) res = new[] { op };
@@ -845,7 +849,7 @@ namespace DevExpress.DXBinding.Native {
                     else if (x is NType) {
                         if (((NType)x).Ident is NMethod)
                             return ((NMethod)((NType)x).Ident).Args;
-                        else return new NBase[] { };
+                        else return Array.Empty<NBase>();
                     } else if (x is NNew) {
                         return ((NNew)x).Args;
                     }
@@ -854,7 +858,7 @@ namespace DevExpress.DXBinding.Native {
             return res.ToList();
         }
         IEnumerable<Operand> NotFullPack_RootIdent(NIdentBase n) {
-            IEnumerable<Operand> res = new Operand[] { };
+            IEnumerable<Operand> res = Array.Empty<Operand>();
             NRelative nr = n as NRelative;
             if (nr != null) {
                 if (!(nr.Kind == NRelative.NKind.Value
@@ -878,7 +882,7 @@ namespace DevExpress.DXBinding.Native {
                        else if (x is NType) {
                            if (((NType)x).Ident is NMethod)
                                return ((NMethod)((NType)x).Ident).Args;
-                           else return new NBase[] { };
+                           else return Array.Empty<NBase>();
                        } else if (x is NNew) {
                            return ((NNew)x).Args;
                        }
@@ -888,11 +892,11 @@ namespace DevExpress.DXBinding.Native {
         }
 
         void BackExpr(NBase n) {
-            if(operands.Count() == 0) {
+            if(operands.Count == 0) {
                 errorHandler.Throw(ErrorHelper.Err102(), null);
                 return;
             }
-            if(operands.Count() > 1) {
+            if(operands.Count > 1) {
                 errorHandler.Throw(ErrorHelper.Err103(), null);
                 return;
             }
@@ -900,7 +904,7 @@ namespace DevExpress.DXBinding.Native {
             return;
         }
         void BackAssigns(IEnumerable<NAssign> assigns) {
-            IEnumerable<Operand> backOperands = new Operand[] { };
+            IEnumerable<Operand> backOperands = Array.Empty<Operand>();
             assigns
                 .Select(x => x.Left).Select(Visit)
                 .ToList()
@@ -914,7 +918,7 @@ namespace DevExpress.DXBinding.Native {
         }
         void RootVisitBack(NRoot backExpr) {
             if(errorHandler.HasError) return;
-            if(backExpr.Exprs.Count() == 1 && !(backExpr.Expr is NAssign)) {
+            if(backExpr.Exprs.Count == 1 && !(backExpr.Expr is NAssign)) {
                 BackExpr(backExpr.Expr);
                 return;
             }
@@ -1077,7 +1081,7 @@ namespace DevExpress.DXBinding.Native {
             if (fromT.IsArray)
                 return Try(() => ((Array)from).GetValue(indexArgs.Cast<int>().ToArray()));
             var allMethods = fromT.GetProperties(MemberSearcher.InstanceBindingFlags)
-                .Where(x => x.GetIndexParameters().Any())
+                .Where(x => x.GetIndexParameters().Length != 0)
                 .Select(x => x.GetGetMethod())
                 .ToArray();
             return InvokeMethod(allMethods, indexArgs, "Indexer", from, fromT);
@@ -1179,7 +1183,7 @@ namespace DevExpress.DXBinding.Native {
                 return;
 
             var parameters = method.GetParameters();
-            if (parameters.Any() && MemberSearcher.IsParams(parameters.Last())) {
+            if (parameters.Length != 0 && MemberSearcher.IsParams(parameters.Last())) {
                 int toPack = args.Count() - parameters.Length + 1;
                 var paramsArray = outArgs.Skip(outArgs.Count() - toPack).ToArray();
                 outArgs = outArgs.Take(args.Count() - toPack).ToList();
@@ -1252,8 +1256,9 @@ namespace DevExpress.DXBinding.Native {
                 }
             }
             if (operand != null) {
-                if (operandValues.ContainsKey(operand))
-                    return operandValues[operand];
+                object value;
+                if (operandValues.TryGetValue(operand, out value))
+                    return value;
                 errorHandler.SetError();
             }
             return null;
@@ -1530,7 +1535,7 @@ namespace DevExpress.DXBinding.Native {
             if(from.Type.IsArray)
                 return Expression.ArrayIndex(from, indexArgs);
             var allMethods = from.Type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
-                .Where(x => x.GetIndexParameters().Any())
+                .Where(x => x.GetIndexParameters().Length > 0)
                 .Select(x => x.GetGetMethod())
                 .ToArray();
             return GetInvocationExpression(from, from.Type, allMethods, n.Name, indexArgs);
@@ -1565,11 +1570,11 @@ namespace DevExpress.DXBinding.Native {
             }
             var _methodArgs = new List<Expression>();
             if(args != null) {
-                for(int i = 0; i < args.Count(); i++)
+                for(int i = 0; i < args.Length; i++)
                     _methodArgs.Add(Expression.Convert(methodArgs.ElementAt(i), args[i]));
             }
             var parameters = method.GetParameters();
-            if(parameters.Any() && MemberSearcher.IsParams(parameters.Last())) {
+            if(parameters.Length > 0 && MemberSearcher.IsParams(parameters.Last())) {
                 int toPack = args.Length - parameters.Length + 1;
                 var paramsArray = _methodArgs.Skip(_methodArgs.Count - toPack).ToArray();
                 _methodArgs = _methodArgs.Take(methodArgs.Count() - toPack)
@@ -1874,11 +1879,11 @@ namespace DevExpress.DXBinding.Native {
         }
 
         bool CheckOperandsCount(object[] opValues) {
-            if (Operands.Count() == 0 && opValues == null)
+            if (!Operands.Any() && opValues == null)
                 return true;
             if (opValues == null)
                 return false;
-            if (Operands.Count() != opValues.Count())
+            if (Operands.Count() != opValues.Length)
                 throw new InvalidOperationException();
             return true;
         }
@@ -2003,7 +2008,7 @@ namespace DevExpress.DXBinding.Native {
                 calculate);
         }
         object[] CollectParameterValues(object[] opValues, object parameter) {
-            List<object> res = new List<object>(opValues ?? new object[] { });
+            List<object> res = new List<object>(opValues ?? Array.Empty<object>());
             res.Add(parameter);
             return res.ToArray();
         }
@@ -2037,7 +2042,7 @@ namespace DevExpress.DXBinding.Native {
                 () => { eventFunc(input); });
         }
         object[] CollectParameterValues(object[] opValues, object sender, object args) {
-            List<object> res = new List<object>(opValues ?? new object[] { });
+            List<object> res = new List<object>(opValues ?? Array.Empty<object>());
             res.Add(sender);
             res.Add(args);
             return res.ToArray();

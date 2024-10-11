@@ -47,7 +47,7 @@ namespace DevExpress.Mvvm {
 
         internal static void Verify(IFileInfo fileInfo) {
             if(fileInfo == null)
-                throw new ArgumentNullException("fileInfo");
+                throw new ArgumentNullException(nameof(fileInfo));
         }
     }
 }

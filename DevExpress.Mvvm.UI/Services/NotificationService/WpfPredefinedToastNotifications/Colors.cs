@@ -116,7 +116,7 @@ namespace DevExpress.Mvvm.UI.Native {
             if(!map.Values.Any(v => v > count * 0.05))
                 return DefaultGrayColor;
             var test = map.OrderByDescending(p => p.Value).ToList();
-            var test2 = test.Select(v => (double)v.Value / test.Count()).ToList();
+            var test2 = test.Select(v => (double)v.Value / test.Count).ToList();
             double t = test2[0] - test2[1];
             Color left = map.OrderBy(p => p.Value).Last().Key;
             Color res = colorTable.First(p => p[0] == left)[1];

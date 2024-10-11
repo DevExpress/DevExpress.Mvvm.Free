@@ -72,7 +72,6 @@ namespace DevExpress.Mvvm.UI.Interactivity {
             DataTemplate newValue = e.NewValue as DataTemplate;
             if(oldItems != null) {
                 foreach(Behavior behavior in oldItems)
-                    if(objectBehaviors.Contains(behavior))
                         objectBehaviors.Remove(behavior);
             }
             if(newValue == null) {

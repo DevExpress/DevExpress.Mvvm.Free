@@ -35,7 +35,7 @@ namespace DevExpress.Mvvm {
     public class ApplicationJumpTaskDuplicateCommandIdException : InvalidApplicationJumpItemException { }
     public static class ApplicationJumpListExtensions {
         public static void AddRange(this IApplicationJumpList jumpList, IEnumerable<ApplicationJumpItemInfo> jumpItems) {
-            if(jumpList == null) throw new ArgumentNullException("jumpList");
+            if(jumpList == null) throw new ArgumentNullException(nameof(jumpList));
             List<Exception> exceptions = null;
             foreach(ApplicationJumpItemInfo jumpItem in jumpItems) {
                 try {
@@ -57,7 +57,7 @@ namespace DevExpress.Mvvm {
             }
         }
         public static ApplicationJumpPathInfo Add(this IApplicationJumpList jumpList, string customCategory, string jumpPath) {
-            if(jumpList == null) throw new ArgumentNullException("jumpList");
+            if(jumpList == null) throw new ArgumentNullException(nameof(jumpList));
             ApplicationJumpPathInfo jumpItem = new ApplicationJumpPathInfo() { Path = jumpPath, CustomCategory = customCategory };
             try {
                 jumpList.Add(jumpItem);
@@ -76,12 +76,12 @@ namespace DevExpress.Mvvm {
             return jumpList.Add(customCategory, title, icon, null, action, commandId);
         }
         public static ApplicationJumpTaskInfo Add(this IApplicationJumpList jumpList, string customCategory, string title, ImageSource icon, string description, Action action, string commandId = null) {
-            if(jumpList == null) throw new ArgumentNullException("jumpList");
+            if(jumpList == null) throw new ArgumentNullException(nameof(jumpList));
             ApplicationJumpTaskInfo jumpItem = new ApplicationJumpTaskInfo() { CustomCategory = customCategory, Title = title, Icon = icon, Description = description, CommandId = commandId, Action = action };
             try {
                 jumpList.Add(jumpItem);
             } catch(ApplicationJumpTaskInvalidIconException e) {
-                throw new ArgumentException("", "icon", e);
+                throw new ArgumentException("", nameof(icon), e);
             } catch(InvalidApplicationJumpItemException e) {
                 throw new InvalidOperationException("", e);
             }
@@ -97,12 +97,12 @@ namespace DevExpress.Mvvm {
             return jumpList.AddOrReplace(customCategory, title, icon, null, action, commandId);
         }
         public static ApplicationJumpTaskInfo AddOrReplace(this IApplicationJumpList jumpList, string customCategory, string title, ImageSource icon, string description, Action action, string commandId = null) {
-            if(jumpList == null) throw new ArgumentNullException("jumpList");
+            if(jumpList == null) throw new ArgumentNullException(nameof(jumpList));
             ApplicationJumpTaskInfo jumpItem = new ApplicationJumpTaskInfo() { CustomCategory = customCategory, Title = title, Icon = icon, Description = description, CommandId = commandId, Action = action };
             try {
                 jumpList.AddOrReplace(jumpItem);
             } catch(ApplicationJumpTaskInvalidIconException e) {
-                throw new ArgumentException("", "icon", e);
+                throw new ArgumentException("", nameof(icon), e);
             } catch(InvalidApplicationJumpItemException e) {
                 throw new InvalidOperationException("", e);
             }

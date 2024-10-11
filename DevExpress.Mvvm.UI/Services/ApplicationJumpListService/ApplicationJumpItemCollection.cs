@@ -21,7 +21,7 @@ namespace DevExpress.Mvvm.UI {
         [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)]
         public FreezableCollection<ApplicationJumpItem> SourceItems { get; private set; }
         protected ApplicationJumpItemCollection(IApplicationJumpListImplementation implementation) {
-            if(implementation == null) throw new ArgumentNullException("implementation");
+            if(implementation == null) throw new ArgumentNullException(nameof(implementation));
             this.implementation = implementation;
             SourceItems = new FreezableCollection<ApplicationJumpItem>();
         }

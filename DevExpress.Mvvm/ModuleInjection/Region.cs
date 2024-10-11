@@ -257,18 +257,15 @@ namespace DevExpress.Mvvm.ModuleInjection.Native {
             return GetSerializationMode(customVisualSerializationMode, key, VisualSerializationMode);
         }
         void SetCustomSerializationMode<T>(Dictionary<string, T> storage, string key, T? mode) where T : struct {
-            if(mode == null) {
-                if(storage.ContainsKey(key))
+            if(mode != null)
+                storage[key] = mode.Value;
+            else
                     storage.Remove(key);
-                return;
-            }
-            if(!storage.ContainsKey(key))
-                storage.Add(key, mode.Value);
-            else storage[key] = mode.Value;
         }
         T GetSerializationMode<T>(Dictionary<string, T> storage, string key, T globalValue) {
-            if(storage.ContainsKey(key))
-                return storage[key];
+            T mode;
+            if(storage.TryGetValue(key, out mode))
+                return mode;
             return globalValue;
         }
 

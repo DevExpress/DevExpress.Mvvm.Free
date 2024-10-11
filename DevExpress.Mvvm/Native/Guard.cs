@@ -46,7 +46,8 @@ namespace DevExpress.Mvvm.Native {
         public static TValue ArgumentMatchType<TValue>(object value, string name) {
             try {
                 return (TValue)value;
-            } catch(InvalidCastException e) {
+            }
+            catch(InvalidCastException e) {
                 ThrowArgumentException(name, value, e);
                 throw new InvalidOperationException();
             }

@@ -36,7 +36,7 @@ namespace DevExpress.Mvvm {
             service.Wait(TimeSpan.FromMilliseconds(-1));
         }
         static void VerifyService(IAsyncCommand service) {
-            if(service == null) throw new ArgumentNullException("service");
+            if(service == null) throw new ArgumentNullException(nameof(service));
         }
     }
 }
@@ -68,9 +68,9 @@ namespace DevExpress.Mvvm.Native {
             if(i > 0)
                 name = name.Remove(i);
             if(!type.IsGenericType)
-                return"{@namespace}.{name}";
+                return $"{@namespace}.{name}";
             var genericArgs = string.Join(", ", type.GetGenericArguments().Select(x => x.ToDisplayString()));
-            return"{@namespace}.{name}<{genericArgs}>";
+            return $"{@namespace}.{name}<{genericArgs}>";
         }
     }
 

@@ -369,8 +369,9 @@ namespace DevExpress.Mvvm.UI.ModuleInjection {
             return strategy;
         }
         IWindowStrategy GetStrategy(object vm) {
-            if(vm == null || !strategies.ContainsKey(vm)) return null;
-            return strategies[vm];
+            IWindowStrategy strategy;
+            if(vm == null || !strategies.TryGetValue(vm, out strategy)) return null;
+            return strategy;
         }
         void RemoveStrategy(object vm) {
             var strategy = GetStrategy(vm);

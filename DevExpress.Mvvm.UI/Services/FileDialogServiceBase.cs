@@ -335,7 +335,7 @@ namespace DevExpress.Mvvm.UI {
             FileDialog.Title = Title;
             FileDialog.ValidateNames = ValidateNames;
 
-            if(RestorePreviouslySelectedDirectory && FilesCore.Count() > 0)
+            if(RestorePreviouslySelectedDirectory && FilesCore.Any())
                 FileDialog.InitialDirectory = GetPreviouslySelectedDirectory();
             else
                 FileDialog.InitialDirectory = InitialDirectory;

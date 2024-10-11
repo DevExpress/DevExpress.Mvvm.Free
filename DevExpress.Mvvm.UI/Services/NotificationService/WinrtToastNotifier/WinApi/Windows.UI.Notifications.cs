@@ -1,12 +1,12 @@
-using DevExpress.Data;
-using DevExpress.Internal.WinApi;
-using DevExpress.Internal.WinApi.Window.Data.Xml.Dom;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using DevExpress.Data;
+using DevExpress.Internal.WinApi;
+using DevExpress.Internal.WinApi.Window.Data.Xml.Dom;
 
 namespace DevExpress.Internal.WinApi.Windows.UI.Notifications {
     public enum HResult {

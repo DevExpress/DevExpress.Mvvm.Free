@@ -91,7 +91,11 @@ namespace DevExpress.Data {
             return Environment.GetFolderPath(Environment.SpecialFolder.Programs);
         }
         static string GetSourcePath() {
+#if !NET
             return Process.GetCurrentProcess().MainModule.FileName;
+#else
+            return Environment.ProcessPath;
+#endif
         }
         static string PatchExePath(string exePath) {
             if(string.IsNullOrEmpty(exePath))

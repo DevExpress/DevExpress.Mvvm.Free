@@ -261,7 +261,9 @@ namespace DevExpress.Xpf.DXBinding {
             IXamlTypeResolver xamlTypeResolver;
             Dictionary<string, Type> typeCache = new Dictionary<string, Type>();
             Type ITypeResolver.ResolveType(string type) {
-                if(typeCache.ContainsKey(type)) return typeCache[type];
+                Type typeResult;
+                if(typeCache.TryGetValue(type, out typeResult))
+                    return typeResult;
                 if(IsInDesignMode()) {
                     owner.ErrorHandler.SetError();
                     return null;
@@ -347,7 +349,7 @@ namespace DevExpress.Xpf.DXBinding {
         }
         protected override object GetProvidedValue() {
             if(Mode == BindingMode.Default && TreeInfo.IsEmptyBackExpr()
-                && Calculator.Operands.Count() == 0)
+                && !Calculator.Operands.Any())
                 ActualMode = BindingMode.OneWay;
             if((ActualMode == BindingMode.TwoWay || ActualMode == BindingMode.OneWayToSource)
                && TreeInfo.IsEmptyBackExpr()) {
@@ -363,7 +365,7 @@ namespace DevExpress.Xpf.DXBinding {
             return Calculator != null ? Calculator.Operands : null;
         }
         BindingBase CreateBinding() {
-            if(Calculator.Operands.Count() == 0) {
+            if(!Calculator.Operands.Any()) {
                 var binding = CreateBinding(null, ActualMode);
                 SetBindingProperties(binding, true);
                 binding.Source = Calculator.Resolve(null);
@@ -462,7 +464,7 @@ namespace DevExpress.Xpf.DXBinding {
             return Calculator != null ? Calculator.Operands : null;
         }
         BindingBase CreateBinding() {
-            if(Calculator.Operands.Count() == 0) {
+            if(!Calculator.Operands.Any()) {
                 var binding = CreateBinding(null, BindingMode.OneWay);
                 SetBindingProperties(binding, true);
                 binding.Source = null;
@@ -553,7 +555,7 @@ namespace DevExpress.Xpf.DXBinding {
             return m.GetParameters().ElementAt(1).ParameterType;
         }
         BindingBase CreateBinding() {
-            if(Calculator.Operands.Count() == 0) {
+            if(!Calculator.Operands.Any()) {
                 var binding = CreateBinding(null, BindingMode.OneTime);
                 binding.Source = null;
                 binding.Converter = new DXEventConverter(this, true);
@@ -659,7 +661,7 @@ namespace DevExpress.Xpf.Core.Native {
             value = CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
             object[] res = ConvertBack(value, targetTypes);
             res = CoerceAfterConvertBack(res, targetTypes, parameter, culture);
-            for(int i = 0; i < res.Count(); i++)
+            for(int i = 0; i < res.Length; i++)
                 res[i] = ConvertToTargetType(res[i], targetTypes[i]);
             return res.ToArray();
         }
@@ -742,7 +744,7 @@ namespace DevExpress.Xpf.Core.Native {
         }
         protected override object CoerceBeforeConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
             if(externalConverter != null) {
-                var t = targetTypes != null && targetTypes.Count() == 1 ? targetTypes[0] : backConversionType;
+                var t = targetTypes != null && targetTypes.Length == 1 ? targetTypes[0] : backConversionType;
                 return externalConverter.ConvertBack(value, t, parameter, culture);
             }
             return base.CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
@@ -786,13 +788,13 @@ namespace DevExpress.Xpf.Core.Native {
         }
         protected override object CoerceBeforeConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
             if(externalConverter != null) {
-                var t = targetTypes != null && targetTypes.Count() == 1 ? targetTypes[0] : null;
+                var t = targetTypes != null && targetTypes.Length == 1 ? targetTypes[0] : null;
                 return externalConverter.ConvertBack(value, t, parameter, culture);
             }
             return base.CoerceBeforeConvertBack(value, targetTypes, parameter, culture);
         }
         protected override object[] CoerceAfterConvertBack(object[] value, Type[] targetTypes, object parameter, CultureInfo culture) {
-            for(int i = 0; i < value.Count(); i++)
+            for(int i = 0; i < value.Length; i++)
                 value[i] = ObjectToObjectConverter.Coerce(value[i], targetTypes[i], true);
             return base.CoerceAfterConvertBack(value, targetTypes, parameter, culture);
         }
@@ -934,7 +936,7 @@ namespace DevExpress.Xpf.Core.Native {
             this.isEmpty = isEmpty;
         }
         protected override object Convert(object[] values, Type targetType) {
-            return isEmpty ? null : new List<object>(values ?? new object[] { });
+            return isEmpty ? null : new List<object>(values ?? Array.Empty<object>());
         }
     }
 

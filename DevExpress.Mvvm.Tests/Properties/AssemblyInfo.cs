@@ -12,7 +12,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
-[assembly: CLSCompliant(true)]
+#if NET
+[assembly: System.Runtime.Versioning.SupportedOSPlatform("windows")]
+#endif
 [assembly: Guid("88f58100-3104-43fc-839d-855b47878cee")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]

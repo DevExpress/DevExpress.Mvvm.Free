@@ -394,11 +394,11 @@ namespace DevExpress.Mvvm.Tests {
         int someProperty2;
         public int SomeProperty2 {
             get { return someProperty2; }
-            set { SetProperty(ref someProperty2, value, "SomeProperty2"); }
+            set { SetProperty(ref someProperty2, value, nameof(SomeProperty2)); }
         }
         public int SomeProperty {
             set {
-                RaisePropertyChanged("SomeProperty");
+                RaisePropertyChanged(nameof(SomeProperty));
             }
         }
         public int SomeProperty9 {
@@ -619,7 +619,7 @@ namespace DevExpress.Mvvm.Tests {
         int someProperty2;
         public int SomeProperty2 {
             get { return someProperty2; }
-            set { SetValue(ref someProperty2, value, "SomeProperty2"); }
+            set { SetValue(ref someProperty2, value, nameof(SomeProperty2)); }
         }
     }
     class BindableBaseTest2_CallerMemberName : BindableBase {

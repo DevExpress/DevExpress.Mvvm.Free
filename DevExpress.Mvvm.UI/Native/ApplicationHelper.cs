@@ -1,12 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Windows;
-using System.Windows.Resources;
-using System.Xml.Linq;
-using System.Windows.Interop;
 
 namespace DevExpress.Mvvm.UI.Native {
     public static class StreamHelper {

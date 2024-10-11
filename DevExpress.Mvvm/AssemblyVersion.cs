@@ -1,16 +1,16 @@
 namespace DevExpress.Internal {
  internal static class AssemblyInfo {
-    public const string AssemblyCopyright = "Copyright © 2000-2023 Developer Express Inc.";
+    public const string AssemblyCopyright = "Copyright © 2000-2024 Developer Express Inc.";
     public const string AssemblyCompany = "Developer Express Inc.";
 
-    public const int VersionId = 232;
-    public const int VersionIdMinor = 23201;
-    public const string VersionShort = "23.2";
+    public const int VersionId = 242;
+    public const int VersionIdMinor = 24201;
+    public const string VersionShort = "24.2";
     public const string Version = VersionShort + ".0.0";
 
     public const string FileVersion = Version;
-    public const string MarketingVersion = "v2023 vol 2";
-    public const string VirtDirSuffix = "_v23_2";
+    public const string MarketingVersion = "v2024 vol 2";
+    public const string VirtDirSuffix = "_v24_2";
 
     public const string PublicKeyToken = "79868b8147b5eae4";
     public const string PublicKey = "0024000004800000940000000602000000240000525341310004000001000100dd3415ad127e2479d518586804419e99231acd687f889e897fb021bec3d90d53781811bb9d569e032d00362413298930c553dfd43a24e699c6a3d4922824f3c987fc01524b94059de1ccfbef1ff6aedc86055d56c4c3c92c550c84a1410b0c0e891e8f2f0fa193e1532f25727ae634055808129b901bdc24cb517e95fb8815b5";
@@ -31,7 +31,6 @@ namespace DevExpress.Internal {
     public const string VSuffixExport = VSuffix + ".Export";
     public const string VSuffixLinq = VSuffix + ".Linq";
     public const string SRAssemblyAgScheduler = "DevExpress.Xpf.Scheduler" + VSuffix;
-    public const string SRAssemblyAssemblyLoader = "DevExpress.Xpf.AssemblyLoader" + VSuffix;
     public const string SRAssemblyXpfSpellChecker = "DevExpress.Xpf.SpellChecker" + VSuffix;
     public const string SRAssemblyXpfOffice = "DevExpress.Xpf.Office" + VSuffix;
     public const string SRAssemblyXpfRichEdit = "DevExpress.Xpf.RichEdit" + VSuffix;
@@ -62,18 +61,18 @@ namespace DevExpress.Internal {
     public const string SRAssemblyXpfRibbon = "DevExpress.Xpf.Ribbon" + VSuffix;
     public const string SRAssemblyXpfRibbonFull = SRAssemblyXpfRibbon + FullAssemblyVersionExtension;
     public const string SRAssemblyXpfNavBar = "DevExpress.Xpf.NavBar" + VSuffix;
-    public const string SRAssemblyXpfCoreExtensions = "DevExpress.Xpf.Core" + VSuffix + ".Extensions";
+    public const string SRAssemblyXpfCoreExtensions = SRAssemblyXpfCore + ".Extensions";
     public const string SRAssemblyXpfDemoBase = "DevExpress.Xpf.DemoBase" + VSuffix;
     public const string SRAssemblyXpfGrid = "DevExpress.Xpf.Grid" + VSuffix;
     public const string SRAssemblyXpfGridFull = SRAssemblyXpfGrid + FullAssemblyVersionExtension;
-    public const string SRAssemblyXpfGridCore = "DevExpress.Xpf.Grid" + VSuffix + ".Core";
-    public const string SRAssemblyXpfGridExtensions = "DevExpress.Xpf.Grid" + VSuffix + ".Extensions";
+    public const string SRAssemblyXpfGridCore = SRAssemblyXpfGrid + ".Core";
+    public const string SRAssemblyXpfGridExtensions = SRAssemblyXpfGrid + ".Extensions";
 
     public const string SRAssemblyXpfPivotGrid = "DevExpress.Xpf.PivotGrid" + VSuffix;
     public const string SRAssemblyXpfPivotGridFull = SRAssemblyXpfPivotGrid + FullAssemblyVersionExtension;
-    public const string SRAssemblyXpfPivotGridTests = "DevExpress.Xpf.PivotGrid" + VSuffix + TestsSuffix;
+    public const string SRAssemblyXpfPivotGridTests = SRAssemblyXpfPivotGrid + TestsSuffix;
 
-    public const string SRAssemblyXpfPropertyGrid = "DevExpress.Xpf.PivotGrid" + VSuffix;
+    public const string SRAssemblyXpfPropertyGrid = "DevExpress.Xpf.PropertyGrid" + VSuffix;
     public const string SRAssemblyXpfPropertyGridFull = SRAssemblyXpfPropertyGrid + FullAssemblyVersionExtension;
 
     public const string SRAssemblyXpfDiagram = "DevExpress.Xpf.Diagram" + VSuffix;
@@ -137,10 +136,11 @@ namespace DevExpress.Internal {
     public const string SRAssemblyRichEditLayoutEngine = "DevExpress.RichEdit.LayoutEngine" + VSuffix;
     public const string SRAssemblyRichEditLayoutEngineTests = SRAssemblyRichEditLayoutEngine + TestsSuffix;
 
-    public const string SRDocumentationLink = "http://documentation.devexpress.com/";
+    public const string SRDocumentationLink = "https://docs.devexpress.com/?l=true/";
     public const string SRNewDocumentationLink = "http://docs.devexpress.com/";
     public const string InstallationRegistryKeyBase = "SOFTWARE\\DevExpress\\Components\\";
     public const string InstallationRegistryKey = InstallationRegistryKeyBase + VSuffixWithoutSeparator;
+    public const string InstallationDevExtremeRegistryKey = "SOFTWARE\\DevExpress\\DevExtreme\\" + VSuffixWithoutSeparator;
     public const string InstallationRegistryRootPathValueName = "RootDirectory";
     public const string SRAssemblyXpfPrefix = "DevExpress.Xpf";
     public const string SRAssemblyPrefix = "DevExpress";
@@ -391,6 +391,7 @@ namespace DevExpress.Internal {
         SRAssemblyASPxGauges = "DevExpress.Web.ASPxGauges" + VSuffix,
         SRAssemblyASPxGaugesTests = "DevExpress.Web.ASPxGauges" + VSuffix + ".Tests",
         SRAssemblyGaugesDesignWin = "DevExpress.XtraGauges" + VSuffixDesign + ".Win",
+        SRAssemblyGaugesDesignWinFull = SRAssemblyGaugesDesignWin + FullAssemblyVersionExtension,
         SRAssemblyGridDesign = "DevExpress.XtraGrid" + VSuffixDesign,
         SRAssemblyGridDesignFull = "DevExpress.XtraGrid" + VSuffixDesign + FullAssemblyVersionExtension,
         SRAssemblyPivotGrid = "DevExpress.XtraPivotGrid" + VSuffix,
@@ -448,6 +449,7 @@ namespace DevExpress.Internal {
         SRAssemblyRichEditExportFull = SRAssemblyRichEditExport + FullAssemblyVersionExtension,
         SRAssemblySpreadsheet = "DevExpress.XtraSpreadsheet" + VSuffix,
         SRAssemblySpreadsheetDesign = "DevExpress.XtraSpreadsheet" + VSuffixDesign,
+        SRAssemblySpreadsheetDesignFull = SRAssemblySpreadsheetDesign + FullAssemblyVersionExtension,
         SRAssemblyScheduler = "DevExpress.XtraScheduler" + VSuffix,
         SRAssemblySchedulerDesign = "DevExpress.XtraScheduler" + VSuffixDesign,
         SRAssemblySchedulerDesignFull = "DevExpress.XtraScheduler" + VSuffixDesign + FullAssemblyVersionExtension,
@@ -474,11 +476,13 @@ namespace DevExpress.Internal {
         SRAssemblyChartsWizard = "DevExpress.XtraCharts" + VSuffix + ".Wizard" + FullAssemblyVersionExtension,
         SRAssemblyChartsWizardShort = "DevExpress.XtraCharts" + VSuffix + ".Wizard",
         SRAssemblyChartsDesign = "DevExpress.XtraCharts" + VSuffixDesign,
+        SRAssemblyChartsDesignFull = SRAssemblyChartsDesign + FullAssemblyVersionExtension,
         SRAssemblyChartsWebDesign = "DevExpress.XtraCharts" + VSuffix + ".Web.Design" + FullAssemblyVersionExtension,
         SRAssemblyChartsUI = "DevExpress.XtraCharts" + VSuffix + ".UI",
         SRAssemblyChartsWeb = "DevExpress.XtraCharts" + VSuffix + ".Web",
         SRAssemblyWizard = "DevExpress.XtraWizard" + VSuffix,
         SRAssemblyWizardDesign = "DevExpress.XtraWizard" + VSuffixDesign,
+        SRAssemblyWizardDesignFull = SRAssemblyWizardDesign + FullAssemblyVersionExtension,
         SRAssemblyXpo = "DevExpress.Xpo" + VSuffix,
         SRAssemblyXpoFull = SRAssemblyXpo + FullAssemblyVersionExtension,
         SRAssemblyXpoUI = "DevExpress.Xpo" + VSuffix + ".UI",
@@ -593,7 +597,19 @@ namespace DevExpress.Internal {
         SRAssemblySpreadsheetCoreTestsNotification = "DevExpress.Spreadsheet" + VSuffix + ".Core.Tests.Notification",
         SRAssemblySpreadsheetCoreTestsFunctions = "DevExpress.Spreadsheet" + VSuffix + ".Core.Tests.Functions",
         SRAssemblyMauiCore = "DevExpress.Maui.Core",
-        SRAssemblyMauiCoreFull = SRAssemblyMauiCore + FullAssemblyVersionExtension;
+        SRAssemblyMauiCoreFull = SRAssemblyMauiCore + FullAssemblyVersionExtension,
+
+        SRAssemblyAIIntegration = "DevExpress.AIIntegration" + VSuffix,
+        SRAssemblyAIIntegrationFull = SRAssemblyAIIntegration + FullAssemblyVersionExtension,
+        SRAssemblyAIIntegrationDesktop = "DevExpress.AIIntegration.Desktop" + VSuffix,
+        SRAssemblyAIIntegrationDesktopFull = SRAssemblyAIIntegrationDesktop + FullAssemblyVersionExtension,
+        SRAssemblyAIIntegrationWinForms = "DevExpress.AIIntegration.WinForms" + VSuffix,
+        SRAssemblyAIIntegrationWinFormsFull = SRAssemblyAIIntegrationWinForms + FullAssemblyVersionExtension,
+        SRAssemblyAIIntegrationWpf = "DevExpress.AIIntegration.Wpf" + VSuffix,
+        SRAssemblyAIIntegrationWpfFull = SRAssemblyAIIntegrationWpf + FullAssemblyVersionExtension,
+
+        SRAssemblyAIIntegrationNetCoreReporting = "DevExpress.AIIntegration.AspNetCore.Reporting" + VSuffix,
+        SRAssemblyAIIntegrationBlazorReportingViewer = "DevExpress.AIIntegration.Blazor.Reporting.Viewer" + VSuffix;
 
     public const string SRNuGetPackageVersion = Version + "-eap";
 
@@ -662,6 +678,16 @@ namespace DevExpress.Internal {
         DXLinkGetStarted = "Https://go.devexpress.com/Demo_2013_GetStartedOverall.aspx",
         DXLinkRegisterKB = "https://go.devexpress.com/Demo_2013_RegisterTrial.aspx",
         DXLinkGetStartedWinGrid = "https://go.devexpress.com/Demo_2013_GetStartedWinGrid.aspx",
+
+        DXLinkTrialASPNETCore = "https://go.devexpress.com/Licensing_Installer_Watermark_ASPNETCore.aspx",
+        DXLinkTrialDashboards = "https://go.devexpress.com/Licensing_Installer_Watermark_Dashboards.aspx",
+        DXLinkTrialDevExtreme = "https://go.devexpress.com/Licensing_Installer_Watermark_DevExtreme.aspx",
+        DXLinkTrialReporting = "https://go.devexpress.com/Licensing_Installer_Watermark_Reporting.aspx",
+        DXLinkTrialOffice = "https://go.devexpress.com/Licensing_Installer_Watermark_Office.aspx",
+        DXLinkTrialBlazor = "https://go.devexpress.com/Licensing_Installer_Watermark_Blazor.aspx",
+        DXLinkTrialXAF = "https://go.devexpress.com/Licensing_Installer_Watermark_XAF.aspx",
+        DXLinkTrialCommon = "https://go.devexpress.com/Licensing_Installer_Watermark.aspx", // use this one everywhere if it is difficult to integrate product-specific links
+
         DXEmailInfo = "info@devexpress.com",
         DXLinkEmailInfo = "mailto:" + DXEmailInfo;
 

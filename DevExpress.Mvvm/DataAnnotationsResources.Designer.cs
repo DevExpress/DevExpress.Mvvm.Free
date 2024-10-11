@@ -1,5 +1,4 @@
 
-
 namespace DevExpress.Mvvm {
     using System;
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
